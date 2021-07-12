@@ -137,7 +137,7 @@
 	////////////////////////////////////////////
 		$host=						"radiologie-intranet.gra.kages.at";
 		$_stenvironenttools_path=	$toolsPath."/environent";
-		$_stcmstools_path=			$toolsPath."/cms";
+		$_stcmstools_path=			$toolsPath."/plugins";
 		$php_tools=					"tools.php";
 		$_defaultScripts=			$client_root."/defaultScripts/";
 		$_tinymce_path=				$_defaultScripts."tiny_mce/";
