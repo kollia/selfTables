@@ -1,0 +1,463 @@
+
+<table bgcolor='white'><tr><td><pre>
+incomming <b>QUERY-STRING:</b>
+array( [stget] => array( [table]       => ""
+                         [action]      => ""
+                         [container]   => "usergroup"
+                         [link]        => array( [from] => array( [0] => array( [STPartition] => "ID"      )      )      )
+                         [older]       => array( [stget] => array( [table]     => ""
+                                                                   [container] => "partition"
+                                                                   [link]      => array( [from] => array( [0] => array( [STProject] => "ID"      )      )      )
+                                                                   [older]     => array( [stget] => array( [table]     => ""
+                                                                                                           [container] => "projects"
+                                                                                                           [link]      => array( [from] => ""      )
+                                                                                                           [older]     => array( [stget] => array( [table]     => ""
+                                                                                                                                                   [container] => "user"
+                                                                                                                                                   [link]      => array( [from] => ""      )      )      )
+                                                                                                           [action]    => ""      )      )
+                                                                   [action]    => ""      )      )
+                         [STProject]   => array( [ID] => "1"      )
+                         [STPartition] => array( [ID] => "1"      )      )
+       [debug] => ""      )
+no incomming <b>POST-VARS</b><br /><br />
+first aliases:
+array( [STUserGroup] => "t1"
+       [STGroup]     => "t2"
+       [STUser]      => "t3"
+       [STCluster]   => "t4"      )
+unreach tables:
+array( [STCluster] => "t4"      )
+tableStructure:
+array( [STClusterGroup] => array( [STCluster] => array( [STProject]   => array( -empty- )
+                                                        [STPartition] => array( -empty- )      )
+                                  [STGroup]   => array( -empty- )      )
+       [STUserGroup]    => array( [STUser]  => array( [STGroupType] => array( -empty- )      )
+                                  [STGroup] => array( -empty- )      )      )
+first table from structure is STClusterGroup<br />function getTableReachResults(Array, Array, Array, )<br />NeededTables:
+array( [t1] => "STUserGroup"
+       [t2] => "STGroup"
+       [t3] => "STUser"
+       [t4] => "STCluster"      )
+beforeNeeded:
+array( [STUserGroup] => "t1"
+       [STGroup]     => "t2"
+       [STUser]      => "t3"
+       [STCluster]   => "t4"      )
+search for table STUserGroup<br />found table STClusterGroup<br />found table STCluster<br />found table STProject<br />found table STPartition<br />found table STGroup<br />found table STUserGroup<br />tablestruct from struct:
+array( [STUserGroup] => array( -skip- )      )
+<br />search for table STUserGroup for reached<br />found table STUserGroup<br />search for table STGroup for reached<br />found table STUserGroup<br />found table STUser<br />found table STGroupType<br />found table STGroup<br />search for table STUser for reached<br />found table STUserGroup<br />found table STUser<br />search for table STCluster for reached<br />found table STUserGroup<br />found table STUser<br />found table STGroupType<br />found table STGroup<br />search for table STGroup<br />found table STClusterGroup<br />found table STCluster<br />found table STProject<br />found table STPartition<br />found table STGroup<br />tablestruct from struct:
+array( [STGroup] => array( -skip- )      )
+<br />search for table STUserGroup for reached<br />found table STGroup<br />search for table STGroup for reached<br />found table STGroup<br />search for table STUser for reached<br />found table STGroup<br />search for table STCluster for reached<br />found table STGroup<br />search for table STUser<br />found table STClusterGroup<br />found table STCluster<br />found table STProject<br />found table STPartition<br />found table STGroup<br />found table STUserGroup<br />found table STUser<br />tablestruct from struct:
+array( [STUser] => array( -skip- )      )
+<br />search for table STUserGroup for reached<br />found table STUser<br />found table STGroupType<br />search for table STGroup for reached<br />found table STUser<br />found table STGroupType<br />search for table STUser for reached<br />found table STUser<br />search for table STCluster for reached<br />found table STUser<br />found table STGroupType<br />search for table STCluster<br />found table STClusterGroup<br />found table STCluster<br />tablestruct from struct:
+array( [STCluster] => array( -skip- )      )
+<br />search for table STUserGroup for reached<br />found table STCluster<br />found table STProject<br />found table STPartition<br />search for table STGroup for reached<br />found table STCluster<br />found table STProject<br />found table STPartition<br />search for table STUser for reached<br />found table STCluster<br />found table STProject<br />found table STPartition<br />search for table STCluster for reached<br />found table STCluster<br />end of function getTableReachResults()<br />reachResult:
+array( [STUserGroup] => 3
+       [STGroup]     => 1
+       [STUser]      => 1
+       [STCluster]   => 1      )
+function getTableReachResults(Array, Array, Array, 1)<br />NeededTables:
+array( [t1] => "STUserGroup"
+       [t2] => "STGroup"
+       [t3] => "STUser"
+       [t4] => "STCluster"      )
+beforeNeeded:
+array( [STUserGroup] => 0
+       [STGroup]     => 1
+       [STUser]      => 2
+       [STCluster]   => 3      )
+search for table STUserGroup before<br />found table STClusterGroup<br />found table STCluster<br />found table STProject<br />found table STPartition<br />found table STGroup<br />found table STUserGroup<br />found table STUser<br />found table STGroupType<br />found table STGroup<br />search for table STGroup before<br />found table STClusterGroup<br />table before is STClusterGroup<br />search for table STUserGroup for reached<br />found table STClusterGroup<br />found table STCluster<br />found table STProject<br />found table STPartition<br />found table STGroup<br />search for table STGroup for reached<br />found table STClusterGroup<br />found table STCluster<br />found table STProject<br />found table STPartition<br />found table STGroup<br />search for table STUser for reached<br />found table STClusterGroup<br />found table STCluster<br />found table STProject<br />found table STPartition<br />found table STGroup<br />search for table STCluster for reached<br />found table STClusterGroup<br />found table STCluster<br />search for table STUser before<br />found table STClusterGroup<br />found table STCluster<br />found table STProject<br />found table STPartition<br />found table STGroup<br />found table STUserGroup<br />table before is STUserGroup<br />search for table STUserGroup for reached<br />found table STUserGroup<br />search for table STGroup for reached<br />found table STUserGroup<br />found table STUser<br />found table STGroupType<br />found table STGroup<br />search for table STUser for reached<br />found table STUserGroup<br />found table STUser<br />search for table STCluster for reached<br />found table STUserGroup<br />found table STUser<br />found table STGroupType<br />found table STGroup<br />search for table STCluster before<br />found table STClusterGroup<br />table before is STClusterGroup<br />search for table STUserGroup for reached<br />found table STClusterGroup<br />found table STCluster<br />found table STProject<br />found table STPartition<br />found table STGroup<br />search for table STGroup for reached<br />found table STClusterGroup<br />found table STCluster<br />found table STProject<br />found table STPartition<br />found table STGroup<br />search for table STUser for reached<br />found table STClusterGroup<br />found table STCluster<br />found table STProject<br />found table STPartition<br />found table STGroup<br />search for table STCluster for reached<br />found table STClusterGroup<br />found table STCluster<br />end of function getTableReachResults()<br />reachResult:
+array( [STClusterGroup] => 2
+       [STUserGroup]    => 3      )
+function getTableReachResults(Array, Array, Array, 1)<br />NeededTables:
+array( [t1] => "STUserGroup"
+       [t2] => "STGroup"
+       [t3] => "STUser"
+       [t4] => "STCluster"      )
+beforeNeeded:
+array( [STClusterGroup] => 0
+       [STUserGroup]    => 1      )
+search for table STClusterGroup before<br />found table STClusterGroup<br />found table STCluster<br />found table STProject<br />found table STPartition<br />found table STGroup<br />found table STUserGroup<br />found table STUser<br />found table STGroupType<br />found table STGroup<br />search for table STUserGroup before<br />found table STClusterGroup<br />found table STCluster<br />found table STProject<br />found table STPartition<br />found table STGroup<br />found table STUserGroup<br />found table STUser<br />found table STGroupType<br />found table STGroup<br />end of function getTableReachResults()<br />reachResult:
+array( -empty- )
+first selected Table:
+array( -empty- )
+not all reached<br />reached tables:
+array( [STUserGroup] => boolean(true)
+       [STUser]      => boolean(true)
+       [STGroupType] => boolean(true)
+       [STGroup]     => boolean(true)      )
+table-structure:
+array( [STClusterGroup] => array( [STCluster] => array( [STProject]   => array( -empty- )
+                                                        [STPartition] => array( -empty- )      )
+                                  [STGroup]   => array( -empty- )      )
+       [STUserGroup]    => array( [STUser]  => array( [STGroupType] => array( -empty- )      )
+                                  [STGroup] => array( -empty- )      )      )
+found table STClusterGroup<br />table before unreached is STClusterGroup<br />reached tables:
+array( [STUserGroup] => boolean(true)
+       [STUser]      => boolean(true)
+       [STGroupType] => boolean(true)
+       [STGroup]     => boolean(true)      )
+function findConnectTable()<br />search for STClusterGroup<br />function findConnectTable()<br />search for STCluster<br />function findConnectTable()<br />search for STProject<br />function findConnectTable()<br />search for STPartition<br />function findConnectTable()<br />search for STGroup<br />connection table:"STGroup"first aliases:
+array( [STUserGroup] => "t1"
+       [STGroup]     => "t2"
+       [STUser]      => "t3"
+       [STCluster]   => "t4"      )
+unreach tables:
+array( [STCluster] => "t4"      )
+tableStructure:
+array( [STClusterGroup] => array( [STCluster] => array( [STProject]   => array( -empty- )
+                                                        [STPartition] => array( -empty- )      )
+                                  [STGroup]   => array( -empty- )      )
+       [STUserGroup]    => array( [STUser]  => array( [STGroupType] => array( -empty- )      )
+                                  [STGroup] => array( -empty- )      )      )
+first table from structure is STClusterGroup<br />function getTableReachResults(Array, Array, Array, )<br />NeededTables:
+array( [t1] => "STUserGroup"
+       [t2] => "STGroup"
+       [t3] => "STUser"
+       [t4] => "STCluster"      )
+beforeNeeded:
+array( [STUserGroup] => "t1"
+       [STGroup]     => "t2"
+       [STUser]      => "t3"
+       [STCluster]   => "t4"      )
+search for table STUserGroup<br />found table STClusterGroup<br />found table STCluster<br />found table STProject<br />found table STPartition<br />found table STGroup<br />found table STUserGroup<br />tablestruct from struct:
+array( [STUserGroup] => array( -skip- )      )
+<br />search for table STUserGroup for reached<br />found table STUserGroup<br />search for table STGroup for reached<br />found table STUserGroup<br />found table STUser<br />found table STGroupType<br />found table STGroup<br />search for table STUser for reached<br />found table STUserGroup<br />found table STUser<br />search for table STCluster for reached<br />found table STUserGroup<br />found table STUser<br />found table STGroupType<br />found table STGroup<br />search for table STGroup<br />found table STClusterGroup<br />found table STCluster<br />found table STProject<br />found table STPartition<br />found table STGroup<br />tablestruct from struct:
+array( [STGroup] => array( -skip- )      )
+<br />search for table STUserGroup for reached<br />found table STGroup<br />search for table STGroup for reached<br />found table STGroup<br />search for table STUser for reached<br />found table STGroup<br />search for table STCluster for reached<br />found table STGroup<br />search for table STUser<br />found table STClusterGroup<br />found table STCluster<br />found table STProject<br />found table STPartition<br />found table STGroup<br />found table STUserGroup<br />found table STUser<br />tablestruct from struct:
+array( [STUser] => array( -skip- )      )
+<br />search for table STUserGroup for reached<br />found table STUser<br />found table STGroupType<br />search for table STGroup for reached<br />found table STUser<br />found table STGroupType<br />search for table STUser for reached<br />found table STUser<br />search for table STCluster for reached<br />found table STUser<br />found table STGroupType<br />search for table STCluster<br />found table STClusterGroup<br />found table STCluster<br />tablestruct from struct:
+array( [STCluster] => array( -skip- )      )
+<br />search for table STUserGroup for reached<br />found table STCluster<br />found table STProject<br />found table STPartition<br />search for table STGroup for reached<br />found table STCluster<br />found table STProject<br />found table STPartition<br />search for table STUser for reached<br />found table STCluster<br />found table STProject<br />found table STPartition<br />search for table STCluster for reached<br />found table STCluster<br />end of function getTableReachResults()<br />reachResult:
+array( [STUserGroup] => 3
+       [STGroup]     => 1
+       [STUser]      => 1
+       [STCluster]   => 1      )
+function getTableReachResults(Array, Array, Array, 1)<br />NeededTables:
+array( [t1] => "STUserGroup"
+       [t2] => "STGroup"
+       [t3] => "STUser"
+       [t4] => "STCluster"      )
+beforeNeeded:
+array( [STUserGroup] => 0
+       [STGroup]     => 1
+       [STUser]      => 2
+       [STCluster]   => 3      )
+search for table STUserGroup before<br />found table STClusterGroup<br />found table STCluster<br />found table STProject<br />found table STPartition<br />found table STGroup<br />found table STUserGroup<br />found table STUser<br />found table STGroupType<br />found table STGroup<br />search for table STGroup before<br />found table STClusterGroup<br />table before is STClusterGroup<br />search for table STUserGroup for reached<br />found table STClusterGroup<br />found table STCluster<br />found table STProject<br />found table STPartition<br />found table STGroup<br />search for table STGroup for reached<br />found table STClusterGroup<br />found table STCluster<br />found table STProject<br />found table STPartition<br />found table STGroup<br />search for table STUser for reached<br />found table STClusterGroup<br />found table STCluster<br />found table STProject<br />found table STPartition<br />found table STGroup<br />search for table STCluster for reached<br />found table STClusterGroup<br />found table STCluster<br />search for table STUser before<br />found table STClusterGroup<br />found table STCluster<br />found table STProject<br />found table STPartition<br />found table STGroup<br />found table STUserGroup<br />table before is STUserGroup<br />search for table STUserGroup for reached<br />found table STUserGroup<br />search for table STGroup for reached<br />found table STUserGroup<br />found table STUser<br />found table STGroupType<br />found table STGroup<br />search for table STUser for reached<br />found table STUserGroup<br />found table STUser<br />search for table STCluster for reached<br />found table STUserGroup<br />found table STUser<br />found table STGroupType<br />found table STGroup<br />search for table STCluster before<br />found table STClusterGroup<br />table before is STClusterGroup<br />search for table STUserGroup for reached<br />found table STClusterGroup<br />found table STCluster<br />found table STProject<br />found table STPartition<br />found table STGroup<br />search for table STGroup for reached<br />found table STClusterGroup<br />found table STCluster<br />found table STProject<br />found table STPartition<br />found table STGroup<br />search for table STUser for reached<br />found table STClusterGroup<br />found table STCluster<br />found table STProject<br />found table STPartition<br />found table STGroup<br />search for table STCluster for reached<br />found table STClusterGroup<br />found table STCluster<br />end of function getTableReachResults()<br />reachResult:
+array( [STClusterGroup] => 2
+       [STUserGroup]    => 3      )
+function getTableReachResults(Array, Array, Array, 1)<br />NeededTables:
+array( [t1] => "STUserGroup"
+       [t2] => "STGroup"
+       [t3] => "STUser"
+       [t4] => "STCluster"      )
+beforeNeeded:
+array( [STClusterGroup] => 0
+       [STUserGroup]    => 1      )
+search for table STClusterGroup before<br />found table STClusterGroup<br />found table STCluster<br />found table STProject<br />found table STPartition<br />found table STGroup<br />found table STUserGroup<br />found table STUser<br />found table STGroupType<br />found table STGroup<br />search for table STUserGroup before<br />found table STClusterGroup<br />found table STCluster<br />found table STProject<br />found table STPartition<br />found table STGroup<br />found table STUserGroup<br />found table STUser<br />found table STGroupType<br />found table STGroup<br />end of function getTableReachResults()<br />reachResult:
+array( -empty- )
+first selected Table:
+array( -empty- )
+not all reached<br />reached tables:
+array( [STUserGroup] => boolean(true)
+       [STUser]      => boolean(true)
+       [STGroupType] => boolean(true)
+       [STGroup]     => boolean(true)      )
+table-structure:
+array( [STClusterGroup] => array( [STCluster] => array( [STProject]   => array( -empty- )
+                                                        [STPartition] => array( -empty- )      )
+                                  [STGroup]   => array( -empty- )      )
+       [STUserGroup]    => array( [STUser]  => array( [STGroupType] => array( -empty- )      )
+                                  [STGroup] => array( -empty- )      )      )
+found table STClusterGroup<br />table before unreached is STClusterGroup<br />reached tables:
+array( [STUserGroup] => boolean(true)
+       [STUser]      => boolean(true)
+       [STGroupType] => boolean(true)
+       [STGroup]     => boolean(true)      )
+function findConnectTable()<br />search for STClusterGroup<br />function findConnectTable()<br />search for STCluster<br />function findConnectTable()<br />search for STProject<br />function findConnectTable()<br />search for STPartition<br />function findConnectTable()<br />search for STGroup<br />connection table:"STGroup"first aliases:
+array( [STGroup]   => "t1"
+       [STCluster] => "t2"      )
+unreach tables:
+array( [STCluster] => "t2"      )
+tableStructure:
+array( [STClusterGroup] => array( [STCluster] => array( [STProject]   => array( -empty- )
+                                                        [STPartition] => array( -empty- )      )
+                                  [STGroup]   => array( -empty- )      )
+       [STUserGroup]    => array( [STUser]  => array( [STGroupType] => array( -empty- )      )
+                                  [STGroup] => array( -empty- )      )      )
+first table from structure is STClusterGroup<br />function getTableReachResults(Array, Array, Array, )<br />NeededTables:
+array( [t1] => "STGroup"
+       [t2] => "STCluster"      )
+beforeNeeded:
+array( [STGroup]   => "t1"
+       [STCluster] => "t2"      )
+search for table STGroup<br />found table STClusterGroup<br />found table STCluster<br />found table STProject<br />found table STPartition<br />found table STGroup<br />tablestruct from struct:
+array( [STGroup] => array( -skip- )      )
+<br />search for table STGroup for reached<br />found table STGroup<br />search for table STCluster for reached<br />found table STGroup<br />search for table STCluster<br />found table STClusterGroup<br />found table STCluster<br />tablestruct from struct:
+array( [STCluster] => array( -skip- )      )
+<br />search for table STGroup for reached<br />found table STCluster<br />found table STProject<br />found table STPartition<br />search for table STCluster for reached<br />found table STCluster<br />end of function getTableReachResults()<br />reachResult:
+array( [STGroup]   => 1
+       [STCluster] => 1      )
+function getTableReachResults(Array, Array, Array, 1)<br />NeededTables:
+array( [t1] => "STGroup"
+       [t2] => "STCluster"      )
+beforeNeeded:
+array( [STGroup]   => 0
+       [STCluster] => 1      )
+search for table STGroup before<br />found table STClusterGroup<br />table before is STClusterGroup<br />search for table STGroup for reached<br />found table STClusterGroup<br />found table STCluster<br />found table STProject<br />found table STPartition<br />found table STGroup<br />search for table STCluster for reached<br />found table STClusterGroup<br />found table STCluster<br />search for table STCluster before<br />found table STClusterGroup<br />table before is STClusterGroup<br />search for table STGroup for reached<br />found table STClusterGroup<br />found table STCluster<br />found table STProject<br />found table STPartition<br />found table STGroup<br />search for table STCluster for reached<br />found table STClusterGroup<br />found table STCluster<br />end of function getTableReachResults()<br />reachResult:
+array( [STClusterGroup] => 2      )
+first selected Table:
+array( [0] => "STClusterGroup"      )
+found table STClusterGroup<br />OSTTable execute result <b>NOERROR</b><br /><br /><b>Warning: </b> method should not be used in init methode<br />in <b>function</b> stusergroupmanagement->getactions<b>(</b><b>)</b> <b>file</b> D:\WWW\root\php_includes\selfTables\development\box\STObjectContainer.php <b>line:</b>431<br />STNavigationTable execute result <b>NOERROR</b><br />stusersidecreator execute result <b>NOERROR</b><br />
+</pre></td></tr></table><table width='100%' bgcolor='white'><tr><td><center>this side is set for <b>DEBUG-session</b> (Tag::debug(<font color='blue'>true</font>))</center></td></tr></table><html>
+  <head>
+    <title>
+      Unknown
+    </title>
+    <link rel="stylesheet" href="default.css" type="text/css" title="come-and-see admin-css" />
+  </head>
+  <body>
+    <table width="100%">
+      <tr>
+        <td align="right">
+          <button class="logoutMainButton" type="button" onClick="javascript:self.location.href='index.php?stget[nr]=1583&debug=&doLogout'">
+            log out
+          </button>
+        </td>
+      </tr>
+    </table>
+    <div>
+      <table width="100%">
+        <tr>
+          <td align="right">
+            <button class="backButton" onClick="javascript:location='?stget[nr]=1577&debug='" type="button">
+              Unterteilung nach Partitionen
+            </button>
+          </td>
+        </tr>
+      </table>
+      <br />
+      <br />
+    </div>
+    <table width="100%">
+      <tr>
+        <td>
+          <table class="STNavigationTable">
+            <tr>
+              <td colspan="4" align="center">
+                <table>
+                  <tr class="index">
+                    <td align="center" width="50">
+                      <button class="indexButtons" onClick="javascript:document.location.href='?stget[nr]=1596&debug='" disabled="disabled" type="button">
+                        <<
+                      </button>
+                      <button class="indexButtons" onClick="javascript:document.location.href='?stget[nr]=1597&debug='" disabled="disabled" type="button">
+                        <
+                      </button>
+                    </td>
+                    <td align="center" width="200">
+                      <span class="indexName">
+                        <span class="fromRow">
+                          1
+                        </span>
+                        <span class="indexDelimiter">
+                           - 
+                        </span>
+                        <span class="toRow">
+                          3
+                        </span>
+                        <span class="fromMaxRowName">
+                           from 
+                        </span>
+                        <span class="maxRow">
+                          3
+                        </span>
+                      </span>
+                    </td>
+                    <td align="center" width="50">
+                      <button class="indexButtons" onClick="javascript:document.location.href='?stget[nr]=1598&debug='" disabled="disabled" type="button">
+                        >
+                      </button>
+                      <button class="indexButtons" onClick="javascript:document.location.href='?stget[nr]=1596&debug='" disabled="disabled" type="button">
+                        >>
+                      </button>
+                    </td>
+                  </tr>
+                </table>
+              </td>
+            </tr>
+            <tr>
+              <th>
+                <a class="hline" href="?stget[nr]=1599&debug=">
+                  Benuter
+                </a>
+              </th>
+              <th>
+                <a class="hline" href="?stget[nr]=1600&debug=">
+                  Vorname
+                </a>
+              </th>
+              <th>
+                <a class="hline" href="?stget[nr]=1601&debug=">
+                  Nachname
+                </a>
+              </th>
+            </tr>
+            <tr class="Tr0">
+              <td>
+                <a class="stactivelink" href="javascript:location='/www.come-and-see.at/admin/index.php?stget[nr]=1602&debug='">
+                  admin
+                </a>
+              </td>
+              <td>
+                Alexander
+              </td>
+              <td>
+                Kolli
+              </td>
+            </tr>
+            <tr class="Tr1">
+              <td>
+                <a href="javascript:location='/www.come-and-see.at/admin/index.php?stget[nr]=1603&debug='">
+                  loretto
+                </a>
+              </td>
+              <td>
+              </td>
+              <td>
+              </td>
+            </tr>
+            <tr class="Tr0">
+              <td>
+                <a href="javascript:location='/www.come-and-see.at/admin/index.php?stget[nr]=1604&debug='">
+                  urdbrunnen
+                </a>
+              </td>
+              <td>
+                urd
+              </td>
+              <td>
+                brunnen
+              </td>
+            </tr>
+            <tr>
+              <td>
+              </td>
+            </tr>
+          </table>
+        </td>
+        <td>
+          <div>
+            <table class="tableChoose" align="center">
+              <tr>
+                <td align="center" valign="middle">
+                  <button class="menue" onClick="javascript:location='/www.come-and-see.at/admin/index.php?stget[nr]=1590&debug='" type="button">
+                      Gruppen-Zuweisung zu den expliziten Clustern  
+                  </button>
+                </td>
+              </tr>
+              <tr>
+                <td height="20">
+                </td>
+              </tr>
+            </table>
+            <h2 align="center">
+              Zugriffs-Gruppen
+            </h2>
+            <table class="OSTTable" align="center">
+              <form name="st_checkForm" method="post">
+                <tr>
+                  <td>
+                    <input type="submit" value="Speichern" />
+                    <input type="hidden" name="osttable_make" value="1" />
+                  </td>
+                </tr>
+                <div>
+                  <tr>
+                    <td colspan="6" align="center">
+                      <span>
+                      </span>
+                    </td>
+                  </tr>
+                  <tr>
+                    <th>
+                      <a class="hline" href="?stget[nr]=1592&debug=">
+                        Zugriff
+                      </a>
+                    </th>
+                    <th>
+                      <a class="hline" href="?stget[nr]=1593&debug=">
+                        Gruppen-Name
+                      </a>
+                    </th>
+                    <th>
+                      <a class="hline" href="?stget[nr]=1594&debug=">
+                        Bezeichnung
+                      </a>
+                    </th>
+                    <th>
+                      <a class="hline" href="?stget[nr]=1595&debug=">
+                        zugeh�rigkeit seit
+                      </a>
+                    </th>
+                  </tr>
+                  <tr class="Tr0">
+                    <td align="center">
+                      <input type="checkbox" name="Zugriff[0]" checked="checked" />
+                    </td>
+                    <td>
+                      allAdmin
+                    </td>
+                    <td>
+                      defines the root admin of the system, which has access to all projects
+                    </td>
+                    <td>
+                      <input name="STGroup@ID[0]" type="hidden" value="3" />
+                      <input name="STUser@ID[0]" type="hidden" value="1" />
+                      2006-03-30 20:15:09
+                    </td>
+                  </tr>
+                  <tr class="Tr1">
+                    <td align="center">
+                      <input type="checkbox" name="Zugriff[1]" checked="checked" />
+                    </td>
+                    <td>
+                      casUser
+                    </td>
+                    <td>
+                      Zugriff auf den Besucherkalender und die Feiertage
+                    </td>
+                    <td>
+                      <input name="STGroup@ID[1]" type="hidden" value="80" />
+                      <input name="STUser@ID[1]" type="hidden" value />
+                      2006-07-19 22:09:10
+                    </td>
+                  </tr>
+                  <tr class="Tr0">
+                    <td align="center">
+                      <input type="checkbox" name="Zugriff[2]" checked="checked" />
+                    </td>
+                    <td>
+                      wjt_seePhotos
+                    </td>
+                    <td>
+                    </td>
+                    <td>
+                      <input name="STGroup@ID[2]" type="hidden" value="29" />
+                      <input name="STUser@ID[2]" type="hidden" value />
+                      2006-05-07 14:24:18
+                    </td>
+                  </tr>
+                </div>
+              </form>
+              <tr>
+                <td>
+                </td>
+              </tr>
+            </table>
+          </div>
+        </td>
+      </tr>
+    </table>
+  </body>
+</html>
