@@ -2,7 +2,6 @@
 
 require_once($insert_update);
 require_once($database_selector);
-require_once($_KAGES_LDAP_Server);
 
 
 		// callback-Funktion um den user zu deffinieren und Einzutragen
@@ -331,29 +330,9 @@ class OSTQuestionBox extends OSTBox
 				$statement.= " where cg.ClusterID='".$this->sNewsCluster."'";
 				$groups= $this->oUserDb->fetch_single_array($statement);
 				
-				$ldap = new KAGES_LDAP_Server();
-				Tag::alert(!$ldap->connect(), "OSTQuestionBox::execute", "cannot Connect to LDAP-Server");
-				Tag::alert(!$ldap->bind(), "OSTQuestionBox::execute", "cnnot bind on LDAP-Server");
-				
 				$members= array();
 				foreach($groups as $group)
 				{
-					if(preg_match("/^LKHGraz_(.*)$/", $group, $preg))
-					{
-						$ldap->search(	"(&(objectClass=user)(memberOf=CN=".$preg[1].",CN=Users,DC=klinikum,DC=ad,DC=local))" 
-			 							,array( 'sAMAccountName', 'displayName', 'mail' )
-										,""
-										,"OU=Users, OU=ADM, DC=klinikum,DC=ad,DC=local"												);
-						while($ldap->next_record())
-						{
-							$name= array_pop( $ldap->f( 'sAMAccountName' ) );
-							$displayName= array_pop( $ldap->f('displayName') );
-							$mail= array_pop( $ldap->f( 'mail' ) );
-							if(!$members[$name])
-								$members[$name]= array("fullName"=>$displayName, "mail"=>$mail, "from"=>"LDAP");
-						}
-					}else
-					{
 						$statement=  "select u.UserName, u.FullName, u.EmailAddress ";
 						$statement.= "from MUUser as u";
 						$statement.= " inner join MUUserGroup as ug on u.ID=ug.UserID";
@@ -370,15 +349,14 @@ class OSTQuestionBox extends OSTBox
 									$members[$member["UserName"]]["from"]= "custom";
 								}
 						}
-					}
 				}
 				$send= array();
 				foreach($members as $name=>$member)
 				{
 					if(!$member["mail"])
 					{// durchsuche nochmals ob irgendwo keine EMailAddresse eingetragen ist.
-						$statement= "select EmailAddress from MUUser where UserName='".$name."'";
-						$statement.= " and GroupType='LKHGraz'";
+						$statement= "select EmailAddress from User where UserName='".$name."'";
+						$statement.= " and GroupType='Graz'";
 						$members[$name]["mail"]= $this->oUserDb->fetch_single($statement);
 						if($members[$name]["mail"])
 							$members[$name]["from"]= "custom";

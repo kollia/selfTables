@@ -464,7 +464,6 @@ class myTools
 				$__telephonListNames= array();
 				while ($row = mysql_fetch_array($res,MYSQL_ASSOC))
 				{	
-					// create user name defined from KAGES
 					$uname= strtolower($row["famname"].substr($row["vorname"], 0, 1));
 					$uname= preg_replace("/ä/", "ae", $uname);
 					$uname= preg_replace("/ö/", "oe", $uname);

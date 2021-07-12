@@ -31,7 +31,7 @@ class STUser
 	var $projectID;
 	var $aCluster;
 	var $aExistCluster;
-	var $aLKHGroups;
+	var $aGroups;
 	var $startPage;
 	var $bLog;
 	var $noRegister= false;
@@ -470,7 +470,7 @@ class STUser
 		$sGroupType= null;// wird nur beim ersten Login benutzt
 		$this->projectID= null;
 		$this->aCluster= null;
-		$this->aLKHGroups= null;
+		$this->aGroups= null;
 		//$this->echoSessionVars();
 		foreach($this->aSessionVars as $var)
 		{
