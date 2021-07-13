@@ -135,6 +135,7 @@
 	// so it is packed in an array
 	$global_selftable_session_class_instance= array();
 	////////////////////////////////////////////
+		$toolsPath=                 "selftables";
 		$host=						"localhost";
 		$_stenvironenttools_path=	$toolsPath."/environent";
 		$_stcmstools_path=			$toolsPath."/plugins";
