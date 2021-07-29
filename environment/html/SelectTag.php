@@ -2,7 +2,7 @@
 
 class SelectTag extends Tag
 {
-		function SelectTag($tag= null, $class= null)
+		function __construct($tag= null, $class= null)
 		{
 			Tag::Tag("select", true, $class);
 			$this->add($tag);
@@ -31,7 +31,7 @@ class SelectTag extends Tag
 
 class OptionTag extends Tag
 {
-		function OptionTag()
+		function __construct()
 		{
 			Tag::Tag("option", true);
 		}

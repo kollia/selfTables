@@ -29,7 +29,7 @@ class STDbSelector extends STDbTable
 		var	$bClearedByFirstSelect= false; // die selects in ->show werden gel�scht wenn ein anderer Select gew�nscht wird
 
 
-		function STDbSelector(&$oTable, $defaultTyp= MYSQL_NUM, $onError= onErrorStop)
+		function __construct(&$oTable, $defaultTyp= MYSQL_NUM, $onError= onErrorStop)
 		{
 			STCheck::paramCheck($oTable, 1, "STAliasTable");
 			STCheck::paramCheck($defaultTyp, 2, "check", $defaultTyp==STSQL_NUM || $defaultTyp==STSQL_ASSOC || $defaultTyp==STSQL_BOTH,

@@ -2,7 +2,7 @@
 
 class TitleTag extends Tag
 {
-		function TitleTag($title= null)
+		function __construct($title= null)
 		{
 			STCheck::paramCheck($title, 1, "string", "null");
 

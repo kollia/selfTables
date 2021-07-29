@@ -11,7 +11,7 @@ class OSTDbSiteCreator extends STDbSiteCreator
 		var	$userManagement;
 		var	$aAccessClusters= array();
 		
-		function OSTDbSiteCreator($project, $container= null, $registerSession= true)
+		function __construct($project, $container= null, $registerSession= true)
 		{
 			Tag::paramCheck($project, 1, "string", "int");
 			Tag::paramCheck($container, 2, "STDbTableContainer", "null");

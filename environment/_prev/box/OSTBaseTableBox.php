@@ -4,11 +4,7 @@ require_once($php_html_description);
 require_once($stmessagehandling);
 require_once($php_javascript);
 require_once($php_htmltag_class);
-require_once($database_tables);
 require_once($_ostcallbackclass);
-
-
-
 
 class OSTBaseTableBox extends TableTag
 {
@@ -30,7 +26,7 @@ class OSTBaseTableBox extends TableTag
 		var $where= "";
 		var $language= "en";
 
-		function OSTBaseTableBox(&$container, $class= "OSTBaseTableBox")
+		function __construct(&$container, $class= "OSTBaseTableBox")
 		{
 			global $HTTP_SERVER_VARS;
 
@@ -118,7 +114,7 @@ class OSTBaseTableBox extends TableTag
 			$this->aCallbacks[$columnName][]= array(	"action"=>	$action,
 														"function"=>$callbackFunction	);
 		}
-		/*protected*/function makeCallback($action, &$oCallbackClass, $columnName, $rownum)
+		protected function makeCallback($action, &$oCallbackClass, $columnName, $rownum)
 		{//STCheck::warning(1,"","makeCallback");
 			Tag::echoDebug("callback", "makeCallback(ACTION:'$action', CALLBACKCLASS("
 									.get_class($oCallbackClass)."), COLUMN:'$columnName', ROWNUM:$rownum)");
@@ -412,7 +408,7 @@ class OSTBaseTableBox extends TableTag
     			$fieldArray= $this->db->describeTable($statement);
     			foreach($this->uniqueKey as $uniqueKey)
     			{
-    				$keys= split(" ", $uniqueKey);
+    				$keys= preg_split("/ /", $uniqueKey);
     				foreach($fieldArray as $key=>$field)
     				{
     					foreach($keys as $unique)
@@ -428,7 +424,7 @@ class OSTBaseTableBox extends TableTag
     								if(!preg_match("/multiple_key/", $field["flags"]))
     									$fieldArray[$key]["flags"].= " multiple_key($uniqueKey)";
     								else
-    									$fieldArray[$key]["flags"]= ereg_replace("multiple_key", $field["flags"], "multiple_key($uniqueKey)");
+    									$fieldArray[$key]["flags"]= preg_replace("/multiple_key/", $field["flags"], "multiple_key($uniqueKey)");
     							}
     						}
     					}

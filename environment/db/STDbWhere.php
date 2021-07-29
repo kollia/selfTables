@@ -34,7 +34,7 @@ class STDbWhere
 	 * @param string $clauselOp can be the string 'and' or 'or', default if you not set this parameter the operator is 'and'
 	 * @public
 	 */
-	function STDbWhere($statement= null, $tableName= null, $clauselOp= null)
+	function __construct($statement= null, $tableName= null, $clauselOp= null)
 	{
 		STCheck::param($statement, 0, "string", "empty(string)", "null");
 		STCheck::param($tableName, 1, "string", "empty(string)", "null");

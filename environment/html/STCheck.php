@@ -339,7 +339,7 @@ class STCheck
 				and
 				$boolean	)
 			{
-				$param= &new STQueryString();
+				$param= new STQueryString();
 				$HTTP_GET_VARS= $param->getArrayVars();
 				echo "\n<table bgcolor='white'><tr><td><pre>\n";
 				if(file_exists($global_logfile_dataname))

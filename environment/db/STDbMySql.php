@@ -1,10 +1,7 @@
-<?
+<?php
 
 //last change 23.11.2004
-require_once($php_tools_class);
-//require_once($database_selector);
-//require_once($stdbtablecontainer);
-require_once($_stdatabase);
+require_once($_stdatabase);	
 
 	/**
 	*	 class STDbMySql
@@ -15,12 +12,22 @@ require_once($_stdatabase);
 	*/
 class STDbMySql extends STDatabase
 {
+	/**
+	 * last call of msqli::query
+	 */
+	private $lastDbResult= NULL;
+
+	/**
+	 * all tables and fields 
+	 * inside this database
+	 */
+	private $databaseTables= array();
 
   /**
 	*  Konstruktor f�r Zugriffs-deffinition
 	*
 	*/
-	function STDbMySql($identifName= "main-menue", $defaultTyp= MYSQL_NUM, $DBtype= "MYSQL")
+	function __construct($identifName= "main-menue", $defaultTyp= MYSQL_NUM, $DBtype= "MYSQL")
    	{
 		STDatabase::STDatabase($identifName, $defaultTyp, "MYSQL");
   	}
@@ -31,19 +38,19 @@ class STDbMySql extends STDatabase
 	*  @param $user: Username
 	*  @param $passwd: Passwort
 	*/
-	function connect($host= null, $user= null, $passwd= null)
+	function connect($host= null, $user= null, $passwd= null, $database= null)
 	{
-   		$this->conn= @mysql_connect($host, $user, $passwd);
+   		$this->conn= new mysqli($host, $user, $passwd, $database);
 		// alex 17/05/2005: obwohl referenze auf innere DB besteht
 		//					wird die Connection dort nicht eingetragen.
 		//					keine Ahnung warum !!!
 		$this->db->conn= $this->conn;
-  		if(!$this->conn)
+  		if($this->conn->connect_errno)
   		{
-				$this->error= true;
+			$this->error= true;
   			echo "can not make the connection to host <b>$host</b><br>";
   			echo "with user <b>$user</b><br>";
-  			echo "<b>ERROR".@mysql_errno($this->conn).": </b>".@mysql_error($this->conn);
+  			echo "<b>ERROR".$this->conn->connect_errno.": </b>".$this->conn->connect_error;
   			exit;
   		}
 		Tag::echoDebug("db.statement", "connect to MySql-database with user $user on host $host in db-container ".$this->getName());
@@ -58,9 +65,10 @@ class STDbMySql extends STDatabase
 		if(Tag::isDebug())
 		{
 			Tag::echoDebug("db.statement", "close MySql-connection from database ".$this->dbName." in db-container ".$this->getName());
-			mysql_close($this->conn);
+			if(!$this->conn->close())
+				echo $this->conn->error."<br />";
 		}else
-			@mysql_close($this->conn);
+			$this->conn->close();
 	}
 	// deprecated
    	function toDatabase($database, $onError= onErrorStop)
@@ -88,21 +96,21 @@ class STDbMySql extends STDatabase
 		//					keine Ahnung warum !!!
 		$this->db->dbName= $this->dbName;
 		Tag::echoDebug("db.statement", "use Database ".$database);
-  		if(!mysql_select_db("$database", $this->conn))
+  		if(!$this->conn->select_db("$database"))
   		{
 				$this->error= true;
 				if($onError>noErrorShow)
 				{
-    			echo "<br>can not reache database <b>$database</b>,<br>";
+    				echo "<br>can not reache database <b>$database</b>,<br>";
 					if( $this->conn==null )
 					 	echo "with no connection be set<br>";
 					else
 					{
-        			echo "with user <b>$this->user</b> on host <b>$this->host</b><br>";
-        			echo "<b>ERROR".mysql_errno($this->conn).": </b>".mysql_error($this->conn);
+						echo "with user <b>$this->user</b> on host <b>$this->host</b><br>";
+						echo "<b>ERROR".$this->conn->connect_errno.": </b>".$this->conn->connect_error."<br />";
 					}
 					if($onError==onErrorStop)
-    				exit();
+    					exit();
 				}
   		}
 		// read all tables in database
@@ -136,7 +144,143 @@ class STDbMySql extends STDatabase
 	}
 	function getLastInsertedPk()
 	{
-		return mysql_insert_id($this->conn);
+		return $this->insertdb_id();
+	}
+	protected function fetchdb($statement)
+	{
+		$this->lastDbResult = $this->conn->query($statement);
+		if(Tag::isDebug())
+			Tag::echoDebug("db.statement.time", date("H:i:s")." ".(time()-$_st_page_starttime_));
+		return $this->lastDbResult;
+	}
+	protected function list_dbtable_fields($TableName)
+	{
+		if(isset($this->databaseTables[$TableName]))
+			return $this->databaseTables[$TableName];
+		$fields= array();
+		$statement= "SHOW COLUMNS FROM $TableName";
+		$res= $this->conn->query($statement);
+		if($res->errno)
+			return NULL;
+		while($row= $res->fetch_row())
+			$fields[]= $row;
+		$this->databaseTables[$TableName]= $fields;
+		return $fields;
+	}
+	public function field_count()
+	{
+		if($this->lastDbResult == NULL)
+			return 0;
+		return $this->lastDbResult->field_count;
+	}
+	public function field_name($field_offset)
+	{
+		if($this->lastDbResult == NULL)
+			return NULL;
+		$properties = mysqli_fetch_field_direct($this->lastDbResult, $field_offset);
+		return is_object($properties) ? $properties->name : null;
+	}
+	public function field_len($field_offset)
+	{
+		if($this->lastDbResult == NULL)
+			return NULL;
+		$properties = mysqli_fetch_field_direct($this->lastDbResult, $field_offset);
+		return is_object($properties) ? $properties->length : null;
+	}
+	public function field_flags($field_offset)
+	{
+		if($this->lastDbResult == NULL)
+			return NULL;
+		$properties = mysqli_fetch_field_direct($this->lastDbResult, $field_offset);
+		if(!is_object($properties))
+			return NULL;
+		echo "flags of filed are:".$properties->flags."<br>";
+		echo "please check before using.";
+		exit;
+	}
+	public function field_type($field_offset)
+	{
+		if($this->lastDbResult == NULL)
+			return NULL;
+		$properties = mysqli_fetch_field_direct($this->lastDbResult, $field_offset);
+		if(!is_object($properties))
+			return NULL;
+		echo "type of filed are:".$properties->type."<br>";
+		echo "please check before using.";
+		exit;
+	}
+	public static function h_flags2txt($flags_num)
+	{
+		static $flags;
+
+		if (!isset($flags))
+		{
+			$flags = array();
+			$constants = get_defined_constants(true);
+			foreach ($constants['mysqli'] as $c => $n) if (preg_match('/MYSQLI_(.*)_FLAG$/', $c, $m)) if (!array_key_exists($n, $flags)) $flags[$n] = $m[1];
+		}
+
+		$result = array();
+		foreach ($flags as $n => $t) if ($flags_num & $n) $result[] = $t;
+		return implode(' ', $result);
+	}
+	public static function h_type2txt($type_id)
+	{
+		static $types;
+
+		if (!isset($types))
+		{
+			$types = array();
+			$constants = get_defined_constants(true);
+			foreach ($constants['mysqli'] as $c => $n) if (preg_match('/^MYSQLI_TYPE_(.*)/', $c, $m)) $types[$n] = $m[1];
+		}
+
+		return array_key_exists($type_id, $types)? $types[$type_id] : NULL;
+	}
+	protected function insert_id()
+	{
+		return $this->conn->insert_id();
+	}
+	protected function fetchdb_row($typ= STSQL_ASSOC)
+	{
+		if(	$type == STSQL_NUM ||
+			$type == STSQL_BOTH		)
+		{
+			$num= $this->lastDbResult->fetch_row();
+			if($num == NULL)
+				return NULL;
+			$row= $num;
+		}
+		if(	$type == STSQL_ASSOC ||
+			$type == STSQL_BOTH		)
+		{
+			$row= $this->lastDbResult->fetch_assoc();
+			if($row == NULL)
+				return NULL;
+			if($type == STSQL_BOTH)
+				$row= array_merge($row, $num);
+		}
+		return $row;
+	}
+	protected function errnodb()
+	{
+		$ern= $this->conn->connect_errno;
+		if(	$ern > 0 ||
+			$this->lastDbResult == NULL	)
+		{
+			return $ern;
+		}
+		return $this->lastDbResult->errno;
+	}
+	protected function errordb()
+	{
+		$ern= $this->conn->connect_errno;
+		if(	$ern > 0 ||
+			$this->lastDbResult == NULL	)
+		{
+			return $this->conn->connect_error;
+		}
+		return this->lastDbResult->error;
 	}
 	function solution($statement, $typ= null, $onError= onErrorStop)
 	{

@@ -5,7 +5,7 @@ require_once($_stdbinserter);
 
 class STUserManagement extends STObjectContainer
 {
-	function STUserManagement($name, &$container, $bInstall= false)
+	function __construct($name, &$container, $bInstall= false)
 	{
 		Tag::paramCheck($name, 1, "string");
 		Tag::paramCheck($container, 2, "STObjectContainer");	

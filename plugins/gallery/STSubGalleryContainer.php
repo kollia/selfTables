@@ -18,7 +18,7 @@ class STSubGalleryContainer extends STObjectContainer
 	var $nFirstDeep= 0;
 	var	$anPicSize;
 	
-	function STSubGalleryContainer(&$container, $name= "gallery")
+	function __construct(&$container, $name= "gallery")
 	{
 		STObjectContainer::STObjectContainer($name, $container);
 		$this->documentRoot= $_SERVER["DOCUMENT_ROOT"];
@@ -54,7 +54,7 @@ class STSubGalleryContainer extends STObjectContainer
 		{
 		    // given path is from computer root
 				$document_root= preg_quote($_SERVER["DOCUMENT_ROOT"]);
-				$document_root= ereg_replace("/", "\\/", $document_root);
+				$document_root= preg_replace("/\/", "\\/", $document_root);
 				if(preg_match("/^".$document_root."(.+)$/", $path, $preg))
 				    $path= $preg[1];
 		}
@@ -69,7 +69,7 @@ class STSubGalleryContainer extends STObjectContainer
 	function setFirstDisplayOrder($orderName)
 	{
 	    $this->sDisplayOrder= $orderName;
-		$split= split("/", $orderName);
+		$split= preg_split("/\//", $orderName);
 		$count= 0;
 		foreach($split as $path)
 		{
@@ -143,7 +143,7 @@ class STSubGalleryContainer extends STObjectContainer
 		    $g= new OSTDbSelector($this->oGalleryTable);
     		//$g->clearSelects();
     		$g->select("gallery", $pkName);
-    		$where= &new STDbWhere($subOrderName."='".$this->sDisplayOrder."'");
+    		$where= new STDbWhere($subOrderName."='".$this->sDisplayOrder."'");
     		$where->andWhere($parentName." is null");				
     		$g->where($where);
     		$g->execute();
@@ -153,7 +153,7 @@ class STSubGalleryContainer extends STObjectContainer
 		
 		if($this->nAktOrderID)
 		{//Tag::debug("db.statement");
-        	$selector= &new OSTDbSelector($this->oGalleryTable);
+        	$selector= new OSTDbSelector($this->oGalleryTable);
 			$selector->where($pkName."=".$this->nAktOrderID);
 			//$selector->limitByOwn(true);
 			$selector->modifyForeignKey(false);
@@ -272,7 +272,7 @@ class STSubGalleryContainer extends STObjectContainer
 			}*/
 		  	if($this->getName()==$this->oPicContainer->getName())
 			{// layout is set for type image
-			    $html= &new GetHtml();
+			    $html= new GetHtml();
     			$ID= $html->getArrayVars();
     			$ID= $ID["stget"][$this->oGalleryTable->getName()][$pkName];					
     			
@@ -393,7 +393,7 @@ class STSubGalleryContainer extends STObjectContainer
 	{
 	    STDbTableContainer::install();
 		$this->createContainer();
-	    $selector= &new OSTDbSelector($this->oGalleryTable);
+	    $selector= new OSTDbSelector($this->oGalleryTable);
 			$selector->count();
       	$selector->execute(MYSQL_ASSOC);
 		$count= $selector->getSingleResult();
@@ -405,7 +405,7 @@ class STSubGalleryContainer extends STObjectContainer
 	{//;st_print_r($this->asTableColumns,10);
 		$uploadPath= $this->documentRoot.$this->uploadPath;
 		
-		$inserter= &new STDbDefInserter($this, $gallery);
+		$inserter= new STDbDefInserter($this, $gallery);
 		$inserter->fillColumn($gallery->getPkColumnName(), 1);// so the PK by archiv always the same
 		$inserter->fillColumn("suborder", 'archiv');
 		$inserter->fillColumn("type", "order");
@@ -451,7 +451,7 @@ class STSubGalleryContainer extends STObjectContainer
 	
 		if($parent===null)
 			$parent= "null";
-	    $gallery= &new OSTDbSelector($this->oGalleryTable);
+	    $gallery= new OSTDbSelector($this->oGalleryTable);
 			$gallery->select("gallery", "max(sort)");
 			$gallery->where($this->getColumnFromTable("gallery", "parent")."=".$parent);
 			$gallery->execute();
@@ -504,7 +504,7 @@ class STSubGalleryContainer extends STObjectContainer
 			//st_print_r($dirResult);
 			//st_print_r($noDir);
 				
-			$inserter= &new STDbDefInserter($this, $this->oGalleryTable);
+			$inserter= new STDbDefInserter($this, $this->oGalleryTable);
 			foreach($dirResult as $dir=>$file)
 			{//echo $dir."<br />";
 			    if( !isset($dbResult[$dir])
@@ -595,7 +595,7 @@ class STSubGalleryContainer extends STObjectContainer
 			}
 		}//st_print_r($files);
 		//echo "filesize is ".$fileSize."<br />";
-		$gallery= &new OSTDbSelector($this->oGalleryTable);
+		$gallery= new OSTDbSelector($this->oGalleryTable);
 		$gallery->select("gallery", "ID");
 		$gallery->select("gallery", "from_date");
 		$gallery->select("gallery", "picture");
@@ -661,7 +661,7 @@ class STSubGalleryContainer extends STObjectContainer
 				$showTumpnailImage= null;
 				if($this->tumpnail($uploadPath."tumpnails/", $ftpPath, $imageName, $tumpnailImage, $showTumpnailImage))
 				{
-				  $inserter= &new STDbDefInserter($this, $this->oGalleryTable);
+				  $inserter= new STDbDefInserter($this, $this->oGalleryTable);
 					$inserter->fillColumn("type", "image");
 					$inserter->fillColumn("picture", $imageName);
 					$inserter->fillColumn("tumpnail", $tumpnailImage);

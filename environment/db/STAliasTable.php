@@ -1,8 +1,5 @@
 <?php
 
-require_once($database_where_clausel);
-//require_once($php_tools_class);
-
 class STAliasTable
 {
 	var $Name;
@@ -107,7 +104,7 @@ class STAliasTable
 	  * 
 	  * @param {table object, string, null} $oTable exist other table, new tablename or null to create symbolic null table
 	  */
-	function STAliasTable($oTable= null)
+	function __construct($oTable= null)
 	{
 		Tag::paramCheck($oTable, 1, "string", "STAliasTable", "null");
 
@@ -1480,7 +1477,7 @@ class STAliasTable
 					$split= array();
 					$split[]= $preg[2];
 				}else
-					$split= split("[ ,]", $preg[2]);
+					$split= preg_split("/[ ,]/", $preg[2]);
 				foreach($split as $col)
 				{
 					if($col!="distinct")
@@ -1984,30 +1981,6 @@ class STAliasTable
 		{
 			$this->bShowName= $show;
 		}
-/*		function where($where)
-		{// von der SearchBox wird zur Zeit ein String �bermittelt
-		 // mit allen where clauseln enthalten
-		 	Tag::paramCheck($where, 1, "STDbWhere", "string", "empty(string)", "null");
-			if(!$where)
-				return;
-		 	if(is_string($where))
-		 	{	
-		 	echo "before make new where-string:<br>";
-		 	echo __file__.__line__."<br>";
-		 	echo "<pre>";
-			st_print_r($this->oWhere,10);
-			echo "</pre>";
-				$where= &new STDbWhere($where);
-		 	}
-			if(!$where->isModified())
-				return;
-			$where->forTable($this->Name);
-			unset($this->oWhere);
-			$this->oWhere= &$where;	
-		 	echo "<pre>";
-			st_print_r($this->oWhere,10);
-			echo "</pre>";
-		}*/
 		function andWhere($stwhere)
 		{
 		 	Tag::paramCheck($stwhere, 1, "STDbWhere", "string", "empty(string)", "null");

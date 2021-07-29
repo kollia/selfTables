@@ -1,6 +1,5 @@
 <?php
 
-//require_once($base_site_creator);
 require_once($user_admin);
 require_once($table_out);
 require_once($_stdatabase);
@@ -14,7 +13,7 @@ class STSessionSideCreator extends STSideCreator
 	var	$aAccessClusters= array();
 	var $sUserLoginMask= null;
 
-	function STSessionSideCreator($container= null)
+	function __construct($container= null)
 	{
 		STCheck::paramCheck($container, 1, "STBaseContainer", "null");
 
@@ -265,7 +264,7 @@ class STSessionSideCreator extends STSideCreator
 		{
 			global $HTTP_GET_VARS;
 
-			$query= &new STQueryString();
+			$query= new STQueryString();
 			$get_vars= $query->getArrayVars("stget");
 			$tableName= $this->getTableName();
 			$action= $this->getAction();

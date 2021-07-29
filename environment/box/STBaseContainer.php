@@ -1,6 +1,5 @@
 <?php
 
-//echo $php_html_description."<br/>";
 require_once($php_html_description);
 require_once($php_htmltag_class);
 
@@ -42,7 +41,7 @@ class STBaseContainer extends BodyTag
 	var $chooseTitle= "";
 	var $sDefaultCssLink= "";
 
-	function STBaseContainer($name)
+	function __construct($name)
 	{
 		global	$global_array_all_exist_stobjectcontainers;
 		

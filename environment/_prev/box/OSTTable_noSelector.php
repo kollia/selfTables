@@ -1,10 +1,10 @@
 <?php
 
 
-	require_once($base_table);
-	require_once($database_selector);
-	require_once($_stdbupdater);
-	require_once($_stdbdeleter);
+require_once($base_table);
+require_once($database_selector);
+require_once($_stdbupdater);
+require_once($_stdbdeleter);
 
 	
 class OSTTable extends OSTBaseTableBox
@@ -34,7 +34,7 @@ class OSTTable extends OSTBaseTableBox
 		var	$bContainerManagement= true; // ob die Container in das older verschoben werden soll
 		var $bLinkAccess= array(); // ob auf einen Link Zugriff besteht
 		
-		function OSTTable(&$container, $class= "OSTTable", $logTime= false)
+		function __construct(&$container, $class= "OSTTable", $logTime= false)
 		{
 			Tag::paramCheck($container, 1, "STBaseContainer");
 			Tag::paramCheck($class, 2, "string");
@@ -1236,8 +1236,8 @@ class OSTTable extends OSTBaseTableBox
 						$address= $this->address[$createdColumn];
 						if(!$address)
 							$address= $this->address["All"];
-						$file= eregi_replace("%NAME%", $createdColumn, $address);
-						$file= eregi_replace("%ROWNUM%", "$row", $file);
+						$file= preg_replace("/%NAME%/i", $createdColumn, $address);
+						$file= preg_replace("/%ROWNUM%/i", "$row", $file);
 						if(preg_match("/(['\"]?)%VALUE%['\"]?/i", $file, $preg))
 						{
 							$sValue= $columnValue;
@@ -1246,7 +1246,7 @@ class OSTTable extends OSTBaseTableBox
 								if(!$preg[1])
 									$sValue= "null";
 							}									
-          					$file= eregi_replace("%VALUE%", $sValue, $file);
+          					$file= preg_replace("/%VALUE%/i", $sValue, $file);
 						}
           			}
 						if($extraField=="check")
@@ -1476,237 +1476,6 @@ class OSTTable extends OSTBaseTableBox
 			/*****************************************************************************/
 				
 		}
-/*		function createHtmlCode()
-		{
-			$htmlSource= "";// in diese Variable wird der gesamte HTML-Code geschrieben
-			
-			// wenn ein buttonText deffiniert ist
-			// wird der Tabellen-Inhalt in einen Div-Tag geschriben
-			if($this->buttonText)
-				$hTable= new DivTag();
-			else// sonst gleich in die Tabelle =dieses Objekt($this)
-				$hTable= &$this;	
-			
-			/*****************************************************************
-			 **        �berschrift-Zeile deffinieren wenn HORIZONTAL        **
-			 *****************************************************************/
-/*			if($this->arrangement==STHORIZONTAL)
-			{
-$htmlSource.= "<tr>";
-				$firstRow= $this->SqlResult[0];
-            foreach($firstRow as $key=>$value)
-            {					
-					if($this->showTypes[$key]!="get")
-					{
-$htmlSource.= 		"<th>";
-$htmlSource.= 			"$key";
-$htmlSource.= 		"</th>";
-					}
-					if($this->showTypes[$key]=="check")
-						$this->checkboxes[]= $key;
-            }
-$htmlSource.= "</tr>";
-			}	
-			/*****************************************************************/
-			
-/*			$this->add($htmlSource);return;		
-						
-			$Rows= &$this->SqlResult;
-			$CallbackClass= new OSTCallbackClass($this->db, $Rows);	
-        foreach($Rows as $rowKey=>$rowArray)
-        {
-				//*****************************************************************************************
-				$extraField= $this->showTypes[$rowKey];// diese Valiablen werden je nach HORIZONTAL/VERTIKAL
-				$class= "Tr".($rowKey%2);			   // in der n�chsten Schleife �berschrieben
-				$row= $rowKey;
-				$key= $rowKey;
-				//*****************************************************************************************
-				
-				
-$htmlSource.= "<tr class='$class'>";
-				$tr= new RowTag($class);
-				$getColumn= false;// sagt aus das die Spalte zuvor
-								  // nur zur �bermittlung (showType=get) war
-				
-				foreach($rowArray as $columnKey=>$columnValue)
-          	{					
-  				if($this->arrangement==STVERTICAL)
-  				{// erstelle als erstes Feld die �berschrift
-$htmlSource.= 		"<th>";
-$htmlSource.= 			"$rowKey";
-$htmlSource.= 		"</th>";
-						$row= $columnKey;
-						$class= "Tr".($columnKey%2);
-  				}else
-					{
-						$key= $columnKey;						
-					}
-					
-					$extraField= $this->showTypes[$key];
-					if($this->makeCallback(STLIST, $CallbackClass, $columnKey, $rowKey))
-					{// ein Callback vom user wurde durchgef�hrt
-						if($CallbackClass->bSkip)
-							break;
-						if($CallbackClass->showType)
-							$extraField= $CallbackClass->showType;
-						if($CallbackClass->bNoShowType)
-							$extraField= null;
-						// aktuelles Feld wird in $columnValue nicht aktualisiert
-						$columnValue= $CallbackClass->sqlResult[$rowKey][$columnKey];
-					}
-					
-					if(!$getColumn)
-					{
-$htmlSource.= 			"<td>";
-					}else// wenn getColumn gesetzt ist wird kein neuer TD Tag erzeugt
-						$getColumn= false;
-							
-          		if($extraField)
-          		{
-          			if(!$this->address)
-          			{
-							global	$HTTP_SERVER_VARS;
-							
-							$file=  "javascript:location='";
-          				$file.= $HTTP_SERVER_VARS["SCRIPT_NAME"];
-								
-							$get= $this->oGet;
-							$file.= $get->getParamString(STINSERT, "stget[link][$key]=$columnValue");
-							$file.= "'";
-							
-          			}else
-          			{
-							$file= eregi_replace("%NAME%", $key, $this->address);
-							$file= eregi_replace("%ROWNUM%", "$row", $file);
-							if(preg_match("/(['\"]?)%VALUE%['\"]?/i", $file, $preg))
-							{
-								$sValue= $columnValue;
-								if($sValue===null)
-								{
-									if(!$preg[1])
-										$sValue= "null";
-								}									
-          					$file= eregi_replace("%VALUE%", $sValue, $file);
-							}
-          			}
-						if($extraField=="check")
-						{
-$htmlSource.= 			"<input type='checkbox' name='$key[$row]'";
-							if($columnValue!=null)
-							{
-$htmlSource.= 					" checked";
-							}
-							if($this->address)
-							{
-$htmlSource.= 					" onClick='$file'";
-							}
-$htmlSource.= 									" />";
-							if($columnValue)
-							{
-$htmlSource.= 				"<input type='hidden' name='checked_$key[$row]' value='on' />";
-							}
-						}elseif($extraField=="image")
-						{
-							if($columnValue)
-							{
-								$image= new ImageTag();
-									$image->src($columnValue);
-//							$div->add($image);
-								$td->add($image);
-							}
-						}elseif($extraField=="imagelink")
-						{
-							if($columnValue)
-							{
-								$a= new ATag();
-									$a->href($file);
-									$image= new ImageTag();
-										$image->src($columnValue);
-            					$a->add($image);
-//							$div->add($a);
-								$td->add($a);
-							}
-						}elseif($extraField=="namedlink")
-						{
-							$a= new ATag();
-								$a->href($file);
-            				$a->add($columnValue);
-//						$div->add($a);
-							$td->add($a);
-						}elseif($extraField=="link")
-						{
-							$a= new ATag();
-								$a->href($file);
-            				$a->add($key);
-//						$div->add($a);
-							$td->add($a);
-						}elseif($extraField=="get")
-						{
-							$getColumn= true;
-							$input= new InputTag();
-								$input->name($key."[".$row."]");
-								$input->type("hidden");
-								$input->value($columnValue);
-							$td->add($input);
-						}			
-          		}else
-					{
-						$td->add($columnValue);
-					}
-					if(!$getColumn)
-						$tr->add($td);
-				}// ende der Column Schleife
-				if(!$CallbackClass->bSkip)	// wenn der User in einem Callback skipRow gew�hlt hat
-					$hTable->add($tr);		// wird die RowColumn $tr nicht eingebunden
-      	}// ende der Row Schleife
-			
-			
-			
-			/**********************************************************************************
-			 *****     wenn der buttonText deffiniert ist wird ein Form-Tag ben�tigt      *****
-			 *****     dann ist der hTable-Tag ein Div-Tag, sonst das objekt $this selbst *****
-			 **********************************************************************************/
-/*			if($this->buttonText)
-			{
-				$form= new FormTag();
-					$form->name($this->formName);
-				if(isset($this->action))
-				{
-					$form->action($this->action);
-				}
-					$form->method("post");
-					$this->inherit= array();
-				
-					$input= new InputTag();
-						$input->type("submit");
-						$input->value($this->buttonText);
-					$form->add($input);
-				
-					$input= new InputTag();
-						$input->type("hidden");
-						$input->name("OSTtable_make");
-						$input->value(1);
-					$form->add($input);
-					
-				if(count($this->aHidden))
-				{
-					foreach($this->aHidden as $key=>$value)
-					{
-						$input= new InputTag();
-  						$input->type("hidden");
-  						$input->name($key);
-  						$input->value($value);
-						$form->add($input);
-					}
-						
-				}
-				$form->add($hTable);
-				$this->add($form);
-			}
-				
-			/*****************************************************************************/
-			
-		//}
 		function createDbChanges()
 		{
 			global $HTTP_POST_VARS;
@@ -1734,10 +1503,7 @@ $htmlSource.= 				"<input type='hidden' name='checked_$key[$row]' value='on' />"
 				} 		
 				
 				if(count($box) || count($checked))
-				{
-					//$inserter= &new STDbInserter($this->asDBTable);
-					//$deleter= &new STDbDeleter($this->asDBTable);
-					
+				{	
 					foreach($fields as $checkBoxColumn)
 					{
 						if($checkBoxColumn["name"]===$isCheck)
@@ -2084,7 +1850,7 @@ $htmlSource.= 				"<input type='hidden' name='checked_$key[$row]' value='on' />"
 					$set= $fieldArray[$columnName];
 					if(!isset($set))
 					{
-						$split= split("-", $columnName);
+						$split= preg_split("/-/", $columnName);
 						$columnName= "";
 						for($o= 1; $o<count($split); $o++)
 							$columnName.= $split[$o]."-";
@@ -2108,7 +1874,7 @@ $htmlSource.= 				"<input type='hidden' name='checked_$key[$row]' value='on' />"
 					$set= $fieldArray[$columnName];
 					if(!isset($set))
 					{
-						$split= split("-", $columnName);
+						$split= preg_split("/-/", $columnName);
 						$columnName= "";
 						for($o= 1; $o<count($split); $o++)
 							$columnName.= $split[$o]."-";

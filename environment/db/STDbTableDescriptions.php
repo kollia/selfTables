@@ -20,7 +20,7 @@ class STDbTableDescriptions
 
 		if(!isset($global_sttabledescriptions_class_instance[$dbName]))
 		{
-			$global_sttabledescriptions_class_instance[$dbName]= &new STDbTableDescriptions();
+			$global_sttabledescriptions_class_instance[$dbName]= new STDbTableDescriptions();
 		}
 		return $global_sttabledescriptions_class_instance[$dbName];
 	}

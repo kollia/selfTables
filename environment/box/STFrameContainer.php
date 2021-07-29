@@ -10,7 +10,7 @@ class STFrameContainer extends STBaseContainer
 	var $aInherit= array();
 	var	$frameborder= null;
 
-	function STFrameContainer($name= "STFrame", $address= "")
+	function __construct($name= "STFrame", $address= "")
 	{
 		Tag::paramCheck($name, 1, "string");
 		Tag::paramCheck($address, 2, "string", "empty(string)");

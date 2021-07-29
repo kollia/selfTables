@@ -2,7 +2,7 @@
 
 class IFrameTag extends Tag
 {		
-		function IFrameTag($tag= null, $class= null)
+		function __construct($tag= null, $class= null)
 		{
 			Tag::Tag("iframe", true, $class);
 			$this->add($tag);

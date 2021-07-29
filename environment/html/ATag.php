@@ -2,7 +2,7 @@
 
 class ATag extends Tag
 {
-		function ATag($class= null)
+		function __construct($class= null)
 		{
 			Tag::Tag("a", true, $class);
 		}

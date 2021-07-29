@@ -6,7 +6,7 @@ class OSTSideCreator extends STUserSideCreator
 {
 	var	$sTablePrefix;
 
-	function OSTSideCreator($project, $container= null, $bInstall= false)
+	function __construct($project, $container= null, $bInstall= false)
 	{
 		STCheck::paramCheck($project, 1, "string", "int");
 		STCheck::paramCheck($container, 2, "STObjectContainer", "string", "boolean", "null");

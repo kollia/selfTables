@@ -5,7 +5,7 @@ class STDownload
 	var	$oDb;
 	var	$oTable;
 	
-	function STDownload(&$db, $table)
+	function __construct(&$db, $table)
 	{
 		Tag::paramCheck($db, 1, "STDatabase");
 		Tag::paramCheck($table, 2, "STAliasTable");
@@ -64,7 +64,7 @@ class STDownload
 					</td>
 				</tr>
 			</table>	
-		<?	exit;
+		<?php	exit;
 		}
 		header("Content-Type: x-type/subtype");
 		header("Content-Length: ".filesize($download));

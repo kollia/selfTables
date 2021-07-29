@@ -2,7 +2,7 @@
 
 class DivTag extends Tag
 {
-		function DivTag($class= null)
+		function __construct($class= null)
 		{
 			Tag::Tag("div", true, $class);
 		}

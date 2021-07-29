@@ -2,7 +2,7 @@
 
 class ScriptTag extends Tag
 {
-		function ScriptTag($class= null)
+		function __construct($class= null)
 		{
 			Tag::Tag("script", true, $class);
 			$this->isScript= true;

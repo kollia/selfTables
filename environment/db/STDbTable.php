@@ -9,7 +9,7 @@ class STDbTable extends STAliasTable
 	var $aAuto_increment= array(); // um ein Feld mit Autoincrement vor dem eigentlichen Insert zu holen
 	var	$password= array(); // all about to set an password in database
 
-    function STDbTable($Table, $container= null, $onError= onErrorStop)
+    function __construct($Table, $container= null, $onError= onErrorStop)
     {
 		Tag::paramCheck($Table, 1, "string", "STAliasTable");
 		Tag::paramCheck($container, 2, "STObjectContainer", "string", "null");
@@ -196,7 +196,7 @@ class STDbTable extends STAliasTable
 			}else
 				$accessInfoString= "vom Programmierer nicht definierter Zugriff";
 		}else
-			$accessInfoString= ereg_replace("'", $accessInfoString, "\'");
+			$accessInfoString= preg_replace("/'/", $accessInfoString, "\'");
 
 
 		$this->sAcessClusterColumn[]= array(	"action"=>	$action,
@@ -433,7 +433,7 @@ class STDbTable extends STAliasTable
 		}elseif(preg_match("/(SET|ENUM) *\((.+)\)/", $type, $preg))
 		{
 			$type= $preg[1];
-			$split= split("[ ,]+", $preg[2]);
+			$split= preg_split("/[ ,]+/", $preg[2]);
 			$len= 0;
 			foreach($split as $value)
 			{
@@ -552,7 +552,7 @@ class STDbTable extends STAliasTable
 		if($tableName)
 		{
 			$newContainerName= "dbtable ".$tableName;
-			$address= &new STDbTableContainer($newContainerName, $this->db);
+			$address= new STDbTableContainer($newContainerName, $this->db);
 			$address->needTable($tableName);
 		}
 		STAliasTable::linkA($which, $aliasColumn, $address, $valueColumn);

@@ -1,7 +1,6 @@
-<?
+<?php
 
 //last change 23.11.2004
-require_once($php_tools_class);
 require_once($_stdbtable);
 require_once($_stobjectcontainer);
 require_once($_stdbtabledescriptions);
@@ -18,7 +17,7 @@ require_once($_stdbtabledescriptions);
 * @author Alexander Kolli
 * @version 1.0
 */
-class STDatabase extends STObjectContainer
+abstract class STDatabase extends STObjectContainer
 {
 /**
 *  string type of the database
@@ -133,7 +132,7 @@ class STDatabase extends STObjectContainer
 		*  Konstruktor f�r Zugriffs-deffinition
 		*
 		*/
-  	function STDatabase($identifName= "main-menue", $defaultTyp= MYSQL_NUM, $DBtype= "BLINDDB")
+  	function __construct($identifName= "main-menue", $defaultTyp= MYSQL_NUM, $DBtype= "BLINDDB")
    	{
 		$this->defaultTyp= $defaultTyp;
 		$this->error= false;
@@ -436,7 +435,8 @@ class STDatabase extends STObjectContainer
 	{
 		return $this->conn;
 	}
-  	function fetch($statement, $onError= onErrorStop)
+	abstract protected function fetchdb($statement);
+  	private function fetch($statement, $onError= onErrorStop)
   	{
 		global $HTML_CLASS_DEBUG_CONTENT;
 		global $g_first_scanDescribe;
@@ -460,9 +460,7 @@ class STDatabase extends STObjectContainer
 				Tag::echoDebug("db.statement", " \"".$statement."\"");			
 				STCheck::flog("fetch statement on db with command mysql_query");
 			}
-			$res = mysql_query($statement, $this->conn);
-			if(Tag::isDebug())
-				Tag::echoDebug("db.statement.time", date("H:i:s")." ".(time()-$_st_page_starttime_));
+			$res= $this->fetchdb($statement);
 		}else// wenn statement schon ein Array, wird dieses sogleich
 			return $statement; // als Ergebnis zur�ckgegeben
 		
@@ -511,6 +509,7 @@ class STDatabase extends STObjectContainer
 	  	return $string;
 
 	}
+	abstract protected function fetchdb_row($result, $typ);
 	function fetch_row($statement, $typ= null, $onError= onErrorStop)
 	{
 		if($this->dbType=="BLINDDB")
@@ -523,7 +522,7 @@ class STDatabase extends STObjectContainer
  	 	$result= $this->fetch($statement, $onError);
 		if(!$result)
 			return;
- 		$row= mysql_fetch_array($result, $typ);
+ 		$row= $this->fetchdb_row($result, $typ);
 		if($row)
 			$row= $this->orderDate("row", $row, $statement, $onError);
  		return $row;
@@ -637,15 +636,20 @@ class STDatabase extends STObjectContainer
 			$Rv= reset($row);
 		return $Rv;
  	}
+	abstract protected function errnodb();
  	function errno()
  	{
-		$this->error= true;
- 	 	return mysql_errno($this->conn);
+		$ern= $this->errnodb();
+		if($ern > 0)
+			$this->error= true;
+ 	 	return $ern;
   	}
   	function error()
-  	{
-		$this->error= true;
-  	 	return mysql_error($this->conn);
+	{
+		$ern= $this->errnodb();
+		if($ern > 0)
+			$this->error= true;
+		return $this->errordb();
   	}
 	function fetch_single_array($statement, $onError= onErrorStop)
 	{
@@ -673,7 +677,7 @@ class STDatabase extends STObjectContainer
 			$statement= $this->getStatement($statement);
  		$res= $this->fetch($statement, $onError);
 		if(!$res)
-			return;
+			return NULL;
 		$orderTyp= $typ;
 		if($typ==NUM_OSTfetchArray)
 			$typ= MYSQL_NUM;
@@ -681,7 +685,7 @@ class STDatabase extends STObjectContainer
 			$typ= MYSQL_ASSOC;
 		elseif($typ==BOTH_OSTfetchArray)
 			$typ= MYSQL_BOTH;
- 		while($row = mysql_fetch_array($res, $typ))
+ 		while($row = $this->fetchdb_row($typ))
  		{
 			if(	$orderTyp==NUM_OSTfetchArray
 				or
@@ -742,15 +746,15 @@ class STDatabase extends STObjectContainer
 			return null;
 		}
 
-		$columns= mysql_num_fields($result);
+		$columns= $this->field_count();
 		$aRv= array();
 		$descTable= NULL;
 		for ($n= 0; $n<$columns; $n++)
 		{
-			$name=  mysql_field_name($result, $n);
-			$flags= mysql_field_flags($result, $n);
-			$type=  mysql_field_type($result, $n);
-			$len=   mysql_field_len($result, $n);
+			$name=  $this->field_name($n);
+			$flags= $this->field_flags($result, $n);
+			$type=  $this->field_type($result, $n);
+			$len=   $this->field_len($result, $n);
 			if(preg_match("/enum/", $flags))
 			{
 				if(	$tableName
@@ -783,6 +787,7 @@ class STDatabase extends STObjectContainer
 		}
 		return $aRv;
  	}
+	abstract public function field_count();
 	function setInTableNewColumn($tableName, $columnName, $type)
 	{
 		$objs= &STBaseContainer::getAllContainer();
@@ -973,6 +978,7 @@ class STDatabase extends STObjectContainer
 		$this->tableNames= $tables;
 		return $tables;
 	}
+	abstract protected function list_dbtable_fields($TableName);
 	function list_fields($TableName, $onError= onErrorStop)
 	{
 		Tag::paramCheck($TableName, 1, "string");
@@ -985,9 +991,7 @@ class STDatabase extends STObjectContainer
 			$TableName= $preg[2];
 		}else
 			$dbName= $this->dbName;
-		$result= @mysql_list_fields($dbName, $TableName, $this->conn);
-		//if(!$result)
-		//	$result= @mysql_list_fields($dbName, "st_clustergroup", $this->conn);
+		$result= $this->list_dbtable_fields($TableName);
 		if( !$result
 			&&
 			$onError > noErrorShow )
@@ -2821,9 +2825,10 @@ class STDatabase extends STObjectContainer
 			$table= $table->getName();
 		$this->aNoChoice[$table]= $table;
 	}
+	abstract protected function insertdb_id();
 	function getLastInsertID()
 	{
-		return mysql_insert_id($this->conn);
+		return $this->insert_id();
 	}
 	function saveForeignKeys()
 	{

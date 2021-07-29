@@ -2,7 +2,7 @@
 
 class STClusterGroupManagement extends STObjectContainer
 {
-	function STClusterGroupManagement($name, &$container)
+	function __construct($name, &$container)
 	{
 		Tag::paramCheck($name, 1, "string");
 		Tag::paramCheck($container, 2, "STObjectContainer");
@@ -55,13 +55,13 @@ class STClusterGroupManagement extends STObjectContainer
 		$cluster= $this->getTable("Cluster");
 		$cluster->select("ID");
 		$cluster->select("Description");
-		$selector= &new OSTDbSelector($cluster);
+		$selector= new OSTDbSelector($cluster);
 		$selector->execute();
 		$res= $selector->getRowResult();
-		$div= &new DivTag();
-			$h2= &new H3Tag("Description");
+		$div= new DivTag();
+			$h2= new H3Tag("Description");
 				$h2->add("Zugeh�rigkeit der Gruppen zum Cluster ");
-				$span= &new SpanTag("hightlighted");
+				$span= new SpanTag("hightlighted");
 					$span->add($res[0]);
 				$h2->addObj($span);
 			$div->addObj($h2);

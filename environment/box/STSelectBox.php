@@ -18,10 +18,10 @@ class STSelectBox extends TableTag
 		var	$sCallAsName;
 		
 		// alex 20/06/2005:	habe Parameter umgedreht,
-		//					da ich den class-Parameter für wichtiger halte
+		//					da ich den class-Parameter fï¿½r wichtiger halte
 		//					und ich glaube bis Dato wurde der settings-Parameter
 		//					eh nie gebraucht
-		function STSelectBox($class= "STSelectBox", $settings= STGET)
+		function __construct($class= "STSelectBox", $settings= STGET)
 		{
 			global	$HTTP_POST_VARS;
 			
@@ -36,7 +36,7 @@ class STSelectBox extends TableTag
 				$this->aSettings= $HTTP_POST_VARS;
 			}else
 			{
-				$get= &new STQueryString();
+				$get= new STQueryString();
 				$params= $get->getArrayVars();
 				$this->aSettings= $params;
 			}
@@ -49,7 +49,7 @@ class STSelectBox extends TableTag
 		/**
 		 *	@param $name:	der Name vor der Pop-Up-Box
 		 *	@param $array: 	ist eine array wie aus einem DB-Select
-		 *	@param $key: 	name der Spalte für die values des option-Tags
+		 *	@param $key: 	name der Spalte fï¿½r die values des option-Tags
 		 *	@param $value:	name der Spalte welche als Liste im Pop-up angezeigt wird
 		 *  @param $var:	name der Variable im gesetzten Array (HTTP_POST/GET_VARS) des Konstruktors (optional $name)
 		 */
@@ -102,7 +102,7 @@ class STSelectBox extends TableTag
 		{
 			$get= new STQueryString();
 			$aNames= array();// in diesem Array werden alle Select Namen 
-							 // welche im Parameter übergeben werden
+							 // welche im Parameter ï¿½bergeben werden
 							 // als key aufgelistet
 			$form= new FormTag();
 			$tr= new RowTag();
@@ -111,7 +111,7 @@ class STSelectBox extends TableTag
 				$array= array();
 				if($this->asFirstNullRegister)
 				{// wenn ein NullRegisterName angegeben ist
-				 // diesen an erster stelle einfügen
+				 // diesen an erster stelle einfï¿½gen
 					$register= array();
 					$register[$selects["key"]]= null;
 					$register[$selects["value"]]= $this->asFirstNullRegister;
@@ -125,9 +125,9 @@ class STSelectBox extends TableTag
 				{
 					if(preg_match("/\[/", $selects["var"]))
 					{
-						$split= split("\[", $selects["var"]);
+						$split= preg_split("/\[/", $selects["var"]);
 						$choosen= $this->aSettings;
-						$get= &new STQueryString($this->aSettings);
+						$get= new STQueryString($this->aSettings);
 						$get->delete($selects["var"]);
 						$this->aSettings= $get->getArrayVars();
 						foreach($split as $param)

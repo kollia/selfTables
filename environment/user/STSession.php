@@ -1,4 +1,4 @@
-<?
+<?php
 
 
 require_once( $php_html_description );
@@ -57,7 +57,7 @@ class STSession
 	var $UserLoginMask= null;
 
 
-	function STSession($private)
+	function __construct($private)
   	{
 		Tag::alert($private!="selfTables_STSession_private_String", "STSession::constructor()",
 								"class STSession is private, choose STSession::init()");
@@ -249,7 +249,7 @@ class STSession
 				$this->aProjectAccessCluster[$row[$sAuthorisation]]= $row[$sCluster];
 			//print_r($this->aProjectAccessCluster);echo "<br />";
 		}
-		$aAccess= split(",", $authorisationString);
+		$aAccess= preg_split("/,/", $authorisationString);
 		$clusterString= "";
 		$bRv= false;
 		foreach($aAccess as $autho)
@@ -438,21 +438,19 @@ class STSession
 		$this->projectID= null;
 		$this->aCluster= null;
 		//$this->echoSessionVars();
+		$vars= array();
 		foreach($this->aSessionVars as $var)
-		{
-			session_unregister($var);
-			$$var= null;
-		}
+			$vars[]= $var;
+		foreach($vars as $var)
+			unset($this->aSessionVars[$var]);
+		session_unset();
     }
 	function echoSessionVars()
 	{
 		foreach($this->aSessionVars as $var)
-			global $$var;
-
-		foreach($this->aSessionVars as $var)
 		{
 			echo $var.": ";
-			var_dump($$var);
+			var_dump($_SESSION[$var]);
 			echo "<br />";
 		}
 	}

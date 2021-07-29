@@ -2,7 +2,7 @@
 
 class STCalendarSerieForm extends OSTBox
 {
-	function STCalendarSerieForm(&$database, $classID= "STcalendarSerie")
+	function __construct(&$database, $classID= "STcalendarSerie")
 	{
 		OSTBox::OSTBox($database, $classID);
 	}

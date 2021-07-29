@@ -1,11 +1,10 @@
 <?php
 
 require_once($_stobjectcontainer);
-//require_once($_stdbtablecreator);
 
 class STDbTableContainer extends STObjectContainer
 {
-	function STDbTableContainer($name, &$container)
+	function __construct($name, &$container)
 	{
 		Tag::paramCheck($name, 1, "string");
 		Tag::paramCheck($container, 2, "STObjectContainer");
@@ -46,7 +45,7 @@ class STDbTableContainer extends STObjectContainer
 		
 		if($containerName===null)
 			$containerName= $this->getName();
-		$params= &new GetHtml();
+		$params= new GetHtml();
 		$stget= $params->getArrayVars();
 		$stget= $stget["stget"];		
 		while($stget)
@@ -76,9 +75,9 @@ class STDbTableContainer extends STObjectContainer
 		
 		$table= &$this->tables[$orgTableName];
 		if(!$table)
-		{	// alex 24/05/2005:	// alex 17/05/2005:	die Tabelle wird von der überschriebenen Funktion
+		{	// alex 24/05/2005:	// alex 17/05/2005:	die Tabelle wird von der ï¿½berschriebenen Funktion
 			//					getTable() aus dem Datenbank-Objekt geholt.
-			//					natürlich ohne Referenz, da sie noch in STDbContainerTable geändert wird
+			//					natï¿½rlich ohne Referenz, da sie noch in STDbContainerTable geï¿½ndert wird
 			unset($this->tables[$orgTableName]);
 			$table= $this->db->getTable($orgTableName);
 			$table= new STDbDefTable($table, $this);

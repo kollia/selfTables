@@ -27,7 +27,7 @@ class STSearchBox extends STCategoryGroup
 	var	$bFks= false; // ob die Tabelle �ber verbindungen abgesucht werden soll
 	var $aSearched= array();
 		
-		function STSearchBox(&$container, $name= "STSearchBox", $id= "STSearchBox")
+		function __construct(&$container, $name= "STSearchBox", $id= "STSearchBox")
 		{			
 			Tag::paramCheck($container, 1, "STObjectContainer");
 			Tag::paramCheck($name, 2, "string");

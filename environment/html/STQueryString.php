@@ -1,6 +1,5 @@
 <?php
 
-
 require_once($php_html_description);
 require_once($_stdbtabledescriptions);
 require_once($_stdbinserter);
@@ -40,7 +39,7 @@ class STQueryString
 		var $param_vars;
 		var $aNoSth;
 
-		function STQueryString($param_vars= null)
+		function __construct($param_vars= null)
 		{
 			global	$HTTP_GET_VARS;
 
@@ -811,14 +810,14 @@ class STQueryString
 				$this->param_vars= "";
 			elseif(substr($this->param_vars, 0, 1)=="&")
 				$this->param_vars= "?".substr($this->param_vars, 1);
-			$this->param_vars= ereg_replace("&&", "&", $this->param_vars);
+			$this->param_vars= preg_replace("/&&/", "&", $this->param_vars);
 			Tag::echoDebug("stquerystring", "result is \"".$this->param_vars."\"<br />");
 		}
 		function makeNewArray($type= null, $sWithOrWithout= null)
 		{
 			if($type===null)
 				return false;
-			$split= split("=", $sWithOrWithout);
+			$split= preg_split("/=/", $sWithOrWithout);
 			$key= $split[0];
 			$value= $split[1];
 			// erstelle key f�r regular expression
@@ -836,7 +835,7 @@ class STQueryString
 					or
 					$type==STUPDATE	)
 				{
-					$this->param_vars= ereg_replace($key2."=".$preg[1], "$key=$value", $this->param_vars);
+					$this->param_vars= preg_replace("/$key2=".$preg[1]."/", "$key=$value", $this->param_vars);
 					if(Tag::isDebug())
 					{
 						if($type==STINSERT) Tag::echoDebug("stquerystring.insert", "update $key from ".$preg[1]." to $value for insert");
@@ -868,7 +867,7 @@ class STQueryString
 					 	$this->makeNewArray(STUPDATE, $key."=".$result);
 						return $preg[1];
 					}// sonst wird sie gel�scht und zur�ckgegeben
-					$this->param_vars= ereg_replace("&?".$key2."=([^&]*)", "", $this->param_vars);
+					$this->param_vars= preg_replace("/&?".$key2."=([^&]*)/", "", $this->param_vars);
 					Tag::echoDebug("stquerystring.delete", "delete $key, return ".$preg[1]);
 					return $preg[1];
 				}else
@@ -876,7 +875,7 @@ class STQueryString
 			}elseif($type==STDELETE)
 			{
 				Tag::echoDebug("stquerystring.delete", "$key2 for delete has maybe no logical operator");
-				$split= split("&", $this->param_vars);
+				$split= preg_split("/&/", $this->param_vars);
 				$param_vars= "";
 				foreach($split as $value)
 				{
@@ -884,7 +883,7 @@ class STQueryString
 						$param_vars.= $value."&";
 				}
 				$this->param_vars= substr($param_vars, 0, strlen($param_vars)-1);
-				//$this->param_vars= ereg_replace("[^=]".$key2."[^=]", "", $this->param_vars);
+				
 			}elseif($type==STINSERT
 					or
 					$type==STUPDATE	)

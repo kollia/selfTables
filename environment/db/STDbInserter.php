@@ -13,7 +13,7 @@ class STDbInserter
 	 *
 	 * @param STAliasTable $oTable object of Table
 	 */
-	function STDbInserter(&$oTable)
+	function __construct(&$oTable)
 	{
 	    Tag::paramCheck($oTable, 1, "STDbTable");
 		$this->table= &$oTable;
@@ -163,14 +163,14 @@ class STDbInserter
 			$tableName= $this->table->getDisplayName();
 			$pkName= $this->table->getPkColumnName();
 			$pk= $this->db->getLastInsertID();
-			$updater= &new STDbUpdater($this->table);
+			$updater= new STDbUpdater($this->table);
 			$updater->where($pkName."=".$pk);
 			$doUpdate= false;
 			foreach($this->sAccessClusterColumn as $aColumnCluster)
    			{
    				if($aColumnCluster["cluster"]===$pkName)
    				{
-					$infoString= ereg_replace("@", $identification, $aColumnCluster["info"]);
+					$infoString= preg_replace("/@/", $identification, $aColumnCluster["info"]);
 					if($aColumnCluster["cluster"]===$pkName)
 					{
 						$cluster= "$pk";

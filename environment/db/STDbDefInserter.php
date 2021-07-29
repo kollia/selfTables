@@ -1,12 +1,12 @@
 <?php
 
-    require_once($_stdbinserter);
+require_once($_stdbinserter);
 		
 class STDbDefInserter extends STDbInserter
 {
     var $container;
 		
-		function STDbDefInserter(&$container, &$table)
+		function __construct(&$container, &$table)
 		{
 		    Tag::paramCheck($container, 1, "STDbTableContainer");
 		    Tag::paramCheck($table, 2, "STDbTable");

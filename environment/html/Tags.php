@@ -1,7 +1,6 @@
 <?php
 
 require_once($_stcheck);
-require_once($php_tools_class);
 
 $tag_spaces= 0;
 $tagCount= 0;
@@ -16,7 +15,7 @@ class Tag extends STCheck
 		var $aNames;
 		var $isScript= false;
 
-		function Tag($name, $bEndTag, $class= null)
+		function __construct($name, $bEndTag, $class= null)
 		{
 /*			global $tagCount;
 			$tagCount++;
@@ -546,35 +545,35 @@ class Tag extends STCheck
 	}
 }
 
-	require_once($_stdevelopmenttools_path."/html/HtmlTag.php");
-	require_once($_stdevelopmenttools_path."/html/HeadTag.php");
-	require_once($_stdevelopmenttools_path."/html/MetaTag.php");
-	require_once($_stdevelopmenttools_path."/html/LinkTag.php");
-	require_once($_stdevelopmenttools_path."/html/BodyTag.php");
-	require_once($_stdevelopmenttools_path."/html/FontTag.php");
-	require_once($_stdevelopmenttools_path."/html/BrTag.php");
-	require_once($_stdevelopmenttools_path."/html/ATag.php");
-	require_once($_stdevelopmenttools_path."/html/SpanTag.php");
-	require_once($_stdevelopmenttools_path."/html/DivTag.php");
-	require_once($_stdevelopmenttools_path."/html/ScriptTag.php");
-	require_once($_stdevelopmenttools_path."/html/BTag.php");
-	require_once($_stdevelopmenttools_path."/html/PTag.php");
-	require_once($_stdevelopmenttools_path."/html/HTag.php");
-	require_once($_stdevelopmenttools_path."/html/EmTag.php");
-	require_once($_stdevelopmenttools_path."/html/CenterTag.php");
-	require_once($_stdevelopmenttools_path."/html/TableTag.php");
-	require_once($_stdevelopmenttools_path."/html/st_tableTag.php");
-	require_once($_stdevelopmenttools_path."/html/ListingTags.php");
-	require_once($_stdevelopmenttools_path."/html/TitleTag.php");
-	require_once($_stdevelopmenttools_path."/html/FormTag.php");
-	require_once($_stdevelopmenttools_path."/html/ImageTag.php");
-	require_once($_stdevelopmenttools_path."/html/ButtonTag.php");
-	require_once($_stdevelopmenttools_path."/html/InputTag.php");
-	require_once($_stdevelopmenttools_path."/html/TextAreaTag.php");
-	require_once($_stdevelopmenttools_path."/html/SelectTag.php");
-	require_once($_stdevelopmenttools_path."/html/StyleTag.php");
-	require_once($_stdevelopmenttools_path."/html/FieldSetTag.php");
-	require_once($_stdevelopmenttools_path."/html/LegendTag.php");
-	require_once($_stdevelopmenttools_path."/html/IFrameTag.php");
+require_once($_stenvironmenttools_path."/html/HtmlTag.php");
+require_once($_stenvironmenttools_path."/html/HeadTag.php");
+require_once($_stenvironmenttools_path."/html/MetaTag.php");
+require_once($_stenvironmenttools_path."/html/LinkTag.php");
+require_once($_stenvironmenttools_path."/html/BodyTag.php");
+require_once($_stenvironmenttools_path."/html/FontTag.php");
+require_once($_stenvironmenttools_path."/html/BrTag.php");
+require_once($_stenvironmenttools_path."/html/ATag.php");
+require_once($_stenvironmenttools_path."/html/SpanTag.php");
+require_once($_stenvironmenttools_path."/html/DivTag.php");
+require_once($_stenvironmenttools_path."/html/ScriptTag.php");
+require_once($_stenvironmenttools_path."/html/BTag.php");
+require_once($_stenvironmenttools_path."/html/PTag.php");
+require_once($_stenvironmenttools_path."/html/HTag.php");
+require_once($_stenvironmenttools_path."/html/EmTag.php");
+require_once($_stenvironmenttools_path."/html/CenterTag.php");
+require_once($_stenvironmenttools_path."/html/TableTag.php");
+require_once($_stenvironmenttools_path."/html/st_tableTag.php");
+require_once($_stenvironmenttools_path."/html/ListingTags.php");
+require_once($_stenvironmenttools_path."/html/TitleTag.php");
+require_once($_stenvironmenttools_path."/html/FormTag.php");
+require_once($_stenvironmenttools_path."/html/ImageTag.php");
+require_once($_stenvironmenttools_path."/html/ButtonTag.php");
+require_once($_stenvironmenttools_path."/html/InputTag.php");
+require_once($_stenvironmenttools_path."/html/TextAreaTag.php");
+require_once($_stenvironmenttools_path."/html/SelectTag.php");
+require_once($_stenvironmenttools_path."/html/StyleTag.php");
+require_once($_stenvironmenttools_path."/html/FieldSetTag.php");
+require_once($_stenvironmenttools_path."/html/LegendTag.php");
+require_once($_stenvironmenttools_path."/html/IFrameTag.php");
 
 ?>

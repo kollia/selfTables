@@ -22,7 +22,7 @@ class OSTCallbackClass
 		var $aAcessClusterColumns= array();//die Dynamic-Cluster der Tabelle
 		var	$aTables;
 
-		function OSTCallbackClass(&$container, $sqlResult)
+		function __construct(&$container, $sqlResult)
 		{
 			$this->container= &$container;
 			$this->db= &$container->getDatabase();

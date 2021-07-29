@@ -3,7 +3,7 @@
 class BodyTag extends Tag
 {
 		
-		function BodyTag($class= null)
+		function __construct($class= null)
 		{
 			Tag::Tag("body", true, $class);
 		}

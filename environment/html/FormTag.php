@@ -2,7 +2,7 @@
 
 class FormTag extends Tag
 {
-		function FormTag($class= null)
+		function __construct($class= null)
 		{
 			Tag::Tag("form", true, $class);
 		}

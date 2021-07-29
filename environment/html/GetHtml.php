@@ -1,6 +1,6 @@
 <?php
 
-require_once($php_html_description);
+st_require_once($php_html_description);
 
   /**
    *  gibt ein verkn�pfungs-Tag auf eine Cascade Sylesheet aus
@@ -36,7 +36,7 @@ class GetHtml
 {	
 		var $param_vars;
 		
-		function GetHtml($param_vars= null)
+		function __construct($param_vars= null)
 		{
 			global	$HTTP_GET_VARS;
 			
@@ -45,7 +45,7 @@ class GetHtml
 			 //					auch die Adresse selbst mitgegeben werden
 				if(preg_match("/\?/", $param_vars))
 				{
-					$split= split("\?", $param_vars);
+					$split= preg_split("/\?/", $param_vars);
 					$param_vars= $split[1];
 				}
 			}
@@ -186,20 +186,7 @@ class GetHtml
 			// -> $param_vars= &$param_vars["stget"]["older"];
 			if($lastParam["stget"]["older"]===null)
 				unset($lastParam["stget"]["older"]);
-			return;		
-/*			$param= preg_quote($param);
-			$params= $this->createParamString($this->param_vars);
-			$params= substr($params, 1);
-			$params= split("&", $params);
-			$newParams= "";
-			foreach($params as $one)
-			{
-				if(!preg_match("/^".$param."/", $one))
-					$newParams[]= $one;
-			}
-			foreach($newParams as $param)			
-				$this->createArrayA($param, $param_vars);
-			st_print_r($param_vars,9);*/
+			return;	
 		}
 		function update($paramValue)
 		{
@@ -247,7 +234,7 @@ class GetHtml
 		}
 		function splitParamValue($paramValue)
 		{
-			$split= split("=", $paramValue);
+			$split= preg_split("/=/", $paramValue);
 			$param= $split[0];
 			$value= $split[1];
 			$split= preg_split("/[".preg_quote("[]")."]/", $param);
@@ -266,12 +253,12 @@ class GetHtml
 		}
 		function createArray($paramValue, &$aParams)
 		{
-			$params= split("\?", $paramValue);
+			$params= preg_split("/\?/", $paramValue);
 			if(count($params)==1)
 				$params= $params[0];
 			else
 				$params= $params[1];
-			$params= split("&", $params);
+			$params= preg_split("/&/", $params);
 			foreach($params as $param)
 			{
 				if($param)
@@ -382,7 +369,7 @@ class GetHtml
 		{
 			if(substr($paramString, 0, 1)=="?")
 				$paramString= substr($paramString, 1);
-			$split= split("&", $paramString);
+			$split= preg_split("/&/", $paramString);
 			
 			// erstelle nun einen div-Tag
 			// indem alle Variablen des query-strings stehen
@@ -397,7 +384,7 @@ class GetHtml
 			$replace[]= "\]";
 			foreach($split as $param)
 			{
-				$KeyValue= split("=", $param);
+				$KeyValue= preg_split("/=/", $param);
 				$KeyValue[0]= trim($KeyValue[0]);
 				$inside= false;
 				
@@ -473,14 +460,14 @@ class GetHtml
 				$this->param_vars= "";
 			elseif(substr($this->param_vars, 0, 1)=="&")
 				$this->param_vars= "?".substr($this->param_vars, 1);
-			$this->param_vars= ereg_replace("&&", "&", $this->param_vars);
+			$this->param_vars= preg_replace("/&&/", "&", $this->param_vars);
 			Tag::echoDebug("gethtml", "result is \"".$this->param_vars."\"<br />");
 		}
 		function makeNewArray($type= null, $sWithOrWithout= null)
 		{
 			if($type===null)
 				return false;
-			$split= split("=", $sWithOrWithout);
+			$split= preg_split("/=/", $sWithOrWithout);
 			$key= $split[0];
 			$value= $split[1];
 			// erstelle key f�r regular expression
@@ -498,7 +485,7 @@ class GetHtml
 					or
 					$type==STUPDATE	)
 				{
-					$this->param_vars= ereg_replace($key2."=".$preg[1], "$key=$value", $this->param_vars);
+					$this->param_vars= preg_replace("/$key2=".$preg[1]."/", "$key=$value", $this->param_vars);
 					if(Tag::isDebug())
 					{
 						if($type==STINSERT) Tag::echoDebug("gethtml.insert", "update $key from ".$preg[1]." to $value for insert");
@@ -530,7 +517,7 @@ class GetHtml
 					 	$this->makeNewArray(STUPDATE, $key."=".$result);
 						return $preg[1];
 					}// sonst wird sie gel�scht und zur�ckgegeben
-					$this->param_vars= ereg_replace("&?".$key2."=([^&]*)", "", $this->param_vars);
+					$this->param_vars= preg_replace("/&?".$key2."=([^&]*)/", "", $this->param_vars);
 					Tag::echoDebug("gethtml.delete", "delete $key, return ".$preg[1]);
 					return $preg[1];
 				}else
@@ -538,7 +525,7 @@ class GetHtml
 			}elseif($type==STDELETE)
 			{
 				Tag::echoDebug("gethtml.delete", "$key2 for delete has maybe no logical operator");
-				$split= split("&", $this->param_vars);
+				$split= preg_split("/&/", $this->param_vars);
 				$param_vars= "";
 				foreach($split as $value)
 				{
@@ -546,7 +533,6 @@ class GetHtml
 						$param_vars.= $value."&";
 				}
 				$this->param_vars= substr($param_vars, 0, strlen($param_vars)-1);
-				//$this->param_vars= ereg_replace("[^=]".$key2."[^=]", "", $this->param_vars);
 			}elseif($type==STINSERT
 					or
 					$type==STUPDATE	)

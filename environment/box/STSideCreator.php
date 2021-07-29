@@ -1,10 +1,7 @@
 <?php
 
 require_once($choose_table);
-//require_once($mysql_database);
-//require_once($database_tables);
 require_once($insert_update);
-require_once($database_where_clausel);
 require_once($php_html_description);
 require_once($_stdownload);
 
@@ -40,7 +37,7 @@ class STSideCreator extends HtmlTag
 		var $logoutButton= null;
 		var $sDefaultCssLink;
 
-		function STSideCreator($container= null)
+		function __construct($container= null)
 		{
 			global	$_selftable_first_main_database_name;
 
@@ -475,7 +472,7 @@ class STSideCreator extends HtmlTag
 				return null;
 
 
-			$get= &new STQueryString();
+			$get= new STQueryString();
 			if($get_vars["action"]!=STLIST)
 			{
 				$get->update("stget[action]=".STLIST);

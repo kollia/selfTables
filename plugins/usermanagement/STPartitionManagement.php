@@ -2,7 +2,7 @@
 
 class STPartitionManagement extends STObjectContainer
 {
-	function STPartitionManagement($name, &$container)
+	function __construct($name, &$container)
 	{
 		Tag::paramCheck($name, 1, "string");
 		Tag::paramCheck($container, 2, "STObjectContainer");

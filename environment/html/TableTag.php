@@ -5,7 +5,7 @@ define("TD", false);
 
 class ColumnTag extends Tag
 {
-		function ColumnTag($headline, $class= null)
+		function __construct($headline, $class= null)
 		{
 			if($headline)
 				$name= "th";
@@ -47,7 +47,7 @@ class ColumnTag extends Tag
 
 class RowTag extends Tag
 {
-		function RowTag($class= null)
+		function __construct($class= null)
 		{
 			Tag::Tag("tr", true, $class);
 		}
@@ -86,7 +86,7 @@ class RowTag extends Tag
 
 class TableTag extends Tag
 {
-		function TableTag($class= null)
+		function __construct($class= null)
 		{
 			Tag::Tag("table", true, $class);
 		}

@@ -7,7 +7,7 @@ class STDbUpdater
 	var $columns;
 	var $nAktRow= 0;
 	
-	function STDbUpdater(&$oTable)
+	function __construct(&$oTable)
 	{
 	    Tag::paramCheck($oTable, 1, "STDbTable");
 		$this->table= &$oTable;

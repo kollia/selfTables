@@ -15,7 +15,7 @@ class OSTSearchBox extends OSTBaseTableBox
 		var $checkBoxNrs= array();
 		var $showAllButtonName= "l&ouml;sche Suche";
 		
-		function OSTSearchBox($database, $class= "OSTSearchBox")
+		function __construct($database, $class= "OSTSearchBox")
 		{		
 			OSTBaseTableBox::OSTBaseTableBox($database, $class);
 			$this->msg->setMessageContent("EMPTY_RESULT", "kein Ergebnis f�r den Suchbegriff");

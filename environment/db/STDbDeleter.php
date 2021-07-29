@@ -10,7 +10,7 @@ class STDbDeleter
 	// do not take by reference
 	// because into table comming
 	// where statements
-	function STDbDeleter($oTable)
+	function __construct($oTable)
 	{
 	    Tag::paramCheck($oTable, 1, "STDbTable");
 		$this->table= &$oTable;
@@ -18,7 +18,7 @@ class STDbDeleter
 	function where($stwhere)
 	{
 		if(is_string($stwhere))
-			$st_where= &new STDbWhere($stwhere);
+			$st_where= new STDbWhere($stwhere);
 		$this->aWhere[]= &$st_where;
 	}
 	function execute($onError= onErrorStop)

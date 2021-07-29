@@ -1,4 +1,4 @@
-	<?php
+<?php
 
 require_once($_stsession);
 require_once($database_selector);
@@ -44,7 +44,7 @@ class STUserSession extends STSession
 	var $sAuthorisationColumn= "Authorisation";
 	var $aProjectAccessCluster= array();
 
-	function STUserSession(&$Db, $prefix= null, $private= "")
+	function __construct(&$Db, $prefix= null, $private= "")
 	{
 		Tag::alert($private!="selfTables_STUserSession_private_String", "STUserSession::constructor()",
 								"class STUserSession is private, choose STUserSession::init(\$Db)");

@@ -2,7 +2,7 @@
 
 class TextAreaTag extends Tag
 {
-		function TextAreaTag($class= null)
+		function __construct($class= null)
 		{
 			Tag::Tag("textarea", true, $class);
 		}

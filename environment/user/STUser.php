@@ -1,4 +1,4 @@
-<?
+<?php
 
 
 require_once( $php_html_description );
@@ -6,16 +6,16 @@ require_once( $php_htmltag_class );
 
 
 /*	---------------------------------------------------------------
-			~~~~~~~~ Logbeschreibung f�r customID (LOGIN/LOGOUT)~~~~~~~~
-			
-			0	-	erfolgreich eingelogt/ausgelogt
+		~~~~~~~~ Logbeschreibung f�r customID (LOGIN/LOGOUT)~~~~~~~~
+		
+		0	-	erfolgreich eingelogt/ausgelogt
         1	-	falscher Username
         2	-	falsches Passwort
         3	-	Multiple Usernames found!
         4	-	Unknown error in LDAP authentication!
-			5	-	Sie haben keinen Zugriff auf diese Daten!
-			6	-	Timeout
-			7	-	Zugriffs-Fehler (ACCESS_ERROR)
+		5	-	Sie haben keinen Zugriff auf diese Daten!
+		6	-	Timeout
+		7	-	Zugriffs-Fehler (ACCESS_ERROR)
 		---------------------------------------------------------------	*/
 
 class STUser
@@ -44,7 +44,7 @@ class STUser
 	var $sAuthorisationColumn= "Authorisation";
 	var $aProjectAccessCluster= array();
   
-	function STUser(&$Db)
+	function __construct(&$Db)
   	{
 		$this->aCluster= array();
    		$this->database= &$Db;
@@ -141,8 +141,13 @@ class STUser
 		else
 			$bSetSession= session_start();
 		session_set_cookie_params( 0, '/', $client_root);
-		foreach($this->aSessionVars as $var)
-			session_register($var);
+		$_SESSION['ST_LOGGED_IN']= false;
+		$_SESSION['ST_USER']= "";
+		$_SESSION['ST_USERID']= -1;
+		$_SESSION['ST_PROJECTID']= -1;
+		$_SESSION['ST_CLUSTER_MEMBERSHIP']= null;
+		$_SESSION['ST_EXIST_CLUSTER']= null;
+		$_SESSION['ST_LOGGED_MESSAGES'] = "";
 			
 		/**/if( Tag::isDebug("user") )
 		{
@@ -165,37 +170,27 @@ class STUser
 	}
   	function getUserID()
   	{
-		global	$ST_USERID;
-  /*  	global $ST_LOGGED_IN;
-		  
-      	if( $ST_LOGGED_IN )*/
-	  		return $ST_USERID;		  
-/*	  	else
-	  	  	return 0;*/
+		return $_SESSION['ST_USERID'];
   	}
 	function isLoggedIn()
 	{
-    	global $ST_LOGGED_IN;
-		 
 		if(Tag::isDebug())
 		{
 			Tag::echoDebug("user", "entering ::isLoggedIn() ...");
-			if($ST_LOGGED_IN)
+			if($_SESSION['ST_LOGGED_IN'])
 				$string= "user is Logged, so return true";
 			else
 				$string= "user is not logged, so return false";
 			Tag::echoDebug("user", $string);
 		} 
-      	if( $ST_LOGGED_IN )
+      	if( $_SESSION['ST_LOGGED_IN'] )
 	  		return true;		  
 	  	else
 	  	  	return false;
 	}
 	function getUserName()
-	{
-		global $ST_USER;
-			
-		return $ST_USER;
+	{	
+		return $_SESSION['ST_USER'];
 	}
 	function getProjectID()
 	{
@@ -207,17 +202,15 @@ class STUser
 	}
 	function hasUserManagementAccess($projectID= null, $addType= addUser)
 	{
-		global	$ST_CLUSTER_MEMBERSHIP;
-		
 		/**/if( Tag::isDebug("user") ) {
 			echo "Entering hasUserManagementAccess checking for Groups <em>".htmlspecialchars( $groupString )."</em>, <br />";
 			echo "User is currently member of following clusters: ";
-			if(is_array($ST_CLUSTER_MEMBERSHIP) && count($ST_CLUSTER_MEMBERSHIP))
-				foreach( $ST_CLUSTER_MEMBERSHIP as $myCluster=>$Project )
+			if(is_array($_SESSION['ST_CLUSTER_MEMBERSHIP']) && count($_SESSION['ST_CLUSTER_MEMBERSHIP']))
+				foreach( $_SESSION['ST_CLUSTER_MEMBERSHIP'] as $myCluster=>$Project )
 					echo $myCluster.";";
 			echo ",<br />";
 		}
-		if(	isset($ST_CLUSTER_MEMBERSHIP[$this->allAdminCluster])
+		if(	isset($_SESSION['ST_CLUSTER_MEMBERSHIP'][$this->allAdminCluster])
 			and
 			$this->isLoggedIn())
 		{
@@ -227,9 +220,9 @@ class STUser
   		}
 		$anyAccess= false;
 		$projectAccess= false;
-		if(is_array($ST_CLUSTER_MEMBERSHIP))
+		if(is_array($_SESSION['ST_CLUSTER_MEMBERSHIP']))
 		{
-			foreach($ST_CLUSTER_MEMBERSHIP as $project)
+			foreach($_SESSION['ST_CLUSTER_MEMBERSHIP'] as $project)
 			{
 				if(	$project["addUser"]=="Y"
 					or
@@ -292,15 +285,13 @@ class STUser
 		return $this->access($authorisationString, $toAccessInfoString, $customID, $gotoLoginMask);
 	}
 	function hasProjectAccess($authorisationString, $toAccessInfoString= null, $customID= null)
-	{
-		global	$ST_CLUSTER_MEMBERSHIP;
-				
+	{		
 		if($this->noRegister)
 		{
 			/**/Tag::echoDebug("user", "-&gt; User must not be registered so return TRUE<br />");
 			return true;
 		}
-		if(	isset( $ST_CLUSTER_MEMBERSHIP[$this->allAdminCluster])
+		if(	isset( $_SESSION['ST_CLUSTER_MEMBERSHIP'][$this->allAdminCluster])
 			and
 			$this->isLoggedIn())
 		{
@@ -320,7 +311,7 @@ class STUser
 				$this->aProjectAccessCluster[$row[$sAuthorisation]]= $row[$sCluster];
 			//print_r($this->aProjectAccessCluster);echo "<br />";
 		}
-		$aAccess= split(",", $authorisationString);
+		$aAccess= preg_split("/,/", $authorisationString);
 		$clusterString= "";	
 		$bRv= false;
 		foreach($aAccess as $autho)
@@ -346,12 +337,7 @@ class STUser
 	//					da jetzt in hasAccess zwischen access und hasProjectAccess 
 	//					unterschieden wird
 	function access($clusterString, $toAccessInfoString= null, $customID= null, $gotoLoginMask= false)
-	{
-		global	$ST_LOGGED_IN,
-				$ST_EXIST_CLUSTER,
-				$ST_CLUSTER_MEMBERSHIP;
-			
-			
+	{	
 		if($this->noRegister)
 		{
 			/**/Tag::echoDebug("user", "-&gt; User must not be registered so return TRUE<br />");
@@ -371,20 +357,20 @@ class STUser
 				$sID= htmlspecialchars("\"".$sID."\"");
 			echo "<b>[</b>user<b>]:</b> <b>entering hasAccess(<em>&quot;".htmlspecialchars( $clusterString )."&quot;, ".$sAccess.", ".$sID.",</em>)</b><br />";
 			echo "<b>[</b>user<b>]:</b> User is currently member of following clusters: ";
-			if(is_array($ST_CLUSTER_MEMBERSHIP) && count($ST_CLUSTER_MEMBERSHIP))
+			if(is_array($_SESSION['ST_CLUSTER_MEMBERSHIP']) && count($_SESSION['ST_CLUSTER_MEMBERSHIP']))
 			{
-				foreach( $ST_CLUSTER_MEMBERSHIP as $myCluster=>$Project )
+				foreach( $_SESSION['ST_CLUSTER_MEMBERSHIP'] as $myCluster=>$Project )
 					echo $myCluster.";";
 			}else
 				echo "<em>NO CLUSTER</em>";
 			echo "<br />";
 			echo "<b>[</b>user<b>]:</b> sessionvar ST_LOGGED_IN is ";
-			var_dump($ST_LOGGED_IN);echo "<br />";
+			var_dump($_SESSION['ST_LOGGED_IN']);echo "<br />";
 		}
 		// alex 09/10/2005:	User muss nicht eingeloggt sein
 		//					um auf Projekte zugriff zu haben
 		//					habe Abfrage herausgenommen
-		/*if(!$ST_LOGGED_IN)
+		/*if(!$_SESSION['ST_LOGGED_IN'])
 		{
 			$this->gotoLoginMask(0);
 			exit;
@@ -414,11 +400,11 @@ class STUser
 		foreach($clusters as $cluster)
 		{
 			$cluster= trim($cluster);
-			if(	!isset($ST_EXIST_CLUSTER[$cluster]))
-			{echo "exist clusters";print_r($ST_EXIST_CLUSTER);
+			if(	!isset($_SESSION['ST_EXIST_CLUSTER'][$cluster]))
+			{echo "exist clusters";print_r($_SESSION['ST_EXIST_CLUSTER']);
 				echo "<br /><b>ERROR:</b> Cluster <b>\"</b>".$cluster."<b>\"</b> not exist in database";
 				exit;
-			}elseif($ST_EXIST_CLUSTER[$cluster]!==$this->projectID
+			}elseif($_SESSION['ST_EXIST_CLUSTER'][$cluster]!==$this->projectID
 					and
 					$this->project!=0	)
 			{
@@ -427,7 +413,7 @@ class STUser
 				exit();
 			}
 		}
-		if(	isset( $ST_CLUSTER_MEMBERSHIP[$this->allAdminCluster])
+		if(	isset( $_SESSION['ST_CLUSTER_MEMBERSHIP'][$this->allAdminCluster])
 			and
 			$this->isLoggedIn())
 		{
@@ -437,7 +423,7 @@ class STUser
   		}
 		foreach($clusters as $cluster)
 		{
-			if(isset( $ST_CLUSTER_MEMBERSHIP[ trim($cluster) ]))
+			if(isset( $_SESSION['ST_CLUSTER_MEMBERSHIP'][ trim($cluster) ]))
 			{
 				if($toAccessInfoString)
 					$this->LOG(STACCESS, $customID, $toAccessInfoString);
@@ -458,10 +444,7 @@ class STUser
 		return false;
 	}  
     function logHimOut($CustomID, $logTXT= "")
-  	{
-		foreach($this->aSessionVars as $var)
-			global $$var;
-				
+  	{		
 		/**/Tag::echoDebug("user", "clear all Session-Vars");
 		$this->setUserProject($this->project);
 		$this->LOG(STLOGOUT, $CustomID, $logTXT);
@@ -473,48 +456,40 @@ class STUser
 		$this->aGroups= null;
 		//$this->echoSessionVars();
 		foreach($this->aSessionVars as $var)
-		{
-			session_unregister($var);
-			$$var= null;
-		}
+			unset($_SESSION[$var]);
+		session_unset();
     }
 	function echoSessionVars()
 	{
 		foreach($this->aSessionVars as $var)
-			global $$var;
-			
-		foreach($this->aSessionVars as $var)
 		{
 			echo $var.": ";
-			var_dump($$var);
+			var_dump($_SESSION[$var]);
 			echo "<br />";
 		}
 	}
 		function setUserProject($ProjectName)
-		{
-  			global	$ST_USER,
-					$ST_USERID;
-					
+		{	
 			/**/Tag::echoDebug("user", "<b>entering setUserProject(</b>$ProjectName<b>)</b>");
 			// deffiniere User-Name
-			if(isset($ST_USERID))
+			if(isset($_SESSION['ST_USERID']))
 			{//wenn ST_USERID gesetzt ist, weiss die Klasse
-				$this->userID= $ST_USERID;//die UserID nicht.
-				/**/Tag::echoDebug("user", "set userID from session-var to ".$ST_USERID);
+				$this->userID= $_SESSION['ST_USERID'];//die UserID nicht.
+				/**/Tag::echoDebug("user", "set userID from session-var to ".$_SESSION['ST_USERID']);
 			}else// sonst wurde bereits eine Authentifizierung �ber Datenbank/ELDAP gemacht
 			{
 				/**/Tag::echoDebug("user", "set ST_USERID from database to ".$this->userID);
-				$ST_USERID= $this->userID;
+				$_SESSION['ST_USERID']= $this->userID;
 			}
-			if(isset($ST_USER))//selbiges!!
-				$this->user= $ST_USER;
+			if(isset($_SESSION['ST_USER']))//selbiges!!
+				$this->user= $_SESSION['ST_USER'];
 			else
-				$ST_USER= $this->user;
+				$_SESSION['ST_USER']= $this->user;
 			
 			if($ProjectName==trim("##StartPage"))
 			{
 				$this->projectID= 0;
-				$ST_PROJECTID= 0;
+				$_SESSION['ST_PROJECTID']= 0;
 			}else
 			{
   			// deffiniere Projekt
@@ -542,24 +517,20 @@ class STUser
 					/**/Tag::echoDebug("user", "set startPage from database to ".$row[2]);
 					$this->startPage= $row[2];
 				}
-  			$ST_PROJECTID= $this->projectID;
+				$_SESSION['ST_PROJECTID']= $this->projectID;
 			}
 		}
   	function setProperties($ProjectName)
   	{
   			/**/Tag::echoDebug("user", "entering setProperties..");
-			global	$ST_LOGGED_IN, 
-					$ST_CLUSTER_MEMBERSHIP,
-					$ST_EXIST_CLUSTER;
-  		
 			// define Login-Flag
-			$ST_LOGGED_IN= 1;
+			$_SESSION['ST_LOGGED_IN']= 1;
 				
 			$this->setUserProject( $ProjectName );
 			// alex 09/10/2005:	ST_CLUSTER_MEMBERSHIP soll bei jedem setProperties
 			//					aktualisiert werden
 			// deffiniere Gruppen-Array				
-			//if( !isset( $ST_CLUSTER_MEMBERSHIP ) )
+			//if( !isset( $_SESSION['ST_CLUSTER_MEMBERSHIP'] ) )
 			//{
 				/**/if( Tag::isDebug("user") ) 
 				{
@@ -567,14 +538,14 @@ class STUser
 					echo "->start checking properties from scratch..<br />";
 				}
 				$this->readCluster();
-				$ST_CLUSTER_MEMBERSHIP= $this->aCluster;
+				$_SESSION['ST_CLUSTER_MEMBERSHIP']= $this->aCluster;
 				
 			//}else
 			//{// sonst use the session-variable / Session-Cookie
 			//	/**/Tag::echoDebug("user", "ST_CLUSTER_MEMBERSHIP - found in Session<br />");
-			//	$this->aCluster= $ST_CLUSTER_MEMBERSHIP;				
+			//	$this->aCluster= $_SESSION['ST_CLUSTER_MEMBERSHIP'];				
 			//}	
-			if(!isset($ST_EXIST_CLUSTER))
+			if(!isset($_SESSION['ST_EXIST_CLUSTER']))
 			{
 				/**/if( Tag::isDebug("user") ) 
 				{
@@ -587,26 +558,24 @@ class STUser
 				$this->aExistCluster= array();
 				foreach($aClusters as $row)
 					$this->aExistCluster[$row["ID"]]= $row["ProjectID"];
-				$ST_EXIST_CLUSTER= $this->aExistCluster;
+				$_SESSION['ST_EXIST_CLUSTER']= $this->aExistCluster;
 				/**/if( Tag::isDebug("user") )
 				{
 					echo "<b>found existing clusters:</b><br /><pre>";
-					print_r($ST_EXIST_CLUSTER);
+					print_r($_SESSION['ST_EXIST_CLUSTER']);
 					echo "</pre><br />";
 				}
 				
 			}else
 			{// else use the session-variable / Session-Cookie
 				/**/Tag::echoDebug("user", "ST_EXIST_CLUSTER - found in Session<br />");
-				$this->aExistCluster= $ST_EXIST_CLUSTER;				
+				$this->aExistCluster= $_SESSION['ST_EXIST_CLUSTER'];				
 			}			
   	}
 		function readCluster()
 		{// hole alle Cluster, 
 		 // zugeh�rig zum Projekt und User
 		 // aus der Datenbank
-		 	global	$ST_EXIST_CLUSTER;
-		 
 		 	/**/if(Tag::isDebug())
 			{
 		 		$logged_inGroupID= $this->selectGroupID("LOGGED_IN");
@@ -623,11 +592,11 @@ class STUser
 				$this->aExistCluster= array();
 				foreach($aClusters as $row)
 					$this->aExistCluster[$row["ID"]]= $row["ProjectID"];
-				$ST_EXIST_CLUSTER= $this->aExistCluster;
+				$_SESSION['ST_EXIST_CLUSTER']= $this->aExistCluster;
 				/**/if( Tag::isDebug("user") )
 				{
 					echo "<b>found existing clusters:</b><br /><pre>";
-					print_r($ST_EXIST_CLUSTER);
+					print_r($_SESSION['ST_EXIST_CLUSTER']);
 					echo "</pre><br />";
 				}
 				
@@ -708,14 +677,12 @@ class STUser
 		}
 		function acceptUser($user, $password)
 		{
-			global $ST_USER;
-
 			if(Tag::isDebug("user"))
 			{
 				$pwd= str_repeat("*", strlen($password));
 				echo "<b>entering acceptUser(<em>&quot;".$user."&quot;, &quot;".$pwd."&quot;,</em>)</b><br />";
 			}
-			$ST_USER= $user;
+			$_SESSION['ST_USER']= $user;
 			$this->user= $user;
 	 		$statement= "select ID, GroupType from MUUser where UserName='$user'";// Pwd=password('$password')";
 	 	  	$row= $this->database->fetch_row($statement);
@@ -796,9 +763,6 @@ class STUser
 			global	$HTTP_SERVER_VARS,
 					$HTTP_GET_VARS,
 					$HTTP_POST_VARS,
-					$ST_LOGGED_IN,
-					$ST_USERID,
-					$ST_CLUSTER_MEMBERSHIP,
 					$HTTP_COOKIE_VARS;				
 
 			if($this->noRegister)
@@ -828,8 +792,8 @@ class STUser
 			//Tag::debug("user");
 				/**/Tag::echoDebug("user", "receiving new login data, start performing login verification");
 				/**/Tag::echoDebug("user", "set ST_USERID and ST_CLUSTER_MEMBERSHIP to NULL");
-				$ST_CLUSTER_MEMBERSHIP= null;
-				$ST_USERID= null;
+				$_SESSION['ST_CLUSTER_MEMBERSHIP']= null;
+				$_SESSION['ST_USERID']= null;
         	$error= $this->acceptUser($HTTP_POST_VARS["user"], $HTTP_POST_VARS["pwd"]);
       		if(!$error)
 				{
@@ -865,27 +829,27 @@ class STUser
 					echo $Project."</em>,<br />";
 				}
 				$this->setUserProject( $Project );
-  			if( $ST_LOGGED_IN == 1 )
+  			if( $_SESSION['ST_LOGGED_IN'] == 1 )
   			{
   				/**/ if( Tag::isDebug("user") ) 
 						echo "user logged in return TRUE<br />";
   			 	return true;
   		 	}else
 			{
-				if(!$ST_CLUSTER_MEMBERSHIP)
+				if(!$_SESSION['ST_CLUSTER_MEMBERSHIP'])
 				{
 					Tag::echoDebug("user", "read Cluster vor ONLINE staus from database");
 					$this->readCluster();
-					$ST_CLUSTER_MEMBERSHIP= $this->aCluster;
+					$_SESSION['ST_CLUSTER_MEMBERSHIP']= $this->aCluster;
 				}else
-					$this->aCluster= $ST_CLUSTER_MEMBERSHIP;
+					$this->aCluster= $_SESSION['ST_CLUSTER_MEMBERSHIP'];
 			}
   		 	/**/ if( Tag::isDebug("user") ) 
 					echo "user not logged in return FALSE<br />";				
 				return false;    	 
     	}
 			echo "end of verifyLogin, ST_LOGGED_IN is ";
-			var_dump($ST_LOGGED_IN);echo "<br />";
+			var_dump($_SESSION['ST_LOGGED_IN']);echo "<br />";
   	}
 		function gotoLoginMask($error= 0)
 		{
@@ -1005,19 +969,17 @@ class STUser
 		}
 		function writeLog($type, $customID, $logText)
 		{
-			global	$ST_LOGGED_MESSAGES;
-			
 			$searchText= $type." ".$customID." ".$logText;
-			if(!isset($ST_LOGGED_MESSAGES))
-				$ST_LOGGED_MESSAGES= array();
-			elseif(	array_search($searchText, $ST_LOGGED_MESSAGES)
+			if(!isset($_SESSION['ST_LOGGED_MESSAGES']))
+				$_SESSION['ST_LOGGED_MESSAGES']= array();
+			elseif(	array_search($searchText, $_SESSION['ST_LOGGED_MESSAGES'])
 					or
 					!$logText	)
 			{// diese Seite wurde bereits geloggd
 			 // oder der Log ist nicht n�tig, da kein logText vorhanden
 				return;
 			}
-			$ST_LOGGED_MESSAGES[]= $searchText;
+			$_SESSION['ST_LOGGED_MESSAGES'][]= $searchText;
 			if($type==STDEBUG)
 				$Typ= "'DEBUG'";
 			elseif($type==STLOGIN)

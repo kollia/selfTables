@@ -11,7 +11,7 @@ class STTableDescriptions
 		
 		if(!$global_sttabledescriptions_class_instance[0])
 		{
-			$global_sttabledescriptions_class_instance[0]= &new STTableDescriptions();
+			$global_sttabledescriptions_class_instance[0]= new STTableDescriptions();
 		}
 		return $global_sttabledescriptions_class_instance[0];
 	}

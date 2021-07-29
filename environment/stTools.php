@@ -1,9 +1,6 @@
 <?php
 
 
-if(!phpVersionNeed("4.3.0"))
-		require_once($_stunderphp40);
-
 function st_print_r($value, $deep=1, $space= 0, $bFirst= true)
 {
 	if(	is_object($value)
@@ -330,11 +327,11 @@ function phpVersionNeed($needVersion, $functionName= null)
 		return $bOk;
 }
 
-function mysqlVersionNeed($needVersion, $functionName= null)
+function mysqlVersionNeed($database, $needVersion, $functionName= null)
 {
 		global $HTML_CLASS_DEBUG_CONTENT;
 
-		$version= mysql_get_server_info();
+		$version= $database->server_info();
 		$version= preg_split("/[-]/", $version);
 		$version= $version[0];
 		$aktVers= preg_split("/[.]/", $version);
@@ -369,21 +366,6 @@ function mysqlVersionNeed($needVersion, $functionName= null)
 			echo $functionName."<br />\n";
 		}
 		return $bOk;
-}
-
-/**
- * sort all persons like the telephon list
- *
- * @param array $persons an array with person as key and any content as value
- * @param $database object of connected STDatabase class
- * @return same array with sorted persons
- */
-function personTitleSort(array $persons, $database)
-{
-	STCheck::param($database, 2, "STDatabase");
-	
-	$conn= $database->getconnection();
-	return myTools::sqlPersonTitleSort($conn, $persons);
 }
 
 class myTools
@@ -436,76 +418,7 @@ class myTools
 			--$from;
         }
     }
-	/**
-	 * sort all persons like the telephon list
-	 * 
-	 * @param $lnkid handle to mysql database
-	 * @param array $persons an array with person as key and any content as value
-	 * @return same array with sorted persons
-	 */
-	function sqlPersonTitleSort($lnkid, array $persons)
-	{	
-		global $__telephonListNames;
-			
-		if(count($persons) <= 1)
-			return $persons;
-	//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-	//		new sorting of column display for Doctors
-	
-		if(	!isset($__telephonListNames) ||
-			!is_array($__telephonListNames)	)
-		{
-			/* Query String*/
-			$sql="SELECT famname,vorname FROM personen 
-					order by funktion, leitung, titel, famname, vorname";
-			//echo "mysql connection ";st_print_r($lnkid)
-			if($res=mysql_query($sql,$lnkid))
-			{	
-				$__telephonListNames= array();
-				while ($row = mysql_fetch_array($res,MYSQL_ASSOC))
-				{	
-					$uname= strtolower($row["famname"].substr($row["vorname"], 0, 1));
-					$uname= preg_replace("/ä/", "ae", $uname);
-					$uname= preg_replace("/ö/", "oe", $uname);
-					$uname= preg_replace("/ü/", "ue", $uname);
-					$uname= preg_replace("/ß/", "ss", $uname);
-					$row["uname"]= $uname;
-					$__telephonListNames[]= $row;
-					
-				}
-			}else
-			{
-				echo "Datensaetze koennen nicht sortiert werden:".mysql_error()."<br>";
-				return $persons;
-			}
-		}
-		
-		$sorted_nms= array();
-		$noWorker= array();
-		foreach($__telephonListNames as $arzt)
-		{
-			if(isset($persons[$arzt["uname"]]))
-			{
-				$sorted_nms[$arzt["uname"]]= $persons[$arzt["uname"]];
-				unset($persons[$arzt["uname"]]);
-			}
-		}
-		sort($persons);
-		foreach($persons as $name => $content)
-			$sorted_nms[$name]= $content;
-		if(STCheck::isDebug("absenceString"))
-		{
-			echo "sorted Persons:";
-			echo "<pre>";
-			st_print_r($sorted_nms);
-			echo "</pre>";
-		}
-		return $sorted_nms;
-			
-	//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-	//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-	}
-		
+
 	function out($value, $debug)
 	{echo "Function out";exit;
 			$type= gettype($value);

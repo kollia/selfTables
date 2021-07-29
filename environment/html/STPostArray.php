@@ -4,7 +4,7 @@ class STPostArray
 {
 	var $post;
 	
-	function STPostArray()
+	function __construct()
 	{
 		global $HTTP_POST_VARS;
 

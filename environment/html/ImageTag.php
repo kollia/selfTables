@@ -2,7 +2,7 @@
 
 class ImageTag extends Tag
 {		
-		function ImageTag($tag= null, $class= null)
+		function __construct($tag= null, $class= null)
 		{
 			Tag::Tag("img", false, $class);
 			$this->add($tag);

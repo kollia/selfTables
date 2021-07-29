@@ -21,7 +21,7 @@ class STMessageHandling // implements STMessageHandlingInterface <- ab version 5
 		var	$OKUrl= null; // nach OKScript
 		var	$onError;
 		
-		function STMessageHandling($forObject, $onError= onErrorStop)
+		function __construct($forObject, $onError= onErrorStop)
 		{
 			Tag::paramCheck($forObject, 1, "string");
 			$this->sObject= $forObject;

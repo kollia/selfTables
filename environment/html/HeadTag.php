@@ -3,7 +3,7 @@
 class HeadTag extends Tag
 {
 		
-		function HeadTag()
+		function __construct()
 		{
 			Tag::Tag("head", true, null);
 		}

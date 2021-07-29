@@ -39,7 +39,7 @@ class STDbSiteCreator extends HtmlTag
 									// eine Auswahl existieren soll
 		var	$bContainerManagement= true; // ob die Container in das older verschoben werden soll
 		
-		function STDbSiteCreator($container= null)
+		function __construct($container= null)
 		{			
 			Tag::paramCheck($container, 1, "STDbTableContainer", "null");
 			HtmlTag::HtmlTag();

@@ -3,7 +3,7 @@
 
 class STUserGroupManagement extends STObjectContainer
 {
-	function STUserClusterManagement($name, &$container)
+	function __construct($name, &$container)
 	{
 		Tag::paramCheck($name, 1, "string");
 		Tag::paramCheck($container, 2, "STObjectContainer");
@@ -113,9 +113,7 @@ class STUserGroupManagement extends STObjectContainer
 			$query= new STQueryString();
 			$limitation= $query->getLimitation("User");
     		if(!$limitation)
-    		{
-        		/*$where= &new STDbWhere("UserID=1");
-        		$where->forTable("STUser");*/				
+    		{				
 				$pk= $user->getPkColumnName();
 				
 				$userSelector= new OSTDbSelector($user, STSQL_ASSOC);

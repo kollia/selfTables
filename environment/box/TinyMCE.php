@@ -18,7 +18,7 @@ class TinyMCE
 	var	$sAdd= array();
 	var	$sAddBefore= array();
 	
-	function TinyMCE($mode= "exact")
+	function __construct($mode= "exact")
 	{
 		$this->sMode= $mode;
 	}
@@ -26,13 +26,13 @@ class TinyMCE
 	{
 		global	$_tinymce_path;
 		
-		$script= &new JavascriptTag();
+		$script= new JavascriptTag();
 		$script->src($_tinymce_path."tiny_mce.js");
 		return $script;
 	}
 	function &getHeadScript($objectName= "tinyMCE")
 	{
-		$script= &new JavascriptTag();
+		$script= new JavascriptTag();
 		if($objectName!=="tinyMCE")
 			$script->add($objectName."= tinyMCE;");
 		$object=  $objectName.".init(";

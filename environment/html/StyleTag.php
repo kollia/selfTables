@@ -2,7 +2,7 @@
 
 class StyleTag extends Tag
 {
-		function StyleTag()
+		function __construct()
 		{
 			Tag::Tag("style", true);
 		}
@@ -10,7 +10,7 @@ class StyleTag extends Tag
 
 class style extends Tag
 {
-		function style($name)
+		function __construct($name)
 		{
 			Tag::Tag($name, false);
 		}

@@ -1,10 +1,10 @@
 <?php
 
 
-	require_once($base_table);
-	require_once($database_selector);
-	require_once($_stdbupdater);
-	require_once($_stdbdeleter);
+require_once($base_table);
+require_once($database_selector);
+require_once($_stdbupdater);
+require_once($_stdbdeleter);
 
 
 class OSTTable extends OSTBaseTableBox
@@ -37,7 +37,7 @@ class OSTTable extends OSTBaseTableBox
 		var $dateIndex;
 		var $aSorts= null;
 
-		function OSTTable(&$container, $class= "STTable", $logTime= false)
+		function __construct(&$container, $class= "STTable", $logTime= false)
 		{
 			Tag::paramCheck($container, 1, "STBaseContainer");
 			Tag::paramCheck($class, 2, "string");
@@ -1788,9 +1788,6 @@ exit();
 
 				if(count($box) || count($checked))
 				{
-					//$inserter= &new STDbInserter($this->asDBTable);
-					//$deleter= &new STDbDeleter($this->asDBTable);
-
 					foreach($fields as $checkBoxColumn)
 					{
 						if($checkBoxColumn["name"]===$isCheck)
@@ -2149,7 +2146,7 @@ exit();
 					$set= $fieldArray[$columnName];
 					if(!isset($set))
 					{
-						$split= split("-", $columnName);
+						$split= preg_split("/-/", $columnName);
 						$columnName= "";
 						for($o= 1; $o<count($split); $o++)
 							$columnName.= $split[$o]."-";
@@ -2173,7 +2170,7 @@ exit();
 					$set= $fieldArray[$columnName];
 					if(!isset($set))
 					{
-						$split= split("-", $columnName);
+						$split= preg_split("/-/", $columnName);
 						$columnName= "";
 						for($o= 1; $o<count($split); $o++)
 							$columnName.= $split[$o]."-";

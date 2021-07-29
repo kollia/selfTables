@@ -2,7 +2,7 @@
 
 class ButtonTag extends Tag
 {
-		function ButtonTag($class= null)
+		function __construct($class= null)
 		{
 			Tag::Tag("button", true, $class);
 			$this->insertAttribute("type", "button");

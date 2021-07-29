@@ -6,7 +6,7 @@ class STDbTableCreator
 		var $sTable;
 		var $bCheck= false;
 
-    function STDbTableCreator(&$database, $tableName)
+    function __construct(&$database, $tableName)
 	{
 		Tag::paramCheck($database, 1, "STDatabase");
 		Tag::paramCheck($tableName, 2, "string");

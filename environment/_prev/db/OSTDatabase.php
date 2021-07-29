@@ -1,27 +1,26 @@
-<?
+<?php
 
 //last change 23.11.2004
 require_once($php_tools_class);
 require_once($database_selector);
-//require_once($stdbtablecontainer);
 require_once($_stdatabase);
 require_once($_stdbmysql);
 
-	/**
-	*	 class OSTDatabase
-	*	 	   zugriff auf Datenbank
-	*
-	*		   @Autor: Alexander Kolli
-	*		   @version: 1.0
-	*/
+/**
+*	 class OSTDatabase
+*	 	   zugriff auf Datenbank
+*
+*		   @Autor: Alexander Kolli
+*		   @version: 1.0
+*/
 class OSTDatabase extends STDbMySql
 {
 
-	  /**
-		*  Konstruktor f�r Zugriffs-deffinition
-		*
-		*/
-	function OSTDatabase($identifName= "main-menue", $defaultTyp= MYSQL_NUM, $DBtype= "MYSQL")
+	/**
+	*  Konstruktor f�r Zugriffs-deffinition
+	*
+	*/
+	function __construct($identifName= "main-menue", $defaultTyp= MYSQL_NUM, $DBtype= "MYSQL")
    	{
 		STDatabase::STDatabase($identifName, $defaultTyp, "MYSQL");
   	}
@@ -34,17 +33,17 @@ class OSTDatabase extends STDbMySql
 	*/
 	function connect($host= null, $user= null, $passwd= null)
 	{
-   		$this->conn= @mysql_connect($host, $user, $passwd);
+		$this->conn= new mysqli($host, $user, $passwd, $database);
 		// alex 17/05/2005: obwohl referenze auf innere DB besteht
 		//					wird die Connection dort nicht eingetragen.
 		//					keine Ahnung warum !!!
 		$this->db->conn= $this->conn;
-  		if(!$this->conn)
+  		if($this->conn->connect_errno)
   		{
-				$this->error= true;
+			$this->error= true;
   			echo "can not make the connection to host <b>$host</b><br>";
   			echo "with user <b>$user</b><br>";
-  			echo "<b>ERROR".@mysql_errno($this->conn).": </b>".@mysql_error($this->conn);
+  			echo "<b>ERROR".$this->conn->connect_errno.": </b>".$this->conn->connect_error;
   			exit;
   		}
   		$this->host= $host;
@@ -54,41 +53,7 @@ class OSTDatabase extends STDbMySql
    	function toDatabase($database, $onError= onErrorStop)
 	{
 		$this->useDatabase($database, $onError);
-	}
-		/**
-		*  wechselt zu der angegebenen Datenbank
-		*
-		*  @param $database: Datenbank-Name
-		*  @param $onError: ob die Methode Fehler anzeigen soll und beendet werden soll.
-		*					<br>noErrorShow - Fehler wird nicht angezeigt und Programm nicht beendet
-		*					<br>onErrorShow - Fehler wird angezeigt aber Programm nicht beendet
-		*  		  			<br>onErrorStop - Fehler wird angezeigt und Programm beendet
-		*/
-/*   	function useDatabase($database, $onError= onErrorStop)
-   	{
-		$this->dbName= $database;
-		// alex 17/05/2005: obwohl referenze auf innere DB besteht
-		//					wird der DB-Name dort nicht eingetragen.
-		//					keine Ahnung warum !!!
-		$this->db->dbName= $this->dbName;
-  		if(!mysql_select_db("$database", $this->conn))
-  		{
-				$this->error= true;
-				if($onError>noErrorShow)
-				{
-    			echo "<br>can not reache database <b>$database</b>,<br>";
-					if( $this->conn==null )
-					 	echo "with no connection be set<br>";
-					else
-					{
-        			echo "with user <b>$this->user</b> on host <b>$this->host</b><br>";
-        			echo "<b>ERROR".mysql_errno($this->conn).": </b>".mysql_error($this->conn);
-					}
-					if($onError==onErrorStop)
-    				exit();
-				}
-  		}
-	}*/
+	}	
 	function solution($statement, $typ= null, $onError= onErrorStop)
 	{
 		$typ= $this->getTyp($typ);

@@ -4,7 +4,7 @@ require_once($_stsubgallerycontainer);
 
 class STGalleryContainer extends STSubGalleryContainer
 {
-	function STGalleryContainer(&$container, $name= "gallery", $name2= "sgallery", $name3= "pgallery")
+	function __construct(&$container, $name= "gallery", $name2= "sgallery", $name3= "pgallery")
 	{
 		Tag::alert($name==$name2, "STGalleryContainer::constructor()", "first name($name) for order, can not be the same than second name($name2)");
 		Tag::alert($name==$name3, "STGalleryContainer::constructor()", "first name($name) for order, can not be the same than third name($name3)");
@@ -12,8 +12,8 @@ class STGalleryContainer extends STSubGalleryContainer
 		
 		STSubGalleryContainer::STSubGalleryContainer($container, $name);
 		
-		$this->oOrderContainer= &new STSubGalleryContainer($container, $name2);
-    	$this->oPicContainer= &new STSubGalleryContainer($container, $name3);
+		$this->oOrderContainer= new STSubGalleryContainer($container, $name2);
+    	$this->oPicContainer= new STSubGalleryContainer($container, $name3);
     	
     	$this->oOrderContainer->oOrderContainer= &$this->oOrderContainer;
     	$this->oOrderContainer->oPicContainer= &$this->oPicContainer;
@@ -21,8 +21,8 @@ class STGalleryContainer extends STSubGalleryContainer
     	$this->oPicContainer->oOrderContainer= &$this->oOrderContainer;
     	$this->oPicContainer->oPicContainer= &$this->oPicContainer;
     	
-    	$this->oOrderContainer->setDisplayName("zurück");
-    	$this->oPicContainer->setDisplayName("zurück");
+    	$this->oOrderContainer->setDisplayName("zurï¿½ck");
+    	$this->oPicContainer->setDisplayName("zurï¿½ck");
 		
 			
 	}

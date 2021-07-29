@@ -4,7 +4,7 @@ require_once($_tinymce);
 
 class TinyMCE_row extends TinyMCE
 {
-	function TinyMCE_row($bJustify= false, $mode= "exact")
+	function __construct($bJustify= false, $mode= "exact")
 	{
 		TinyMCE::TinyMCE($mode);
 		

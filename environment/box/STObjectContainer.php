@@ -1,4 +1,3 @@
-
 <?php
 
 require_once($php_html_description);
@@ -41,7 +40,7 @@ class STObjectContainer extends STBaseContainer
 		var	$sDeleteAction;
 		var $sNewEntry;
 
-	function STObjectContainer($name, &$container)
+	function __construct($name, &$container)
 	{
 		Tag::paramCheck($name, 1, "string");
 		Tag::paramCheck($container, 2, "STObjectContainer");
@@ -260,7 +259,6 @@ class STObjectContainer extends STBaseContainer
 			$table= clone $container->getTable($orgTableName);//, $bAllByNone);
 			if($table)
 			{
-				//$table= &new STDbTable($newTable, $this);
 				$table->abNewChoice= array();
 				$table->bSelect= false;
 				$table->bTypes= false;

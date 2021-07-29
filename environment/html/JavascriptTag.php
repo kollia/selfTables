@@ -4,7 +4,7 @@
 	
 class JavaScriptTag extends ScriptTag
 {
-		function JavaScriptTag()
+		function __construct()
 		{
 			ScriptTag::ScriptTag();
 			$this->language("javascript");
@@ -18,7 +18,7 @@ class jsFunctionBase
 		var $bInherit= false;
 		var $inherit= array();
 		
-		function jsFunctionBase($name, $aParams, $bInherit)
+		function __construct($name, $aParams, $bInherit)
 		{	
 			$nParamsCount= count($aParams);		
 			for($i= 0; $i<$nParamsCount; $i++)
@@ -98,7 +98,7 @@ class jsFunctionBase
 
 class jsFunction extends jsFunctionBase
 {
-		function jsFunction($name, $param= null)
+		function __construct($name, $param= null)
 		{
 			$args= func_get_args();
 			$new_args= array();

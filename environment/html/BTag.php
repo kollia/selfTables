@@ -2,7 +2,7 @@
 
 class BTag extends Tag
 {
-		function BTag()
+		function __construct()
 		{
 			Tag::Tag("b", true, null);
 		}
@@ -10,7 +10,7 @@ class BTag extends Tag
 
 class BoldTag extends Tag
 {
-		function BoldTag()
+		function __construct()
 		{
 			Tag::Tag("b", true, null);
 		}

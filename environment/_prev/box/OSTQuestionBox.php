@@ -48,7 +48,7 @@ require_once($database_selector);
 		{
 			global $OSTDatabase_userInteraction;
 			
-			$project= split("-", $oCallbackClass->sqlResult[0][0]["Name"]);
+			$project= preg_split("/-/", $oCallbackClass->sqlResult[0][0]["Name"]);
 			$project= trim($project[0]);
 			$db= &$OSTDatabase_userInteraction;
 			$statement=  "select * from MUKategorys where ID=";
@@ -105,7 +105,7 @@ class OSTQuestionBox extends OSTBox
 		var		$bSendEMails= true;
 		var		$sNewsCluster= null;
 		
-		function OSTQuestionBox($kategoryID, $ostuser= null, $class= "OSTQuestionBox")
+		function __construct($kategoryID, $ostuser= null, $class= "OSTQuestionBox")
 		{
 			$this->nKategoryID= $kategoryID;			
 			$this->init($ostuser, $class);

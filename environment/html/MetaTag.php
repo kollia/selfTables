@@ -2,7 +2,7 @@
 
 class MetaTag extends Tag
 {	
-		function MetaTag()
+		function __construct()
 		{
 			Tag::Tag("meta", false);
 		}

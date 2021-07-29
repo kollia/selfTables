@@ -2,7 +2,7 @@
 
 class STProjectManagement extends STObjectContainer
 {
-	function STProjectManagement($name, &$container)
+	function __construct($name, &$container)
 	{
 		STCheck::param($name, 0, "string");
 		STCheck::param($container, 1, "STObjectContainer");
@@ -27,8 +27,8 @@ class STProjectManagement extends STObjectContainer
 		$project->needPkInResult("has_access");
 		$project->accessCluster("has_access", "ID", "Berechtigung zum ansehen des Projektes @.");
 		$project->accessCluster("can_insert", "ID", "Berechtigung zum anlegen eines neue Projektes.");
-		$project->accessCluster("can_update", "ID", "Berechtigung zum ändern des Projektes @.");
-		$project->accessCluster("can_delete", "ID", "Berechtigung zum löschen des Projektes @.");
+		$project->accessCluster("can_update", "ID", "Berechtigung zum ï¿½ndern des Projektes @.");
+		$project->accessCluster("can_delete", "ID", "Berechtigung zum lï¿½schen des Projektes @.");
 
 		$user= &$this->needTable("User");
 		$user->setDisplayName("Benutzer-Liste");
@@ -63,7 +63,7 @@ class STProjectManagement extends STObjectContainer
 		$this->createCluster("STUM-ProjectAccess", "Berechtigung zum ansehen aller Projekte");
 		$this->createCluster("STUM-ProjectInsert", "Berechtigung zum erstellen eines Projektes");
 		$this->createCluster("STUM-ProjectUpdate", "Berechtigung zum editieren der Projekte");
-		$this->createCluster("STUM-ProjectDelete", "Berechtigung zum löschen der Projekte");
+		$this->createCluster("STUM-ProjectDelete", "Berechtigung zum lï¿½schen der Projekte");
 	}
 }
 ?>

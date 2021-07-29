@@ -5,7 +5,7 @@ class st_tableTag extends TableTag
 	var	$nRow= -1;
 	var	$nColumn= -1;
 
-	function st_tableTag($id= null)
+	function __construct($id= null)
 	{
 		TableTag::TableTag("table", true, $id);
 	}
@@ -13,12 +13,12 @@ class st_tableTag extends TableTag
 	{
 		$this->addObj($value, $type, $columnId, $rowId);
 	}
-	function addObj($value, $type= TD, $columnId= null, $rowId= null)
+	function addObj(&$value, $type= TD, $columnId= null, $rowId= null)
 	{
 		if($this->nRow===-1)
 		{
-			$tr= &new RowTag($rowId);
-				$td= &new ColumnTag($type, $columnId);
+			$tr= new RowTag($rowId);
+				$td= new ColumnTag($type, $columnId);
 					$td->addObj($value);
 				$tr->addObj($td);
 			TableTag::addObj($tr);
@@ -26,8 +26,8 @@ class st_tableTag extends TableTag
 			$this->nColumn= 0;
 		}elseif($this->nColumn===-1)
 		{
-			$tr= &new RowTag($rowId);
-				$td= &new ColumnTag($type, $columnId);
+			$tr= new RowTag($rowId);
+				$td= new ColumnTag($type, $columnId);
 					$td->addObj($value);
 				$tr->addObj($td);
 			TableTag::addObj($tr);
@@ -35,7 +35,7 @@ class st_tableTag extends TableTag
 			$this->nColumn= 0;
 		}else
 		{
-			$td= &new ColumnTag($type, $columnId);
+			$td= new ColumnTag($type, $columnId);
 				$td->add($value);
 			$this->inherit[$this->nRow]->addObj($td);
 			++$this->nColumn;

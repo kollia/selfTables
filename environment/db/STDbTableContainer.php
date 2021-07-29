@@ -38,7 +38,7 @@ class STDbTableContainer
 	var	$getParmListLinks= array();	// alle Parameter die bei einem link aus dem Main-Table
 									// eingestellt werden
 		
-	function STDbTableContainer($name, &$container)
+	function __construct($name, &$container)
 	{
 		global	$global_array_all_exist_stdbtableContainers;
 		

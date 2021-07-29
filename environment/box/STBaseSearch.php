@@ -20,13 +20,12 @@ class STBaseSearch extends TableTag
 	var $sFieldset= false; // ob um die Kategorien ein Rand angezeigt werden soll
 	var $sInputType= "checkbox"; // ob die Gruppe aus Checkboxen oder Radio-Buttons besteht
 	
-	var	$aCategorys= array(); // alle Kategorien
 	var $bBreakAfterGroup= true;
 	var	$sbAndOrDefined= null; // ob die AndOrRadioButtons aktiviert sind 
 	var	$sbCaseSensitive= null; // ob zwischen Klein und Gro�schreiben unterschiden werden soll
 	var	$sbWholeWords= null; // ob auch ganze Worte ber�cksichtigt werden sollen
 	
-	function STBaseSearch($name, $id= "STCategoryGroup")
+	function __construct($name, $id= "STCategoryGroup")
 	{		
 		TableTag::TableTag($id);
 		$this->categoryName= $name;
@@ -314,7 +313,7 @@ class STBaseSearch extends TableTag
 	function &getNewCategory($name)
 	{	
 		if(typeof($this, "STSearchBox"))
-			$category= &new STCategoryGroup($name);
+			$category= new STCategoryGroup($name);
 		else
 			$category= &$this;
 		return $category;

@@ -16,7 +16,7 @@ class STChooseTable extends TableTag
 		// wenn $Db ein Array ist sind die Eintr�ge [Button-Name] => Adresse
 		// oder [Button-Name] => [0] => Adresse
 		//						 [1] => Beschreibung	
-		function STChooseTable(&$container, $class= "tableChoose")
+		function __construct(&$container, $class= "tableChoose")
 		{
 			TableTag::TableTag($class);
 			// alex 26/04/2005:	Bei Angabe von Datenbank oder Array
@@ -189,13 +189,13 @@ class STChooseTable extends TableTag
 		//					wenn von aussen ein Parameter extra gel�scht wurde
 		//					bleibt er hierbei ja sonst wieder erhalten 
 		/*$address= trim($address);
-		$split= split("\?", $address);
+		$split= preg_split("/\?/", $address);
 		$address= $split[0];
 		$params= $split[1];
 		$Get= new STQueryString();
 		if($params)
 		{
-			$split= split("&", $params);
+			$split= preg_split("/&/", $params);
 			foreach($split as $param)
 				$Get->getParamString(STINSERT, $param);
 		}   

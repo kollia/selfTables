@@ -7,7 +7,7 @@ class STUserSideCreator extends STSessionSideCreator
 	var	$sUserTablePrefix;
 	var	$bDoInstall= false;
 
-	function STUserSideCreator($projectNameNr, $container= null)
+	function __construct($projectNameNr, $container= null)
 	{
 		STCheck::paramCheck($projectNameNr, 1, "string", "int");
 		STCheck::paramCheck($container, 2, "STBaseContainer", "null");
@@ -63,7 +63,7 @@ class STUserSideCreator extends STSessionSideCreator
 		$queryTable= &$this->userDb->getTable("Query");
 		STQueryString::setQueryTable($queryTable, $nrColumn, $pathColumn);
 		STQueryString::globaly_noStgetNr(session_name());
-		$param= &new STQueryString();
+		$param= new STQueryString();
 		Tag::echoDebug("user", "table for querystring is be set");
 		// alex 02/05/2005:	entfernt, da var $startPage ja nicht gesetzt wird
 		//$this->setStartPage($this->userManagement->getStartPage());

@@ -22,8 +22,15 @@
 	//
 	//--------------------------------------------------------------------------
 	
+	$__globally_debug_defined= true;
+	if($__globally_debug_defined)
+	{
+		ini_set('display_errors', 1);
+		ini_set('display_startup_errors', 1);
+		error_reporting(E_ALL);
+	}else
+		error_reporting(E_ERROR | E_WARNING | E_PARSE);
 
-	error_reporting(E_ERROR | E_WARNING | E_PARSE);
 	//--------------------------------------------------------------------------
 	// set php variables
 	//--------------------------------------------------------------------------
@@ -33,6 +40,7 @@
 	$HTTP_GET_VARS= &$_GET;
 	$HTTP_POST_VARS= &$_POST;
 	$HTTP_COOKIE_VARS= &$_COOKIE;
+	$HTTP_SESSION_VARS= &$_SESSION;
 	/**
 	 * function to define the global SESSION variable
 	 * after session_start() inside method <code>STSession::registerSession()</code>	 * 
@@ -44,22 +52,60 @@
 	{
 		global $HTTP_SESSION_VARS;
 		
-		if(phpversion() < 5)
-		{
-			foreach($this->aSessionVars as $var)
-			{
-				session_register($var);
-				global $$var;
-				$this->session_vars[$var]= &$$var;
-			}
-		}else
-		{			
-			$globalVar= $_SESSION;
-			$HTTP_SESSION_VARS= $_SESSION;
-		} 
+		$globalVar= $_SESSION;
+		$HTTP_SESSION_VARS= $_SESSION;
 	}
 	//--------------------------------------------------------------------------
-	
+
+	$__defined_include_paths= null;
+	function st_check_require_once($file)
+	{
+		global $__globally_debug_defined;
+		global $__defined_include_paths;
+
+		if($__globally_debug_defined)
+		{
+			$trace= debug_backtrace();
+			if(!isset($__defined_include_paths))
+			{
+				$include_path= get_include_path();
+				$__defined_include_paths= preg_split("/:/", $include_path);
+			}
+			$ffile= $file;
+			if(substr($file, 0, 1) != "/")
+			{
+				foreach($__defined_include_paths as $path)
+				{
+					if(file_exists("$path/$file"))
+					{
+						$ffile= "$path/$file";
+						break;
+					}
+				}
+			}
+			if(	!isset($file) ||
+				trim($file) == "" ||
+				is_numeric($file) ||
+				!file_exists($ffile)	)
+			{
+				echo "ERROR: file in require_once('$file') does not exist<br>";
+				echo "<b>file:</b>".$trace[0]['file']. "  <b>line:</b>".$trace[0]['line']."<br>";
+        		throw new Exception ("require_once('$file') file does not exist");
+			}
+			if(!is_readable($ffile))
+			{
+				echo "ERROR: file in require_once('$file') is not readable<br>";
+				echo "<b>file:</b>".$trace[0]['file']. "  <b>line:</b>".$trace[0]['line']."<br>";
+        		throw new Exception ("require_once('$file') file is not readable");
+			}
+			echo "<b>found require_once('</b>$file<b>')</b> on <b>file:</b>".$trace[0]['file']. "  <b>line:</b>".$trace[0]['line']."<br>";
+		}
+		
+	}
+
+	define("MYSQL_NUM", 0x10);
+	define("MYSQL_ASSOC", 0X01);
+	define("MYSQL_BOTH", 0x11);
 	define("STSQL_NUM", MYSQL_NUM);
 	define("STSQL_ASSOC", MYSQL_ASSOC);
 	define("STSQL_BOTH", MYSQL_BOTH);
@@ -135,9 +181,11 @@
 	// so it is packed in an array
 	$global_selftable_session_class_instance= array();
 	////////////////////////////////////////////
-		$toolsPath=                 "selftables";
+		//$client_root=				$_SERVER['DOCUMENT_ROOT'];
+		$client_root=				"/";
+		$toolsPath=                 "selfTables";
 		$host=						"localhost";
-		$_stenvironenttools_path=	$toolsPath."/environent";
+		$_stenvironmenttools_path=	$toolsPath."/environment";
 		$_stcmstools_path=			$toolsPath."/plugins";
 		$php_tools=					"tools.php";
 		$_defaultScripts=			$client_root."/defaultScripts/";
@@ -149,78 +197,70 @@
 
 		// UserManagement Login
 		$USERCLASS=					"OSTUser";
-		$DBin_UserHost=				"localhost";
-		$DBin_UserUser=				"usermanagement";
-		$DBin_UserPwd=				"hupfauf45";
-		$DBin_UserDatabase=			"UserManagement";
-		//$st_user_login_mask=		"http://".$host.$client_root."/login.php";
-		$st_user_navigator_mask=	"/show.php";
 
+		$_sttools=					$_stenvironmenttools_path."/stTools.php";
+		$_stcheck=					$_stenvironmenttools_path."/html/STCheck.php";
+		$php_html_description=		$_stenvironmenttools_path."/html/Tags.php";
+		$_stquerystring=			$_stenvironmenttools_path."/html/STQueryString.php";
+		$_stpostarray=				$_stenvironmenttools_path."/html/STPostArray.php";
+		$php_htmltag_class=			$_stenvironmenttools_path."/_prev/html/GetHtml.php";
+		$php_javascript=			$_stenvironmenttools_path."/html/JavascriptTag.php";
 
-		$php_tools_class=			$_stenvironenttools_path."/myTools.php";
-		$_stunderphp40=				$_stenvironenttools_path."/STUnderPHP40.php";
-		$_stcheck=					$_stenvironenttools_path."/html/STCheck.php";
-		$php_html_description=		$_stenvironenttools_path."/html/Tags.php";
-		$_stquerystring=			$_stenvironenttools_path."/html/STQueryString.php";
-		$_stpostarray=				$_stenvironenttools_path."/html/STPostArray.php";
-		$php_htmltag_class=			$_stenvironenttools_path."/_prev/html/GetHtml.php";
-		$php_javascript=			$_stenvironenttools_path."/html/JavascriptTag.php";
+		$stdbtablecontainer=		$_stenvironmenttools_path."/_prev/db/STDbTableContainer.php";
+		$_stdatabase=				$_stenvironmenttools_path."/db/STDatabase.php";
+		$_stdbmysql=				$_stenvironmenttools_path."/db/STDbMySql.php";
+		$_staliastable=				$_stenvironmenttools_path."/db/STAliasTable.php";
+		$_stdbtable=				$_stenvironmenttools_path."/db/STDbTable.php";
+		$_stdbdeftable=				$_stenvironmenttools_path."/db/STDbDefTable.php";
+		$_stdbwhere=				$_stenvironmenttools_path."/db/STDbWhere.php";
+		//$database_where_clausel=	$_stenvironmenttools_path."/_prev/db/OSTDbWhere.php";
+		//$database_selector=			$_stenvironmenttools_path."/_prev/db/OSTDbSelector.php";
+		$_stdbselector=				$_stenvironmenttools_path."/db/STDbSelector.php";
+		$_stdbinserter=				$_stenvironmenttools_path."/db/STDbInserter.php";
+		$_stdbdefinserter=			$_stenvironmenttools_path."/db/STDbDefInserter.php";
+		$_stdbupdater=				$_stenvironmenttools_path."/db/STDbUpdater.php";
+		$_stdbdeleter=				$_stenvironmenttools_path."/db/STDbDeleter.php";
+		$_stdbtablecreator= 		$_stenvironmenttools_path."/db/STDbTableCreator.php";
+		$_stdbtabledescriptions=	$_stenvironmenttools_path."/db/STDbTableDescriptions.php";
 
-		$stdbtablecontainer=		$_stenvironenttools_path."/_prev/db/STDbTableContainer.php";
-		$_stdatabase=				$_stenvironenttools_path."/db/STDatabase.php";
-		$_stdbmysql=				$_stenvironenttools_path."/db/STDbMySql.php";
-		$_staliastable=				$_stenvironenttools_path."/db/STAliasTable.php";
-		$_stdbtable=				$_stenvironenttools_path."/db/STDbTable.php";
-		$_stdbdeftable=				$_stenvironenttools_path."/db/STDbDefTable.php";
-		$_stdbwhere=				$_stenvironenttools_path."/db/STDbWhere.php";
-		$database_where_clausel=	$_stenvironenttools_path."/_prev/db/OSTDbWhere.php";
-		$database_selector=			$_stenvironenttools_path."/_prev/db/OSTDbSelector.php";
-		$_stdbselector=				$_stenvironenttools_path."/db/STDbSelector.php";
-		$_stdbinserter=				$_stenvironenttools_path."/db/STDbInserter.php";
-		$_stdbdefinserter=			$_stenvironenttools_path."/db/STDbDefInserter.php";
-		$_stdbupdater=				$_stenvironenttools_path."/db/STDbUpdater.php";
-		$_stdbdeleter=				$_stenvironenttools_path."/db/STDbDeleter.php";
-		$_stdbtablecreator= 		$_stenvironenttools_path."/db/STDbTableCreator.php";
-		$_stdbtabledescriptions=	$_stenvironenttools_path."/db/STDbTableDescriptions.php";
+		$stmessagehandling=			$_stenvironmenttools_path."/box/STMessageHandling.php";
+		$_ostcallbackclass=			$_stenvironmenttools_path."/_prev/box/OSTCallbackClass.php";
+		$base_table=				$_stenvironmenttools_path."/_prev/box/OSTBaseTableBox.php";
+		$insert_update=				$_stenvironmenttools_path."/_prev/box/OSTBox.php";
+		$table_out=					$_stenvironmenttools_path."/_prev/box/OSTTable.php";
+		$_stsearchbox=				$_stenvironmenttools_path."/box/STSearchBox.php";
+		$_stcategorygroup=			$_stenvironmenttools_path."/box/STCategoryGroup.php";
+		$_stbasesearch=				$_stenvironmenttools_path."/box/STBaseSearch.php";
+		$search_table=				$_stenvironmenttools_path."/_prev/box/OSTSearchBox.php";
+		$choose_table=				$_stenvironmenttools_path."/box/STChooseTable.php";
+		$_stsidecreator=			$_stenvironmenttools_path."/box/STSideCreator.php";
+		$_stsessionsidecreator=		$_stenvironmenttools_path."/box/STSessionSideCreator.php";
+		$_stusersidecreator=		$_stenvironmenttools_path."/box/STUserSideCreator.php";
+		$base_site_creator=			$_stenvironmenttools_path."/_prev/box/STDbSiteCreator.php";
+		$site_creator=				$_stenvironmenttools_path."/_prev/box/OSTDbSiteCreator.php";
+		$ostquestionbox=			$_stenvironmenttools_path."/_prev/box/OSTQuestionBox.php";
+		$stselectbox=				$_stenvironmenttools_path."/box/STSelectBox.php";
+		$_stdownload=				$_stenvironmenttools_path."/box/STDownload.php";
+		$_stbasecontainer=			$_stenvironmenttools_path."/box/STBaseContainer.php";
+		$_stframecontainer=			$_stenvironmenttools_path."/box/STFrameContainer.php";
+		$_stobjectcontainer=		$_stenvironmenttools_path."/box/STObjectContainer.php";
+		$_tinymce=					$_stenvironmenttools_path."/box/TinyMCE.php";
+		$_tinymce_row=				$_stenvironmenttools_path."/box/TinyMCE_row.php";
 
-		$stmessagehandling=			$_stenvironenttools_path."/box/STMessageHandling.php";
-		$_ostcallbackclass=			$_stenvironenttools_path."/_prev/box/OSTCallbackClass.php";
-		$base_table=				$_stenvironenttools_path."/_prev/box/OSTBaseTableBox.php";
-		$insert_update=				$_stenvironenttools_path."/_prev/box/OSTBox.php";
-		$table_out=					$_stenvironenttools_path."/_prev/box/OSTTable.php";
-		$_stsearchbox=				$_stenvironenttools_path."/box/STSearchBox.php";
-		$_stcategorygroup=			$_stenvironenttools_path."/box/STCategoryGroup.php";
-		$_stbasesearch=				$_stenvironenttools_path."/box/STBaseSearch.php";
-		$search_table=				$_stenvironenttools_path."/_prev/box/OSTSearchBox.php";
-		$choose_table=				$_stenvironenttools_path."/box/STChooseTable.php";
-		$_stsidecreator=			$_stenvironenttools_path."/box/STSideCreator.php";
-		$_stsessionsidecreator=		$_stenvironenttools_path."/box/STSessionSideCreator.php";
-		$_stusersidecreator=		$_stenvironenttools_path."/box/STUserSideCreator.php";
-		$base_site_creator=			$_stenvironenttools_path."/_prev/box/STDbSiteCreator.php";
-		$site_creator=				$_stenvironenttools_path."/_prev/box/OSTDbSiteCreator.php";
-		$ostquestionbox=			$_stenvironenttools_path."/_prev/box/OSTQuestionBox.php";
-		$stselectbox=				$_stenvironenttools_path."/box/STSelectBox.php";
-		$_stdownload=				$_stenvironenttools_path."/box/STDownload.php";
-		$_stbasecontainer=			$_stenvironenttools_path."/box/STBaseContainer.php";
-		$_stframecontainer=			$_stenvironenttools_path."/box/STFrameContainer.php";
-		$_stobjectcontainer=		$_stenvironenttools_path."/box/STObjectContainer.php";
-		$_tinymce=					$_stenvironenttools_path."/box/TinyMCE.php";
-		$_tinymce_row=				$_stenvironenttools_path."/box/TinyMCE_row.php";
-
-		$_stsession=				$_stenvironenttools_path."/user/STSession.php";
-		$_stusersession=			$_stenvironenttools_path."/user/STUserSession.php";
-		$stuser=					$_stenvironenttools_path."/user/STUser.php";
-		$ostuser=					$_stenvironenttools_path."/_prev/user/OSTUser.php";
+		$_stsession=				$_stenvironmenttools_path."/user/STSession.php";
+		$_stusersession=			$_stenvironmenttools_path."/user/STUserSession.php";
+		$stuser=					$_stenvironmenttools_path."/user/STUser.php";
+		$ostuser=					$_stenvironmenttools_path."/_prev/user/OSTUser.php";
 		$user_admin=				$ostuser;
-		$user_property=				$_stenvironenttools_path."/_prev/user/my_inc_user_check.php";
-		$ostuser_projectaccess=		$_stenvironenttools_path."/_prev/user/OSTUser_ProjectAccess.php";
+		$user_property=				$_stenvironmenttools_path."/_prev/user/my_inc_user_check.php";
+		$ostuser_projectaccess=		$_stenvironmenttools_path."/_prev/user/OSTUser_ProjectAccess.php";
 
-		$_ostusersession=			$_stenvironenttools_path."/_prev/user/OSTUserSession.php";
-		$_ostsidecreator=			$_stenvironenttools_path."/_prev/box/OSTSideCreator.php";
-		$mysql_database=			$_stenvironenttools_path."/_prev/db/OSTDatabase.php";
-		$database_tables=			$_stenvironenttools_path."/_prev/db/OSTDbTable.php";
+		$_ostusersession=			$_stenvironmenttools_path."/_prev/user/OSTUserSession.php";
+		$_ostsidecreator=			$_stenvironmenttools_path."/_prev/box/OSTSideCreator.php";
+		$mysql_database=			$_stenvironmenttools_path."/_prev/db/OSTDatabase.php";
+		//$database_tables=			$_stenvironmenttools_path."/_prev/db/OSTDbTable.php";
 
-		$_sttabledescriptions=		$_stenvironenttools_path."/box/fault_class.php";
+		$_sttabledescriptions=		$_stenvironmenttools_path."/box/fault_class.php";
 
 		/**********************************************************************\
 		|**         selfTables - CMS System                                  **|
@@ -239,4 +279,7 @@
 		$_stseriescontainer_install=	$_stcmstools_path."/calendar/stseriescontainer_install.php";
 		$_stcalendarserie=				$_stcmstools_path."/calendar/STCalendarSerieForm.php";
 
+		//st_check_require_once($_sttools);
+		require_once($_sttools);
+		require_once($_stcheck);
 ?>

@@ -1,7 +1,6 @@
 <?php
 
 require_once($base_table);
-require_once($database_selector);
 
 
 /**
@@ -40,7 +39,7 @@ class OSTBox extends OSTBaseTableBox
 		 */
 		var $innerTabPos= array("pos"=>"begin", "count"=>0);
 
-		function OSTBox(&$container, $class= "OSTBox")
+		function __construct(&$container, $class= "OSTBox")
 		{
 			Tag::paramCheck($container, 1, "STBaseContainer");
 			Tag::paramCheck($class, 2, "string");
@@ -253,14 +252,14 @@ class OSTBox extends OSTBaseTableBox
 			{
 				//$count= 0;
 				//$aRv[$count]= $Table;
-				$joins= split("[ ]+and[ ]+", $join);
+				$joins= preg_split("/[ ]+and[ ]+/", $join);
 				foreach($joins as $join)
 				{// gehe jeden join getrennt mit "and" durch
-				 		$result= split("[ ]*=[ ]*", $join);
+				 		$result= preg_split("/[ ]*=[ ]*/", $join);
 						$name= "";
 						foreach($result as $sides)
 						{// im einzelnen join alle zwei Seiten vom "="
-  				 		$side= split("[.]", $sides);
+  				 		$side= preg_split("/[.]+/", $sides);
 							if($action==STINSERT)
 								$c= count($side)-1;
 							else		// beim Update wird von der Haupttabelle ausgegangen,
@@ -290,7 +289,7 @@ class OSTBox extends OSTBaseTableBox
 								}
 						 		$statement= "select distinct $PK PK";
 								$Bez= "";
-								$syn= split("[ ]*\|[ ]*", $side[$c]);
+								$syn= preg_split("/[ ]*\|[ ]*/", $side[$c]);
 								$syn_anz= count($syn);
 								if($syn_anz>1)
 								{
@@ -401,7 +400,7 @@ class OSTBox extends OSTBaseTableBox
 				if(count($this->asSelect))
 				{
 					//$sColumns= $this->getSelect();
-					$sColumns= ereg_replace(" as ", " ", $sColumns);
+					$sColumns= preg_replace("/[ ]+as[ ]+/", " ", $sColumns);
 				}
   		 	$fromStat= preg_split("/,/", $sColumns);
 				$columns= array();
@@ -1471,7 +1470,7 @@ class OSTBox extends OSTBaseTableBox
 		}
 		function join($join)
 		{
-			$split= split("=", $join);
+			$split= preg_split("/=/", $join);
 			$this->join[$split[0]]= $join;
 		}
     function update($onError= onErrorMessage)
@@ -1543,9 +1542,11 @@ class OSTBox extends OSTBaseTableBox
 			$this->asDBTable->setFirstRowSelect($firstRow);
 		return $message;
 	}
-	function callback($action, $callbackFunction)
+	function callback($columnNameAction, $callbackFunction, $action= "SAME AS columnNameAction")
 	{
-		OSTBaseTableBox::callback($action, $callbackFunction, $action);
+		if($action == "SAME AS columnNameAction")
+			$action= $columnNameAction;
+		OSTBaseTableBox::callback($columnNameAction, $callbackFunction, $action);
 	}
 	function table($table, $name= null)
 	{
@@ -1822,7 +1823,7 @@ class OSTBox extends OSTBaseTableBox
    					{
    						if(!$post[$aColumnCluster["column"]])
    						{
-							$infoString= ereg_replace("@", $identification, $aColumnCluster["info"]);
+							$infoString= preg_replace("/@/", $identification, $aColumnCluster["info"]);
 
 							$cluster= $post[$aColumnCluster["cluster"]];
    							$result= $_instance->createAccessCluster(	$aColumnCluster["parent"],
@@ -2006,7 +2007,7 @@ class OSTBox extends OSTBaseTableBox
 					$upload_file= $HTTP_POST_FILES[$name];
 					if($file["type"])
 					{
-						$pattern= ereg_replace("/", "\\/", $upload_file["type"]);
+						$pattern= preg_replace("/\//", "\\/", $upload_file["type"]);
 						if(!preg_match("/$pattern/i", $file["type"]))
 						{// dieser Typ darf nicht hochgeladen werden
 							$this->msg->setMessageId("WRONGUPLOADTYPE@@@", $columns[$name], $file["type"], $upload_file["type"]);
@@ -2130,7 +2131,7 @@ class OSTBox extends OSTBaseTableBox
 				$oTable= new STDbTable($table, $this->db);
 			if($this->where)
 				$oTable->andWhere($this->where);
-			$selector= new OSTDbSelector($oTable);
+			$selector= new STDbSelector($oTable);
 			$selector->clearFKs();
 			$statement= $this->db->getStatement($selector, false, false);
         	$result= $this->db->fetch_row($statement, MYSQL_ASSOC, $this->getOnError("SQL"));
@@ -2301,12 +2302,11 @@ class OSTBox extends OSTBaseTableBox
 				//					keine Spalte gefunden wird ist es die aktuelle,
 				//					sowie var $aFounded gel�scht (wird nirgends gebraucht)
 				if( preg_match("/(multiple_key)\(([^()]*)\)?/", $field["flags"], $ereg))
-				//if( ereg("multiple_key\((.*)\)", $field["flags"], $ereg))
 				{//echo $field["flags"]."<br />";st_print_r($ereg);
 					//$aFounded[]= $ereg[1];
 					if(!trim($ereg[2]))
 						$ereg[2]= $field["name"];
-					$aNames= split(" ", $ereg[2]);
+					$aNames= preg_split("/ /", $ereg[2]);
 					$where= "";
 					foreach($aNames as $unique)
 					{

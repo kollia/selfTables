@@ -2,7 +2,7 @@
 
 class BrTag extends Tag
 {
-		function BrTag()
+		function __construct()
 		{
 			Tag::Tag("br", false, null);
 		}

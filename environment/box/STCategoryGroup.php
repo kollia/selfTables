@@ -25,7 +25,7 @@ class STCategoryGroup extends TableTag
 	var	$sbCaseSensitive= null; // ob zwischen Klein und Gro�schreiben unterschiden werden soll
 	var	$sbWholeWords= null; // ob auch ganze Worte ber�cksichtigt werden sollen
 	
-	function STCategoryGroup($name, $id= "STCategoryGroup")
+	function __construct($name, $id= "STCategoryGroup")
 	{		
 		TableTag::TableTag($id);
 		$this->categoryName= $name;
@@ -321,7 +321,7 @@ class STCategoryGroup extends TableTag
 	function &getNewCategory($name)
 	{	
 		if(typeof($this, "STSearchBox"))
-			$category= &new STCategoryGroup($name);
+			$category= new STCategoryGroup($name);
 		else
 			$category= &$this;
 		return $category;

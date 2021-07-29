@@ -2,7 +2,7 @@
 
 class SpanTag extends Tag
 {
-		function SpanTag($class= null)
+		function __construct($class= null)
 		{
 			Tag::Tag("span", true, $class);
 		}

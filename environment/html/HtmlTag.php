@@ -3,7 +3,7 @@
 class HtmlTag extends Tag
 {
 		
-		function HtmlTag()
+		function __construct()
 		{
 			Tag::Tag("html", true, null);
 		}

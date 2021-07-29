@@ -2,7 +2,7 @@
 
 class InputTag extends Tag
 {
-		function InputTag($class= null)
+		function __construct($class= null)
 		{
 			Tag::Tag("input", false, $class);
 		}
