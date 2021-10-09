@@ -4,7 +4,7 @@ class ATag extends Tag
 {
 		function __construct($class= null)
 		{
-			Tag::Tag("a", true, $class);
+			Tag::__construct("a", true, $class);
 		}
 		function href($value)
 		{

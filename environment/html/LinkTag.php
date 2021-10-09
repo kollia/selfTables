@@ -4,7 +4,7 @@ class LinkTag extends Tag
 {//<link rel="stylesheet" type="text/css" href="../../src/selfhtml.css">
 		function __construct()
 		{
-			Tag::Tag("link", false);
+			Tag::__construct("link", false);
 		}
 		function href($value)
 		{

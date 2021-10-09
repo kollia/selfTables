@@ -162,6 +162,11 @@ class STCheck
 		}
 		static function warning($trigger, $functionName, $message, $outFunc= 0)
 		{
+			STCheck::deprecated("STCheck::is_warning()", "STCheck::warning()");
+			STCheck::is_warning($trigger, $functionName, $message, $outFunc= 0);
+		}
+		static function is_warning($trigger, $functionName, $message, $outFunc= 0)
+		{
 			if(!STCheck::isDebug())
 			{
 				if($trigger)
@@ -170,7 +175,12 @@ class STCheck
 			}
 			return STCheck::error_message("Warning", $trigger, $functionName, $message, $outFunc);
 		}
-		function error($trigger, $functionName, $message, $outFunc= 0)
+		/*
+		 * 2021/07/29 alex: change function from error() to is_error() for php8 compatibility
+		 * 					with STDatabase class where an error function
+		 * 					be with no parameters
+		 */
+		function is_error($trigger, $functionName, $message, $outFunc= 0)
 		{
 			if(!Tag::isDebug())
 			{
@@ -181,6 +191,11 @@ class STCheck
 			return Tag::error_message("Error", $trigger, $functionName, $message, $outFunc);
 		}
 		public static function alert($trigger, $functionName, $message, $outFunc= 0)
+		{
+			STCheck::deprecated("STCheck::is_alert()", "STCheck::alert()");
+			STCheck::is_alert($trigger, $functionName, $message, $outFunc);
+		}
+		public static function is_alert($trigger, $functionName, $message, $outFunc= 0)
 		{
 			if(!Tag::isDebug())
 			{

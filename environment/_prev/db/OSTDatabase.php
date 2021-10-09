@@ -22,7 +22,7 @@ class OSTDatabase extends STDbMySql
 	*/
 	function __construct($identifName= "main-menue", $defaultTyp= MYSQL_NUM, $DBtype= "MYSQL")
    	{
-		STDatabase::STDatabase($identifName, $defaultTyp, "MYSQL");
+		STDatabase::__construct($identifName, $defaultTyp, "MYSQL");
   	}
 	/**
 	*  Verbindungs-Aufbau zur Datenbank

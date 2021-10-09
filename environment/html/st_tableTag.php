@@ -7,7 +7,7 @@ class st_tableTag extends TableTag
 
 	function __construct($id= null)
 	{
-		TableTag::TableTag("table", true, $id);
+		TableTag::__construct("table", true, $id);
 	}
 	function add($value, $type= TD, $columnId= null, $rowId= null)
 	{

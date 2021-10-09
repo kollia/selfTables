@@ -17,7 +17,7 @@ class STFrameContainer extends STBaseContainer
 
 		if($address)
 			$this->setFramePath($address);
-		STBaseContainer::STBaseContainer($name);
+		STBaseContainer::__construct($name);
 	}
 	function setFramePath($address)
 	{

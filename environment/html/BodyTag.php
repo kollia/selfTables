@@ -5,7 +5,7 @@ class BodyTag extends Tag
 		
 		function __construct($class= null)
 		{
-			Tag::Tag("body", true, $class);
+			Tag::__construct("body", true, $class);
 		}
 		function bgcolor($value)
 		{

@@ -25,7 +25,7 @@ class STSelectBox extends TableTag
 		{
 			global	$HTTP_POST_VARS;
 			
-			TableTag::TableTag($class);
+			TableTag::__construct($class);
 			$this->sSettings= $settings;
 			if(is_array($settings))
 			{

@@ -17,7 +17,7 @@ class OSTSearchBox extends OSTBaseTableBox
 		
 		function __construct($database, $class= "OSTSearchBox")
 		{		
-			OSTBaseTableBox::OSTBaseTableBox($database, $class);
+			OSTBaseTableBox::__construct($database, $class);
 			$this->msg->setMessageContent("EMPTY_RESULT", "kein Ergebnis f�r den Suchbegriff");
 			$this->msg->setMessageContent("SQL_ERROR", "Hier wird der SQL-Error Gesetzt");
 			$this->msg->setMessageContent("NOERROR", "");

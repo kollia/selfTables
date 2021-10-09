@@ -1,13 +1,13 @@
 <?php
 
 
-require_once($base_table);
-require_once($database_selector);
-require_once($_stdbupdater);
-require_once($_stdbdeleter);
+require_once($_stbasetablebox);
+require_once($_stdbselector);
+//require_once($_stdbupdater);
+//require_once($_stdbdeleter);
 
 
-class OSTTable extends OSTBaseTableBox
+class STTable extends STBaseTableBox
 {
 		var $arrangement;
 		var $statement;
@@ -42,7 +42,7 @@ class OSTTable extends OSTBaseTableBox
 			Tag::paramCheck($container, 1, "STBaseContainer");
 			Tag::paramCheck($class, 2, "string");
 
-			OSTBaseTableBox::OSTBaseTableBox($container, $class);
+			STBaseTableBox::__construct($container, $class);
 			$this->logTime($logTime);
 
 			if($this->log)
@@ -60,7 +60,7 @@ class OSTTable extends OSTBaseTableBox
 			{
 				$debug= $user->isDebug();
 				$user->debug(true);
-				$user->LOG("end OSTTable->Konstructor", 0);
+				$user->LOG("end STTable->Konstructor", 0);
 				$user->debug($debug);
 			}
 		}
@@ -77,7 +77,7 @@ class OSTTable extends OSTBaseTableBox
 		}
 		function createMessages()
 		{
-			OSTBaseTableBox::createMessages();
+			STBaseTableBox::createMessages();
 			if($this->language == "de")
 			{
 				$this->msg->setMessageContent("NO_SOLUTION", "zuerst muss die Funktion solution() oder table() aufgerufen werden!");
@@ -147,7 +147,7 @@ class OSTTable extends OSTBaseTableBox
 				global $user;
 				$debug= $user->isDebug();
 				$user->debug(true);
-				$user->LOG("start OSTTable->check", 1);
+				$user->LOG("start STTable->check", 1);
 				$user->debug($debug);
 			}
 
@@ -164,7 +164,7 @@ class OSTTable extends OSTBaseTableBox
 			{
 				$debug= $user->isDebug();
 				$user->debug(true);
-				$user->LOG("end OSTTable->check", 1);
+				$user->LOG("end STTable->check", 1);
 				$user->debug($debug);
 			}
 			if(count($result))
@@ -256,7 +256,7 @@ class OSTTable extends OSTBaseTableBox
 			STCheck::echoDebug("callback", "makeCallback(ACTION:'$action', CALLBACKCLASS("
 									.get_class($oCallbackClass)."), COLUMN:'$columnName', ROWNUM:$rownum)");
 			STCheck::param($action, 0, "string");
-			STCheck::param($oCallbackClass, 1, "OSTCallbackClass");
+			STCheck::param($oCallbackClass, 1, "STCallbackClass");
 			STCheck::param($columnName, 2, "string");
 			STCheck::param($rownum, 3 , "int", "string");
 		}
@@ -265,7 +265,7 @@ class OSTTable extends OSTBaseTableBox
 		$this->oSelector->createAliases($aliases);
 		$aliases= array_flip($aliases);
 		$oCallbackClass->aTables= $aliases;
-		return OSTBaseTableBox::makeCallback($action, $oCallbackClass, $columnName, $rownum);
+		return STBaseTableBox::makeCallback($action, $oCallbackClass, $columnName, $rownum);
 	}
 	function createStatement()
 	{
@@ -292,7 +292,7 @@ class OSTTable extends OSTBaseTableBox
 			// to generate new the where clausel
 			if(isset($this->asDBTable->aCallbacks[STLIST]))
 			{
-				$callbackClass= new OSTCallbackClass($this->tableContainer, $this->sqlResult);
+				$callbackClass= new STCallbackClass($this->tableContainer, $this->sqlResult);
 				$callbackClass->indexTable= &$this->oIndexTable;
 				$callbackClass->before= true;
 				$anTable= &$this->getTable();
@@ -437,12 +437,12 @@ class OSTTable extends OSTBaseTableBox
 
 
 			$tableDb= &$oTable->getDatabase();
-			if(typeof($oTable, "OSTDBSelector"))
+			if(typeof($oTable, "STDBSelector"))
 			{
 				$this->oSelector= &$oTable;
 			}else
 			{
-				$this->oSelector= new OSTDbSelector($oTable, MYSQL_ASSOC, $this->getOnError("SQL"));
+				$this->oSelector= new STDbSelector($oTable, MYSQL_ASSOC, $this->getOnError("SQL"));
 			}
 			if(	isset($firstRow)
 				or
@@ -487,7 +487,7 @@ class OSTTable extends OSTBaseTableBox
 					and
 					!count($this->asTable)	)
 		{
-			echo "<br /><b>ERROR</b> user dont create any table for object OSTTable";
+			echo "<br /><b>ERROR</b> user dont create any table for object STTable";
 			exit;
 		}
 	}
@@ -498,7 +498,7 @@ class OSTTable extends OSTBaseTableBox
 			global $user;
 			$debug= $user->isDebug();
 			$user->debug(true);
-			$user->LOG("start OSTTable->makeResult", 2);
+			$user->LOG("start STTable->makeResult", 2);
 			$user->debug($debug);
 		}
 
@@ -542,7 +542,7 @@ class OSTTable extends OSTBaseTableBox
   			{
   				Tag::echoDebug("db.statement", "create result");
 				if(0)//$this->oSelector)
-				{ // toDo: OSTDbSelector defekt
+				{ // toDo: STDbSelector defekt
 
 		STCheck::write("make list result");
 exit();
@@ -568,7 +568,7 @@ exit();
 		{
 			$debug= $user->isDebug();
 			$user->debug(true);
-			$user->LOG("end OSTTable->makeResult", 2);
+			$user->LOG("end STTable->makeResult", 2);
 			$user->debug($debug);
 		}
 	}
@@ -660,9 +660,11 @@ exit();
 			if(isset($this->oIndexTable))
 				return $this->oIndexTable;
 			$oTable= &$this->getTable();
-			if(count($oTable->dateIndex))
+			if(	isset($oTable->dateIndex) &&
+				count($oTable->dateIndex)		)
+			{
 				$this->oIndexTable= &$this->getDateIndex($oTable);
-			else
+			}else
 				$this->oIndexTable= &$this->getNumIndex($oTable);
 			// damit die Funktion kein zweites mal durchlaufen wird
 			// setze auf oIndexTable , fals kein IndexTable erzeugt wurde, einen span-tag
@@ -775,7 +777,7 @@ exit();
 
 				$needAlwaysIndex= $oTable->needAlwaysIndex();
 				$tableName= $oTable->getName();
-				$cTab= new OSTDbSelector($oTable);
+				$cTab= new STDbSelector($oTable);
 				$cTab->allowQueryLimitation($oTable->modify());
 				$cTab->clearRekursiveNoFkSelects();
 				$cTab->clearRekursiveGetColumns();
@@ -991,9 +993,9 @@ exit();
 							$indexTable->add($itr);
 			return $indexTable;
 		}
-		function callback($columnName, $callbackFunction)
+		function callback($columnName, $callbackFunction, $action= STLIST)
 		{
-			OSTBaseTableBox::callback($columnName, $callbackFunction, STLIST);
+			STBaseTableBox::callback($columnName, $callbackFunction, $action);
 		}
 		function insertAttributes(&$tag, $element)
 		{
@@ -1095,7 +1097,7 @@ exit();
 
 
 			$Rows= &$this->SqlResult;
-			$CallbackClass= new OSTCallbackClass($this->tableContainer, $Rows);
+			$CallbackClass= new STCallbackClass($this->tableContainer, $Rows);
 			$CallbackClass->before= false;
 			$CallbackClass->nDisplayColumns= $this->asDBTable->nDisplayColumns;
 			$CallbackClass->arrangement= $this->arrangement;
@@ -1735,7 +1737,7 @@ exit();
 
 					$input= new InputTag();
 						$input->type("hidden");
-						$input->name("osttable_make");
+						$input->name("sttable_make");
 						$input->value(1);
 					$td->add($input);
 				$tr->add($td);
@@ -1765,7 +1767,7 @@ exit();
 			global $HTTP_POST_VARS;
 			
 			$checked= array();
-			if(	isset($HTTP_POST_VARS["osttable_make"])
+			if(	isset($HTTP_POST_VARS["sttable_make"])
 				and
 				!$this->insertStatement					)
 			{// checkboxen mit Datenbank abgleichen
@@ -1846,7 +1848,7 @@ exit();
 			global $HTTP_POST_VARS;
 
 			$error= $this->msg->getAktualMessageId();
-			if(	isset($HTTP_POST_VARS["osttable_make"])
+			if(	isset($HTTP_POST_VARS["sttable_make"])
 				and
 				$error==="NOERROR"						)
 			{// checkboxen mit Datenbank abgleichen
@@ -2297,15 +2299,15 @@ exit();
 				global $user;
 				$debug= $user->isDebug();
 				$user->debug(true);
-				$user->LOG("start OSTTable->display", 4);
+				$user->LOG("start STTable->display", 4);
 				$user->debug($debug);
 			}
-			OSTBaseTableBox::display();
+			STBaseTableBox::display();
 			if($this->log)
 			{
 				$debug= $user->isDebug();
 				$user->debug(true);
-				$user->LOG("end OSTTable->display", 4);
+				$user->LOG("end STTable->display", 4);
 				$user->debug($debug);
 			}
 			return true;
@@ -2341,7 +2343,7 @@ exit();
 				$this->formAdr= $table->asForm["action"];
 			}
 		}
-		OSTBaseTableBox::table($table, $name);
+		STBaseTableBox::table($table, $name);
 		if(typeof($table, "STAliasTable"))
 			$this->takeTypesFromTable();
 	}

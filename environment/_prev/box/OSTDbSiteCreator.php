@@ -17,7 +17,7 @@ class OSTDbSiteCreator extends STDbSiteCreator
 			Tag::paramCheck($container, 2, "STDbTableContainer", "null");
 			Tag::paramCheck($registerSession, 3, "bool");
 		
-			STDbSiteCreator::STDbSiteCreator($container);
+			STDbSiteCreator::__construct($container);
 			OSTDbSiteCreator::init($project, $registerSession);
 		}		
 		function init($project, $registerSession)

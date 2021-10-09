@@ -27,7 +27,7 @@ class STBaseSearch extends TableTag
 	
 	function __construct($name, $id= "STCategoryGroup")
 	{		
-		TableTag::TableTag($id);
+		TableTag::__construct($id);
 		$this->categoryName= $name;
 	}
 	function addCategory(&$oCategory, $bBreakAfterGroup= false)

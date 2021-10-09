@@ -1,14 +1,14 @@
 <?php
 
-require_once($base_table);
+require_once($_stbasetablebox);
 
 
 /**
-*	 src: OSTBox.php
-*	 class OSTBox: insert und update Box
+*	 src: STBox.php
+*	 class STBox: insert und update Box
 */
 
-class OSTBox extends OSTBaseTableBox
+class STBox extends STBaseTableBox
 {
 		var $action;
 		var $startTag;
@@ -39,12 +39,12 @@ class OSTBox extends OSTBaseTableBox
 		 */
 		var $innerTabPos= array("pos"=>"begin", "count"=>0);
 
-		function __construct(&$container, $class= "OSTBox")
+		function __construct(&$container, $class= "STBox")
 		{
 			Tag::paramCheck($container, 1, "STBaseContainer");
 			Tag::paramCheck($class, 2, "string");
 
-			OSTBaseTableBox::OSTBaseTableBox($container, $class);
+			STBaseTableBox::__construct($container, $class);
 			//$this->startTag= $tag;
 			$this->columns= "*";
 			$this->intersecBez= 0;
@@ -54,7 +54,7 @@ class OSTBox extends OSTBaseTableBox
 		}
 		function createMessages()
 		{
-			OSTBaseTableBox::createMessages();
+			STBaseTableBox::createMessages();
 			if($this->language == "de")
 			{
 				$this->aSelectNames["select"]= "&#160;&#160; bitte ausw&auml;hlen &#160;&#160;";
@@ -345,7 +345,7 @@ class OSTBox extends OSTBaseTableBox
 		{
 			foreach($joinArray as $name=>$join)
 			{
-				$oCallbackClass= new OSTCallbackClass($this->tableContainer, $join);
+				$oCallbackClass= new STCallbackClass($this->tableContainer, $join);
 				$oCallbackClass->sqlResult= $post;
 				$oCallbackClass->joinResult= $joinArray[$name];
 				//echo $name;st_print_r($this->aDisabled);echo "<br />";
@@ -570,7 +570,7 @@ class OSTBox extends OSTBaseTableBox
 			$form->enctype("multipart/form-data");
 		}
 
-		if(!isset($post["OSTBoxes_action"]))
+		if(!isset($post["STBoxes_action"]))
 		{
 			// write content without values for every column row
 			// into post variable
@@ -578,10 +578,10 @@ class OSTBox extends OSTBaseTableBox
 				if(!isset($post[$content["name"]]))
 					$post[$content["name"]]= "";
 
-			//$post["OSTBoxes_action"]= "before";
+			//$post["STBoxes_action"]= "before";
 
 		}
-		$oCallbackClass= new OSTCallbackClass($this->tableContainer, $post);
+		$oCallbackClass= new STCallbackClass($this->tableContainer, $post);
 		$oCallbackClass->before= true;
 		$oCallbackClass->rownum= 0;
 		$oCallbackClass->sqlResult= $post;
@@ -592,7 +592,7 @@ class OSTBox extends OSTBaseTableBox
 		}else
 			$oCallbackClass->where= $this->where;
 
-        if($this->action==STUPDATE)// && $post["OSTBoxes_action"]!="workOn_Database")
+        if($this->action==STUPDATE)// && $post["STBoxes_action"]!="workOn_Database")
         {// hole die Felder aus der Datenbank, f�r vorab-Anzeige
 		 //$aliasNames= array_flip($columns);
 
@@ -609,11 +609,12 @@ class OSTBox extends OSTBaseTableBox
         	}else
         	{
         		$statement= "select * from $tableName where ".$this->where;
-        		Tag::alert(!$this->where, "OSTBox::makeBox()", "no where-clausel is defined");
+        		Tag::alert(!$this->where, "STBox::makeBox()", "no where-clausel is defined");
         	}
         	
 			STCheck::echoDebug("db.statement", "get actual database entrys");
-			$result= $this->db->fetch_row($statement, MYSQL_ASSOC, $this->getOnError("SQL"));
+			$this->db->query($statement, $this->getOnError("SQL"));
+			$result= $this->db->fetch_row(MYSQL_ASSOC, $this->getOnError("SQL"));
 			$tablePk= $this->asDBTable->getPkColumnName();
 			if(isset($result[$tablePk]))
 				$this->lastInsertID= $result[$tablePk];
@@ -643,7 +644,7 @@ class OSTBox extends OSTBaseTableBox
 					if(STCheck::isDebug("db.main.statement"))
 					{
 						STCheck::echoDebug("db.main.statement", "exist result from db");
-						if(isset($post["OSTBoxes_action"]))
+						if(isset($post["STBoxes_action"]))
 						{
 							STCheck::echoDebug("db.main.statement", "is new result:");
 							echo "<b>[</b>db.main.statement<b>]</b> ";
@@ -669,7 +670,7 @@ class OSTBox extends OSTBaseTableBox
 				
 				
         }
-		if(!isset($post["OSTBoxes_action"]))
+		if(!isset($post["STBoxes_action"]))
 		{
 			$this->msg->setMessageId("BOXDISPLAY");
 			$oCallbackClass->MessageId= "BOXDISPLAY";
@@ -1189,6 +1190,10 @@ class OSTBox extends OSTBaseTableBox
 								$td->add($string);
 							}
 							$td->add($input);
+							if(preg_match("/datetime/", $field["type"]))
+							{// bei einem Datums-Feld auch noch das Format angeben
+								$td->add("(".$this->db->getDateFormat()." ".$this->db->getTimeFormat().")");
+							}else
 							if(preg_match("/date/", $field["type"]))
 							{// bei einem Datums-Feld auch noch das Format angeben
 								$td->add("(".$this->db->getDateFormat().")");
@@ -1366,7 +1371,7 @@ class OSTBox extends OSTBaseTableBox
 
 		$input= new InputTag();
 		$input->type("hidden");
-		$input->name("OSTBoxes_action");
+		$input->name("STBoxes_action");
 		$input->value("make");
 		$td->add($input);
 		if(	$this->action==STINSERT
@@ -1393,7 +1398,7 @@ class OSTBox extends OSTBaseTableBox
 					$td= new ColumnTag(TD);
 						$script= new JavaScriptTag();
 							$DB_changeBox= new jsFunction("DB_changeBox", "action");
-						  		$DB_changeBox->add("document.STForm.OSTBoxes_action.value= action;");
+						  		$DB_changeBox->add("document.STForm.STBoxes_action.value= action;");
 				  				$DB_changeBox->add("document.STForm.submit();");
 							$script->add($DB_changeBox);
 						$td->add($script);
@@ -1489,7 +1494,7 @@ class OSTBox extends OSTBaseTableBox
 			and
 			!$this->asDBTable	)
 		{
-			echo "<br><b>ERROR </b> in object OSTBox<br />";
+			echo "<br><b>ERROR </b> in object STBox<br />";
 			echo "es wurde f&uuml;r die deffinierte Box keine Tabelle gesetzt<br>";
 			exit;
 		}
@@ -1529,7 +1534,7 @@ class OSTBox extends OSTBaseTableBox
 				
 		$message= $this->msg->getAktualMessageId();
 
-		$oCallbackClass= new OSTCallbackClass($this->tableContainer, $this->getChangedResult());
+		$oCallbackClass= new STCallbackClass($this->tableContainer, $this->getChangedResult());
 		$oCallbackClass->before= false;
 		$oCallbackClass->rownum= 0;
 		$oCallbackClass->MessageId= $message;
@@ -1546,11 +1551,11 @@ class OSTBox extends OSTBaseTableBox
 	{
 		if($action == "SAME AS columnNameAction")
 			$action= $columnNameAction;
-		OSTBaseTableBox::callback($columnNameAction, $callbackFunction, $action);
+		STBaseTableBox::callback($columnNameAction, $callbackFunction, $action);
 	}
 	function table($table, $name= null)
 	{
-		OSTBaseTableBox::table($table, $name= null);
+		STBaseTableBox::table($table, $name= null);
 		if(typeof($table, "STAliasTable"))
 		{
 			// alex 08/09/2005:	onlyRadioButtons aus der Tabelle uebernehmen
@@ -1694,8 +1699,8 @@ class OSTBox extends OSTBaseTableBox
 				unset($post[$column]);
 		}
     	$bError= false;
-        if( isset($post["OSTBoxes_action"]) &&
-        	$post["OSTBoxes_action"]=="make" 	)
+        if( isset($post["STBoxes_action"]) &&
+        	$post["STBoxes_action"]=="make" 	)
         {
 			// �berpr�fung bei nur 2 Enum's
   			$aEnums= $this->countingAllEnumns();
@@ -1736,7 +1741,7 @@ class OSTBox extends OSTBaseTableBox
 				$bError= true;
 
 			// alle callbacks welche vom Anwender gesetzt wurden durchlaufen
-			$oCallbackClass= new OSTCallbackClass($this->tableContainer, $post);
+			$oCallbackClass= new STCallbackClass($this->tableContainer, $post);
 			$oCallbackClass->before= true;
 			$oCallbackClass->rownum= 0;
 			$oCallbackClass->MessageId= "PREPARE";
@@ -1757,7 +1762,7 @@ class OSTBox extends OSTBaseTableBox
 					$where= $this->where;
 			if($this->asDBTable)
 				if($this->action==STUPDATE)
-					Tag::alert(!($where && $where->isModified()), "OSTBox::box()",
+					Tag::alert(!($where && $where->isModified()), "STBox::box()",
 										"no where-clausel defined for update in database");
 			}else
 				$bError= true;
@@ -2134,7 +2139,8 @@ class OSTBox extends OSTBaseTableBox
 			$selector= new STDbSelector($oTable);
 			$selector->clearFKs();
 			$statement= $this->db->getStatement($selector, false, false);
-        	$result= $this->db->fetch_row($statement, MYSQL_ASSOC, $this->getOnError("SQL"));
+			$this->db->query($statement, $this->getOnError("SQL"));
+        	$result= $this->db->fetch_row(MYSQL_ASSOC, $this->getOnError("SQL"));
         	if(STCheck::isDebug("db.statement"))
         	{
         		STCheck::echoDebug("db.statement", "actual result from database for function checkFields");
@@ -2462,8 +2468,9 @@ class OSTBox extends OSTBaseTableBox
 			//st_print_r($table->oWhere);
 			$this->db->foreignKeyModification($table);
 			$statement= $this->db->getStatement($table);
-			$result= $this->db->fetch_row($statement, MYSQL_ASSOC);
-			$oCallbackClass= new OSTCallbackClass($this->tableContainer, $result);
+			$this->db->query($statement, $this->getOnError("SQL"));
+			$result= $this->db->fetch_row(MYSQL_ASSOC, $this->getOnError("SQL"));
+			$oCallbackClass= new STCallbackClass($this->tableContainer, $result);
 			$oCallbackClass->before= true;
 			$oCallbackClass->MessageId= "PREPARE";
 			$sErrorString= $this->makeCallback(STDELETE, $oCallbackClass, STDELETE, 0);

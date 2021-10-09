@@ -4,7 +4,7 @@ class DivTag extends Tag
 {
 		function __construct($class= null)
 		{
-			Tag::Tag("div", true, $class);
+			Tag::__construct("div", true, $class);
 		}
 		function style($value)
 		{

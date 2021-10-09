@@ -18,7 +18,7 @@ class STChooseTable extends TableTag
 		//						 [1] => Beschreibung	
 		function __construct(&$container, $class= "tableChoose")
 		{
-			TableTag::TableTag($class);
+			TableTag::__construct($class);
 			// alex 26/04/2005:	Bei Angabe von Datenbank oder Array
 			//					wird nun die Variable f�r besseres Verst�ndnis
 			//					auf eigene Members aufgeteilt,

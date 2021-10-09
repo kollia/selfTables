@@ -99,6 +99,49 @@ abstract class STDatabase extends STObjectContainer
 * @var array string
 */
 	var $aTableStructure= array();
+
+	/**
+	 * all type-name whitch column
+	 * can have
+	 */
+	private $allowedTypes=	array(	"int",
+									"real",
+									"string",
+									"time",
+									"date",
+									"datetime",
+									"enum"		);
+	/*
+		all exist types		array(	"decimal",
+									"tiny",
+									"short",
+									"long",
+									"float",
+									"double",
+									"null",
+									"timestamp",
+									"longlong",
+									"int24",
+									"date",
+									"time",
+									"datetime",
+									"year",
+									"newdate",
+									"enum",
+									"set",
+									"tiny_blob",
+									"medium_blob",
+									"long_blob",
+									"blob",
+									"var_string",
+									"string",
+									"char",
+									"interval",
+									"geometry",
+									"json",
+									"newdecimal",
+									"bit"      		);*/
+
 /**
 *  contains all tablenames in the database to which was curently conected
 *
@@ -143,7 +186,7 @@ abstract class STDatabase extends STObjectContainer
 		$this->pregTimeFormat= "/([0-9]{1,2})[., :-]([0-9]{1,2})([., :-]([0-9]{1,2}))?/";
     	// alex 17/05/2005:	class is now extend from STObjectcontainer
     	//					and must give at second parameter an container
-    	STObjectContainer::STObjectContainer($identifName, $this);
+    	STObjectContainer::__construct($identifName, $this);
   	}
 	static function existDatabaseClassName($className)
 	{
@@ -155,10 +198,13 @@ abstract class STDatabase extends STObjectContainer
 	{
 		return $this->dbType;
 	}
-	function getTyp($typ)
+	function getTyp($typ= null)
 	{
-		if($typ)
+		if(	isset($typ) &&
+			$this->isSqlTyp($typ)	)
+		{
 			return $typ;
+		}
 		return $this->defaultTyp;
 	}
 	function isTable($tableName)
@@ -406,16 +452,8 @@ abstract class STDatabase extends STObjectContainer
 	*  @param $user: Username
 	*  @param $passwd: Passwort
 	*/
-	function connect($host= null, $user= null, $passwd= null)
-	{
-		if(Tag::isDebug())
-			Tag::warning(1, "STDatabase::connect()", "can not connect to any database");
-	}
-	function closeConnection()
-	{
-		//if(Tag::isDebug())
-			Tag::warning(1, "STDatabase::closeConnection()", "method from STDatabase not overriden in class ".get_class($this));
-	}
+	abstract public function connect($host= null, $user= null, $passwd= null, $database= null);
+	abstract public function closeConnection();
    	function useDatabase($database, $onError= onErrorStop)
    	{
    		$this->bHasTables= false;
@@ -435,8 +473,13 @@ abstract class STDatabase extends STObjectContainer
 	{
 		return $this->conn;
 	}
-	abstract protected function fetchdb($statement);
-  	private function fetch($statement, $onError= onErrorStop)
+	abstract protected function querydb($statement);
+  	public function fetch($statement, $onError= onErrorStop)
+	{
+		STCheck::deprecated("STDatabase::query()", "STDatabase::fetch()");
+		return $this->query($statement, $onError);
+	}
+	public function query($statement, $onError= onErrorStop)
   	{
 		global $HTML_CLASS_DEBUG_CONTENT;
 		global $g_first_scanDescribe;
@@ -460,11 +503,11 @@ abstract class STDatabase extends STObjectContainer
 				Tag::echoDebug("db.statement", " \"".$statement."\"");			
 				STCheck::flog("fetch statement on db with command mysql_query");
 			}
-			$res= $this->fetchdb($statement);
+			$res= $this->querydb($statement);
 		}else// wenn statement schon ein Array, wird dieses sogleich
 			return $statement; // als Ergebnis zur�ckgegeben
 		
-		$this->lastStatement= $statement;
+		$this->lastStatement= $res;
     	if( (	$res==null
 				or
 				!$res	)
@@ -509,22 +552,35 @@ abstract class STDatabase extends STObjectContainer
 	  	return $string;
 
 	}
-	abstract protected function fetchdb_row($result, $typ);
-	function fetch_row($statement, $typ= null, $onError= onErrorStop)
+	protected function isSqlTyp($typ)
 	{
+		if(	$typ == STSQL_NUM ||
+			$typ == STSQL_ASSOC ||
+			$typ == STSQL_BOTH		)
+		{
+			return true;
+		}
+		return false;
+	}
+	abstract protected function fetchdb_row($typ);
+	/*
+	 * 2021/07/29 alex: change function from error() to is_error() for php8 compatibility
+	 * 					with STDatabase class where an error function
+	 * 					be with no parameters
+	 */
+	function fetch_row($typ= STSQL_ASSOC, $onError= onErrorStop)
+	{
+		STCheck::paramCheck($typ, 1, "check", $typ==STSQL_ASSOC || $typ==STSQL_NUM || $typ==STSQL_BOTH, $typ==STBLINDDB,
+														"STSQL_ASSOC", "STSQL_NUM", "STSQL_BOTH", "STBLINDDB");
+		STCheck::paramCheck($onError, 2, "check", $onError==noErrorShow || $onError==onErrorShow || $onError==onErrorStop,
+														"noErrorShow", "onErrorShow", "onErrorStop");
 		if($this->dbType=="BLINDDB")
 			return;
-		$typ= $this->getTyp($typ);
-		if(is_Array($statement))
-			return $statement;
- 	 	if(!preg_match("/limit/i", $statement))
- 			$statement.= " limit 1";
- 	 	$result= $this->fetch($statement, $onError);
-		if(!$result)
-			return;
- 		$row= $this->fetchdb_row($result, $typ);
+		$row= array();
+		$type= $this->getTyp($typ);
+		$row= $this->fetchdb_row($typ);
 		if($row)
-			$row= $this->orderDate("row", $row, $statement, $onError);
+			$row= $this->orderDate("row", $row, "", $onError);
  		return $row;
 	}
 	function orderDates($bOrder)
@@ -547,7 +603,7 @@ abstract class STDatabase extends STObjectContainer
 
 		if(	!count($array)
 			or
-			preg_match("/describe|show tables/", $statement)	)
+			preg_match("/describe|show tables/i", $statement)	)
 		{
 			return $array;
 		}
@@ -628,9 +684,13 @@ abstract class STDatabase extends STObjectContainer
 	}
  	function fetch_single($statement, $onError= onErrorStop)
  	{
+		STCheck::paramCheck($statement, 1, "string");
+		STCheck::paramCheck($onError, 2, "check", $onError==noErrorShow || $onError==onErrorShow || $onError==onErrorStop,
+														"noErrorShow", "onErrorShow", "onErrorStop");
 		if($this->dbType=="BLINDDB")
 			return;
-	  	$row= $this->fetch_row($statement, null, $onError);
+		$this->query($statement, $onError);
+	  	$row= $this->fetch_row(STSQL_NUM, $onError);
 		$Rv= null;
 		if($row)
 			$Rv= reset($row);
@@ -663,7 +723,7 @@ abstract class STDatabase extends STObjectContainer
 			$aRv[]= $single[0];
 		return $aRv;
 	}
-	function fetch_array($statement, $typ= null, $onError= onErrorStop)
+	function fetch_array($statement, $typ= STSQL_ASSOC, $onError= onErrorStop)
 	{
 		if($this->dbType=="BLINDDB")
 			return;
@@ -699,7 +759,7 @@ abstract class STDatabase extends STObjectContainer
 			  	$Array[$count]= $row;
 			$count++;
  		}
-		if(!preg_match("/show +tables/", $statement))
+		if(!preg_match("/show +tables/i", $statement))
 			$Array= $this->orderDate("array", $Array, $statement, $onError);
  		return $Array;
  	}
@@ -730,64 +790,84 @@ abstract class STDatabase extends STObjectContainer
 			return $this->aFieldArrays[$statement];
 		}
 		elseif(preg_match("/ from ([^ ]*)/i", $statement, $preg))
-		{
+		{// statement should be a correct query
 			$tableName= $preg[1];
  	 		if(!preg_match("/limit/i", $statement))
  				$statement.= " limit 1";
-			$result= $this->fetch($statement, $onError);
-			Tag::echoDebug("db.statement", "field-content readed in STDatabase::fieldsArray() on line ".(__line__-1));
+			STCheck::echoDebug("db.statement", "describe field-content read from a <b>statement(</b>$statement<b>)</b>");
+			echo "get name:$name<br>";
+			echo "<br>".__FILE__.__LINE__."<br>";
+			echo "toDo: describeTable can also called from an statement<br>";
+			echo "      so differ between this two states!";
+			exit;
 		}else
-		{
+		{// statement should only be a table name
 			$tableName= $statement;
-			$result= $this->list_fields($tableName, $onError);
-		}
-		if(!$result)
-		{
-			return null;
+			$statement= "select * from $tableName limit 1";
+			STCheck::echoDebug("db.statement", "describe field-content read from <b>table(</b>$tableName<b>)</b>");
+		//-----------------------------------------------------------------------
+		echo "<br>".__FILE__.__LINE__."<br>";
+		echo "list db table fields<br>";
+		st_print_r($this->list_dbtable_fields($tableName), 2);
+		//-----------------------------------------------------------------------
 		}
 
-		$columns= $this->field_count();
 		$aRv= array();
-		$descTable= NULL;
+		if(!isset($result))
+			$result= $this->query($statement, $onError);
+		if(!$result)
+			return $aRv;
+		$columns= $this->field_count($result);
+		$this->allowedTypeNames($this->allowedTypes);
 		for ($n= 0; $n<$columns; $n++)
 		{
-			$name=  $this->field_name($n);
-			$flags= $this->field_flags($result, $n);
-			$type=  $this->field_type($result, $n);
-			$len=   $this->field_len($result, $n);
-			if(preg_match("/enum/", $flags))
+			$name=  $this->field_name($tableName, $n);
+			$type=  $this->field_type($tableName, $n);
+			$len=   $this->field_len($tableName, $n);
+			$flags= "";
+			if(!$this->field_NullAllowed($tableName, $n))
+				$flags.= "not_null ";
+			if($this->field_PrimaryKey($tableName, $n))
+				$flags.= "primary_key ";
+			if($this->field_UniqueKey($tableName, $n))
+				$flags.= "unique_key ";
+			if($this->field_MultipleKey($tableName, $n))
+				$flags.= "multiple_key ";
+			if($this->field_autoIncrement($tableName, $n))
+				$flags.= "auto_increment ";
+			$enums= $this->getField_EnumArray($tableName, $n);
+			if(	is_array($enums) &&
+				count($enums) > 0	)
 			{
-				if(	$tableName
-					&&
-					!isset($descTable)	)
-				{
-					$descTable= $this->fetch_array("describe $tableName");
-					if(!$descTable)
-					{
-						echo __file__.__line__."<br>";
-						echo "### ERROR: cannot fetch array from database for $tableName description<br>";
-						return null;
-					}
-				}
-				if($descTable !== null)
-				{
-					$enum= $descTable[$n][1];
-					$flags= preg_replace("/enum/", $enum, $flags);
-				}
+				$flags.= "enum ";
 			}
 			$aRv[$n]= array("name"=>$name, "flags"=>$flags, "type"=>$type, "len"=>$len);
+			if(	is_array($enums) &&
+				count($enums) > 0	)
+			{
+				$aRv[$n]['enums']= $enums;
+			}
 		}
 		$this->aFieldArrays[$statement]= $aRv;
-		if(STCheck::isDebug("db.statement"))
+		if(STCheck::isDebug("show.db.fields"))
 		{
-			STCheck::echoDebug("produced column-result:");
-			if(!isset($aRv))
-				echo "<br />";
-			st_print_r($aRv, 5);
+			STCheck::echoDebug("show.db.fields", "produced column-result:");
+			if(!empty($aRv))
+				echo "<strong>ERROR:</strong> no field content!<br />";
+			st_print_r($aRv, 5, 20);
 		}
+		echo "<br>";
+		showErrorTrace();
 		return $aRv;
  	}
-	abstract public function field_count();
+	abstract public function getField_EnumArray($tableName, $field_offset);
+	abstract public function field_UniqueKey($tableName, $field_offset);
+	abstract public function field_MultipleKey($tableName, $field_offset);
+	abstract public function field_NullAllowed($tableName, $field_offset);
+	abstract public function field_PrimaryKey($tableName, $field_offset);
+	abstract public function field_autoIncrement($tableName, $field_offset);
+	abstract public function field_count($dbResult);
+	abstract protected function allowedTypeNames($allowed);
 	function setInTableNewColumn($tableName, $columnName, $type)
 	{
 		$objs= &STBaseContainer::getAllContainer();
@@ -837,7 +917,7 @@ abstract class STDatabase extends STObjectContainer
 
         foreach($result as $key => $value)
 		{
-			$auto_increment= preg_match("/auto_increment/", $flags[$key]);
+			$auto_increment= preg_match("/auto_increment/i", $flags[$key]);
 			if(	$key_string!=""
 				and
 				!$auto_increment	)
@@ -1356,17 +1436,17 @@ abstract class STDatabase extends STObjectContainer
 				if(isset($column["column"]))
 				{
 					$sColumn= $column["column"];
-					$msg+= "column <b>$sColumn</b>";
+					$msg.= "column <b>$sColumn</b>";
 				}else
 				{
 					$sColumn= "<b>Undefined Column</b>";
-					$msg+= $sColumn;
+					$msg.= $sColumn;
 				}
-				$msg+= " as ";
+				$msg.= " as ";
 				if(isset($column["alias"]))
-					$msg+= $column["alias"];
+					$msg.= $column["alias"];
 				else
-					$msg+= $sColumn;
+					$msg.= $sColumn;
 				STCheck::echoDebug("db.statements.select", $msg);
 			}
 
@@ -1485,7 +1565,6 @@ abstract class STDatabase extends STObjectContainer
 			if($statement)
 				$statement.= ",";
 		}
-
 		$statement= substr($statement, 0, strlen($statement)-1);
 		Tag::echoDebug("db.statements.select", "createt String is \"".$statement."\"");
 		return $statement;
@@ -2580,9 +2659,6 @@ abstract class STDatabase extends STObjectContainer
 					$statement.= " where $whereStatement";
 				}
 		}
-				//echo "$whereStatement<br />";
-//			}
-//		}
 		// Order Statement hinzufügen wenn vorhanden
 		if(	!isset($oTable->bOrder) ||
 			$oTable->bOrder == true		)
@@ -2758,22 +2834,28 @@ abstract class STDatabase extends STObjectContainer
 		}
 
 		if(!$tableName)
-			$tableName= $this->getTableName();
-		else
-			$tableName= $this->getTableName($tableName);
-		if(!$tableName)
 		{
-			Tag::echoDebug("table", "no table($tableName) to show difined for this database ".get_class($this)."(".$this->getName().")");
+			$tableName= $this->getTableName();
+			$orgTableName= $this->getTableName($tableName);
+		}else
+		{
+			// not all databases save the tables case sensetive
+			$orgTableName= $this->getTableName($tableName);
+		}
+		if(!$orgTableName)
+		{
+			Tag::echoDebug("table", "no table('$orgTableName') to show difined for this database ".get_class($this)."(".$this->getName().")");
 			Tag::echoDebug("table", "or it not be showen on the first status");
 			return $table;
-
 		}
-		$orgTableName= $this->getTableName($tableName);
-    	if($orgTableName)
-    	    $tableName= $orgTableName;
-		else
-		// not all databases save the tables case sensetive
-			$orgTableName= $tableName;
+/*		$this->aCount[$tableName][$this->getName()]+= 1;
+		if($this->aCount[$tableName][$this->getName()] > 20)
+		{
+			echo "__________________________________________________________________________________________________<br>";
+			echo "ask rekursive for table $tableName<br>";
+			showErrorTrace();
+			exit();
+		}*/
 		Tag::echoDebug("table", "get table <b>$tableName</b> from DB <b>".$this->getName()."</b>");
 		$tableName= strtolower($tableName);
 		// alex 12/04/2005: mit getTable werden nun alle Tabellen erstellt
@@ -2818,6 +2900,17 @@ abstract class STDatabase extends STObjectContainer
 		}
 		return $table;
 	}
+/*	public function &getTable($tableName)
+	{
+		$table= STObjectContainer::getTable($tableName);
+		if(typeof($table, "STAliasTable"))
+			return $table;
+		$orgTableName= $this->getTableName($tableName);
+		
+		// otherwise create an new table-object with the new container
+		$table= new STDbTable($orgTableName, $this);
+		return $table;
+	}*/
 	//deprecated wurde als doChoice in STObjectContainer verschoben
 	function noChoise($table)
 	{
@@ -2825,7 +2918,7 @@ abstract class STDatabase extends STObjectContainer
 			$table= $table->getName();
 		$this->aNoChoice[$table]= $table;
 	}
-	abstract protected function insertdb_id();
+	abstract protected function insert_id();
 	function getLastInsertID()
 	{
 		return $this->insert_id();

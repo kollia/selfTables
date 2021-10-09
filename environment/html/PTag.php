@@ -4,7 +4,7 @@ class PTag extends Tag
 {
 		function __construct($class= null)
 		{
-			Tag::Tag("p", true, $class);
+			Tag::__construct("p", true, $class);
 		}
 		function align($align)
 		{

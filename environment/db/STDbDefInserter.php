@@ -12,7 +12,7 @@ class STDbDefInserter extends STDbInserter
 		    Tag::paramCheck($table, 2, "STDbTable");
 				
 		    $this->container= &$container;
-		    STDbInserter::STDbInserter($table);
+		    STDbInserter::__construct($table);
 		}
 		function fillColumn($column, $value)
 		{

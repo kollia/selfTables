@@ -6,7 +6,7 @@ class TinyMCE_row extends TinyMCE
 {
 	function __construct($bJustify= false, $mode= "exact")
 	{
-		TinyMCE::TinyMCE($mode);
+		TinyMCE::__construct($mode);
 		
 		$this->theme("advanced");
 		

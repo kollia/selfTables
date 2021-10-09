@@ -1,13 +1,12 @@
 <?php
 
-require_once($php_tools_class);
-require_once($database_tables);
-require_once($database_where_clausel);
 require_once($_stdbtable);
+require_once($_stdbwhere);
 
 class STDbSelector extends STDbTable
 {
 		var $selector= array();
+		//var $oMainTable= null;
 		var $aoToTables= array();
 		var	$aNewSelects= array();
 		var $columns= array();
@@ -40,7 +39,9 @@ class STDbSelector extends STDbTable
 			$this->defaultTyp= $defaultTyp;
 			$this->onError= $onError;
 			$db= &$oTable->getDatabase();
-			STDbTable::STDbTable($oTable);
+			//$this->oMainTable= &$oTable;
+			$this->aoToTables[$oTable->getName()]= &$oTable;
+			STDbTable::__construct($oTable);
 		}
 		/*function getName()
 		{
@@ -170,7 +171,7 @@ class STDbSelector extends STDbTable
 					return $this->getTable($table);
 			}
 		}
-		$nullob= new STAliasTable();
+		$nullob= new STAliasTable("NoForeignKeyTable");
 		return $nullob;
 	}
 		function &getTable($sTableName)
@@ -280,7 +281,7 @@ class STDbSelector extends STDbTable
 			//$this->aoToTables[]= &$oTable;
 			STDbTable::foreignKeyObj($columnName, $oTable, $otherColumn);
 		}
-		function select($tableName, $column, $alias= null, $nextLine= true, $add= false)
+		function select($tableName, $column= "", $alias= null, $nextLine= true, $add= false)
 		{
 			if(STCheck::isDebug())
 			{
@@ -353,6 +354,15 @@ class STDbSelector extends STDbTable
 			}
 			$this->selectA($tableName, $column, $alias, $nextLine, $add);
 		}
+		function limit($start, $limit= null)
+		{
+			if(!$limit)
+			{
+				$limit= $start;
+				$start= 0;
+			}
+			$this->limitRows= array("start"=>$start, "limit"=>$limit);
+		}
 		/*private*/function createNnTable()
 		{
 			$fk= &$this->getForeignKeys();
@@ -407,7 +417,21 @@ class STDbSelector extends STDbTable
 			}
 			$table->identifColumn($column, $alias);
 		}
-		function getResult()
+/*		public function allowQueryLimitation($bModify= true)
+		{ $this->oMainTable->allowQueryLimitation($bModify); }
+		public function clearRekursiveNoFkSelects()
+		{ $this->oMainTable->clearRekursiveNoFkSelects(); }
+		public function clearRekursiveGetColumns()
+		{ $this->oMainTable->clearRekursiveGetColumns(); }
+		public function distinct($bDistinct= true)
+		{
+			$this->bDistinct= $bDistinct;
+		}
+		function isDistinct()
+		{
+			return $this->bDistinct;
+		}*/
+		function getResult($sqlType= null) // need sqlType only to be compatible with STDbTable
 		{
 			return $this->SqlResult;
 		}
@@ -421,7 +445,7 @@ class STDbSelector extends STDbTable
 			}
 			return $result;
 		}
-		function &getSingleResult()
+		function getSingleResult($sqlType= null) // need sqlType only to be compatible with STDbTable
 		{
 			if(isset($this->SqlResult[0]))
 				$row= $this->SqlResult[0];
@@ -439,7 +463,7 @@ class STDbSelector extends STDbTable
 			}
 			return $result;
 		}
-		function getRowResult()
+		function getRowResult($sqlType= null) // need sqlType only to be compatible with STDbTable
 		{
 			if($this->defaultTyp==NUM_OSTfetchArray)
 			{
@@ -515,7 +539,12 @@ class STDbSelector extends STDbTable
 			$this->SqlResult= $this->db->orderDate($fields, $this->SqlResult);
 			if($bNormal)
 			{
-				list($key, $value)= each($this->SqlResult);
+				$fvalue= array();
+				foreach($this->SqlResult as $key=>$value)
+				{
+					$fvalue= $value;
+					break;
+				}
 				reset($this->SqlResult);
 				$nRv= count($value);
 			}else
@@ -525,7 +554,7 @@ class STDbSelector extends STDbTable
 				$nRv/= 2;
 			return $nRv;
 		}
-		function getColumn($tableName, $columnName)
+		function getColumn($tableName, $columnName= "")
 		{
 			STCheck::paramCheck($tableName, 1, "string");
 			STCheck::paramCheck($columnName, 2, "string");
@@ -564,10 +593,8 @@ class STDbSelector extends STDbTable
   			}
 		}
 		function setStatement($statement)
-		{
-			$this->sqlStatement= $statement;
-		}
-		function getStatement($limit= null)
+		{ $this->sqlStatement= $statement; }
+		function getStatement($limit= null, $withAlias= true)
 		{
 
 			if($this->sqlStatement != "")
@@ -578,7 +605,7 @@ class STDbSelector extends STDbTable
 			$aDeep= array();
 			$sFirstTable= $this->Name;
 
-			$this->sqlStatement= $this->db->getStatement($this, false, true);
+			$this->sqlStatement= $this->db->getStatement($this, false, $withAlias);
 			//echo $this->sqlStatement."<br />";
 			if($limit)
 				$this->sqlStatement.= " limit ".$limit;

@@ -17,7 +17,7 @@ class STSessionSideCreator extends STSideCreator
 	{
 		STCheck::paramCheck($container, 1, "STBaseContainer", "null");
 
-		STSideCreator::STSideCreator($container);
+		STSideCreator::__construct($container);
 	}
 		function getProjectID()
 		{
@@ -259,6 +259,16 @@ class STSessionSideCreator extends STSideCreator
 			$toAccessInfoString= $sAction." table ".$table->getName()." ".$additionText;
 			$bRv= $this->hasAccess($clusterString, $toAccessInfoString, $nAction, true);
 			return $bRv;
+		}
+		protected function closeUserDbConnection()
+		{
+			if(STUserSession::sessionGenerated())
+			{
+				$_instance= &STUserSession::instance();
+				$db= &$_instance->getUserDb();
+				if(!$aClosed[$db->getName()])
+					$db->closeConnection();
+			}
 		}
 		function execute($additionalText= "")
 		{

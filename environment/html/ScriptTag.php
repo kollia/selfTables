@@ -4,7 +4,7 @@ class ScriptTag extends Tag
 {
 		function __construct($class= null)
 		{
-			Tag::Tag("script", true, $class);
+			Tag::__construct("script", true, $class);
 			$this->isScript= true;
 		}
 		function type($value)

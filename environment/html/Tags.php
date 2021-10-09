@@ -51,7 +51,12 @@ class Tag extends STCheck
 		{
 			return Tag::error_message("Warning", $trigger, $functionName, $message, $outFunc);
 		}
-		function error($trigger, $functionName, $message, $outFunc= 0)
+		/*
+		 * 2021/07/29 alex: change function from error() to is_error() for php8 compatibility
+		 * 					with STDatabase class where an error function
+		 * 					be with no parameters
+		 */
+		function is_error($trigger, $functionName, $message, $outFunc= 0)
 		{
 			return Tag::error_message("Error", $trigger, $functionName, $message, $outFunc);
 		}

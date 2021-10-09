@@ -5,7 +5,7 @@ class HeadTag extends Tag
 		
 		function __construct()
 		{
-			Tag::Tag("head", true, null);
+			Tag::__construct("head", true, null);
 		}
 }
 

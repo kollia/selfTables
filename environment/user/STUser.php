@@ -498,7 +498,8 @@ class STUser
 					$statement.= "ID=".$ProjectName;
 				else
 					$statement.= "Name='$ProjectName'";
-				$row= $this->database->fetch_row($statement);
+				$this->database->query($statement);
+				$row= $this->database->fetch_row(STSQL_NUM);
   			if( !isset($row)
 					or
 					!$row
@@ -685,7 +686,8 @@ class STUser
 			$_SESSION['ST_USER']= $user;
 			$this->user= $user;
 	 		$statement= "select ID, GroupType from MUUser where UserName='$user'";// Pwd=password('$password')";
-	 	  	$row= $this->database->fetch_row($statement);
+			$this->database->query($statement);
+	 	  	$row= $this->database->fetch_row(STSQL_NUM);
 		  	$ID= $row[0];
 			if( Tag::isDebug("user") )
 			{

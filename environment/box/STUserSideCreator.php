@@ -19,7 +19,7 @@ class STUserSideCreator extends STSessionSideCreator
 		$this->sProject= $projectNameNr;
 		if(is_numeric($projectNameNr))
 			$this->nProjectID= $projectNameNr;
-		STSessionSideCreator::STSessionSideCreator($container);
+		STSessionSideCreator::__construct($container);
 	}
 	function initSession($userDb= null)
 	{

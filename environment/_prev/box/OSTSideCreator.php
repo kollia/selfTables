@@ -17,7 +17,7 @@ class OSTSideCreator extends STUserSideCreator
 			$bInstall= $container;
 			$container= null;
 		}
-		STUserSideCreator::STUserSideCreator($project);
+		STUserSideCreator::__construct($project);
 		$this->init($project, $container, $bInstall);
 	}
 	function init($project, $container, $bInstall)

@@ -103,6 +103,7 @@
 		
 	}
 
+	define("STBLINDDB", "STBLINDDB");
 	define("MYSQL_NUM", 0x10);
 	define("MYSQL_ASSOC", 0X01);
 	define("MYSQL_BOTH", 0x11);
@@ -223,11 +224,11 @@
 		$_stdbtablecreator= 		$_stenvironmenttools_path."/db/STDbTableCreator.php";
 		$_stdbtabledescriptions=	$_stenvironmenttools_path."/db/STDbTableDescriptions.php";
 
-		$stmessagehandling=			$_stenvironmenttools_path."/box/STMessageHandling.php";
-		$_ostcallbackclass=			$_stenvironmenttools_path."/_prev/box/OSTCallbackClass.php";
-		$base_table=				$_stenvironmenttools_path."/_prev/box/OSTBaseTableBox.php";
-		$insert_update=				$_stenvironmenttools_path."/_prev/box/OSTBox.php";
-		$table_out=					$_stenvironmenttools_path."/_prev/box/OSTTable.php";
+		$_stmessagehandling=		$_stenvironmenttools_path."/box/STMessageHandling.php";
+		$_stcallbackclass=			$_stenvironmenttools_path."/box/STCallbackClass.php";
+		$_stbasetablebox=			$_stenvironmenttools_path."/box/STBaseTableBox.php";
+		$_stbox=					$_stenvironmenttools_path."/box/STBox.php";
+		$_sttable=					$_stenvironmenttools_path."/box/STTable.php";
 		$_stsearchbox=				$_stenvironmenttools_path."/box/STSearchBox.php";
 		$_stcategorygroup=			$_stenvironmenttools_path."/box/STCategoryGroup.php";
 		$_stbasesearch=				$_stenvironmenttools_path."/box/STBaseSearch.php";

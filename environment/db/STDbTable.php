@@ -14,6 +14,11 @@ class STDbTable extends STAliasTable
 		Tag::paramCheck($Table, 1, "string", "STAliasTable");
 		Tag::paramCheck($container, 2, "STObjectContainer", "string", "null");
 
+		$this->abNewChoice= array();
+		$this->bSelect= false;
+		$this->bTypes= false;
+		$this->bIdentifColumns= false;
+
 		if(typeof($Table, "STAliasTable"))
 		{
 			$tableName= $Table->Name;
@@ -50,7 +55,7 @@ class STDbTable extends STAliasTable
 		if(typeof($Table, "STAliasTable"))
 			$this->copy($Table);
 		else
-			STAliasTable::STAliasTable($Table);
+			STAliasTable::__construct($Table);
 		if($container)
 		{
 			if(is_string($container))
@@ -73,9 +78,12 @@ class STDbTable extends STAliasTable
 			$this->error= $this->db->isError();
     		foreach($fieldArray as $field)
       		{
-      			if(preg_match("/primary_key/", $field["flags"]))
+      			if(	preg_match("/pri_key/i", $field["flags"]) ||
+				  	preg_match("/primary_key/i", $field["flags"])		)
+				{
       				$this->sPKColumn= $field["name"];
-				if(preg_match("/multiple_key/", $field["flags"]))
+				}
+				if(preg_match("/multiple_key/i", $field["flags"]))
 				{
 					$sql=  "select `REFERENCED_TABLE_SCHEMA`, `REFERENCED_TABLE_NAME`, `REFERENCED_COLUMN_NAME` ";
 					$sql.= "FROM `information_schema`.`KEY_COLUMN_USAGE` ";
@@ -83,7 +91,8 @@ class STDbTable extends STAliasTable
 					$sql.= " and  `TABLE_NAME` = '$tableName'";
 					$sql.= " and  `COLUMN_NAME`='".$field["name"]."'";
 					$sql.= " and  `REFERENCED_COLUMN_NAME` is not NULL";
-					$result= $this->db->fetch_row($sql);
+					$this->db->query($sql);
+					$result= $this->db->fetch_row(STSQL_NUM);
 					
 					if(	isset($result) &&
 						isset($result[0]) &&
@@ -116,14 +125,18 @@ class STDbTable extends STAliasTable
 		$this->sAcessClusterColumn= $oTable->sAcessClusterColumn;
 		$this->password= $oTable->password;
 	}
-	function select($column, $alias= null, $fillCallback= null, $nextLine= null)
+	//function select($tableName, $column, $alias= null, $nextLine= true, $add= false)
+	function select($column, $alias= null, $fillCallback= null, $nextLine= null, $add= false)
 	{
-    	Tag::paramCheck($column, 1, "string");
-		Tag::paramCheck($alias, 2, "string", "function", "TinyMCE", "bool", "null");
-		Tag::paramCheck($fillCallback, 3, "function", "TinyMCE", "bool", "null");
-		Tag::paramCheck($nextLine, 4, "bool", "null");
-    	$nParams= func_num_args();
-    	Tag::lastParam(4, $nParams);
+		if(STCheck::isDebug())
+		{
+			Tag::paramCheck($column, 1, "string");
+			Tag::paramCheck($alias, 2, "string", "function", "TinyMCE", "bool", "null");
+			Tag::paramCheck($fillCallback, 3, "function", "TinyMCE", "bool", "null");
+			Tag::paramCheck($nextLine, 4, "bool", "null");
+			$nParams= func_num_args();
+			Tag::lastParam(4, $nParams);
+		}
 
     	$field= $this->findColumnOrAlias($column);
     	if($field["type"] == "not found")
@@ -449,7 +462,7 @@ class STDbTable extends STAliasTable
 		return array(	"type"=>$type,
 						"length"=>$len	);
 	}
-	/*protected*/function fk($ownColumn, &$toTable, $otherColumn= null, $bInnerJoin= null, $where= null)
+	protected function fk($ownColumn, &$toTable, $otherColumn= null, $bInnerJoin= null, $where= null)
 	{
 		Tag::paramCheck($ownColumn, 1, "string");
 		Tag::paramCheck($toTable, 2, "STAliasTable", "string");
@@ -468,7 +481,12 @@ class STDbTable extends STAliasTable
     	{
     		$toTableName= $this->container->getTableName($toTable);
     		unset($toTable);//Adresse auf dieser Variable l�schen
-    		$toTable= &$this->db->getTable($toTableName);//, false/*bAllByNone*/);
+			// check first whether FK points to own new created table
+			// otherwise ther will be an endless loop
+			if(strtolower($toTableName) == strtolower($this->getName()))
+				$toTable= &$this;
+			else
+    			$toTable= &$this->db->getTable($toTableName);//, false/*bAllByNone*/);
 			Tag::alert(!isset($toTable), "STDbTable::fk()", "second parameter '$toTableName' is no exist table");
     	}
 		STAliasTable::fk($ownColumn, $toTable, $otherColumn, $bInnerJoin, $where);
@@ -515,7 +533,11 @@ class STDbTable extends STAliasTable
 		$selector->execute($sqlType);
 		return $selector->getSingleResult();
 	}
-	function getStatement($bFromIdentifications= false, $withAlias= true)
+	function getStatment(int $limit)
+	{
+		
+	}
+	function getStatement(bool $bFromIdentifications= false, bool $withAlias= true)
 	{
 		if(STCheck::isDebug("db.statements.where"))
 		{

@@ -4,7 +4,7 @@ class ImageTag extends Tag
 {		
 		function __construct($tag= null, $class= null)
 		{
-			Tag::Tag("img", false, $class);
+			Tag::__construct("img", false, $class);
 			$this->add($tag);
 		}
 		function name($value)

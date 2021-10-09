@@ -4,7 +4,7 @@ class CenterTag extends Tag
 {
 		function __construct()
 		{
-			Tag::Tag("center", true, null);
+			Tag::__construct("center", true, null);
 		}
 }
 

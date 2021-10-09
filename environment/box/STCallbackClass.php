@@ -1,6 +1,6 @@
 <?php
 
-class OSTCallbackClass
+class STCallbackClass
 {
 		var $tableName;
 		var	$db;
@@ -29,7 +29,7 @@ class OSTCallbackClass
 			$this->sqlResult= &$sqlResult;
 			$this->clear();
 		}
-		// functionen f�r OSTTable
+		// functionen f�r STTable
 		function clear()
 		{
 			$this->showType= null;
@@ -70,7 +70,7 @@ class OSTCallbackClass
 		}
 		/*public*/function setWhere($where)
 		{
-    		if(	typeof($where, "ostwhere") ||
+    		if(	typeof($where, "stwhere") ||
     			typeof($where, "STDbWhere")	)
     		{
     			$this->where= $where;
@@ -225,7 +225,7 @@ class OSTCallbackClass
 				{
 					if($rownum!==null)
 					{
-						echo "toDo: auswertung der rownum in OSTCallbackClass::getValue()<br />";
+						echo "toDo: auswertung der rownum in STCallbackClass::getValue()<br />";
 						echo "wenn die Tabelle in mehreren Spalten angezeigt wird<br />";
 						echo "und eine bestimmte Zeile gewuenscht wird";exit;
 						$rownum= $rownum/$this->nDisplayColumns;

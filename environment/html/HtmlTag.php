@@ -5,7 +5,7 @@ class HtmlTag extends Tag
 		
 		function __construct()
 		{
-			Tag::Tag("html", true, null);
+			Tag::__construct("html", true, null);
 		}
 }
 

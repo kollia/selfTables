@@ -39,7 +39,7 @@ class OSTTable extends OSTBaseTableBox
 			Tag::paramCheck($container, 1, "STBaseContainer");
 			Tag::paramCheck($class, 2, "string");
 			
-			OSTBaseTableBox::OSTBaseTableBox($container, $class);
+			OSTBaseTableBox::__construct($container, $class);
 			$this->logTime($logTime);
 			
 			if($this->log)

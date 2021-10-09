@@ -1,12 +1,12 @@
 <?php
 
 require_once($php_html_description);
-require_once($stmessagehandling);
+require_once($_stmessagehandling);
 require_once($php_javascript);
 require_once($php_htmltag_class);
-require_once($_ostcallbackclass);
+require_once($_stcallbackclass);
 
-class OSTBaseTableBox extends TableTag
+class STBaseTableBox extends TableTag
 {
 		var	$db;
 		var $tableContainer;
@@ -25,12 +25,16 @@ class OSTBaseTableBox extends TableTag
 		var	$aCallbacks= array();
 		var $where= "";
 		var $language= "en";
+		/**
+		 * css stylshet link
+		 */
+		protected string $css_link= "";
 
-		function __construct(&$container, $class= "OSTBaseTableBox")
+		function __construct(&$container, $class= "STBaseTableBox")
 		{
 			global $HTTP_SERVER_VARS;
 
-			TableTag::TableTag($class);
+			TableTag::__construct($class);
 			// alex 17/05/2005:	parameter kann jetzt vom Container STDbTableContainer sein
 			// die Datenbank wird nun �ber dieses Objekt geholt
 			$this->db= &$container->getDatabase();
@@ -38,7 +42,7 @@ class OSTBaseTableBox extends TableTag
 			$table= $container->getTable();
 			$this->fieldArray[$table->getName()]= $table->columns;
 			$this->msg= new STMessageHandling($class);
-			OSTBaseTableBox::init();
+			STBaseTableBox::init();
 			$this->aktualScript= $HTTP_SERVER_VARS["SCRIPT_NAME"];
 			$this->Error= "NOERROR";
 			if($container==null)
@@ -97,7 +101,7 @@ class OSTBaseTableBox extends TableTag
 		function clear()
 		{
 			TableTag::clear();
-			OSTBaseTableBox::init();
+			STBaseTableBox::init();
 			$this->init();
 		}
 		function callback($columnName, $callbackFunction, $action)
@@ -119,7 +123,7 @@ class OSTBaseTableBox extends TableTag
 			Tag::echoDebug("callback", "makeCallback(ACTION:'$action', CALLBACKCLASS("
 									.get_class($oCallbackClass)."), COLUMN:'$columnName', ROWNUM:$rownum)");
 			Tag::paramCheck($action, 1, "string");
-			Tag::paramCheck($oCallbackClass, 2, "OSTCallbackClass");
+			Tag::paramCheck($oCallbackClass, 2, "STCallbackClass");
 			Tag::paramCheck($columnName, 3, "string");
 			Tag::paramCheck($rownum, 4, "int", "string");
 
@@ -369,12 +373,23 @@ class OSTBaseTableBox extends TableTag
   			}elseif(count($sqlResult)===0)
 				$this->msg->setMessageId("EMPTY_RESULT");
 		}
-		function getDefaultCssLink()
+		public function getCssLink()
 		{
-			global	$default_css_link;
-
-			$link= getCssLink($default_css_link, "protokoll default Stylesheet");
+			showErrorTrace();
+			if(!isset($this->css_link["css"]))
+				return null;
+			$css= $this->css_link["css"];
+			$description= "Stylesheet Link";
+			if(isset($this->css_link["description"]))
+				$description= $this->css_link["description"];
+			$link= getCssLink($link, $description);
 			return $link;
+		}
+		public function setCssLink($link, $description= null)
+		{
+			$this->css_link["css"]= $link;
+			if($description !== null)
+				$this->css_link["description"]= $description;
 		}
 		function hidden($name, $value)
 		{
@@ -583,7 +598,7 @@ class OSTBaseTableBox extends TableTag
 				$field= $this->searchByColumn($name);
 			if(!$field && !$firstAlias)
 				$field= $this->searchByAlias($name);
-			Tag::warning(!$field, "OSTBaseTableBox::findAliasOrColumn()", "column ".$name." is not declared in table ".$this->Name);
+			Tag::warning(!$field, "STBaseTableBox::findAliasOrColumn()", "column ".$name." is not declared in table ".$this->Name);
 			if(!$field)
 			{
 				$field= array();

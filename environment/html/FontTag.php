@@ -5,7 +5,7 @@ class FontTag extends Tag
 		
 		function __construct($tag= null, $class= null)
 		{
-			Tag::Tag("font", true, $class);
+			Tag::__construct("font", true, $class);
 			$this->add($tag);
 		}
 		function face($value)

@@ -4,7 +4,7 @@ class FormTag extends Tag
 {
 		function __construct($class= null)
 		{
-			Tag::Tag("form", true, $class);
+			Tag::__construct("form", true, $class);
 		}
 		function method($value)
 		{

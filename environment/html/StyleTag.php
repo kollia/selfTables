@@ -4,7 +4,7 @@ class StyleTag extends Tag
 {
 		function __construct()
 		{
-			Tag::Tag("style", true);
+			Tag::__construct("style", true);
 		}
 }
 
@@ -12,7 +12,7 @@ class style extends Tag
 {
 		function __construct($name)
 		{
-			Tag::Tag($name, false);
+			Tag::__construct($name, false);
 		}
 		function border_width($value)
 		{

@@ -53,7 +53,8 @@ require_once($database_selector);
 			$db= &$OSTDatabase_userInteraction;
 			$statement=  "select * from MUKategorys where ID=";
 			$statement.= $oCallbackClass->sqlResult[0][0]["PK"];
-			$result= $db->fetch_row($statement, MYSQL_ASSOC);
+			$db->query($statement);
+			$result= $db->fetch_row(MYSQL_ASSOC);
 			$hirarchie= array();
 			$hirarchie[0]["PK"]= $result["ID"];
 			$hirarchie[0]["Name"]= $project." - ".$result["Name"]."</font>";
@@ -184,7 +185,7 @@ class OSTQuestionBox extends OSTBox
 				
 				
 				$this->setAlso("userID", $this->nUserID);
-			OSTBox::OSTBox($this->db, $class);
+			OSTBox::__construct($this->db, $class);
 			// erroiere alle m�glichen Kategorien
 			/*$aShowKategorys= $this->getLowerKategoryIDs($this->nKategoryID);
 			$inClausel= "in(";

@@ -11,7 +11,7 @@ class ColumnTag extends Tag
 				$name= "th";
 			else
 				$name= "td";
-			Tag::Tag($name, true, $class);
+			Tag::__construct($name, true, $class);
 		}
 		function align($value)
 		{
@@ -49,7 +49,7 @@ class RowTag extends Tag
 {
 		function __construct($class= null)
 		{
-			Tag::Tag("tr", true, $class);
+			Tag::__construct("tr", true, $class);
 		}
 		function align($value)
 		{
@@ -88,7 +88,7 @@ class TableTag extends Tag
 {
 		function __construct($class= null)
 		{
-			Tag::Tag("table", true, $class);
+			Tag::__construct("table", true, $class);
 		}
 		function border($show)
 		{

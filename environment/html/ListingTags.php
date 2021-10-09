@@ -4,7 +4,7 @@ class UlTag extends Tag
 {
 		function __construct($class= null)
 		{
-			Tag::Tag("ul", true, $class);
+			Tag::__construct("ul", true, $class);
 		}
 }
 
@@ -12,7 +12,7 @@ class LiTag extends Tag
 {
 		function __construct($class= null)
 		{
-			Tag::Tag("li", true, $class);
+			Tag::__construct("li", true, $class);
 		}
 }
 

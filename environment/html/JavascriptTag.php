@@ -6,7 +6,7 @@ class JavaScriptTag extends ScriptTag
 {
 		function __construct()
 		{
-			ScriptTag::ScriptTag();
+			ScriptTag::__construct();
 			$this->language("javascript");
 			$this->type("text/javascript");
 		}
@@ -104,7 +104,7 @@ class jsFunction extends jsFunctionBase
 			$new_args= array();
 			for($i= 1; $i<count($args); $i++)
 				$new_args[]= $args[$i];
-			jsFunctionBase::jsFunctionBase("function $name", $new_args, true);
+			jsFunctionBase::__construct("function $name", $new_args, true);
 		}
 }
 

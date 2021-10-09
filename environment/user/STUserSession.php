@@ -48,7 +48,7 @@ class STUserSession extends STSession
 	{
 		Tag::alert($private!="selfTables_STUserSession_private_String", "STUserSession::constructor()",
 								"class STUserSession is private, choose STUserSession::init(\$Db)");
-		STSession::STSession("selfTables_STSession_private_String");
+		STSession::__construct("selfTables_STSession_private_String");
    		$this->database= &$Db;
 		$this->bLog= true;
 
@@ -413,15 +413,15 @@ class STUserSession extends STSession
 								"session was already created");
 		$global_selftable_session_class_instance[0]= new STUserSession($Db, $prefix, "selfTables_STUserSession_private_String");
 	}
-	/* fault whether I do not know 
-	static function sessionGenerated()
+	/* fault whether I do not know
+	static public function sessionGenerated()
 	{
 		/**
 		 * when this function making problems!
 		 * Strict Standards:  Non-static method STSession::sessionGenerated() should not be called statically
 		 * there is also a globaly method global_sessionGenerated() which do the same
 		 *
-		//global $global_selftable_session_class_instance;
+		global $global_selftable_session_class_instance;
 
 		if(	isset($global_selftable_session_class_instance[0]) &&
 			typeof($global_selftable_session_class_instance[0], "STUserSession")	)
@@ -593,7 +593,8 @@ class STUserSession extends STSession
 				$where->andWhere("Name='$ProjectName'");
 			$project->where($where);
   			$statement= $this->database->getStatement($project);
-			$row= $this->database->fetch_row($statement);
+			$this->database->query($statement);
+			$row= $this->database->fetch_row(STSQL_NUM);
 			STCheck::alert(	(!is_array($row) || count($row)==0 ), "STUserSession::setUserProject()",
   										"Project &quote;<b>$ProjectName</b>&quote; is not defined in the database" );
   			$this->projectID= $row[0];

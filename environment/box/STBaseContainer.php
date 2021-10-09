@@ -53,7 +53,7 @@ class STBaseContainer extends BodyTag
 					"STBaseContainer::STBaseContainer(\"$name\"",
 					"container \"$name\" already exists");
 		$global_array_all_exist_stobjectcontainers[$name]= &$this;
-		BodyTag::BodyTag($name);
+		BodyTag::__construct($name);
 	}
 	function containerLevel($nLevel)
 	{
@@ -261,7 +261,7 @@ class STBaseContainer extends BodyTag
 			$container= &STObjectContainer::getContainer($older);
 		return $container;
 	}
-	function execute(&$externSideCreator)
+	function execute(&$externSideCreator, $onError)
 	{
 		// initial container
     	$this->initContainer();
@@ -987,8 +987,9 @@ class STBaseContainer extends BodyTag
 					$this->oExternSideCreator->bContainerManagement								) ||
 				(	isset($this->backButtonAddress) &&
 					trim($this->backButtonAddress) != ""	) ||
-				$get_vars["action"]==STINSERT ||
-				$get_vars["action"]==STUPDATE														)
+				(	isset($get_vars["action"]) &&
+					(	$get_vars["action"]==STINSERT ||
+						$get_vars["action"]==STUPDATE		)		)										)
 			{// erzeuge BackButton
 
 					if(	!isset($this->backButtonAddress) ||

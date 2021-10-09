@@ -4,7 +4,7 @@ class MetaTag extends Tag
 {	
 		function __construct()
 		{
-			Tag::Tag("meta", false);
+			Tag::__construct("meta", false);
 		}
 		function name($value)
 		{

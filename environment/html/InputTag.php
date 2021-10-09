@@ -4,7 +4,7 @@ class InputTag extends Tag
 {
 		function __construct($class= null)
 		{
-			Tag::Tag("input", false, $class);
+			Tag::__construct("input", false, $class);
 		}
 		function name($vlaue)
 		{

@@ -40,7 +40,7 @@ class STDbSiteCreator extends HtmlTag
 		function __construct($container= null)
 		{			
 			Tag::paramCheck($container, 1, "STDbTableContainer", "null");
-			HtmlTag::HtmlTag();
+			HtmlTag::__construct();
 			if($container)
 			{ 
 				// alex 11/09/2005:	da der container keine Referenz ist

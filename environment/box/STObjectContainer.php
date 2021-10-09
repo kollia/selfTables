@@ -5,6 +5,8 @@ require_once($php_htmltag_class);
 require_once($_stbasecontainer);
 require_once($_stdbtablecreator);
 require_once($_stdbtabledescriptions);
+require_once($_sttable);
+require_once($_stbox);
 
 
 class STObjectContainer extends STBaseContainer
@@ -16,7 +18,7 @@ class STObjectContainer extends STBaseContainer
 	var $sDefaultCssLink;
 	var	$parentContainerName; // name of the parent container
 	var	$oGetTables= array(); // all tables which are geted but not needed
-	var $tables= array(); // alle OSTDbTable Objekte welche f�r die Auflistung gebraucht werden
+	var $tables= array(); // alle STDbTable Objekte welche f�r die Auflistung gebraucht werden
 	var	$sFirstTableName; //erste Tabelle
 	var $sFirstAction= null; // erste Aktion nicht gesetzt hole von Tabelle
 	var $actAction= ""; // current action from this container
@@ -47,7 +49,7 @@ class STObjectContainer extends STBaseContainer
 
 		$this->db= &$container->getDatabase();
 		$this->parentContainerName= $container->getName();
-		STBaseContainer::STBaseContainer($name);
+		STBaseContainer::__construct($name);
 	}
 	function setLanguage($lang)
 	{
@@ -181,23 +183,6 @@ class STObjectContainer extends STBaseContainer
 			 	$this->tables[$sTableName]= &$newTable;
 				return $newTable;
 			}
-			// otherwise create an new table-object with the new container
-			$table= new STDbTable($newTable, $this);
-			$this->tables[$sTableName]= &$table;
-			$this->oGetTables[$sTableName]= &$table;
-			$table->abNewChoice= array();
-			$table->bSelect= false;
-			$table->bTypes= false;
-			$table->bIdentifColumns= false;
-			//$table->bIdentifColumns
-			// alex 04/06/2005:	wenn die Datenbank nicht mit ampersand "&" vor new erzeugt wurde
-			//					ist die Datenbank in der Variable $this->db nicht die gleiche
-			//					zur Sicherheit -> zus�tzlich eintragen
-			/*if(typeof($this, "STDatabase"))
-			{
-				if(!$this->db->tables[$sTableName])
-					$this->db->tables[$sTableName]= &$table;
-			}*/
 		}
 		return $table;
 	}
@@ -402,6 +387,9 @@ class STObjectContainer extends STBaseContainer
 		{
 
 			$description= &STDbTableDescriptions::instance($this->db->getName());
+			// getTableName from STDbTableDescriptions
+			// return only an different name when before
+			// was defined an other tablename
 			$orgTableName= $description->getTableName($tableName);
 			if(!$orgTableName)
 			{// maby the table-name is lower case
@@ -420,8 +408,7 @@ class STObjectContainer extends STBaseContainer
 					}
 					$orgTableName= $this->aExistTables[$tableName]["table"];
 				}
-			}
-			if($orgTableName)
+			}else
 		    	$tableName= $orgTableName;
 		}
 		//$tableName= $HTTP_GET_VARS["stget"]["table"];
@@ -844,7 +831,7 @@ class STObjectContainer extends STBaseContainer
     			exit;
     		}
 		}
-		STBaseContainer::execute($externSideCreator);
+		STBaseContainer::execute($externSideCreator, $onError);
 		if(	isset($get_vars["action"]) &&
 			(	$get_vars["action"]==STUPDATE ||
 				$get_vars["action"]==STINSERT	)	)
@@ -1023,7 +1010,7 @@ class STObjectContainer extends STBaseContainer
 /*			if(isset($get_vars["link"][$this->sDeleteAction]))
 			{
 				$table= &$this->getTable($get_vars["table"]);
-				$box= new OSTBox(tableContainer);
+				$box= new STBox(tableContainer);
 				$box->table($table);
 				$box->where($PK."=".$get_vars["link"][$this->sDeleteAction]);
 				$box->onOkGotoUrl($get->getParamString(STDELETE, "stget[link][".$this->sDeleteAction."]"));
@@ -1035,7 +1022,7 @@ class STObjectContainer extends STBaseContainer
 				or
 				isset($result)										)*/
 //			{	// alex 14/06/2005:	setAllMessagesContent kurz vor das execute verschoben,
-				//					da ich auch ein setAllMessagesContent f�r OSTBox eingef�gt habe
+				//					da ich auch ein setAllMessagesContent f�r STBox eingef�gt habe
 				$this->setAllMessagesContent(STLIST, $list);
 				if(typeof($table, "STDbTable"))
 					$result= $list->execute();
@@ -1106,7 +1093,7 @@ class STObjectContainer extends STBaseContainer
 		function makeInsertUpdateTags($get_vars)
 		{	
 			$table= &$this->getTable($get_vars["table"]);
-			$box= new OSTBox($this);
+			$box= new STBox($this);
 			$box->align("center");
 			$get= new STQueryString();
 			if($this->sFirstAction==$get_vars["action"])
@@ -1200,7 +1187,7 @@ class STObjectContainer extends STBaseContainer
 		{
 			$table= &$this->getTable($get_vars["table"]);
 			//$PK= $table->getPkColumnName();
-			$box= new OSTBox($this);
+			$box= new STBox($this);
 			$box->table($table);
 			//$box->where($PK."=".$get_vars["link"]["VALUE"]);
 			//$box->onOkGotoUrl($get->getParamString(STDELETE, "stget[link][".$this->sDeleteAction."]"));
@@ -1315,7 +1302,7 @@ class STObjectContainer extends STBaseContainer
 					return $this->oCurrentListTable;
 			}
 
-			$this->oCurrentListTable= new OSTTable($this);
+			$this->oCurrentListTable= new STTable($this);
 			$table= &$this->getTable($tableName);
 			$table->getSelectedColumns();	//fals noch keine Spalte gesetzt ist
 										//vor dem setzen von "aktualisieren" und "l�schen"
@@ -1380,7 +1367,7 @@ class STObjectContainer extends STBaseContainer
 		// in den divirsen Objekten, welche dann mit
 		// execute ausgefuehrt werden.
 		//
-		// param $table muss ein objekt vom typ OSTBaseTableBox sein
+		// param $table muss ein objekt vom typ STBaseTableBox sein
 		/*private*/ function setAllMessagesContent($action, &$oBox)
 		{
 			$oBox->setLanguage($this->language);

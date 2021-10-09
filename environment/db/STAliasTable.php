@@ -1,5 +1,7 @@
 <?php
 
+require_once($_stsession);
+
 class STAliasTable
 {
 	var $Name;
@@ -98,6 +100,7 @@ class STAliasTable
 	 */
 	var $aInnerTables= array();
 	var $dateIndex;
+	var $null= null;
 
 	 /**
 	  * Constructor of normal table object
@@ -113,8 +116,9 @@ class STAliasTable
     		if(!typeof($this, "STDbTable"))
     		{
     			if($oTable === null)
+				{
     				STCheck::echoDebug("table", "create non correct null table.");
-				elseif(is_string($oTable))
+				}elseif(is_string($oTable))
     				Tag::echoDebug("table", "create new table <b>".$oTable."</b>");
 				else
 					Tag::echoDebug("table", "copy table <b>".$oTable->Name."</b>");
@@ -489,7 +493,7 @@ class STAliasTable
 			{
 				if($column["name"]==$fromDateColumn)
 				{
-					if(preg_match("/date/", $column["type"]))
+					if(preg_match("/date/i", $column["type"]))
 						$type= STMONTH;
 					else
 						$type= STDAY;
@@ -695,7 +699,7 @@ class STAliasTable
 
 			$this->fk($ownColumn, $toTable, $otherColumn, null, $where);
 		}
-		function innerJoin($ownColumn, $toTable, $otherColumn= null)
+		function innerJoin($ownColumn, &$toTable, $otherColumn= null)
 		{
 			Tag::paramCheck($ownColumn, 1, "string");
 			Tag::paramCheck($toTable, 2, "STAliasTable", "string");
@@ -719,7 +723,7 @@ class STAliasTable
 
 			$this->fk($ownColumn, $toTable, $otherColumn, "right", null);
 		}
-    /*protected*/function fk($ownColumn, &$toTable, $otherColumn= null, $join= null, $where= null)
+    protected function fk($ownColumn, &$toTable, $otherColumn= null, $join= null, $where= null)
     {// echo "function fk($ownColumn, &$toTable, $otherColumn, $join, $where)<br />";
 		Tag::paramCheck($ownColumn, 1, "string");
 		Tag::paramCheck($toTable, 2, "STAliasTable", "string");
@@ -774,7 +778,7 @@ class STAliasTable
 					if($field["name"]==$ownColumn)
 					{//echo "fields: ";print_r($field);echo "<br />";
 						$bInTable= true;
-						if(preg_match("/not_null/", $field["flags"]))
+						if(preg_match("/not_null/i", $field["flags"]))
 							$join= "inner";
 						else
 							$join= "outer";
@@ -1011,8 +1015,11 @@ class STAliasTable
 		foreach($aNeededColumns as $columnContent)
 		{
 			$fkTableName= $oTable->getFkTableName($columnContent["column"]);
-			if(isset($fkTableName))
+			if(	isset($fkTableName) &&
+				$this->Name != $fkTableName	)
 			{
+				echo __FILE__.__LINE__."<br>";
+				echo "getOrderStatement($aTableAlias, $fkTableName, $bIsOrdered)<br>";
 				$order= $this->getOrderStatement($aTableAlias, $fkTableName, $bIsOrdered);
 				if($order)
 				{
@@ -1032,7 +1039,7 @@ class STAliasTable
 			$statement= "";
 			foreach($aGet as $column)
 			{
-				preg_match("/^([^_]+)_(ASC|DESC)$/", $column, $inherit);
+				preg_match("/^([^_]+)_(ASC|DESC)$/i", $column, $inherit);
 				$db= $this->getDatabase();
 				$field= $this->searchByAlias($inherit[1]);
 				$statement.= $field["column"]." ".$inherit[2].",";
@@ -1137,7 +1144,7 @@ class STAliasTable
 			$flags= "";
 			foreach($aFlag as $flag)
 			{
-				if(!preg_match("/".$flag."/", $this->columns[$columnKey]["flags"]))
+				if(!preg_match("/".$flag."/i", $this->columns[$columnKey]["flags"]))
 					$flags.= " ".$flag;
 			}
 			$this->columns[$columnKey]["flags"]= substr($flags, 1);
@@ -1328,7 +1335,7 @@ class STAliasTable
 				Tag::paramCheck($nextLine, 4, "bool");
 				Tag::paramCheck($add, 5, "bool");
 			}
-			if(!preg_match("/^count\(.*\)$/", $column))
+			if(!preg_match("/^count\(.*\)$/i", $column))
 				$this->bOrder= true;
 			$desc= STDbTableDescriptions::instance($this->db->getName());
 			$column= $desc->getColumnName($table, $column);// if table is original function must not search
@@ -1468,7 +1475,7 @@ class STAliasTable
 			if(preg_match("/^['\"].*['\"]$/", $column))
 			// column is maybe only an string content
 				return true;
-			if(preg_match("/(count|min|max)\((.*)\)/", $column, $preg))
+			if(preg_match("/(count|min|max)\((.*)\)/i", $column, $preg))
 			{
 				if($preg[1]=="count" && trim($preg[2])=="*")
 					return true;
@@ -1874,7 +1881,8 @@ class STAliasTable
 			foreach($this->show as $key=>$content)
 			{
 				$table= &$this->getFkTable($content["column"], true);
-				if($table->correctTable())
+				if(	isset($table) &&
+					$table->correctTable()	)
 				{
 					$table->clearRekursiveNoFkIdentifColumns();
 					unset($table);
@@ -2146,7 +2154,7 @@ class STAliasTable
 			{
 				foreach($this->columns as $column)
 				{
-					if(preg_match("/.*primary_key.*/", $column["flags"]))
+					if(preg_match("/.*primary_key.*/i", $column["flags"]))
 					{
 						$this->sPKColumn= $column["name"];
 						return $column["name"];
@@ -2436,18 +2444,21 @@ class STAliasTable
 	{
 		$this->namedColumnLink($aliasColumn, $this->sPKColumn, $address);
 	}
-	function getColumn($aliasColumn)
+	function getColumn($column, $alias= "")
 	{
-		$field= $this->findAliasOrColumn($aliasColumn);
+		Tag::paramCheck($column, 1, "string");
+		Tag::paramCheck($alias, 2, "string", "empty(string)");
+
+		$field= $this->findAliasOrColumn($column);
 		// if column exists in selected list
 		// make no entry for getColumn
-		$column= $field["column"];
+		$wantColumn= $field["column"];
 		foreach($this->show as $content)
 		{
-			if($content["column"]===$column)
+			if($content["column"]===$wantColumn)
 				return;
 		}
-		$this->linkA("get", $aliasColumn, null, null);
+		$this->linkA("get", $column, null, null);
 	}
 	function clearGetColumns()
 	{
@@ -2480,7 +2491,8 @@ class STAliasTable
     	foreach($from as $key=>$content)
     	{
     		$table= &$this->getFkTable($content["column"], true);
-    		if($table->correctTable())
+    		if(	$this->Name != $table->getName() &&
+				$table->correctTable()				)
     		{
     			$table->clearRekursiveGetColumns();
     			unset($table);
@@ -2581,7 +2593,7 @@ class STAliasTable
 				}
 			}
 		}
-		return /*incorrect table*/STAliasTable();;
+		return $this->null;// /*incorrect table*/STAliasTable();;
 	}
 	function getFkTableName($fromColumn)
 	{

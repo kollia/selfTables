@@ -6,7 +6,7 @@ class TitleTag extends Tag
 		{
 			STCheck::paramCheck($title, 1, "string", "null");
 
-			Tag::Tag("title", true, null);
+			Tag::__construct("title", true, null);
 			if(is_String($title))
 				$this->add($title);
 		}

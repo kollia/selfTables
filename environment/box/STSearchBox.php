@@ -33,7 +33,7 @@ class STSearchBox extends STCategoryGroup
 			Tag::paramCheck($name, 2, "string");
 			Tag::paramCheck($id, 3, "string");
 			
-			STCategoryGroup::STCategoryGroup($name, $id);
+			STCategoryGroup::__construct($name, $id);
 			//$this->fieldset(false);
 			$this->oContainer= &$container;
 			$this->oDb= &$container->getDatabase();

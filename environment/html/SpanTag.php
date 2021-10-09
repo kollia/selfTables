@@ -4,7 +4,7 @@ class SpanTag extends Tag
 {
 		function __construct($class= null)
 		{
-			Tag::Tag("span", true, $class);
+			Tag::__construct("span", true, $class);
 		}
 		function style($value)
 		{

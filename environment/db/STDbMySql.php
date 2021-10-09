@@ -18,10 +18,22 @@ class STDbMySql extends STDatabase
 	private $lastDbResult= NULL;
 
 	/**
+	 * field propertys from last result
+	 */
+	private $field_properties= NULL;
+
+	/**
 	 * all tables and fields 
 	 * inside this database
 	 */
 	private $databaseTables= array();
+
+	/**
+	 * all type-name whitch column
+	 * can have
+	 */
+	private $existTypes= array();
+	private $columnTypes= array();
 
   /**
 	*  Konstruktor f�r Zugriffs-deffinition
@@ -29,7 +41,7 @@ class STDbMySql extends STDatabase
 	*/
 	function __construct($identifName= "main-menue", $defaultTyp= MYSQL_NUM, $DBtype= "MYSQL")
    	{
-		STDatabase::STDatabase($identifName, $defaultTyp, "MYSQL");
+		STDatabase::__construct($identifName, $defaultTyp, "MYSQL");
   	}
 	/**
 	*  Verbindungs-Aufbau zur Datenbank
@@ -56,6 +68,16 @@ class STDbMySql extends STDatabase
 		Tag::echoDebug("db.statement", "connect to MySql-database with user $user on host $host in db-container ".$this->getName());
   		$this->host= $host;
   		$this->user= $user;
+		$this->dbName= $database;
+		if(	isset($database) &&
+			$database != null &&
+			trim($database) != ""	)
+		{
+			// if database was defined (same as this case)
+			// function do not select new databse
+			// only create content of table names
+			$this->useDatabase($database);
+		}
 	}
 	/**
 	*  close connection to database
@@ -90,29 +112,32 @@ class STDbMySql extends STDatabase
    		STCheck::paramCheck($onError, 2, "int");
    		
 		STCheck::echoDebug("db.statement". "use Mysql Database $database");
-		$this->dbName= $database;
-		// alex 17/05/2005: obwohl referenze auf innere DB besteht
-		//					wird der DB-Name dort nicht eingetragen.
-		//					keine Ahnung warum !!!
-		$this->db->dbName= $this->dbName;
-		Tag::echoDebug("db.statement", "use Database ".$database);
-  		if(!$this->conn->select_db("$database"))
-  		{
-				$this->error= true;
-				if($onError>noErrorShow)
-				{
-    				echo "<br>can not reache database <b>$database</b>,<br>";
-					if( $this->conn==null )
-					 	echo "with no connection be set<br>";
-					else
+		if($database != $this->dbName)
+		{
+			$this->dbName= $database;
+			// alex 17/05/2005: obwohl referenze auf innere DB besteht
+			//					wird der DB-Name dort nicht eingetragen.
+			//					keine Ahnung warum !!!
+			$this->db->dbName= $this->dbName;
+			Tag::echoDebug("db.statement", "use new Database ".$database);
+			if(!$this->conn->select_db("$database"))
+			{
+					$this->error= true;
+					if($onError>noErrorShow)
 					{
-						echo "with user <b>$this->user</b> on host <b>$this->host</b><br>";
-						echo "<b>ERROR".$this->conn->connect_errno.": </b>".$this->conn->connect_error."<br />";
+						echo "<br>can not reache database <b>$database</b>,<br>";
+						if( $this->conn==null )
+							echo "with no connection be set<br>";
+						else
+						{
+							echo "with user <b>$this->user</b> on host <b>$this->host</b><br>";
+							echo "<b>ERROR".$this->conn->connect_errno.": </b>".$this->conn->connect_error."<br />";
+						}
+						if($onError==onErrorStop)
+							exit();
 					}
-					if($onError==onErrorStop)
-    					exit();
-				}
-  		}
+			}
+		}
 		// read all tables in database
 		$this->asExistTableNames= $this->fetch_single_array("show tables");
 		// save also in db on wich must be an reference,
@@ -144,13 +169,18 @@ class STDbMySql extends STDatabase
 	}
 	function getLastInsertedPk()
 	{
-		return $this->insertdb_id();
+		return $this->insert_id();
 	}
-	protected function fetchdb($statement)
+	protected function querydb($statement)
 	{
+		global $_st_page_starttime_;
+
 		$this->lastDbResult = $this->conn->query($statement);
-		if(Tag::isDebug())
-			Tag::echoDebug("db.statement.time", date("H:i:s")." ".(time()-$_st_page_starttime_));
+		if(STCheck::isDebug())
+		{
+			STCheck::echoDebug("db.statement", $statement);
+			STCheck::echoDebug("db.statement.time", date("H:i:s")." ".(time()-$_st_page_starttime_));
+		}
 		return $this->lastDbResult;
 	}
 	protected function list_dbtable_fields($TableName)
@@ -159,89 +189,193 @@ class STDbMySql extends STDatabase
 			return $this->databaseTables[$TableName];
 		$fields= array();
 		$statement= "SHOW COLUMNS FROM $TableName";
-		$res= $this->conn->query($statement);
-		if($res->errno)
+		$res= $this->query($statement);
+		$errno= $this->errnodb();
+		if($errno > 0)
 			return NULL;
-		while($row= $res->fetch_row())
+		while($row= $this->fetch_row(STSQL_ASSOC))
+		{
 			$fields[]= $row;
+		}
 		$this->databaseTables[$TableName]= $fields;
 		return $fields;
 	}
-	public function field_count()
+	public function field_count($dbResult)
 	{
-		if($this->lastDbResult == NULL)
-			return 0;
-		return $this->lastDbResult->field_count;
+		st_print_r($dbResult,2);
+		echo "field count is ".$dbResult->field_count."<br>";
+		return $dbResult->field_count;
 	}
-	public function field_name($field_offset)
+	private function getFieldProperties($tableName, $field_offset)
 	{
-		if($this->lastDbResult == NULL)
+		if(!isset($this->field_properties[$tableName][$field_offset]))
+		{
+			$this->list_dbtable_fields($tableName);
+			if($this->lastDbResult == NULL)
+				return NULL;
+			$this->field_properties[$tableName][$field_offset]= mysqli_fetch_field_direct($this->lastDbResult, $field_offset);
+			if(!is_object($this->field_properties[$tableName][$field_offset]))
+				return null;
+		}
+		return $this->field_properties[$tableName][$field_offset];
+	}
+	public function field_name($tableName, $field_offset)
+	{
+		$properties= $this->getFieldProperties($tableName, $field_offset);
+		if($properties == NULL)
 			return NULL;
-		$properties = mysqli_fetch_field_direct($this->lastDbResult, $field_offset);
 		return is_object($properties) ? $properties->name : null;
 	}
-	public function field_len($field_offset)
+	public function field_len($tableName, $field_offset)
 	{
-		if($this->lastDbResult == NULL)
+		$properties= $this->getFieldProperties($tableName, $field_offset);
+		if($properties == NULL)
 			return NULL;
-		$properties = mysqli_fetch_field_direct($this->lastDbResult, $field_offset);
 		return is_object($properties) ? $properties->length : null;
 	}
-	public function field_flags($field_offset)
+	public function field_NullAllowed($tableName, $field_offset)
 	{
-		if($this->lastDbResult == NULL)
-			return NULL;
-		$properties = mysqli_fetch_field_direct($this->lastDbResult, $field_offset);
-		if(!is_object($properties))
-			return NULL;
-		echo "flags of filed are:".$properties->flags."<br>";
-		echo "please check before using.";
-		exit;
+		return !$this->has_field_flag($tableName, $field_offset, "NOT_NULL");
 	}
-	public function field_type($field_offset)
+	public function field_PrimaryKey($tableName, $field_offset)
 	{
-		if($this->lastDbResult == NULL)
-			return NULL;
-		$properties = mysqli_fetch_field_direct($this->lastDbResult, $field_offset);
-		if(!is_object($properties))
-			return NULL;
-		echo "type of filed are:".$properties->type."<br>";
-		echo "please check before using.";
-		exit;
+		return $this->has_field_flag($tableName, $field_offset, "PRI_KEY");
 	}
-	public static function h_flags2txt($flags_num)
+	public function field_autoIncrement($tableName, $field_offset)
+	{
+		return $this->has_field_flag($tableName, $field_offset, "AUTO_INCREMENT");
+	}
+	public function field_UniqueKey($tableName, $field_offset)
+	{
+		return $this->has_field_flag($tableName, $field_offset, "UNIQUE_KEY");
+	}
+	public function field_MultipleKey($tableName, $field_offset)
+	{
+		return $this->has_field_flag($tableName, $field_offset, "MULTIPLE_KEY");
+	}
+	public function field_enum_field($tableName, $field_offset)
+	{
+		return $this->has_field_flag($tableName, $field_offset, "ENUM");
+	}
+	public function getField_EnumArray($tableName, $field_offset)
+	{
+		if(!isset($this->databaseTables[$tableName]))
+			$this->list_dbtable_fields($tableName);
+
+		$flags= array();
+		if(!preg_match("/enum\((.+)\)/i", $this->databaseTables[$tableName][$field_offset]["Type"], $flags))
+			return null;
+		echo "<br>".__FILE__.__LINE__."<br>";
+		st_print_r($this->databaseTables[$tableName][$field_offset],2);
+		$enums= preg_split("/','/", $flags[1]);
+		$enums[0]= substr($enums[0], 1);
+		$enums[count($enums)-1]= substr($enums[count($enums)-1], 0, strlen($enums[count($enums)-1])-1);
+		st_print_r($enums);
+		return $enums;
+	}
+	private function has_field_flag($tableName, $field_offset, $flag_name)
 	{
 		static $flags;
 
+		$properties= $this->getFieldProperties($tableName, $field_offset);
+		if($properties == NULL)
+			return NULL;
+		$flags_num= $properties->flags;
+
 		if (!isset($flags))
-		{
+		{// create flags-table
 			$flags = array();
 			$constants = get_defined_constants(true);
-			foreach ($constants['mysqli'] as $c => $n) if (preg_match('/MYSQLI_(.*)_FLAG$/', $c, $m)) if (!array_key_exists($n, $flags)) $flags[$n] = $m[1];
+			foreach ($constants['mysqli'] as $c => $n)
+			{
+				if (preg_match('/MYSQLI_(.*)_FLAG$/', $c, $m))
+				{	
+					if (!array_key_exists($n, $flags)) 
+						$flags[$m[1]] = $n;
+				}
+			}
+			if(STCheck::isDebug("show.db.fields"))
+			{
+				STCheck::echoDebug("show.db.fields", "existing mysql flags on mysqli-client:");
+				st_print_r($flags, 2, 20);
+				echo "<br />";
+			}
 		}
 
-		$result = array();
-		foreach ($flags as $n => $t) if ($flags_num & $n) $result[] = $t;
-		return implode(' ', $result);
+		if(!isset($flags[$flag_name]))
+			return false;
+		if($flags_num & $flags[$flag_name])
+			return true;
+		return false;
 	}
-	public static function h_type2txt($type_id)
+	protected function allowedTypeNames($allowed)
 	{
-		static $types;
-
-		if (!isset($types))
+		if (empty($this->columnTypes))
 		{
-			$types = array();
 			$constants = get_defined_constants(true);
-			foreach ($constants['mysqli'] as $c => $n) if (preg_match('/^MYSQLI_TYPE_(.*)/', $c, $m)) $types[$n] = $m[1];
+			foreach ($constants['mysqli'] as $c => $n)
+			{
+				if (preg_match('/^MYSQLI_TYPE_(.*)/', $c, $m))
+					$this->existTypes[$n]= $m[1];
+			}
+			// all not listet types are not handled inside STBox
+			// so it should throw an exception when it should be used
+			// to know for the developer to handle it!
+			$this->columnTypes= array(	"DECIMAL"     => "real",
+										"TINY"        => "int",
+										"SHORT"       => "int",
+										"LONG"        => "int",
+										"FLOAT"       => "real",
+										"DOUBLE"      => "real",
+										"TIMESTAMP"   => "int",
+										"LONGLONG"    => "int",
+										"INT24"       => "int",
+										"DATE"        => "date",
+										"TIME"        => "time",
+										"DATETIME"    => "datetime",
+										"NEWDATE"     => "date",
+										"ENUM"        => "enum",
+										"SET"         => "enum",
+										"TINY_BLOB"   => "string",
+										"MEDIUM_BLOB" => "string",
+										"LONG_BLOB"   => "string",
+										"BLOB"        => "string",
+										"VAR_STRING"  => "string",
+										"STRING"      => "string",
+										"CHAR"        => "string",
+										"NEWDECIMAL"  => "real"		  );
+			if(STCheck::isDebug("show.db.fields"))
+			{
+				STCheck::echoDebug("show.db.fields", "existing mysql types on mysqli-client:");
+				st_print_r($this->existTypes, 2, 20);
+				echo "<br />";
+				STCheck::echoDebug("show.db.fields", "allowed database types:");
+				st_print_r($allowed, 2, 20);
+				echo "<br />";
+				STCheck::echoDebug("show.db.fields", "compare Table:");
+				st_print_r($this->columnTypes, 2, 20);
+				echo "<br />";
+			}
 		}
 
-		return array_key_exists($type_id, $types)? $types[$type_id] : NULL;
+	}
+	public function field_type($tableName, $field_offset)
+	{
+		$properties= $this->getFieldProperties($tableName, $field_offset);
+		if($properties == NULL)
+			return NULL;
+		if(!array_key_exists($properties->type, $this->existTypes ))
+			throw new Exception("type '$properties->type' does not exist inside existing database list	");
+		$type= $this->existTypes[$properties->type];
+		if(!array_key_exists($type, $this->columnTypes ))
+			throw new Exception("type '$type' does not exist inside known list");
+		return $this->columnTypes[$type];
 	}
 	protected function insert_id()
 	{
 		return $this->conn->insert_id();
 	}
-	protected function fetchdb_row($typ= STSQL_ASSOC)
+	protected function fetchdb_row($type= STSQL_ASSOC)
 	{
 		if(	$type == STSQL_NUM ||
 			$type == STSQL_BOTH		)
@@ -270,7 +404,7 @@ class STDbMySql extends STDatabase
 		{
 			return $ern;
 		}
-		return $this->lastDbResult->errno;
+		return $this->conn->errno;
 	}
 	protected function errordb()
 	{
@@ -280,7 +414,7 @@ class STDbMySql extends STDatabase
 		{
 			return $this->conn->connect_error;
 		}
-		return this->lastDbResult->error;
+		return this->conn->error;
 	}
 	function solution($statement, $typ= null, $onError= onErrorStop)
 	{

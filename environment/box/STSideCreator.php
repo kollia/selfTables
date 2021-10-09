@@ -1,7 +1,7 @@
 <?php
 
 require_once($choose_table);
-require_once($insert_update);
+require_once($_stmessagehandling);
 require_once($php_html_description);
 require_once($_stdownload);
 
@@ -50,7 +50,7 @@ class STSideCreator extends HtmlTag
 				STCheck::setPageStartTime();
 				STCheck::echoDebug("performance", "creating object of class STSideCreator ".date("H:i:s")." ".(time()-$_st_page_starttime_));
 			}
-			HtmlTag::HtmlTag();
+			HtmlTag::__construct();
 			if($container)
 			{
 				// alex 11/09/2005:	da der container keine Referenz ist
@@ -138,6 +138,12 @@ class STSideCreator extends HtmlTag
 			}		
 			return $msgHandling;
 		}
+		protected function closeUserDbConnection()
+		{
+			// Dummy function for STSessionSideCreator
+			// there is eventually defined an extra user database
+			// which should also be closed
+		}
 		function display($bCloseConnection= true)
 		{
 			$aClosed= array();
@@ -152,13 +158,7 @@ class STSideCreator extends HtmlTag
 						$aClosed[$container->getName()]= true;
 					}
 				}
-    			if(STUserSession::sessionGenerated())
-    			{
-    				$_instance= &STUserSession::instance();
-    				$db= &$_instance->getUserDb();
-    				if(!$aClosed[$db->getName()])
-    					$db->closeConnection();
-    			}
+				$this->closeUserDbConnection();
 			}
 			echo "<!DOCTYPE html>";
 			if(STCheck::isDebug())
@@ -517,8 +517,6 @@ class STSideCreator extends HtmlTag
 			{
 				if($this->sDefaultCssLink)
 					$link= getCssLink($this->sDefaultCssLink["link"], $this->sDefaultCssLink["media"], $this->sDefaultCssLink["title"]);
-				else
-					$link= getCssLink($default_css_link, "screen", "protokoll default Stylesheet");
 			}
 			return $link;
 		}

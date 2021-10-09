@@ -1,6 +1,6 @@
 <?php
 
-st_require_once($php_html_description);
+require_once($php_html_description);
 
   /**
    *  gibt ein verkn�pfungs-Tag auf eine Cascade Sylesheet aus
