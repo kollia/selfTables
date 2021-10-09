@@ -1430,12 +1430,21 @@ abstract class STDatabase extends STObjectContainer
 		$aliasCount= count($aTableAlias);
 		foreach($aNeededColumns as $column)
 		{// durchlaufe das Array mit allen benoetigten Columns
+			
+			$columnName= $column["column"];
+			if(preg_match("/(.+)\\((.+)\\)/", $columnName, $preg))
+			{
+				if($preg[2] != "*")
+					$columnName= $preg[1]."(`".$preg[2]."`)";
+			}else
+				$columnName= "`$columnName`";
+			$columnAlias= "'".$column["alias"]."'";
 			if(STCheck::isDebug())
 			{
 				$msg= "select ";
 				if(isset($column["column"]))
 				{
-					$sColumn= $column["column"];
+					$sColumn= $columnName;
 					$msg.= "column <b>$sColumn</b>";
 				}else
 				{
@@ -1454,7 +1463,7 @@ abstract class STDatabase extends STObjectContainer
 			{		// wenn die Tabelle null ist, gibts sie nicht im FK
 				$table= $oTable->getFkTableName($column["column"]);
 				if($table)
-					STCheck::echoDebug("db.statements.select", "from ".get_class($oTable)." ".$oTable->getName()." for column ".$column["column"]." is Fk-Table \"".$table."\"");
+					STCheck::echoDebug("db.statements.select", "from ".get_class($oTable)." ".$oTable->getName()." for column ".$columnname." is Fk-Table \"".$table."\"");
 				if(	$table
 					and
 					typeof($oMainTable, "OSTDbSelector")	)
@@ -1482,16 +1491,16 @@ abstract class STDatabase extends STObjectContainer
 					}
 					$this->sNeedAlias[$aliasTable]= "need";// Tabellen Alias wird gebraucht
 					if($this->isSqlSelectKeyWord($column["column"]))
-						$statement.= $column["column"];
+						$statement.= $columnName;
 					else
-						$statement.= $aliasTable.".".$column["column"];
+						$statement.= "`".$aliasTable."`.$columnName";
    					if(	isset($column["alias"])
 						and
 						$column["column"]!=$column["alias"]
 						and
 						$withAlias							)
    					{
-						$statement.= " as '".$column["alias"]."'";
+						$statement.= " as $columnAlias";
    					}
 					if(Tag::isDebug())
 					{
@@ -1552,14 +1561,15 @@ abstract class STDatabase extends STObjectContainer
 				}
 			}else
 			{
-				$statement.= $column["column"];
+
+				$statement.= $columnName;
 				if(	isset($column["alias"])
 					and
 					$column["column"]!=$column["alias"]
 					and
 					$withAlias							)
 				{
-					$statement.= " as '".$column["alias"]."'";
+					$statement.= " as $columnAlias";
 				}
 			}
 			if($statement)
