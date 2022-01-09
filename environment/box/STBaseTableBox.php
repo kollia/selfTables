@@ -408,8 +408,13 @@ class STBaseTableBox extends TableTag
 		}
 		function getFieldArray($statement= null)
 		{
-			if($this->fieldArray == null)
+			if(STCheck::isDebug() && $this->fieldArray == null)
+			{
 				echo "<br>";
+				echo __FILE__.__LINE__."<br>";
+				echo "getFieldArray($statement)<br>";
+				st_print_r($this->fieldArray);
+			}
 			if($statement==null)
 			{
 				$statement= reset($this->asTable);

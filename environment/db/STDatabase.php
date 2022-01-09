@@ -782,7 +782,8 @@ abstract class STDatabase extends STObjectContainer
 			return $statement->columns;
 		}
 		
-		
+		echo "<br>".__FILE__.__LINE__."<br>";
+		echo "describe statement $statement<br>";
 		if(!is_String($statement))
 			$result= $statement;// $statement ist bereits eine Datenbank-Abfrage
 		elseif(isset($this->aFieldArrays[$statement]))
@@ -792,6 +793,7 @@ abstract class STDatabase extends STObjectContainer
 		elseif(preg_match("/ from ([^ ]*)/i", $statement, $preg))
 		{// statement should be a correct query
 			$tableName= $preg[1];
+			$filedArrayKey= $tableName;
  	 		if(!preg_match("/limit/i", $statement))
  				$statement.= " limit 1";
 			STCheck::echoDebug("db.statement", "describe field-content read from a <b>statement(</b>$statement<b>)</b>");
@@ -803,6 +805,7 @@ abstract class STDatabase extends STObjectContainer
 		}else
 		{// statement should only be a table name
 			$tableName= $statement;
+			$filedArrayKey= $tableName;
 			$statement= "select * from $tableName limit 1";
 			STCheck::echoDebug("db.statement", "describe field-content read from <b>table(</b>$tableName<b>)</b>");
 		//-----------------------------------------------------------------------
@@ -811,6 +814,8 @@ abstract class STDatabase extends STObjectContainer
 		st_print_r($this->list_dbtable_fields($tableName), 2);
 		//-----------------------------------------------------------------------
 		}
+		if(isset($this->aFieldArrays[$filedArrayKey]))
+			return $this->aFieldArrays[$filedArrayKey];
 
 		$aRv= array();
 		if(!isset($result))
@@ -848,7 +853,7 @@ abstract class STDatabase extends STObjectContainer
 				$aRv[$n]['enums']= $enums;
 			}
 		}
-		$this->aFieldArrays[$statement]= $aRv;
+		$this->aFieldArrays[$filedArrayKey]= $aRv;
 		if(STCheck::isDebug("show.db.fields"))
 		{
 			STCheck::echoDebug("show.db.fields", "produced column-result:");
@@ -858,6 +863,7 @@ abstract class STDatabase extends STObjectContainer
 		}
 		echo "<br>";
 		showErrorTrace();
+		st_print_r($this->aFieldArrays, 5, 20);
 		return $aRv;
  	}
 	abstract public function getField_EnumArray($tableName, $field_offset);
@@ -1438,7 +1444,10 @@ abstract class STDatabase extends STObjectContainer
 					$columnName= $preg[1]."(`".$preg[2]."`)";
 			}else
 				$columnName= "`$columnName`";
-			$columnAlias= "'".$column["alias"]."'";
+			if(isset($column["alias"]))
+				$columnAlias= "'".$column["alias"]."'";
+			else
+				$columnAlias= "'".$column["column"]."'";
 			if(STCheck::isDebug())
 			{
 				$msg= "select ";
@@ -1463,7 +1472,7 @@ abstract class STDatabase extends STObjectContainer
 			{		// wenn die Tabelle null ist, gibts sie nicht im FK
 				$table= $oTable->getFkTableName($column["column"]);
 				if($table)
-					STCheck::echoDebug("db.statements.select", "from ".get_class($oTable)." ".$oTable->getName()." for column ".$columnname." is Fk-Table \"".$table."\"");
+					STCheck::echoDebug("db.statements.select", "from ".get_class($oTable)." ".$oTable->getName()." for column ".$column["column"]." is Fk-Table \"".$table."\"");
 				if(	$table
 					and
 					typeof($oMainTable, "OSTDbSelector")	)

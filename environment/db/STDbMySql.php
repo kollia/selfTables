@@ -202,8 +202,8 @@ class STDbMySql extends STDatabase
 	}
 	public function field_count($dbResult)
 	{
-		st_print_r($dbResult,2);
-		echo "field count is ".$dbResult->field_count."<br>";
+		//st_print_r($dbResult,2);
+		//echo "field count is ".$dbResult->field_count."<br>";
 		return $dbResult->field_count;
 	}
 	private function getFieldProperties($tableName, $field_offset)
@@ -265,12 +265,9 @@ class STDbMySql extends STDatabase
 		$flags= array();
 		if(!preg_match("/enum\((.+)\)/i", $this->databaseTables[$tableName][$field_offset]["Type"], $flags))
 			return null;
-		echo "<br>".__FILE__.__LINE__."<br>";
-		st_print_r($this->databaseTables[$tableName][$field_offset],2);
 		$enums= preg_split("/','/", $flags[1]);
 		$enums[0]= substr($enums[0], 1);
 		$enums[count($enums)-1]= substr($enums[count($enums)-1], 0, strlen($enums[count($enums)-1])-1);
-		st_print_r($enums);
 		return $enums;
 	}
 	private function has_field_flag($tableName, $field_offset, $flag_name)

@@ -192,7 +192,6 @@ class STBox extends STBaseTableBox
     						$sPkInside= $joinColumns["other"];
     					}
 
-    					$bFromIdentifications= true;
     					STCheck::echoDebug("form.join", "make join select from table ".$joinTable->getName());
     					$statement= $joinTable->getStatement(/*identification select*/true);
     					$result= $joinTable->db->fetch_array($statement, MYSQL_ASSOC, $this->getOnError("SQL"));
@@ -274,7 +273,7 @@ class STBox extends STBaseTableBox
 							 // Es k�nnen dabei auch mehrere Tabellen angegeben sein => Tabelle.Feld.Tabelle.Feld ...
 								$PK= "";
 						 		$table= $side[$c-1];
-								Tag::echoDebug("fieldArray", "get file:".__file__." line:".__line__);
+								Tag::echoDebug("show.db.fields", "get file:".__file__." line:".__line__);
 								$aTableFields= $this->getFieldArray();
 								reset($aTableFields);
 								foreach($aTableFields as $field)
@@ -389,7 +388,7 @@ class STBox extends STBaseTableBox
 				and
 				!count($this->asSelect))
   		{// erstelle Spalten-Array aus Tabelle
-				Tag::echoDebug("fieldArray", "get file:".__file__." line:".__line__);
+				Tag::echoDebug("show.db.fields", "get file:".__file__." line:".__line__);
 				$fields= $this->getFieldArray();
   			$columns= array();
   			foreach( $fields as $field )
@@ -542,6 +541,10 @@ class STBox extends STBaseTableBox
 				}
 			}//st_print_r($HTTP_POST_VARS);
 		}
+		echo __FILE__." ".__FUNCTION__." line:".__LINE__."<br>";
+		st_print_r($post,5);
+		st_print_r($changedPost,5);
+		st_print_r($HTTP_POST_VARS,5);
 		// 19/06/2007 alex:	the post-vars must be the second parameter
 		//					from array_merge, because from the second
 		//					the first will be replaced
@@ -557,7 +560,7 @@ class STBox extends STBaseTableBox
 				$post[$key]= $value;
 		}*/
 		
-		Tag::echoDebug("fieldArray", "get file:".__file__." line:".__line__);
+		Tag::echoDebug("show.db.fields", "get file:".__file__." line:".__line__);
   		$fields= $this->getFieldArray();//hole Felder aus Datenbank
         $columns= $this->createColumns();// erstelle Array aus Spalten-Name und Alias-Name im $statement
         $fields= $this->orderByColumns($fields, $columns);//ordne die Feld-Namen aus der Datenbank, nach dem eingegebenen $statement
@@ -615,6 +618,9 @@ class STBox extends STBaseTableBox
 			STCheck::echoDebug("db.statement", "get actual database entrys");
 			$this->db->query($statement, $this->getOnError("SQL"));
 			$result= $this->db->fetch_row(MYSQL_ASSOC, $this->getOnError("SQL"));
+			echo __FILE__." ".__FUNCTION__." line:".__LINE__."<br>";
+			echo "$statement<br>";
+			st_print_r($result,5);
 			$tablePk= $this->asDBTable->getPkColumnName();
 			if(isset($result[$tablePk]))
 				$this->lastInsertID= $result[$tablePk];
@@ -701,6 +707,8 @@ class STBox extends STBaseTableBox
 		 * if inner table is NULL, currently no inner table be set
 		 */
 		$innerTable= NULL;
+		echo __FILE__." ".__FUNCTION__." line:".__LINE__."<br>";
+		st_print_r($fields,5);
 		while($x<count($fields))
 		{// gehe alle Felder von der Datenbank durch
 			
@@ -923,6 +931,8 @@ class STBox extends STBaseTableBox
 							$previousSelectionDone= true;
   						}else
   						{
+  						    echo __FILE__." ".__FUNCTION__." line:".__LINE__."<br>";
+  						    st_print_r($post,5);
   							if(isset($post[$field["name"]]))
   								$zahl= $post[$field["name"]];
   						}
@@ -1034,6 +1044,8 @@ class STBox extends STBaseTableBox
 								 // Der erste Eintrag im Enum wird als nicht angehakt bezeichnet
 								 	$bSingleEnum= true;
 									$input->type("checkbox");
+									echo __FILE__.__LINE__."<br>";
+									st_print_r($aEnums);
 									$input->value($aEnums[2]);
 									if($post[$field["name"]]==$aEnums[2])
 										$input->checked();
@@ -1424,7 +1436,7 @@ class STBox extends STBaseTableBox
 	}
 	function countingAllEnumns()
 	{
-		Tag::echoDebug("fieldArray", "get file:".__file__." line:".__line__);
+		Tag::echoDebug("show.db.fields", "get file:".__file__." line:".__line__);
 		$fields= $this->getFieldArray();//hole Felder aus Datenbank
 		foreach($fields as $field)
 			$this->countingEnums($field["name"], $field["flags"]);
@@ -1432,12 +1444,15 @@ class STBox extends STBaseTableBox
 	}
 	function countingEnums($columnName, $flag= null)
 	{
+		echo __FILE__.__LINE__."<br>";
+		echo "counting enums for column($columnName)<br>";
+		st_print_r($this->aEnums);
 		if(isset($this->aEnums[$columnName]))
 			return $this->aEnums[$columnName];
 		if($flag==null)
 		{
-			Tag::echoDebug("fieldArray", "get file:".__file__." line:".__line__);
-			$fields= $this->getFieldArray();//hole Felder aus Datenbank
+			Tag::echoDebug("show.db.fields", "get file:".__file__." line:".__line__);
+			$fields= $this->getFieldArray($this->tableName);//hole Felder aus Datenbank
 			foreach($fields as $field)
 			{
 				if($field["name"]==$columnName)
@@ -1463,6 +1478,10 @@ class STBox extends STBaseTableBox
   		for($i= 1; $i<count($preg); $i+= 2)
 			$is_preg[]= $preg[$i];
 		$this->aEnums[$columnName]= $is_preg;
+		
+		echo __FILE__.__LINE__."<br>";
+		echo "result of counting enums<br>";
+		st_print_r($is_preg);
 		return $is_preg;
 	}
 		/*function table($table)
@@ -2126,7 +2145,7 @@ class STBox extends STBaseTableBox
 		//					(wird nirgends gebraucht)
 		//$aFounded= array();//f�r multiple_key
         $columns= $this->createColumns($this->columns);// erstelle Array aus Spalten-Name und Alias-Name#
-		Tag::echoDebug("fieldArray", "get file:".__file__." line:".__line__);
+		Tag::echoDebug("show.db.fields", "get file:".__file__." line:".__line__);
         $fields= $this->getFieldArray();//hole Felder aus Datenbank
         if($this->action==STUPDATE)
         {// nur die ge�nderten Felder pr�fen

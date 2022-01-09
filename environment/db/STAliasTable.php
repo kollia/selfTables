@@ -1018,8 +1018,8 @@ class STAliasTable
 			if(	isset($fkTableName) &&
 				$this->Name != $fkTableName	)
 			{
-				echo __FILE__.__LINE__."<br>";
-				echo "getOrderStatement($aTableAlias, $fkTableName, $bIsOrdered)<br>";
+				//echo __FILE__.__LINE__."<br>";
+				//echo "getOrderStatement($aTableAlias, $fkTableName, $bIsOrdered)<br>";
 				$order= $this->getOrderStatement($aTableAlias, $fkTableName, $bIsOrdered);
 				if($order)
 				{

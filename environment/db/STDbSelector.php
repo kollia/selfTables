@@ -115,8 +115,8 @@ class STDbSelector extends STDbTable
 				$fkTable= $container->getTable($tableName);
 				if($fkTable)
 				{
-					if(!typeof($fkTable, "OSTDbSelector"))
-						$fkTable= new OSTDbSelector($fkTable);
+					if(!typeof($fkTable, "STDbSelector"))
+						$fkTable= new STDbSelector($fkTable);
 					$this->aoToTables[$tableName]= $fkTable;
 					$this->addFKTables($db->dbName, $aDone, $tableName);
 				}
@@ -196,8 +196,8 @@ class STDbSelector extends STDbTable
 				}
 				if(!$oTable)
 					$oTable= &$this->container->getTable($sTableName);
-				if($oTable && !typeof($oTable, "OSTDbSelector"))
-					$oTable= new OSTDbSelector($oTable);
+				if($oTable && !typeof($oTable, "STDbSelector"))
+					$oTable= new STDbSelector($oTable);
 				if($oTable)
 					$this->aoToTables[$sTableName]= &$oTable;
 				else
