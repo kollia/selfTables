@@ -411,7 +411,7 @@ class STDbMySql extends STDatabase
 		{
 			return $this->conn->connect_error;
 		}
-		return this->conn->error;
+		return $this->conn->error;
 	}
 	function solution($statement, $typ= null, $onError= onErrorStop)
 	{

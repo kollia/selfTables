@@ -541,10 +541,10 @@ class STBox extends STBaseTableBox
 				}
 			}//st_print_r($HTTP_POST_VARS);
 		}
-		echo __FILE__." ".__FUNCTION__." line:".__LINE__."<br>";
+/*		echo __FILE__." ".__FUNCTION__." line:".__LINE__."<br>";
 		st_print_r($post,5);
 		st_print_r($changedPost,5);
-		st_print_r($HTTP_POST_VARS,5);
+		st_print_r($HTTP_POST_VARS,5);*/
 		// 19/06/2007 alex:	the post-vars must be the second parameter
 		//					from array_merge, because from the second
 		//					the first will be replaced
@@ -707,8 +707,6 @@ class STBox extends STBaseTableBox
 		 * if inner table is NULL, currently no inner table be set
 		 */
 		$innerTable= NULL;
-		echo __FILE__." ".__FUNCTION__." line:".__LINE__."<br>";
-		st_print_r($fields,5);
 		while($x<count($fields))
 		{// gehe alle Felder von der Datenbank durch
 			
@@ -1446,7 +1444,7 @@ class STBox extends STBaseTableBox
 	{
 		echo __FILE__.__LINE__."<br>";
 		echo "counting enums for column($columnName)<br>";
-		st_print_r($this->aEnums);
+		st_print_r($this->aEnums, 2);
 		if(isset($this->aEnums[$columnName]))
 			return $this->aEnums[$columnName];
 		if($flag==null)

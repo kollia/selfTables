@@ -184,11 +184,8 @@
 	////////////////////////////////////////////
 		//$client_root=				$_SERVER['DOCUMENT_ROOT'];
 		$client_root=				"/";
-		$toolsPath=                 "selfTables";
-		$host=						"localhost";
-		$_stenvironmenttools_path=	$toolsPath."/environment";
-		$_stcmstools_path=			$toolsPath."/plugins";
-		$php_tools=					"tools.php";
+		$_stenvironmenttools_path=	__DIR__."/environment";
+		$_stcmstools_path=			__DIR__."/plugins";
 		$_defaultScripts=			$client_root."/defaultScripts/";
 		$_tinymce_path=				$_defaultScripts."tiny_mce/";
 		$default_css_link=			$_defaultScripts."default.css";

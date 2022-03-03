@@ -39,7 +39,7 @@ class STBaseContainer extends BodyTag
 	
 	var $headTag= "";
 	var $chooseTitle= "";
-	var $sDefaultCssLink= "";
+	var $sDefaultCssLink= null;
 
 	function __construct($name)
 	{
@@ -119,16 +119,18 @@ class STBaseContainer extends BodyTag
 		$this->headTag= &$head;
 		return $head;
 	}
-	function setCssLink($link, $title= "protokoll default Stylesheet")
+	function setCssLink($href, $media= "all")
 	{
-		$this->sDefaultCssLink= array(	"link"=>	$link,
-										"title"=>	$title	);
+		$this->sDefaultCssLink= array("rel"   =>  "stylesheet",
+		                              "type"  =>  "text/css",
+		                              "href"  =>  $href,
+		                              "media" =>  $media	);
 	}
 	function getCssLink()
 	{
 		$link= null;
 		if($this->sDefaultCssLink)
-			$link= getCssLink($this->sDefaultCssLink["link"], $this->sDefaultCssLink["title"]);
+			$link= getCssLink($this->sDefaultCssLink["href"], $this->sDefaultCssLink["media"]);
 		return $link;
 	}
 	function navigationTable($table, $forTable= STALLDEF, $pos= null, $classId= "STNavigationTable")
@@ -291,45 +293,43 @@ class STBaseContainer extends BodyTag
 			$this->sBackButton= $this->oExternSideCreator->sBackButton;
 
 	}
-	/*public*/function createContainer()
+	protected function createContainer()
 	{
-	    if(!$this->bCreated)
-		{
-			if($this->bCreated===null)
-			{
-				//echo __file__.__line__."<br>";
-				//echo "createing container ".get_class($this)."(".$this->name.")<br />";
-				//echo "createContainer in ".get_class($this)."(".$this->name."): created is ";
-				//st_print_r($this->bCreated);echo "<br />";
-				$this->bCreated= false;
-				STCheck::echoDebug("container", "starting create routine for container <b>".$this->name."</b>(".get_class($this).")");
-		    	$this->create();
-				$this->bCreated= true;
-			}else
-				Tag::warning($this->bCreated===false, "::createContainer()", "method should not be used in init methode", 1);
+	    if(!isset($this->bCreated))// if bCreated is false, container is inside the creation phase
+	    {
+			$this->bCreated= false;
+			STCheck::echoDebug("container", "starting create routine for container <b>".$this->name."</b>(".get_class($this).")");
+	    	$this->create();
+			$this->bCreated= true;
 		}
-		//echo "end of createContainer created:";st_print_r($this->bCreated);echo "<br />";
 	}
-	/*public*/function initContainer()
+	protected function initContainer()
 	{
-		if($this->bInitialize===null)
+	    // method needs initialization properties
+	    // only if he is not initializised
+	    // and not in the create or initialize phase
+	    // to know which tables are defined
+		if(!isset($this->bInitialize))
 		{
-			if($this->bCreated===null)
-				$this->createContainer();
+		    if(!isset($this->bCreated))
+		    {
+		        $this->createContainer();
+		    }else if($this->bCreated !== true)
+		        return; // container is currently inside the creation phase
 			$this->bInitialize= false;
 			STCheck::echoDebug("container", "starting initial routine for container <b>".$this->name."</b>(".get_class($this).")");
 			$this->init();
 			$this->bInitialize= true;
 		}
 	}
-    /*protected*/function create()
+    protected function create()
     {//echo "create container ".get_class($this)."(".$this->name.")<br />";
        // this function is only a hook for this template-pattern
     	 // and startig the creation in the initContainer/execute
     	 // when this object is needed
 		 // and also in some methodes where tables needed
     }
-    /*protected*/function init()
+    protected function init()
     {//echo "initial container ".get_class($this)."(".$this->name.")<br />";
        // this function is only a hook for this template-pattern
     	 // and startig the initialisation in the execute

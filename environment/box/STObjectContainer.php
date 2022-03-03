@@ -58,7 +58,7 @@ class STObjectContainer extends STBaseContainer
 		if(	$lang != "en" &&
 			$lang != "de"	)
 		{
-			echo "<b>only follow languages be allowed:</b><br />";
+			echo "<b>only follow languages are allowed:</b><br />";
 			echo "                   en   -   english<br />";
 			echo "                   de   -   german<br />";
 			printErrorTrace();
@@ -121,49 +121,46 @@ class STObjectContainer extends STBaseContainer
 		STCheck::paramCheck($sTableName, 1, "string");
 		STCheck::paramCheck($bEmpty, 2, "null", "boolean");
 
-		// method needs initialization properties
-		// only if he is not initializised
-		// and not in the create or initialize phase
-		// to know which tables are defined
-		if(	$this->bCreated===null
-			or
-			(	$this->bCreated===true
-				and
-				$this->bInitialize===null	)	)
-		{
-			$this->initContainer();
-		}
+		$this->initContainer();
 		$orgTableName= $this->getTableName($sTableName);
     	if($orgTableName)
     	    $sTableName= $orgTableName;
 		else
 		// not all databases save the tables case sensetive
 			$orgTableName= $sTableName;
-		Tag::echoDebug("table", "need table <b>$sTableName</b> in container <b>".$this->getName()."</b>");
+		STCheck::echoDebug("table", "need table <b>$sTableName</b> in container <b>".$this->getName()."</b>");
 		$sTableName= strtolower($sTableName);
-		$table= &$this->tables[$sTableName];
-		if(!$table)
-		{
-			$table= &$this->oGetTables[$sTableName];
-		}
-
-		if($table)
+		$table= null;
+		if(isset($this->tables[$sTableName]))
+		  $table= &$this->tables[$sTableName];
+		if(isset($this->oGetTables[$sTableName]))
+		  $table= &$this->oGetTables[$sTableName];
+		
+		if(isset($table))
 		{
 			$this->tables[$sTableName]= &$table;
 		}else
 		{
+		    if(STCheck::isDebug())
+		    {
+		        $msg= "table <b>$orgTableName</b> do not exist insite current container <b>".$this->getName()."</b>";
+		        if(STCheck::isDebug("table"))
+		            STCheck::echoDebug("table", $msg);
+	            else
+	                STCheck::echoDebug("db.statements.table", $msg);
+		    }
 			// alex 17/05/2005:	die Tabelle wird nun von der �berschriebenen Funktion
 			//					getTable() aus dem Datenbank-Objekt erzeugt.
 			// alex 08/06/2005: 2. Parameter f�r getTable auf false gesetzt
 			//					da sonst wenn das erste mal needTable aufgerufen wird,
 			//					bei der funktion getTable aus der Datenbank,
-			//					alle Tabellen in die this->tables geladen werden
+		    //					alle Tabellen in die this->tables geladen werden
 			if(!typeof($this, "STDatabase"))
 			{
 				$container= &STBaseContainer::getContainer($this->parentContainerName);
-				$newTable= &$container->getTable($orgTableName);//, false);
+				$newTable= clone $container->getTable($orgTableName);//, false);
 			}else
-				$newTable= &$this->getTable($orgTableName);//, false);
+			    $newTable= &$this->getTable($orgTableName);//, false)
 			if(	!isset($newTable) ||
 				!is_object($newTable)	)
 			{
@@ -183,6 +180,7 @@ class STObjectContainer extends STBaseContainer
 			 	$this->tables[$sTableName]= &$newTable;
 				return $newTable;
 			}
+			return $newTable;
 		}
 		return $table;
 	}
@@ -443,22 +441,17 @@ class STObjectContainer extends STBaseContainer
 	}
 	function getActions()
 	{
-		// method needs initialization properties
-		// to know which tables are defined
-		if(	$this->bCreated===null
-			or
-			(	$this->bCreated===true
-				and
-				$this->bInitialize===null	)	)
-		{
-			$this->createContainer();
-		}
-
+		$this->createContainer();
 		foreach($this->tables as $table)
 		{
 			$tableName= $table->getName();
 			if(!isset($this->actions[$tableName]))
-				$this->actions[$tableName]= $table->getFirstAction();
+			{
+				$action= $table->getFirstAction();
+				if(!isset($action))
+				    $action= STLIST;
+				$this->actions[$tableName]= $action;
+			}
 		}
 		return $this->actions;
 	}
@@ -548,7 +541,7 @@ class STObjectContainer extends STBaseContainer
 	function getAction()
 	{
 		global $HTTP_GET_VARS;
-		
+
 		if(	isset($this->actAction) &&
 			trim($this->actAction) != ""	)
 		{
@@ -1005,29 +998,13 @@ class STObjectContainer extends STBaseContainer
 					//$list->setParamOnActivate(UPDATE, "stget[action]=delete", $this->sDeleteAction);
 				}
 			}
-			// alex 02/09/2005:	wenn gel�scht wird,
-			//					wird jetzt die Funktion "deleteTableEntry()" aufgerufen
-/*			if(isset($get_vars["link"][$this->sDeleteAction]))
+			$this->setAllMessagesContent(STLIST, $list);
+			
+			if(typeof($table, "STDbTable"))
 			{
-				$table= &$this->getTable($get_vars["table"]);
-				$box= new STBox(tableContainer);
-				$box->table($table);
-				$box->where($PK."=".$get_vars["link"][$this->sDeleteAction]);
-				$box->onOkGotoUrl($get->getParamString(STDELETE, "stget[link][".$this->sDeleteAction."]"));
-				$this->setAllMessagesContent(STDELETE, $box);
-				$result= $box->delete();
-				$this->addObj($box);
-			}
-			if(	!isset($get_vars["link"][$this->sDeleteAction])
-				or
-				isset($result)										)*/
-//			{	// alex 14/06/2005:	setAllMessagesContent kurz vor das execute verschoben,
-				//					da ich auch ein setAllMessagesContent f�r STBox eingef�gt habe
-				$this->setAllMessagesContent(STLIST, $list);
-				if(typeof($table, "STDbTable"))
-					$result= $list->execute();
-				else
-					$result= "NOERROR";
+			    $result= $list->execute();
+			}else
+				$result= "NOERROR";
 				
 			if(	$table->canInsert() &&
 				$table->hasAccess(STINSERT)	&&
@@ -1307,7 +1284,7 @@ class STObjectContainer extends STBaseContainer
 			$table->getSelectedColumns();	//fals noch keine Spalte gesetzt ist
 										//vor dem setzen von "aktualisieren" und "l�schen"
 										//alle Spalten aus der Datenbank holen
-
+			
 			// create rows for dynamic-clustering
 			$checked= $table->createDynamicAccess();
 			if(count($checked))
@@ -1340,7 +1317,7 @@ class STObjectContainer extends STBaseContainer
 			}
 
 			// check Access
- 			$this->setAccessForColumnsInTable($table, $this->oCurrentListTable);
+			$this->setAccessForColumnsInTable($table, $this->oCurrentListTable);
 			$this->oCurrentListTable->table($table);
 			$this->oCurrentListTable->doContainerManagement($this->oExternSideCreator->bContainerManagement);
 			$this->oCurrentListTable->align("center");
@@ -1348,15 +1325,17 @@ class STObjectContainer extends STBaseContainer
 		}
 		function setAccessForColumnsInTable(&$oTable, &$oList)
 		{
-			Tag::echoDebug("access", "<b>setAccessForColumnsInTable</b> \"".$oTable->getName()."\"");
+		    Tag::echoDebug("access", "<b>setAccessForColumnsInTable</b> \"".$oTable->getName()."\"");
 			foreach($oTable->showTypes as $columnName=>$extra)
 			{
 				foreach($extra as $extraField=>$container)
 				{
 					if(preg_match("/container.+link/", $extraField))
 					{//control wether the link to the container can showen
-						$container= $this->getContainer($container->getName());
-						$access= $container->hasContainerAccess();
+					    // alex: 26/01/2022
+					    // should be defined
+					    //$container= $this->getContainer($container->getName());
+					    $access= $container->hasContainerAccess();
 						$oList->hasAccess($columnName, $access);
 					}
 				}
@@ -1364,7 +1343,7 @@ class STObjectContainer extends STBaseContainer
 		}
 		// setzt alle gewuenschten Fehler-Meldungen
 		// und Callbacks
-		// in den divirsen Objekten, welche dann mit
+		// in den diversen Objekten, welche dann mit
 		// execute ausgefuehrt werden.
 		//
 		// param $table muss ein objekt vom typ STBaseTableBox sein

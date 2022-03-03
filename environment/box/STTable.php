@@ -3,8 +3,6 @@
 
 require_once($_stbasetablebox);
 require_once($_stdbselector);
-//require_once($_stdbupdater);
-//require_once($_stdbdeleter);
 
 
 class STTable extends STBaseTableBox
@@ -454,7 +452,8 @@ class STTable extends STBaseTableBox
 			}
 
 			// toDo: DbSelector find not the right Statement / Alias-Table
-			$this->oSelector->setStatement($tableDb->getStatement($oTable));
+			$statement= $tableDb->getStatement($oTable);
+			$this->oSelector->setStatement($statement);
   			$this->statement= $this->oSelector->getStatement();
 			$aliases= array();
 			$this->db->createAliases($aliases, $oTable, false);
@@ -557,7 +556,7 @@ exit();
 				}else
 				{
   					$this->SqlResult= $this->db->fetch_array($this->statement, STSQL_ASSOC, $this->getOnError("SQL"));
-					$this->setSqlError($this->SqlResult);
+  					$this->setSqlError($this->SqlResult);
 				}
 
   			}else
@@ -606,7 +605,8 @@ exit();
 				{
 					foreach($aSorts as $column=>$value)
 					{
-						preg_match("/^([^_]+)_(ASC|DESC)$/", $value, $nValue);
+						//preg_match("/^([^_]+)_(ASC|DESC)$/", $value, $nValue);
+					    preg_match("/^(.+)_(ASC|DESC)$/", $value, $nValue);
 						$arr= array();
 						$arr["column"]= $nValue[1];
 						$arr["sort"]= $nValue[2];
@@ -1137,16 +1137,29 @@ exit();
 			{
 				echo "<br /><br />";
 				STCheck::write("output defined to write all column properties from list");
+				$msg= "current arrangement is ";
+				if($this->arrangement == STHORIZONTAL)
+				    $msg.= "HORICONTAL";
+				else if($this->arrangement == STVERTICAL)
+				    $msg.= "VERTICAL";
+				else
+				    $msg.= "unknown!";
+				STCheck::write($msg);
+				st_print_r($Rows,2);
 			}else
 				$_showColumnProperties= false;
 		}
+		$class= "Tr1";
         foreach($Rows as $rowKey=>$rowArray)
         {
         	$extraField= null;
 			//*****************************************************************************************
 			if(isset($this->showTypes[$rowKey]))
-				$extraField= $this->showTypes[$rowKey];// diese Variablen werden je nach HORIZONTAL/VERTIKAL
-			$class= "Tr".($rowKey%2);			   // in der n�chsten Schleife �berschrieben
+				$extraField= $this->showTypes[$rowKey];// diese Variablen werden je nach HORIZONTAL/VERTIKA
+			if($class == "Tr1")
+			    $class= "Tr0";
+			else
+			    $class= "Tr1";
 			$row= $rowKey;
 			$key= $rowKey;
 			//*****************************************************************************************
@@ -1172,8 +1185,11 @@ exit();
 								$th->add($rowKey);
 							$tr->add($th);
 						}
-							$row= $columnKey;
-							$class= "Tr".($columnKey%2);
+						$row= $columnKey;
+						if($class == "Tr1")
+						    $class= "Tr0";
+					    else
+					        $class= "Tr1";
   					}
   				}else
 				{
@@ -1259,9 +1275,13 @@ exit();
 							$file=  "javascript:location='";
           					$file.= $HTTP_SERVER_VARS["SCRIPT_NAME"];
 
+          					$alldef= [];
+          					$array= [];
 							$get= new STQueryString();//$this->oGet;
-							$alldef= $this->aGetParams[STINSERT][STALLDEF];
-							$array= $this->aGetParams[STINSERT][$createdColumn];
+							if(isset($this->aGetParams[STINSERT][STALLDEF]))
+							    $alldef= $this->aGetParams[STINSERT][STALLDEF];
+							if(isset($this->aGetParams[STINSERT][$createdColumn]))
+							    $array= $this->aGetParams[STINSERT][$createdColumn];
 							if(	is_array($alldef) &&
 								is_array($array)	)
 							{
@@ -1276,8 +1296,10 @@ exit();
 									$get->insert($param);
 								}
 							}
-							$alldef= $this->aGetParams[STUPDATE][STALLDEF];
-							$array= $this->aGetParams[STUPDATE][$createdColumn];
+							if(isset($this->aGetParams[STUPDATE][STALLDEF]))
+							    $alldef= $this->aGetParams[STUPDATE][STALLDEF];
+							if(isset($this->aGetParams[STUPDATE][$createdColumn]))
+							    $array= $this->aGetParams[STUPDATE][$createdColumn];
 							if(	is_array($alldef) &&
 								is_array($array)	)
 							{
@@ -1292,8 +1314,10 @@ exit();
 									$get->update($param);
 								}
 							}
-							$alldef= $this->aGetParams[STDELETE][STALLDEF];
-							$array= $this->aGetParams[STDELETE][$createdColumn];
+							if(isset($this->aGetParams[STDELETE][STALLDEF]))
+							    $alldef= $this->aGetParams[STDELETE][STALLDEF];
+							if(isset($this->aGetParams[STDELETE][$createdColumn]))
+							    $array= $this->aGetParams[STDELETE][$createdColumn];
 							if(	is_array($alldef) &&
 								is_array($array)	)
 							{
@@ -1621,7 +1645,7 @@ exit();
 							{
 								if($bHasAccess)
 								{
-									$class= null;
+									$Aclass= null;
 									if(	isset($createdColumn) &&
 										isset($this->asDBTable->aActiveLink["column"]) &&
 										$createdColumn === $this->asDBTable->aActiveLink["column"] &&
@@ -1633,9 +1657,9 @@ exit();
 												isset($this->asDBTable->aActiveLink["represent"]) &&
 												$rowArray[$createdRepresent]===$this->asDBTable->aActiveLink["represent"]	)	)	)
 									{
-										$class= "stactivelink";
+										$Aclass= "stactivelink";
 									}
-									$a= new ATag($class);
+									$a= new ATag($Aclass);
 										$a->href($file);
             						$a->add($columnValue);
 									$td->add($a);
@@ -1653,14 +1677,14 @@ exit();
 							{
 								if($bHasAccess)
 								{
-									$class= null;
+									$Aclass= null;
 									if(	$createdColumn===$this->asDBTable->aActiveLink["column"]
 										and
 										$rowArray[$createdRepresent]===$this->asDBTable->aActiveLink["represent"]	)
 									{
-										$class= "stactivelink";
+										$Aclass= "stactivelink";
 									}
-									$a= new ATag($class);
+									$a= new ATag($Aclass);
 										$a->href($file);
         	    						$a->add($columnValue);
 									$td->add($a);

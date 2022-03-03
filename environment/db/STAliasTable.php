@@ -119,8 +119,9 @@ class STAliasTable
 				{
     				STCheck::echoDebug("table", "create non correct null table.");
 				}elseif(is_string($oTable))
+				{
     				Tag::echoDebug("table", "create new table <b>".$oTable."</b>");
-				else
+				}else
 					Tag::echoDebug("table", "copy table <b>".$oTable->Name."</b>");
     		}
     	}
@@ -1039,8 +1040,8 @@ class STAliasTable
 			$statement= "";
 			foreach($aGet as $column)
 			{
-				preg_match("/^([^_]+)_(ASC|DESC)$/i", $column, $inherit);
-				$db= $this->getDatabase();
+				//preg_match("/^([^_]+)_(ASC|DESC)$/i", $column, $inherit);
+			    preg_match("/^(.+)_(ASC|DESC)$/i", $column, $inherit);
 				$field= $this->searchByAlias($inherit[1]);
 				$statement.= $field["column"]." ".$inherit[2].",";
 			}
@@ -1275,7 +1276,7 @@ class STAliasTable
 			Tag::paramCheck($add, 5, "bool");
 			$nParams= func_num_args();
 			Tag::lastParam(5, $nParams);
-
+			
 			if(STCheck::isDebug())
 			{
 				STCheck::alert(!$this->columnExist($column), "STAliasTable::selectA()",
@@ -1315,7 +1316,7 @@ class STAliasTable
 				$alias= $column;
 			}elseif(!$alias)
 				$alias= $column;
-
+				
 			$this->selectA($this->Name, $column, $alias, $nextLine, $add);
 			if($fillCallback)
 			{
@@ -1880,6 +1881,8 @@ class STAliasTable
 		{
 			foreach($this->show as $key=>$content)
 			{
+			    if(STCheck::isDebug("table"))
+			     STCheck::echoDebug("table", "get FK table for column <b>".$content["column"]."</b>");
 				$table= &$this->getFkTable($content["column"], true);
 				if(	isset($table) &&
 					$table->correctTable()	)

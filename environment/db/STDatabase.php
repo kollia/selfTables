@@ -782,8 +782,6 @@ abstract class STDatabase extends STObjectContainer
 			return $statement->columns;
 		}
 		
-		echo "<br>".__FILE__.__LINE__."<br>";
-		echo "describe statement $statement<br>";
 		if(!is_String($statement))
 			$result= $statement;// $statement ist bereits eine Datenbank-Abfrage
 		elseif(isset($this->aFieldArrays[$statement]))
@@ -807,13 +805,12 @@ abstract class STDatabase extends STObjectContainer
 			$tableName= $statement;
 			$filedArrayKey= $tableName;
 			$statement= "select * from $tableName limit 1";
-			STCheck::echoDebug("db.statement", "describe field-content read from <b>table(</b>$tableName<b>)</b>");
-		//-----------------------------------------------------------------------
-		echo "<br>".__FILE__.__LINE__."<br>";
-		echo "list db table fields<br>";
-		st_print_r($this->list_dbtable_fields($tableName), 2);
-		//-----------------------------------------------------------------------
 		}
+		//-----------------------------------------------------------------------
+		// pre-define list of fields from table
+		STCheck::echoDebug("db.statement", "describe field-content read from <b>table(</b>$tableName<b>)</b>");
+		$this->list_dbtable_fields($tableName);
+		//-----------------------------------------------------------------------
 		if(isset($this->aFieldArrays[$filedArrayKey]))
 			return $this->aFieldArrays[$filedArrayKey];
 
@@ -861,9 +858,6 @@ abstract class STDatabase extends STObjectContainer
 				echo "<strong>ERROR:</strong> no field content!<br />";
 			st_print_r($aRv, 5, 20);
 		}
-		echo "<br>";
-		showErrorTrace();
-		st_print_r($this->aFieldArrays, 5, 20);
 		return $aRv;
  	}
 	abstract public function getField_EnumArray($tableName, $field_offset);
@@ -1358,15 +1352,6 @@ abstract class STDatabase extends STObjectContainer
 //		echo __file__.__line__."<br>";
 			//echo "get from identif columns<br>";
 		}
-			// alex 29/07/2005:	durchsuche ob auch eine column
-			//					nur zur Verarbeitung gebraucht wird.
-			//					Nur wenn oTable nicht vom OSTDbSelector ist
-			//if(!typeof($oTable, "OSTDbSelector"))
-			//{
-/*		echo __file__.__line__."<br>";
-		echo "_Test:";
-		st_print_r($aNeededColumns,2);*/	
-		$aColumns= array();
 		$aGetColumns= array();
 		// put only all getColumns into array aGetColumns
 		foreach($oTable->showTypes as $column=>$extraField)
@@ -2874,8 +2859,16 @@ abstract class STDatabase extends STObjectContainer
 			echo "ask rekursive for table $tableName<br>";
 			showErrorTrace();
 			exit();
-		}*/
-		Tag::echoDebug("table", "get table <b>$tableName</b> from DB <b>".$this->getName()."</b>");
+		}*/        
+		if(STCheck::isDebug())
+		{
+		    $msg= "get table <b>$tableName</b> from DB <b>".$this->getName()."</b>";
+    		if(STCheck::isDebug("table"))
+    		    STCheck::echoDebug("table", $msg);
+		    else
+		        STCheck::echoDebug("db.statements.table", $msg);
+		    //showErrorTrace();
+		}
 		$tableName= strtolower($tableName);
 		// alex 12/04/2005: mit getTable werden nun alle Tabellen erstellt
 		//					wenn zuvor keine Tabelle mit needTable erzeugt wurde

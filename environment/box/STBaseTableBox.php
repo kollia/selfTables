@@ -370,7 +370,7 @@ class STBaseTableBox extends TableTag
 					$messageId= "SQLERROR";//_".$this->db->errno();
   					$this->msg->setMessageId($messageId, $sqlErrorMessage);
 				}
-  			}elseif(count($sqlResult)===0)
+  			}elseif(!isset($sqlResult) || !is_array($sqlResult) || count($sqlResult)===0)
 				$this->msg->setMessageId("EMPTY_RESULT");
 		}
 		public function getCssLink()
