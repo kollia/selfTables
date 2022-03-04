@@ -789,13 +789,13 @@ exit();
 				 //							and if it is distinct it will be set all columns
 				 //							inside from count from the select-statement
 					$cTab->distinct(false);
-    				$cTab->addCount("*");//$oTable, "count");
+    				$cTab->count("*");//$oTable, "count");
 				}else
-					$cTab->addCount("*");
+					$cTab->count("*");
     			$cTab->execute();
     			$nMaxTableRows= $cTab->getSingleResult();
 				if(!isset($nMaxTableRows))
-					$nMaxTableRows= 0;
+				    $nMaxTableRows= 0;
 				$this->nMaxTableRows= $nMaxTableRows;
 				//$statement= "select count(*) from ".$tableName;
 				//$nMaxTableRows= $this->db->fetch_single($statement);
@@ -851,7 +851,7 @@ exit();
 					$get->update($param.$nextRow);
 			 		$nextRow= $script.$get->getStringVars()."'";
 					$get->update($param.$lastRow);
-			 		$lastRow= $script.$get->getStringVars()."'";
+					$lastRow= $script.$get->getStringVars()."'";
 
 					// create nameTags
 					$nameTags= new SpanTag("indexName");
