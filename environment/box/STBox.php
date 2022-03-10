@@ -1027,9 +1027,11 @@ class STBox extends STBaseTableBox
 											{
 												$radio->checked();
 											}
-											if(	$aDisabled===true
-												or
-												$aDisabled[$aEnums[$n]]!==null	)
+											if(	$aDisabled===true or
+											    (   is_array($aDisabled) &&
+											        isset($aEnums[$n]) &&
+											        isset($aDisabled[$aEnums[$n]]) &&
+												    $aDisabled[$aEnums[$n]]!==null	)    )
 											{
 												$radio->disabled();
 											}
@@ -1440,61 +1442,37 @@ class STBox extends STBaseTableBox
 			$this->countingEnums($field["name"], $field["flags"]);
 		return $this->aEnums;
 	}
-	function countingEnums($columnName, $flag= null)
+	function getEnums($columnName)
 	{
-		echo __FILE__.__LINE__."<br>";
-		echo "counting enums for column($columnName)<br>";
-		st_print_r($this->aEnums, 2);
-		if(isset($this->aEnums[$columnName]))
-			return $this->aEnums[$columnName];
-		if($flag==null)
-		{
-			Tag::echoDebug("show.db.fields", "get file:".__file__." line:".__line__);
-			$fields= $this->getFieldArray($this->tableName);//hole Felder aus Datenbank
-			foreach($fields as $field)
-			{
-				if($field["name"]==$columnName)
-				{
-					$flag= $field["flags"];
-					break;
-				}
-			}
-		}
-	//Anzahl der Enums erroieren
-		if(!preg_match("/enum/", $flag))
-			return array(0);
-  		$nEnums= 1;
-  		$one= "(,'([^']*)')?";
-  		$pattern= "/'([^']*)'";
-  		for($i=0; $i<15; ++$i)
-  			$pattern.= $one;
-  		preg_match($pattern."/", $flag, $preg);
-  		$nEnums= count($preg)/2;
-  		if(!preg_match("/not_null/", $flag))
-  			$nEnums++;
-  		$is_preg[0]= $nEnums;
-  		for($i= 1; $i<count($preg); $i+= 2)
-			$is_preg[]= $preg[$i];
-		$this->aEnums[$columnName]= $is_preg;
-		
-		echo __FILE__.__LINE__."<br>";
-		echo "result of counting enums<br>";
-		st_print_r($is_preg);
-		return $is_preg;
+        $tableName= $this->asDBTable->getName();
+        if(!isset($this->db->aFieldArrays[$tableName]))
+            return array();
+        foreach ($this->db->aFieldArrays[$tableName] as $value)
+        {
+            if( $value['name'] == $columnName &&
+                isset($value['enums'])            )
+            {
+                return $value['enums'];
+            }
+        }
+        return array();
 	}
-		/*function table($table)
-		{
-			$this->table= $table;
-		}*/
-		function columns($columns)
-		{
-			$this->columns= $columns;
-		}
-		function join($join)
-		{
-			$split= preg_split("/=/", $join);
-			$this->join[$split[0]]= $join;
-		}
+	function countingEnums($columnName)
+	{
+		$aEnum= $this->getEnums($columnName);
+		$aRv[]= count($aEnum) + 1;
+		$aRv= array_merge($aRv, $aEnum);
+		return $aRv;
+	}
+	function columns($columns)
+	{
+		$this->columns= $columns;
+	}
+	function join($join)
+	{
+		$split= preg_split("/=/", $join);
+		$this->join[$split[0]]= $join;
+	}
     function update($onError= onErrorMessage)
 	{
 		return $this->execute(STUPDATE, $onError);
