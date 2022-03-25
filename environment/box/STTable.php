@@ -764,7 +764,7 @@ exit();
 				if($this->nShowFirstRow===null)
 					$this->nShowFirstRow= 0;
 			}
-			$divTag= new DivTag();
+			//$divTag= new DivTag();
 			/*****************************************************************
 			 ** alex 09/06/2005:                                            **
 			 **        erste Zeile f�r index-Angabe und weiterschaltung     **
@@ -797,6 +797,11 @@ exit();
 				if(!isset($nMaxTableRows))
 				    $nMaxTableRows= 0;
 				$this->nMaxTableRows= $nMaxTableRows;
+				if( $nMaxTableRows <= 1 &&
+				    $this->arrangement == STVERTICAL    )
+				{
+				    return $oNumIndex; 
+				}
 				//$statement= "select count(*) from ".$tableName;
 				//$nMaxTableRows= $this->db->fetch_single($statement);
 			 }
@@ -2221,7 +2226,6 @@ exit();
 			Tag::alert(!typeof($this->getTable(), "STDbTable") && !$this->statement,
 						get_class($this)."::execute()",
 						"no table or statement exist, take before methode ::table() or ::solution() for statement");
-			
 			
 			$this->createMessages();
 			$this->defaultOnError($onError);

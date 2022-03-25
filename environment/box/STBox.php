@@ -1,6 +1,7 @@
 <?php
 
 require_once($_stbasetablebox);
+require_once($_stusersession);
 
 
 /**
@@ -618,9 +619,6 @@ class STBox extends STBaseTableBox
 			STCheck::echoDebug("db.statement", "get actual database entrys");
 			$this->db->query($statement, $this->getOnError("SQL"));
 			$result= $this->db->fetch_row(MYSQL_ASSOC, $this->getOnError("SQL"));
-			echo __FILE__." ".__FUNCTION__." line:".__LINE__."<br>";
-			echo "$statement<br>";
-			st_print_r($result,5);
 			$tablePk= $this->asDBTable->getPkColumnName();
 			if(isset($result[$tablePk]))
 				$this->lastInsertID= $result[$tablePk];
@@ -929,8 +927,6 @@ class STBox extends STBaseTableBox
 							$previousSelectionDone= true;
   						}else
   						{
-  						    echo __FILE__." ".__FUNCTION__." line:".__LINE__."<br>";
-  						    st_print_r($post,5);
   							if(isset($post[$field["name"]]))
   								$zahl= $post[$field["name"]];
   						}
@@ -2215,7 +2211,7 @@ class STBox extends STBaseTableBox
     					$result= $this->db->makeSqlDateFormat(trim($post[$name]));
     					if(!$result)
     					{
-    						$this->msg->setMessageId("WRONGDATEFORMAT@@", $columnName, $this->dateFormat);
+    					    $this->msg->setMessageId("WRONGDATEFORMAT@@", $columnName, $this->db->getDateFormat());
     						return false;
     					}
     					$post[$name]= $result;

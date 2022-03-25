@@ -170,15 +170,20 @@ class STObjectContainer extends STBaseContainer
 					$table->container= &$this;
 					$this->tables[$sTableName]= $table;
 				}else
-					$table= null;
+				    $table= null;
 				return $table;
 			}
 			if($this->getName()===$this->db->getName())
 			{// own container is database,
 			 // so table is inserted in ->oGetTables
-			 // and must only insert int ->tables
-			 	$this->tables[$sTableName]= &$newTable;
+			 // and must only insert in ->tables
+			    $this->tables[$sTableName]= &$newTable;
 				return $newTable;
+			}
+			if(  !isset($this->tables[$sTableName]) ||
+			    !is_object($this->tables[$sTableName])   )
+			{
+			    $this->tables[$sTableName]= &$newTable;
 			}
 			return $newTable;
 		}
@@ -206,7 +211,7 @@ class STObjectContainer extends STBaseContainer
 
 		if($tableName==null)
 		{
-			$tableName= $this->getTableName();
+		    $tableName= $this->getTableName();
 		}
 		if(!$tableName)
 		{
@@ -409,26 +414,27 @@ class STObjectContainer extends STBaseContainer
 			}else
 		    	$tableName= $orgTableName;
 		}
-		//$tableName= $HTTP_GET_VARS["stget"]["table"];
 		if($tableName)
 		{
-			/*if(!$this->haveTable($tableName))
-			{
-				Tag::echoDebug("table", "table ".$tableName." not exist in container ".$this->name);
-				return null;
-			}*/
 			if($bStdTab)
 				$this->actTableName= $tableName;
 			return $tableName;
 		}
 		$tableName= $this->getFirstTableName();
-		if(	!$tableName
+		if(	( !isset($tableName) || !trim($tableName) )
 			and
 			count($this->tables)==1	)
 		{// get tableName from table-object not from key,
 		 // because there only lower case
     		$table= &reset($this->tables);
     		$tableName= $table->getName();
+		}
+		if( ( !isset($tableName) ||
+		      !trim($tableName)     ) &&
+		    $this->parentContainerName != $this->getName()    )
+		{
+		    $container= &STBaseContainer::getContainer($this->parentContainerName);
+		    $tableName= $container->getTableName();
 		}
 		if($bStdTab)
 			$this->actTableName= $tableName;
@@ -494,13 +500,13 @@ class STObjectContainer extends STBaseContainer
 			!$this->bChooseByOneTable	)
     	{// get tableName from table-object not from key,
 		 // because there only lower case
-		 	$table= reset($this->tables);
+    	    $table= reset($this->tables);
     		if(!$table)
     		{
     			$keys= array_keys($this->tables);
     			$tableName= reset($keys);
     		}else
-    			$tableName= $table->getName();//key($this->tables);
+    		    $tableName= $table->getName();
     	}
 		return $tableName;
 	}
@@ -520,42 +526,56 @@ class STObjectContainer extends STBaseContainer
 		$tableName= $this->getTableName($tableName);
 		$action= $this->sFirstAction;
 		if(	!isset($action) ||
-			$tableName != ""		)
+			trim($action) == ""		)
 		{
-			$actions= $this->getActions();
-			if(	isset($tableName) &&
-				is_string($tableName) &&
-				trim($tableName) != "" &&
-				isset($actions[$tableName])	)
-			{
-				return $actions[$tableName];
-			}
-			if(	count($actions)==1 &&
-				!$this->bChooseByOneTable	)
-			{
-				$action= reset($actions);
-			}
+		    if(   isset($tableName) &&
+		          $tableName != ""        )
+		    {
+    			$actions= $this->getActions();
+    			if(	isset($tableName) &&
+    				is_string($tableName) &&
+    				trim($tableName) != "" &&
+    				isset($actions[$tableName])	)
+    			{
+    				return $actions[$tableName];
+    			}
+    			if(	count($actions)==1 &&
+    				!$this->bChooseByOneTable	)
+    			{
+    				$action= reset($actions);
+    			}
+		    }
+		          
+		    if(   !isset($action) ||
+		          trim($action) == "" )
+		    {
+		        $table= $this->getTable();
+		        $action= $table->getAction();
+		        if(   !isset($action) ||
+		              trim($action) == "" )
+		        {
+		            
+		        }
+		    }
 		}
 		return $action;
 	}
 	function getAction()
 	{
-		global $HTTP_GET_VARS;
-
 		if(	isset($this->actAction) &&
 			trim($this->actAction) != ""	)
 		{
 			return $this->actAction;
 		}
-		if(isset($HTTP_GET_VARS["stget"]["action"]))
-			$action= $HTTP_GET_VARS["stget"]["action"];
+		$query= new STQueryString();
+		$action= $query->getAction();
 		$table= $this->getTableName();
 		if(	!isset($action) ||
-			$action == "" ||
+			trim($action) == "" ||
 			!isset($table) ||
-			$table == ""		)// wenn die Tabelle nicht stimmt, stimmt auch die Aktion nicht
+			trim($table) == ""		)// wenn die Tabelle nicht stimmt, stimmt auch die Aktion nicht
 		{
-			$action= $this->getFirstAction();
+		    $action= $this->getFirstAction();
 		}
 		if(	$action==STCHOOSE
 			and
@@ -825,6 +845,14 @@ class STObjectContainer extends STBaseContainer
     		}
 		}
 		STBaseContainer::execute($externSideCreator, $onError);
+		$action= $this->getAction();
+		if($action == "")
+		{
+		    $table= $this->getTableName();
+		    if(!isset($table) || trim($table) == "")
+		        $table= $this->getFirstTableName();
+		    $action= $this->getFirstAction();
+		}
 		if(	isset($get_vars["action"]) &&
 			(	$get_vars["action"]==STUPDATE ||
 				$get_vars["action"]==STINSERT	)	)
@@ -999,7 +1027,7 @@ class STObjectContainer extends STBaseContainer
 				}
 			}
 			$this->setAllMessagesContent(STLIST, $list);
-			
+
 			if(typeof($table, "STDbTable"))
 			{
 			    $result= $list->execute();
@@ -1413,31 +1441,6 @@ class STObjectContainer extends STBaseContainer
 		 // the first one
 			$tableName= $olderContainer->getTableName();
 		}
-		/*while($vars)
-		{
-			if($olderContainerName==$vars["container"])
-			{
-				$tableName= $vars["table"];
-				if(!$tableName)
-				{
-				}
-			}
-		}
-		$tableName= $HTTP_GET_VARS["stget"]["older"]["stget"]["table"];
-		if(!$tableName)
-		{
-			$container= &$this->getOlderContainer();
-			if($HTTP_GET_VARS["stget"]["older"]["stget"])
-			{
-				$tableName= $container->getFirstTableName();
-			}else
-			{
-				$tableName= $HTTP_GET_VARS["stget"]["table"];
-				if(!$tableName)
-					$tableName= $container->getFirstTableName();
-				echo "table for older container:$tableName<br />";
-			}
-		}*/
 		$table= &$olderContainer->getTable($tableName);
 		return $table;
 	}

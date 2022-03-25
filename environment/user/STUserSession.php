@@ -1,8 +1,8 @@
 <?php
 
 require_once($_stsession);
-require_once($database_selector);
-require_once($_stusermanagement_install);
+//require_once($database_selector);
+//require_once($_stusermanagement_install);
 
 class STUserSession extends STSession
 {
@@ -148,7 +148,7 @@ class STUserSession extends STSession
 		$desc->setPrefixToTable($prefix, "GroupType");
 		$desc->setPrefixToTable($prefix, "Log");
 	}
-	function verifyLogin($Project)
+	function verifyLogin($Project= 1)
 	{// method only to check param -> must be set
 		Tag::paramCheck($Project, 1, "int", "string");
 
@@ -171,7 +171,7 @@ class STUserSession extends STSession
         	$project->select("can_update");
         	$project->select("can_delete");
 			$project->where("ID=".$this->projectID);
-			$selector= new OSTDbSelector($project);
+			$selector= new STDbSelector($project);
 			$selector->execute(STSQL_ASSOC, 1);
 			$this->projectCluster= $selector->getRowResult();
 		}
@@ -607,8 +607,9 @@ class STUserSession extends STSession
   			$this->session_vars["ST_PROJECTID"]= $this->projectID;
 		}
 	}
-  	function setProperties($ProjectName)
+  	function setProperties($ProjectName= "")
   	{
+  	    STCheck::paramCheck($ProjectName, 1, "string");// property shouldn*t be an null string, parameter only be defined for STSession::setProperties()
 		/**/Tag::echoDebug("user", "entering STUserSession::setProperties ...");
 
 		$this->setUserProject( $ProjectName );

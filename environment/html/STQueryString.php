@@ -41,8 +41,6 @@ class STQueryString
 
 		function __construct($param_vars= null)
 		{
-			global	$HTTP_GET_VARS;
-
 			STCheck::paramCheck($param_vars, 1, "string", "array", "null");
 			if(is_string($param_vars))
 			{// alex 03/05/2005:	es darf nun bei einem String
@@ -58,8 +56,6 @@ class STQueryString
 		}
 		function setQueryTable($table, $nrColumn, $pathColumn)
 		{
-			global	$global_selftables_query_table;
-
 			$table->clearSelects();
 			$table->select($nrColumn);
 			$table->select($pathColumn);
@@ -244,12 +240,26 @@ class STQueryString
 		{
 			$this->aNoSth[]= $queryString;
 		}
-		function getActTableName()
+		public function getTable()
 		{
 			$sRv= "";
 			if(isset($this->param_vars["stget"]["table"]))
 				$sRv= $this->param_vars["stget"]["table"];
 			return $sRv;
+		}
+		public function getContainer()
+		{
+		    $sRv= "";
+		    if(isset($this->param_vars["stget"]["container"]))
+		        $sRv= $this->param_vars["stget"]["container"];
+		        return $sRv;
+		}
+		public function getAction()
+		{
+		    $sRv= "";
+		    if(isset($this->param_vars["stget"]["action"]))
+		        $sRv= $this->param_vars["stget"]["action"];
+		        return $sRv;
 		}
 		function getArrayVars($var= null/*, ...*/)
 		{

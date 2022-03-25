@@ -225,6 +225,7 @@ abstract class STDatabase extends STObjectContainer
 	function setTimeFormat($sFormat)
 	{
 		//$sFormat= strtoupper(trim($sFormat));
+		$preg= array();
 		$res= preg_match("/^([^HMS]*)([HMS]{1,2})(([^HMS]+)([HMS]{1,2})(([^HMS]+)([HMS]{1,2}))?)?(.*)$/", $sFormat, $preg);
 		if(STCheck::isDebug())
 			STCheck::alert(!$res, "STDatabase::setTimeFormat()", "wrong timeformat '$sFormat'");
@@ -1342,16 +1343,9 @@ abstract class STDatabase extends STObjectContainer
 				$bMainTable= true;
 		}
 		if($bMainTable)
-		{
 			$aNeededColumns= $oTable->getSelectedColumns();
-//		echo __file__.__line__."<br>";
-			//echo "get from selected columns (show)<br>";
-		}else
-		{
+		else
 			$aNeededColumns= $oTable->getIdentifColumns();
-//		echo __file__.__line__."<br>";
-			//echo "get from identif columns<br>";
-		}
 		$aGetColumns= array();
 		// put only all getColumns into array aGetColumns
 		foreach($oTable->showTypes as $column=>$extraField)
@@ -1413,7 +1407,7 @@ abstract class STDatabase extends STObjectContainer
 			echo msg;*/
 		}
 		$aShowTypes= $oTable->showTypes;
-		/*if(typeof($oTable, "OSTDbSelector"))
+		/*if(typeof($oTable, "STDbSelector"))
 			$isSelector= true;					// alex 24/05/2005:	$isSelector eliminiert,
 		else									//					da sie ohnehin nur einmal gebraucht wird
 			$isSelector= false;*/				//					und jetzt sowieso �ber den 3. Parameter
@@ -1460,7 +1454,7 @@ abstract class STDatabase extends STObjectContainer
 					STCheck::echoDebug("db.statements.select", "from ".get_class($oTable)." ".$oTable->getName()." for column ".$column["column"]." is Fk-Table \"".$table."\"");
 				if(	$table
 					and
-					typeof($oMainTable, "OSTDbSelector")	)
+					typeof($oMainTable, "STDbSelector")	)
 				{
 					// alex 24/05/2005:	wenn die Tabelle im FK existiert
 					//					und die Aktuelle Tabelle ein Selector ist,
@@ -1512,7 +1506,7 @@ abstract class STDatabase extends STObjectContainer
 					$container= $this->getContainer($containerName);
 					/*if(!$oOther)// wenn $oOther deffiniert ist, ist die Tabelle von einer anderen Datenbank
 					{*/
-				/*		if(typeof($oMainTable, "OSTDbSelector"))
+				/*		if(typeof($oMainTable, "STDbSelector"))
 						{
 							$oOther= $oMainTable->getTable($table);
 						}else
@@ -1521,8 +1515,8 @@ abstract class STDatabase extends STObjectContainer
 						}
 					}else
 					{
-						if(typeof($oMainTable, "OSTDbSelector"))
-						{// if the table from FK in the OSTDbSelector:$oMainTable
+						if(typeof($oMainTable, "STDbSelector"))
+						{// if the table from FK in the STDbSelector:$oMainTable
 						 // take it from this one
 							$other=  $oMainTable->getTable($table);
 							if($other)
@@ -1635,9 +1629,9 @@ abstract class STDatabase extends STObjectContainer
 				and
 				!isset($maked[$table])
 				and
-				typeof($oTable, "OSTDbSelector"))
+				typeof($oTable, "STDbSelector"))
 			{// wenn die FK Spalte nicht in den ben�tigten Spalten ist,
-			 // das objekt aber vom Typ OSTDbSelector ist (wobei die FK-Spalten nicht aufgelistet werden)
+			 // das objekt aber vom Typ STDbSelector ist (wobei die FK-Spalten nicht aufgelistet werden)
 			 // und die Tabelle in den Aliases ist,
 			 // wird sie doch f�r den join ben�tigt
 			 	$bNeedColumn= true;
@@ -2625,7 +2619,7 @@ abstract class STDatabase extends STObjectContainer
 		$mainTable= $bMainTable;
 		if($mainTable)
 			$mainTable= $oTable;	// alex 24/05/2005:	nur wenn der erste Aufruf für Haupttabelle getätigt wird
-									//					muss zur kontrolle bei einem OSTDbSelector
+									//					muss zur kontrolle bei einem STDbSelector
 									//					die Haupttabelle als dritter Parameter mitgegeben werden
 		$tableName= $oTable->getName();
 		$this->bFirstSelectStatement= true;
@@ -2735,7 +2729,7 @@ abstract class STDatabase extends STObjectContainer
 		if($where)
 			$oTable->andWhere($where);
 
-		$selector= new OSTDbSelector($oTable, STSQL_ASSOC);
+		$selector= new STDbSelector($oTable, STSQL_ASSOC);
 		//$statement= $selector->getStatement();
 		//echo $statement."<br />";
 		$selector->execute();
@@ -2763,7 +2757,7 @@ abstract class STDatabase extends STObjectContainer
 								if(!is_numeric($is))
 									$is= "'".$is."'";
 								$fkTable->where($column["own"]."=".$is);
-								$selector= new OSTDbSelector($fkTable);
+								$selector= new STDbSelector($fkTable);
 								//$statement= $selector->getStatement();
 								//echo $statement."<br />";
 								$selector->execute();
@@ -2867,7 +2861,7 @@ abstract class STDatabase extends STObjectContainer
     		    STCheck::echoDebug("table", $msg);
 		    else
 		        STCheck::echoDebug("db.statements.table", $msg);
-		    //showErrorTrace();
+	        
 		}
 		$tableName= strtolower($tableName);
 		// alex 12/04/2005: mit getTable werden nun alle Tabellen erstellt

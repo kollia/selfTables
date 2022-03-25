@@ -424,7 +424,9 @@ class STCheck
 					echo "seting <b>COOKIE-VARS:</b>";
 					st_print_r($HTTP_COOKIE_VARS, 20);
 				}
-				if(count($HTTP_POST_FILES))
+				if( isset($HTTP_POST_FILES) &&
+				    is_array($HTTP_POST_FILES) &&
+				    count($HTTP_POST_FILES)         )
 				{
 					echo "incomming <b>POST-FILES:</b>";
 					st_print_r($HTTP_POST_FILES, 20);

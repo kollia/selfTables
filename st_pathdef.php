@@ -250,7 +250,6 @@
 		$stuser=					$_stenvironmenttools_path."/user/STUser.php";
 		$ostuser=					$_stenvironmenttools_path."/_prev/user/OSTUser.php";
 		$user_admin=				$ostuser;
-		$user_property=				$_stenvironmenttools_path."/_prev/user/my_inc_user_check.php";
 		$ostuser_projectaccess=		$_stenvironmenttools_path."/_prev/user/OSTUser_ProjectAccess.php";
 
 		$_ostusersession=			$_stenvironmenttools_path."/_prev/user/OSTUserSession.php";

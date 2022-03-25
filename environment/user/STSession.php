@@ -69,7 +69,9 @@ class STSession
 		$this->aSessionVars[]= "ST_EXIST_CLUSTER";
 		$this->aSessionVars[]= "ST_USER_DEFINED_VARS";
   	}
-	public static function init()
+  	// toDo: init method should be the same than inside STUserSession
+  	//       but isn't ($Db and $prefix shouldn't exist)
+  	public static function init(&$Db, $prefix= null)
 	{
 		global	$global_selftable_session_class_instance;
 
@@ -471,7 +473,7 @@ class STSession
 	{
 		return $this->session_vars["ST_CLUSTER_MEMBERSHIP"];
 	}
-  	function setProperties()
+	function setProperties($ProjectName= "")
   	{
 		/**/Tag::echoDebug("user", "entering STSession::setProperties ...");
 		// define Login-Flag
@@ -1033,7 +1035,7 @@ class STSession
                 $logText.= "(user:".$this->user.", project:".$this->project.")";
                 $this->writeLog($Typ, $customID, $logText);
     }
-	function writeLog($Typ, $customID, $logText, $url)
+    function writeLog($Type, $customID, $logText)
 	{
     	if(!$this->sLogFile)
         	return;

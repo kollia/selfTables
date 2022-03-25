@@ -145,6 +145,30 @@ class STAliasTable
 			$this->bCorrect= false;
 		}
 	}
+	function __clone()
+	{
+	    $this->bInsert= true;
+	    $this->bUpdate= true;
+	    $this->bDelete= true;
+	    /**
+	     *
+	     * @var boolean whether should sort Table, by clicking of one of the head-names
+	     */
+	    $this->doTableSorting= true;
+	    $this->bShowName= true;
+	    // alex 08/06/2005:	nun koennen Werte auch Statisch in der
+	    //					STDbTable gesetzt werden
+	    $this->aSetAlso= array();
+	    $this->aCallbacks= array();
+	    // alex 09/06/2005:	limitieren von Rowanzahl aus der Datenbank
+	    $this->nFirstRowSelect= 0;
+	    $this->nMaxRowSelect= null;// null -> es werden alle Rows aufgelistet
+	    $this->nAktSelectedRow= 0;
+	    $this->bAlwaysIndex= true;
+	    $this->bModifyFk= true;//ob die Tabelle anhand der ForeignKeys Modifiziert werden soll
+	    $this->listArrangement= STHORIZONTAL;//bestimmt das Layout der OSTTable
+	    $this->oSearchBox= null; // Suchen-Box bei Auflistung der Tabelle anzeigen
+	}
 	function title($title)
 	{
 		$this->title= $title;

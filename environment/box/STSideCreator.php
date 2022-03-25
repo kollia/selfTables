@@ -333,7 +333,7 @@ class STSideCreator extends HtmlTag
 				//	lost the member variable container
 				$db= &$container->getDatabase();
 				if($db !== NULL)
-					$this->db= &$db;//&$container->getDatabase();
+				    $this->db= &$db;//&$container->getDatabase();			
 			}
 			if(is_array($this->logoutButton))
 				$this->tableContainer->showLogoutButton(	$this->logoutButton["buttonName"],
@@ -372,8 +372,8 @@ class STSideCreator extends HtmlTag
 			$msgHandling= $this->createMessages($onError);
 			$result= $msgHandling->getAktualMessageId();
 			if($result=="NOERROR")
-			{	
-				$result= $this->tableContainer->execute($this, $onError);
+			{
+			    $result= $this->tableContainer->execute($this, $onError);
 				$msgHandling->setMessageContent($result);
 				$msgHandling->setMessageId($result);
 				$endScript= $msgHandling->getMessageEndScript();
