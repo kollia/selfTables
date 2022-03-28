@@ -748,11 +748,11 @@ class STUser
 					}
 					
 					?><script>
-						popupWindowAddress= '<?=$popupWindowAddress?>';
+						<?php echo "popupWindowAddress= '$popupWindowAddress';"; ?>
 						windowParams= 'width=50,height=50,resizable=no,toolbars=no,hotkeys=no';
 						mySessionStarter = window.open(popupWindowAddress, '',  windowParams);
 						window.focus();
-					</script><?
+					</script><?php
 				} else {
 					if( Tag::isDebug("user") ) echo "NO PHPSESS ID FOUND !! [$$sessionName]<br />";
 				}

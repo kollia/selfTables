@@ -201,18 +201,14 @@
 		$php_html_description=		$_stenvironmenttools_path."/html/Tags.php";
 		$_stquerystring=			$_stenvironmenttools_path."/html/STQueryString.php";
 		$_stpostarray=				$_stenvironmenttools_path."/html/STPostArray.php";
-		$php_htmltag_class=			$_stenvironmenttools_path."/_prev/html/GetHtml.php";
 		$php_javascript=			$_stenvironmenttools_path."/html/JavascriptTag.php";
-
-		$stdbtablecontainer=		$_stenvironmenttools_path."/_prev/db/STDbTableContainer.php";
+		
 		$_stdatabase=				$_stenvironmenttools_path."/db/STDatabase.php";
 		$_stdbmysql=				$_stenvironmenttools_path."/db/STDbMySql.php";
 		$_staliastable=				$_stenvironmenttools_path."/db/STAliasTable.php";
 		$_stdbtable=				$_stenvironmenttools_path."/db/STDbTable.php";
 		$_stdbdeftable=				$_stenvironmenttools_path."/db/STDbDefTable.php";
 		$_stdbwhere=				$_stenvironmenttools_path."/db/STDbWhere.php";
-		//$database_where_clausel=	$_stenvironmenttools_path."/_prev/db/OSTDbWhere.php";
-		//$database_selector=			$_stenvironmenttools_path."/_prev/db/OSTDbSelector.php";
 		$_stdbselector=				$_stenvironmenttools_path."/db/STDbSelector.php";
 		$_stdbinserter=				$_stenvironmenttools_path."/db/STDbInserter.php";
 		$_stdbdefinserter=			$_stenvironmenttools_path."/db/STDbDefInserter.php";
@@ -229,14 +225,10 @@
 		$_stsearchbox=				$_stenvironmenttools_path."/box/STSearchBox.php";
 		$_stcategorygroup=			$_stenvironmenttools_path."/box/STCategoryGroup.php";
 		$_stbasesearch=				$_stenvironmenttools_path."/box/STBaseSearch.php";
-		$search_table=				$_stenvironmenttools_path."/_prev/box/OSTSearchBox.php";
 		$choose_table=				$_stenvironmenttools_path."/box/STChooseTable.php";
 		$_stsidecreator=			$_stenvironmenttools_path."/box/STSideCreator.php";
 		$_stsessionsidecreator=		$_stenvironmenttools_path."/box/STSessionSideCreator.php";
 		$_stusersidecreator=		$_stenvironmenttools_path."/box/STUserSideCreator.php";
-		$base_site_creator=			$_stenvironmenttools_path."/_prev/box/STDbSiteCreator.php";
-		$site_creator=				$_stenvironmenttools_path."/_prev/box/OSTDbSiteCreator.php";
-		$ostquestionbox=			$_stenvironmenttools_path."/_prev/box/OSTQuestionBox.php";
 		$stselectbox=				$_stenvironmenttools_path."/box/STSelectBox.php";
 		$_stdownload=				$_stenvironmenttools_path."/box/STDownload.php";
 		$_stbasecontainer=			$_stenvironmenttools_path."/box/STBaseContainer.php";
@@ -247,17 +239,8 @@
 
 		$_stsession=				$_stenvironmenttools_path."/user/STSession.php";
 		$_stusersession=			$_stenvironmenttools_path."/user/STUserSession.php";
-		$stuser=					$_stenvironmenttools_path."/user/STUser.php";
-		$ostuser=					$_stenvironmenttools_path."/_prev/user/OSTUser.php";
-		$user_admin=				$ostuser;
-		$ostuser_projectaccess=		$_stenvironmenttools_path."/_prev/user/OSTUser_ProjectAccess.php";
+		$_stuser=					$_stenvironmenttools_path."/user/STUser.php";
 
-		$_ostusersession=			$_stenvironmenttools_path."/_prev/user/OSTUserSession.php";
-		$_ostsidecreator=			$_stenvironmenttools_path."/_prev/box/OSTSideCreator.php";
-		$mysql_database=			$_stenvironmenttools_path."/_prev/db/OSTDatabase.php";
-		//$database_tables=			$_stenvironmenttools_path."/_prev/db/OSTDbTable.php";
-
-		$_sttabledescriptions=		$_stenvironmenttools_path."/box/fault_class.php";
 
 		/**********************************************************************\
 		|**         selfTables - CMS System                                  **|
