@@ -1511,7 +1511,7 @@ class STObjectContainer extends STBaseContainer
 
     	return $cluster;
 	}
-	/*public*/function install($containerName, $className, $fromContainer= null, $sourceFile= null)
+	static public function install($containerName, $className, $fromContainer= null, $sourceFile= null)
 	{
 		global	$global_array_exist_stobjectcontainer_with_classname,
 				$global_boolean_install_objectContainer;

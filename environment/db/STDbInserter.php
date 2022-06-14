@@ -1,5 +1,7 @@
 <?php
 
+require_once($_stusersession);
+
 class STDbInserter
 {
 	var	$db;
@@ -132,8 +134,8 @@ class STDbInserter
 	}
 	function updateCluster($row)
 	{
-
-		if(count($this->sAccessClusterColumn))
+		if( is_array($this->sAccessClusterColumn) &&
+		    count($this->sAccessClusterColumn)        )
 		{
 			$this->lastInsertID= $this->getLastInsertID();
 

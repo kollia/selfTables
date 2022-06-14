@@ -1,7 +1,7 @@
 <?php
 
 require_once($_stbasetablebox);
-require_once($_stusersession);
+//require_once($_stusersession);
 
 
 /**

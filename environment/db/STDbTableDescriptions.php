@@ -20,6 +20,8 @@ class STDbTableDescriptions
 
 		if(!isset($global_sttabledescriptions_class_instance[$dbName]))
 		{
+		    echo __FILE__.__LINE__."<br>";
+		    echo "create new STDbTableDescription()<br>";
 			$global_sttabledescriptions_class_instance[$dbName]= new STDbTableDescriptions();
 		}
 		return $global_sttabledescriptions_class_instance[$dbName];
@@ -239,7 +241,8 @@ class STDbTableDescriptions
 		$aRv= array();
 		$tableName= $this->getOrgTableName($tableName);
 		if(	isset($this->aExistTables[$tableName]) &&
-			$this->aExistTables[$tableName]				)
+			$this->aExistTables[$tableName]	&&
+		    isset($this->asTableColumns[$tableName])  )
 		{
 			foreach($this->asTableColumns[$tableName] as $name=>$column)
 			{
@@ -315,6 +318,8 @@ class STDbTableDescriptions
 	{
 		Tag::paramCheck($database, 1, "STDatabase");
 
+		echo __FILE__.__LINE__."<br>";
+		echo "STDbTableDescription::installTables();<br>";
 		if(!$this->aExistTables)
 			return;
 		if(mysqlVersionNeed("4.0.7"))

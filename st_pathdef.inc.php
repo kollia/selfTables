@@ -5,8 +5,8 @@
 	//         allowed debug string's for STCheck::debug("<string>")
 	//        ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 	//
-	//     true		-	only set to debug and check parameters in some method's (true is an boolean no string)
-	//     query    -   show incomming query of GET or POST URL's
+	//     true		             -  only set to debug and check parameters in some method's (true is an boolean no string)
+	//     query                 -  show incomming query of GET or POST URL's
 	//     db.statement          -  show created statements of self-Tables
 	//     db.statement.time     -  show how long statement need to fetch from database
 	//     db.statements.select  -  show select statement by creation
@@ -193,8 +193,6 @@
 		$_st_max_query_length=		 0;
 		$_st_max_debug_query_length= 0;
 
-		// UserManagement Login
-		$USERCLASS=					"OSTUser";
 
 		$_sttools=					$_stenvironmenttools_path."/stTools.php";
 		$_stcheck=					$_stenvironmenttools_path."/html/STCheck.php";
@@ -236,18 +234,22 @@
 		$_stobjectcontainer=		$_stenvironmenttools_path."/box/STObjectContainer.php";
 		$_tinymce=					$_stenvironmenttools_path."/box/TinyMCE.php";
 		$_tinymce_row=				$_stenvironmenttools_path."/box/TinyMCE_row.php";
-
-		$_stsession=				$_stenvironmenttools_path."/user/STSession.php";
-		$_stusersession=			$_stenvironmenttools_path."/user/STUserSession.php";
+		
 		$_stuser=					$_stenvironmenttools_path."/user/STUser.php";
+		$_stsession=				$_stenvironmenttools_path."/user/STSession.php";
+		$_stusersession=            $_stenvironmenttools_path."/user/STUserSession.php";
 
 
 		/**********************************************************************\
 		|**         selfTables - CMS System                                  **|
 		\**********************************************************************/
+		$DBin_UserDatabase=       "UserManagement";
+		// UserManagement Login
+		$USERCLASS=               "STUser";
 		$_stum_installcontainer=		$_stcmstools_path."/usermanagement/STUM_InstallContainer.php";
 		$_stusermanagement_install=		$_stcmstools_path."/usermanagement/stusermanagement_install.php";
 		$_stusermanagement=				$_stcmstools_path."/usermanagement/STUserManagement.php";
+		$_stusermanagementsession=		$_stcmstools_path."/usermanagement/STUserManagementSession.php";
 		$_stprojectmanagement=			$_stcmstools_path."/usermanagement/STProjectManagement.php";
 		$_stpartitionmanagement=		$_stcmstools_path."/usermanagement/STPartitionManagement.php";
 		$_stusergroupmanagement=		$_stcmstools_path."/usermanagement/STUserGroupManagement.php";

@@ -47,43 +47,43 @@ class st_tableTag extends TableTag
 	}
     function colspan($num)
     {
-		if(Tag::error($this->nColumn===-1, "st_tableTag::colspan()", "row is undifined, insert first an content"))
+		if(Tag::is_error($this->nColumn===-1, "st_tableTag::colspan()", "row is undifined, insert first an content"))
 			return;
     	$this->inherit[$this->nRow]->inherit[$this->nColumn]->colspan($num);
     }
     function rowspan($num)
     {
-		if(Tag::error($this->nColumn===-1, "st_tableTag::rowspan()", "row is undifined, insert first an content"))
+		if(Tag::is_error($this->nColumn===-1, "st_tableTag::rowspan()", "row is undifined, insert first an content"))
 			return;
     	$this->inherit[$this->nRow]->inherit[$this->nColumn]->rowspan($num);
     }
 	function columnAlign($value)
 	{
-		if(Tag::error($this->nColumn===-1, "st_tableTag::rowspan()", "row is undifined, insert first an content"))
+		if(Tag::is_error($this->nColumn===-1, "st_tableTag::rowspan()", "row is undifined, insert first an content"))
 			return;
     	$this->inherit[$this->nRow]->inherit[$this->nColumn]->align($value);
 	}
 	function columnValign($value)
 	{
-		if(Tag::error($this->nColumn===-1, "st_tableTag::rowspan()", "row is undifined, insert first an content"))
+		if(Tag::is_error($this->nColumn===-1, "st_tableTag::rowspan()", "row is undifined, insert first an content"))
 			return;
     	$this->inherit[$this->nRow]->inherit[$this->nColumn]->valign($value);
 	}
 	function columnWidth($width)
 	{
-		if(Tag::error($this->nColumn===-1, "st_tableTag::rowspan()", "row is undifined, insert first an content"))
+		if(Tag::is_error($this->nColumn===-1, "st_tableTag::rowspan()", "row is undifined, insert first an content"))
 			return;
     	$this->inherit[$this->nRow]->inherit[$this->nColumn]->width($width);
 	}
 	function columnHeight($height)
 	{
-		if(Tag::error($this->nColumn===-1, "st_tableTag::rowspan()", "row is undifined, insert first an content"))
+		if(Tag::is_error($this->nColumn===-1, "st_tableTag::rowspan()", "row is undifined, insert first an content"))
 			return;
     	$this->inherit[$this->nRow]->inherit[$this->nColumn]->height($height);
 	}
 	function columnBgcolor($color)
 	{
-		if(Tag::error($this->nColumn===-1, "st_tableTag::rowspan()", "row is undifined, insert first an content"))
+		if(Tag::is_error($this->nColumn===-1, "st_tableTag::rowspan()", "row is undifined, insert first an content"))
 			return;
     	$this->inherit[$this->nRow]->inherit[$this->nColumn]->bgcolor($color);
 	}

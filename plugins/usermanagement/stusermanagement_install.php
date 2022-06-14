@@ -135,7 +135,6 @@
 		$_stusermanagement_table_description->column("Log", "description", "TEXT", false);
 		$_stusermanagement_table_description->column("Log", "DateCreation", "DATETIME", false);
 
-	showErrorTrace();
 	STObjectContainer::install("um_install", "STUM_InstallContainer", "userDb", $_stum_installcontainer);
 	STObjectContainer::install("user", "STUserManagement", "userDb", $_stusermanagement);
 	STObjectContainer::install("projects", "STProjectManagement", "user", $_stprojectmanagement);

@@ -3,6 +3,8 @@
 
 function st_print_r($value, $deep=1, $space= 0, $bFirst= true)
 {
+    if($bFirst)
+        echo myTools::getSpaces($space);
 	if(	is_object($value)
 		or
 		is_array($value)	)
@@ -53,12 +55,15 @@ function st_print_r($value, $deep=1, $space= 0, $bFirst= true)
 				count($value) == 0	)
 			{
 				echo $f."-empty- )";
+			}elseif (typeof($value, "STAliasTable"))
+			{
+			    echo $f.$value->Name."::".$value->ID." )";
 			}else
 				echo $f."-skip- )";
 			$space-= strlen($f);
 		}
-		if($space==0)
-			echo "\n";
+		if($space==0 || $bFirst)
+			echo "<br />\n";
 	}elseif(is_bool($value))
 	{
 		echo "boolean(";

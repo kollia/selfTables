@@ -2,8 +2,11 @@
 
 require_once($_stsession);
 
+$__static_global_STAlias_ID= 0;
+
 class STAliasTable
 {
+    var $ID= 0;
 	var $Name;
 	var $title= "";
 	var	$sPKColumn;
@@ -109,27 +112,35 @@ class STAliasTable
 	  */
 	function __construct($oTable= null)
 	{
+	    global $__static_globl_STAlias_ID;
+	    
 		Tag::paramCheck($oTable, 1, "string", "STAliasTable", "null");
 
-    	if(Tag::isDebug())
-    	{
-    		if(!typeof($this, "STDbTable"))
-    		{
-    			if($oTable === null)
-				{
-    				STCheck::echoDebug("table", "create non correct null table.");
-				}elseif(is_string($oTable))
-				{
-    				Tag::echoDebug("table", "create new table <b>".$oTable."</b>");
-				}else
-					Tag::echoDebug("table", "copy table <b>".$oTable->Name."</b>");
-    		}
-    	}
+        $__static_globl_STAlias_ID++;
+        $this->ID= $__static_globl_STAlias_ID;
     	$this->bOrder= NULL;
 		if(typeof($oTable, "STAliasTable"))
 		{
-			$this->copy($oTable);
+		    STCheck::echoDebug("table", "create new ".get_class($this)."::<b>".$oTable->Name."</b> with ID:".$this->ID." from ".get_class($oTable)."::<b>".$oTable->Name."</b> with ID:".$oTable->ID);
+		    echo "old <b>FKs</b>:<br>";
+		    st_print_r($oTable->aBackJoin, 3);
+		    $this->copy($oTable);
+		    echo "new <b>FKs</b>:<br>";
+		    st_print_r($this->aBackJoin, 3);
+		    showErrorTrace();
 			return;
+		}
+		if(Tag::isDebug())
+		{
+		    STCheck::echoDebug("table", "create new ID:".$this->ID." for ".get_class($this));
+		    if($oTable === null)
+	        {
+	            STCheck::echoDebug("table", "create non correct null table.");
+	        }elseif(is_string($oTable))
+	        {
+	            Tag::echoDebug("table", "create new table <b>".$oTable."</b>");
+	        }else
+	            Tag::echoDebug("table", "copy table <b>".$oTable->Name."</b>");
 		}
 		$this->asForm= array(	"button"=>	"save",
 								"form"=>	"st_checkForm",
@@ -144,9 +155,16 @@ class STAliasTable
 			$this->Name= "NULL";
 			$this->bCorrect= false;
 		}
+		STCheck::echoDebug("table", "crate table ".$this->Name." with ID:".$this->ID);
 	}
 	function __clone()
 	{
+	    global $__static_globl_STAlias_ID;
+	    
+	    $__static_globl_STAlias_ID++;
+	    $oldID= $this->ID;
+	    $this->ID= $__static_globl_STAlias_ID;
+	    STCheck::echoDebug("table", "clone table ".$this->Name." from ID:$oldID to new ID:".$this);
 	    $this->bInsert= true;
 	    $this->bUpdate= true;
 	    $this->bDelete= true;
@@ -196,6 +214,7 @@ class STAliasTable
      	$this->Name= $Table->Name;
     	$this->FK= $Table->FK;
 		$this->aFks= $Table->aFks;
+		$this->aBackJoin= $Table->aBackJoin;
 		$this->bModifyFk= $Table->bModifyFk;
     	$this->identification= $Table->identification;
     	$this->showTypes= $Table->showTypes;
@@ -712,7 +731,7 @@ class STAliasTable
 			STCheck::param($toTable, 1, "STAliasTable", "string");
 			STCheck::param($otherColumn, 2, "string", "empty(string)", "null");
 			STCheck::param($where, 3, "string", "empty(String)", "STDbWhere", "null");
-			
+						
 			$this->fk($ownColumn, $toTable, $otherColumn, null, $where);
 		}
 		function foreignKeyObj($ownColumn, &$toTable, $otherColumn= null, $where= null)
@@ -773,6 +792,7 @@ class STAliasTable
 			$where= $otherColumn;
 			$otherColumn= &$buffer;
 		}// end of tausch
+		STCheck::echoDebug("db.table.fk", "create FK from ".$this->getName().".$ownColumn to $toTableName.$otherColumn inside STAliasTable::ID'".$this->ID."'");
 		
 			// alex 26/04/2005: where-clausel einfuegen
 			if($where)
@@ -792,13 +812,12 @@ class STAliasTable
 			if($join===null)
 			{
 				$bInTable= false;
-				Tag::echoDebug("db.table.fk", "test <b>$ownColumn:</b> for table <b>".$this->Name."</b> in object <b>".get_class($this)."</b>");
+				$beginning_space= STCheck::echoDebug("db.table.fk", "test <b>$ownColumn:</b> for table <b>".$this->Name."</b> in object <b>".get_class($this).":</b>");
 				foreach($this->columns as $field)
 				{
 					if(Tag::isDebug("db.table.fk"))
 					{
-						print_r($field);
-						echo "<br />";
+						st_print_r($field, 1, $beginning_space);
 					}
 					if($field["name"]==$ownColumn)
 					{//echo "fields: ";print_r($field);echo "<br />";
@@ -814,7 +833,6 @@ class STAliasTable
 					echo "<b>WARNING</b> column $ownColumn is not in Table ".$this->Name."<br />";
 			}
 
-     	$this->FK[$toTableName]= array("own"=>$ownColumn, "other"=>$otherColumn, "join"=>$join, "table"=>&$toTable);
 		$bSet= false;
 		if(	isset($this->aFks[$toTableName]) &&
 			is_array($this->aFks[$toTableName])	)
@@ -830,7 +848,15 @@ class STAliasTable
 			}
 		}
 		if(!$bSet)
+		{
 	     	$this->aFks[$toTableName][]= array("own"=>$ownColumn, "other"=>$otherColumn, "join"=>$join, "table"=>&$toTable);
+	     	$toTable->setBackJoin($this->Name);
+		}
+		if(STCheck::isDebug("db.table.fk"))
+		{
+		    $beginning_space= STCheck::echoDebug("db.table.fk", "new defined foreign keys on table <b>".$this->Name.":</b>");
+		    st_print_r($this->aFks, 3, $beginning_space);
+		}
 
     }
 	function setBackJoin($tableName)
@@ -889,29 +915,26 @@ class STAliasTable
 		//$sMainTableName= $oTable->getName();
 		$count= 2;
 		if($bFromIdentifications)
-		{
 			$showList= $this->getIdentifColumns();
-			if(Tag::isDebug("db.statements.aliases"))
-			{
-				Tag::echoDebug("db.statements.aliases", "need columns from table ".$this->Name." (->getIdentifColumns) where container is ".$this->container->getName());
-				st_print_r($showList, 2, 1);
-				echo "<br />";
-			}
-		}else
+		else
+		    $showList= $this->getSelectedColumns();
+		if(Tag::isDebug("db.statements.aliases"))
 		{
-			$showList= $this->getSelectedColumns();
-			if(Tag::isDebug("db.statements.aliases"))
-			{
-				Tag::echoDebug("db.statements.aliases", "need columns from maintable ".$this->Name." (->getSelectedColumns) where container is ".$this->container->getName());
-				st_print_r($showList, 2, 1);
-				echo "<br />";
-			}
+			Tag::echoDebug("db.statements.aliases", "need columns from table ".$this->Name." (->getIdentifColumns) where container is ".$this->container->getName());
+			st_print_r($showList, 2, 1);
+			echo "<br />";
 		}
 		foreach($showList as $column)
 		{//z�hle wieviel Tabellen ben�tigt werden
-
-			Tag::echoDebug("db.statements.aliases", "need column ".$column["column"]);
-
+		    if(STCheck::isDebug("db.statements.aliases"))
+		    {
+    		    $dbgstr= "need column ".$column["column"];
+    		    if($oMainTable->Name == $column['table'])
+    		        $dbgstr.= " inside own table";
+    		    else
+    		        $dbgstr.= " which has an foreign key to '".$column['table']."'";
+    			STCheck::echoDebug("db.statements.aliases", $dbgstr);
+		    }
 			//$table= $oTable->getFkTableName($column["column"]);
 			//echo "foreignKey Table is $table<br />";
 			//if(!$table)
@@ -931,23 +954,6 @@ class STAliasTable
 				$otherTable= &$oMainTable->getTable($otherTableName);
 				$fktableName= $otherTable->getName();
 				Tag::echoDebug("db.statements.aliases", "column ".$column["column"]." in container ".$otherTable->container->getName().", have an foreign key to table $fktableName");
-				/*if(isset($oTable->FK[$table]["table"]))
-				{// table in other database
-					//$otherTable= $oTable->FK[$table]["table"]->db->getTable($table);
-					//if($oTable->FK[$table]["table"]->db->getName()!==
-					$otherTable= $oTable->getFkTable($column["column"]);
-					echo "newTable containerName:".$otherTable->container->getName()."<br />";
-					//$otherTable= $oTable->FK[$table]["table"]->container->getTable($oTable->FK[$table]["table"]->getName());
-				}else
-				{
-					$otherTable= $this->getTable($table);
-				}
-				// take table from container, not from FK
-				$fktableName= $otherTable->getName();
-				if($otherTable->db->dbName!=$container->db->dbName)
-					$container= $otherTable->db;
-				//$otherTable= $container->getTable($fktableName);*/
-				
 				if(!isset($aliasTables[$fktableName]))
 				{
   					if( !isset($aliasTables["db.".$otherTable->getName()])
@@ -956,26 +962,9 @@ class STAliasTable
   					{
   						$aliasTables["db.".$otherTable->getName()]= $otherTable->db->getDatabaseName();
   					}
+  					STCheck::echoDebug("db.statements.aliases", "create new alias for table '$fktableName'");
 					$otherTable->createAliasesA($aliasTables, $oMainTable);
-					//$otherAliasTables= $oTable->db->getAliases($otherTable, true);
-					//if(Tag::isDebug("db.statements.aliases"))
-					//	if($otherAliasTable)
 					Tag::echoDebug("db.statements.aliases", "be back in table ".$this->Name);
-  					/*foreach($otherAliasTables as $aliasTable=>$value)
-  					{
-    					if(!preg_match("/^db\./", $aliasTable))
-    					{
-							if(!isset($aliasTables[$aliasTable]))
-							{
-    							$aliasTables[$aliasTable]= "t".$count;
-    							$count++;
-							}
-    					}else
-						{
-							if(!isset($aliasTables[$aliasTable]))
-   							$aliasTables[$aliasTable]= $otherAliasTables[$aliasTable];
-						}
-  					}*/
 				}
 				unset($otherTable);
 			}
@@ -1967,6 +1956,7 @@ class STAliasTable
 		{
 			$this->FK= array();
 			$this->aFks= array();
+			$this->aBackJoin= array();
 		}
 		function clearAliases()
 		{
@@ -2371,7 +2361,7 @@ class STAliasTable
 	{
 		STCheck::param($which, 0, "string");
 		STCheck::param($aliasColumn, 1, "string");
-		STCheck::param($address, 2, "STObjectContainer", "STAliasTable");
+		STCheck::param($address, 2, "STObjectContainer", "STAliasTable", "null");
 		STCheck::param($valueColumn, 3, "string", "null");
 		
 		$field= $this->findAliasOrColumn($aliasColumn);

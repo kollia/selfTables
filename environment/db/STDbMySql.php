@@ -46,9 +46,10 @@ class STDbMySql extends STDatabase
 	/**
 	*  Verbindungs-Aufbau zur Datenbank
 	*
-	*  @param $host: Hostname
-	*  @param $user: Username
-	*  @param $passwd: Passwort
+	*  @param string:$host hostname for connection
+	*  @param string:$user username for connection
+	*  @param string:$passwd password for connection
+	*  @param string:$database database which should be used (optional)
 	*/
 	function connect($host= null, $user= null, $passwd= null, $database= null)
 	{
@@ -100,8 +101,8 @@ class STDbMySql extends STDatabase
 		/**
 		*  wechselt zu der angegebenen Datenbank
 		*
-		*  @param $database: Datenbank-Name
-		*  @param $onError: ob die Methode Fehler anzeigen soll und beendet werden soll.
+		*  @param string:$database Datenbank-Name
+		*  @param enum:$onError ob die Methode Fehler anzeigen soll und beendet werden soll.
 		*					<br>noErrorShow - Fehler wird nicht angezeigt und Programm nicht beendet
 		*					<br>onErrorShow - Fehler wird angezeigt aber Programm nicht beendet
 		*  		  			<br>onErrorStop - Fehler wird angezeigt und Programm beendet
@@ -118,7 +119,7 @@ class STDbMySql extends STDatabase
 			// alex 17/05/2005: obwohl referenze auf innere DB besteht
 			//					wird der DB-Name dort nicht eingetragen.
 			//					keine Ahnung warum !!!
-			$this->db->dbName= $this->dbName;
+			//$this->db->dbName= $this->dbName;
 			Tag::echoDebug("db.statement", "use new Database ".$database);
 			if(!$this->conn->select_db("$database"))
 			{
@@ -142,7 +143,7 @@ class STDbMySql extends STDatabase
 		$this->asExistTableNames= $this->fetch_single_array("show tables");
 		// save also in db on wich must be an reference,
 		// do not know why not
-		$this->db->asExistTableNames= $this->asExistTableNames;
+		//$this->db->asExistTableNames= $this->asExistTableNames;
 		if(	STCheck::isDebug("db.statement")
 			or
 			STCheck::isDebug("table")		)
@@ -151,7 +152,6 @@ class STDbMySql extends STDatabase
 				$debugString= "table";
 			else
 				$debugString= "db.statement";
-
 			if($this->asExistTableNames)
 			{
 				Tag::echoDebug($debugString, "found existing tables in database <b>".$this->dbName."</b>:");
@@ -174,6 +174,7 @@ class STDbMySql extends STDatabase
 	protected function querydb($statement)
 	{
 		global $_st_page_starttime_;
+
 
 		$this->lastDbResult = $this->conn->query($statement);
 		if(STCheck::isDebug())
@@ -370,9 +371,10 @@ class STDbMySql extends STDatabase
 	}
 	protected function insert_id()
 	{
-		return $this->conn->insert_id();
+		return $this->conn->insert_id;
 	}
-	protected function fetchdb_row($type= STSQL_ASSOC)
+    
+	protected function fetchdb_row($type= STSQL_ASSOC, $onError= onErrorStop)
 	{
 		if(	$type == STSQL_NUM ||
 			$type == STSQL_BOTH		)
@@ -386,6 +388,15 @@ class STDbMySql extends STDatabase
 			$type == STSQL_BOTH		)
 		{
 			$row= $this->lastDbResult->fetch_assoc();
+			if($this->errordb())
+			{
+			    if($onError == onErrorStop)
+			    {
+			        STCheck::error(1, "fetchdb_row", $this->errordb());
+			        exit;
+			    }else
+			        STCheck::warning(1, "fetchdb_row", $this->errordb());
+			}
 			if($row == NULL)
 				return NULL;
 			if($type == STSQL_BOTH)
@@ -397,7 +408,7 @@ class STDbMySql extends STDatabase
 	{
 		$ern= $this->conn->connect_errno;
 		if(	$ern > 0 ||
-			$this->lastDbResult == NULL	)
+			$this->lastDbResult === NULL	)
 		{
 			return $ern;
 		}
@@ -407,7 +418,7 @@ class STDbMySql extends STDatabase
 	{
 		$ern= $this->conn->connect_errno;
 		if(	$ern > 0 ||
-			$this->lastDbResult == NULL	)
+			$this->lastDbResult === NULL	)
 		{
 			return $this->conn->connect_error;
 		}

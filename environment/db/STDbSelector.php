@@ -41,7 +41,10 @@ class STDbSelector extends STDbTable
 			$db= &$oTable->getDatabase();
 			//$this->oMainTable= &$oTable;
 			$this->aoToTables[$oTable->getName()]= &$oTable;
+			STCheck::echoDebug("table", "copy ".get_class($oTable)."::".$oTable->getName()." into ".get_class($this)." from ID:".$oTable->ID);
 			STDbTable::__construct($oTable);
+			STCheck::echoDebug("table", "copy ".get_class($oTable)."::".$oTable->getName()." into ".get_class($this)." to ID:".$this->ID);
+			st_print_r($this->aFks);
 		}
 		/*function getName()
 		{
@@ -62,7 +65,7 @@ class STDbSelector extends STDbTable
 			}else
 				$sTableName= $table->getName();
 			if(!typeof($table, "OSTDbSelector"))
-				$table= new OSTDbSelector($table);
+				$table= new STDbSelector($table);
 			$this->aoToTables[$sTableName]= &$table;
 			$this->bAddedTabels= true;
 			//$this->FK[$table->getName()]= array("own"=>$ownColumn, "other"=>$otherColumn, "join"=>$join);
@@ -277,7 +280,7 @@ class STDbSelector extends STDbTable
 				$oTable= &$this->getTable($oTable);
 			$bInnerJoin= false;
 			if(!typeof($oTable, "OSTDbSelector"))
-				$oTable= new OSTDbSelector($oTable);
+				$oTable= new STDbSelector($oTable);
 			//$this->aoToTables[]= &$oTable;
 			STDbTable::foreignKeyObj($columnName, $oTable, $otherColumn);
 		}
@@ -286,7 +289,7 @@ class STDbSelector extends STDbTable
 			if(STCheck::isDebug())
 			{
 				Tag::paramCheck($tableName, 1, "string");
-				Tag::paramCheck($column, 2, "string");
+				Tag::paramCheck($column, 2, "string", "empty(string)");
 				Tag::paramCheck($alias, 3, "string", "bool", "null");
 				Tag::paramCheck($nextLine, 4, "bool");
 				Tag::echoDebug("selector", $this->Name.": select column $column($alias) for table $tableName");
@@ -501,6 +504,11 @@ class STDbSelector extends STDbTable
 			else
 				reset($this->SqlResult);
 		}
+		function exec2()
+		{
+		    st_print_r($this->wait);
+		    showErrorTrace();exit;
+		}
 		function execute($sqlType= null, $limit= null)
 		{
 			STCheck::param($sqlType, 0, "int", "null");
@@ -546,7 +554,7 @@ class STDbSelector extends STDbTable
 					break;
 				}
 				reset($this->SqlResult);
-				$nRv= count($value);
+				$nRv= count($fvalue);
 			}else
 				$nRv= count($this->SqlResult);
 

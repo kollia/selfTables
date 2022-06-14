@@ -53,9 +53,10 @@ class STDbTable extends STAliasTable
 		}
 		$this->created[$tableName]= true;
 		if(typeof($Table, "STAliasTable"))
-			$this->copy($Table);
-		else
-			STAliasTable::__construct($Table);
+		{
+		    $this->copy($Table);
+		}//else
+		STAliasTable::__construct($Table);
 		if($container)
 		{
 			if(is_string($container))

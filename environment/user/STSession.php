@@ -2,7 +2,8 @@
 
 
 require_once( $php_html_description );
-require_once( $php_htmltag_class );
+require_once( $_stquerystring );
+//require_once( $php_htmltag_class );
 
 
 /*	-------------------------------------------------------------------
@@ -151,14 +152,14 @@ class STSession
 			session_name($php_session_name);
 		}else
 			$this->sessionName= session_name();
-
+			
+		session_set_cookie_params( 0, '/', $client_root);
+		register_global_SESSION_VAR($globalVar);
 		if(Tag::isDebug())
 		{// if defined Debug-Session,
 			$bSetSession= @session_start();// warning for cookie set is normaly
 		}else
 			$bSetSession= session_start();
-		session_set_cookie_params( 0, '/', $client_root);		
-		register_global_SESSION_VAR($globalVar);
 		$this->session_vars= &$globalVar;
 		//echo "session will be activated for ".session_cache_expire()." minutes<br>";
 
@@ -803,7 +804,7 @@ class STSession
 						$table->add(" ");
 						$table->columnHeight("150");
 						$table->nextRow();
-						$table->addObj(new SpanTag("dynamic"));
+						$table->add(new SpanTag("dynamic"));
 						$table->columnAlign("center");
 						$logTable= new st_tableTag("logtable");
 							$logTable->border(0);
