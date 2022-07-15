@@ -17,11 +17,11 @@ class STDbTableDescriptions
 		global	$global_sttabledescriptions_class_instance;
 
 		STCheck::param($dbName, 0, "string");
-
+		
 		if(!isset($global_sttabledescriptions_class_instance[$dbName]))
 		{
-		    echo __FILE__.__LINE__."<br>";
-		    echo "create new STDbTableDescription()<br>";
+		    //echo __FILE__.__LINE__."<br>";
+		    //echo "create new STDbTableDescription()<br>";
 			$global_sttabledescriptions_class_instance[$dbName]= new STDbTableDescriptions();
 		}
 		return $global_sttabledescriptions_class_instance[$dbName];

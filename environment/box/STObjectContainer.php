@@ -1027,12 +1027,12 @@ class STObjectContainer extends STBaseContainer
 				}
 			}
 			$this->setAllMessagesContent(STLIST, $list);
-
+			
 			if(typeof($table, "STDbTable"))
 			{
 			    $result= $list->execute();
 			}else
-				$result= "NOERROR";
+			    $result= "NOERROR";
 				
 			if(	$table->canInsert() &&
 				$table->hasAccess(STINSERT)	&&

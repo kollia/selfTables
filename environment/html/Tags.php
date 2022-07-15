@@ -171,12 +171,15 @@ class Tag extends STCheck
 				return false;
 			if(is_string($inClassFunction))
 			{
-				//echo "inClass ".$inClassFunction."=".$HTML_CLASS_DEBUG_CONTENT_CLASS_FUNCTION."<br />";;
-				//echo "<br />preg_match('/(^|\/)".$inClassFunction."/i', '".$HTML_CLASS_DEBUG_CONTENT_CLASS_FUNCTION."')";
-				if(	preg_match("/(^|\/)".$inClassFunction."/i", $HTML_CLASS_DEBUG_CONTENT_CLASS_FUNCTION))
-				{//echo " true<br />";
-					return true;
-				}
+			    if($HTML_CLASS_DEBUG_CONTENT_CLASS_FUNCTION != "")
+			    {
+    				//echo "inClass ".$inClassFunction."=".$HTML_CLASS_DEBUG_CONTENT_CLASS_FUNCTION."<br />";;
+    				//echo "<br />preg_match('/(^|\/)".$inClassFunction."/i', '".$HTML_CLASS_DEBUG_CONTENT_CLASS_FUNCTION."')";
+    				if(	preg_match("/(^|\/)".$inClassFunction."/i", $HTML_CLASS_DEBUG_CONTENT_CLASS_FUNCTION))
+    				{//echo " true<br />";
+    					return true;
+    				}
+			    }
 				//echo " false<br />";
 				return false;
 			}

@@ -2698,8 +2698,6 @@ abstract class STDatabase extends STObjectContainer
 		    $statement.= "distinct ";
 		$statement.= $this->getSelectStatement($oTable, $aliasTables, $mainTable, $withAlias);
 		$statement.= " from ".$tableName;
-		echo __FILE__.__LINE__."<br>";
-		echo "statement:$statement<br>";
 		if(count($aliasTables)>1)
 		{
 			$maked= array();

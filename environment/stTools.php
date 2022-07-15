@@ -261,11 +261,14 @@ function typeof($object, $type, $empty= null, $pos= null)
 			}
 		}elseif($aType[$pos]=="function")
 		{
-			if(function_exists($object))
-			{
-				Tag::echoDebug("typeof", $object." == ".$aType[$pos]);
-				return true;
-			}
+		    if($object != null)
+		    {
+    			if(function_exists($object))
+    			{
+    				Tag::echoDebug("typeof", $object." == ".$aType[$pos]);
+    				return true;
+    			}
+		    }
 		}
 		$pos++;
 		if(count($aType)>$pos)

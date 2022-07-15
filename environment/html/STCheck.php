@@ -444,12 +444,15 @@ class STCheck
 				return false;
 			if(is_string($inClassFunction))
 			{
-				//echo "inClass ".$inClassFunction."=".$HTML_CLASS_DEBUG_CONTENT_CLASS_FUNCTION."<br />";;
-				//echo "<br />preg_match('/(^|\/)".$inClassFunction."/i', '".$HTML_CLASS_DEBUG_CONTENT_CLASS_FUNCTION."')";
-				if(	preg_match("/(^|\/)".$inClassFunction."/i", $HTML_CLASS_DEBUG_CONTENT_CLASS_FUNCTION))
-				{//echo " true<br />";
-					return true;
-				}
+			    if($HTML_CLASS_DEBUG_CONTENT_CLASS_FUNCTION != "")
+			    {
+    				//echo "inClass ".$inClassFunction."=".$HTML_CLASS_DEBUG_CONTENT_CLASS_FUNCTION."<br />";;
+    				//echo "<br />preg_match('/(^|\/)".$inClassFunction."/i', '".$HTML_CLASS_DEBUG_CONTENT_CLASS_FUNCTION."')";
+    			    if(	preg_match("/(^|\/)".$inClassFunction."/i", $HTML_CLASS_DEBUG_CONTENT_CLASS_FUNCTION)   )
+    				{//echo " true<br />";
+    					return true;
+    				}
+			    }
 				//echo " false<br />";
 				return false;
 			}
@@ -460,7 +463,7 @@ class STCheck
 		 * Only when debugging be set for defined <code>$inClassFunction</code>
 		 * 
 		 * @param string $inClassFunction for which debug output the string should be displayed
-		 * @param sring $string the debug message
+		 * @param string $string the debug message
 		 * @param string $break whether should be made an carage return after the displayed string
 		 * @return number count of intented spaces
 		 */

@@ -121,14 +121,17 @@ class STAliasTable
     	$this->bOrder= NULL;
 		if(typeof($oTable, "STAliasTable"))
 		{
-		    STCheck::echoDebug("table", "create new ".get_class($this)."::<b>".$oTable->Name."</b> with ID:".$this->ID." from ".get_class($oTable)."::<b>".$oTable->Name."</b> with ID:".$oTable->ID);
-		    echo "old <b>FKs</b>:<br>";
-		    st_print_r($oTable->aBackJoin, 3);
-		    $this->copy($oTable);
-		    echo "new <b>FKs</b>:<br>";
-		    st_print_r($this->aBackJoin, 3);
-		    showErrorTrace();
-			return;
+		    if(STCheck::isDebug("db.table.fk"))
+		    {
+    		    STCheck::echoDebug("db.table.fk", "create new ".get_class($this)."::<b>".$oTable->Name."</b> with ID:".$this->ID." from ".get_class($oTable)."::<b>".$oTable->Name."</b> with ID:".$oTable->ID);
+    		    echo "old <b>FKs</b>:<br>";
+    		    st_print_r($oTable->aBackJoin, 3);
+    		    $this->copy($oTable);
+    		    echo "new <b>FKs</b>:<br>";
+    		    st_print_r($this->aBackJoin, 3);
+    		    showErrorTrace();
+		    }
+		    //return;
 		}
 		if(Tag::isDebug())
 		{
@@ -148,13 +151,17 @@ class STAliasTable
     	$this->error= false;
 		if($oTable !== null)
 		{
-	     	$this->Name= $oTable;
+		    if(typeof($oTable, "STAliasTable"))
+	     	    $this->Name= $oTable->Name;
+		    else
+		        $this->Name= $oTable;
 	     	$this->bCorrect= true;
 		}else 
 		{
 			$this->Name= "NULL";
 			$this->bCorrect= false;
 		}
+		//st_print_r($this->Name);
 		STCheck::echoDebug("table", "crate table ".$this->Name." with ID:".$this->ID);
 	}
 	function __clone()
@@ -164,7 +171,7 @@ class STAliasTable
 	    $__static_globl_STAlias_ID++;
 	    $oldID= $this->ID;
 	    $this->ID= $__static_globl_STAlias_ID;
-	    STCheck::echoDebug("table", "clone table ".$this->Name." from ID:$oldID to new ID:".$this);
+	    STCheck::echoDebug("table", "clone table ".$this->Name." from ID:$oldID to new ID:".$this->ID);
 	    $this->bInsert= true;
 	    $this->bUpdate= true;
 	    $this->bDelete= true;
@@ -1320,9 +1327,9 @@ class STAliasTable
 				$this->oTinyMCE[$alias]= $fillCallback;
 				$fillCallback= null;
 			}
-			if(	function_exists($alias)
-				and
-				$fillCallback===null	)
+			if(	$alias != NULL &&
+			    function_exists($alias) &&
+				$fillCallback===null	   )
 			{// alias ist ein Funktionsname zum f�llen
 			 // einer nicht vorhandenen Spalte
 			 	$fillCallback= $alias;

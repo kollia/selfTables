@@ -44,7 +44,6 @@ class STDbSelector extends STDbTable
 			STCheck::echoDebug("table", "copy ".get_class($oTable)."::".$oTable->getName()." into ".get_class($this)." from ID:".$oTable->ID);
 			STDbTable::__construct($oTable);
 			STCheck::echoDebug("table", "copy ".get_class($oTable)."::".$oTable->getName()." into ".get_class($this)." to ID:".$this->ID);
-			st_print_r($this->aFks);
 		}
 		/*function getName()
 		{

@@ -433,14 +433,14 @@ class STTable extends STBaseTableBox
 			//					und gib diese dann in die Where-Clausl
 			// alex 03/08/2005: kontrolle der fixen Einschr�nkung nach STDatabase verschoben
 
-
+			
 			$tableDb= &$oTable->getDatabase();
 			if(typeof($oTable, "STDBSelector"))
 			{
 				$this->oSelector= &$oTable;
 			}else
 			{
-				$this->oSelector= new STDbSelector($oTable, MYSQL_ASSOC, $this->getOnError("SQL"));
+			    $this->oSelector= new STDbSelector($oTable, MYSQL_ASSOC, $this->getOnError("SQL"));
 			}
 			if(	isset($firstRow)
 				or
@@ -2226,7 +2226,7 @@ exit();
 			Tag::alert(!typeof($this->getTable(), "STDbTable") && !$this->statement,
 						get_class($this)."::execute()",
 						"no table or statement exist, take before methode ::table() or ::solution() for statement");
-			
+				
 			$this->createMessages();
 			$this->defaultOnError($onError);
 			$this->createStatement();
@@ -2312,6 +2312,7 @@ exit();
 				$tr->add($td);
 			$this->add($tr);
 			//STCheck::warning(1,"","");
+			
 			return $this->msg->getAktualMessageId();
   	}
 		function form($buttonText, $formName, $action= null)
