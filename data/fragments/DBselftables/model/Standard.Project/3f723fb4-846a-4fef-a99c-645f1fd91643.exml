@@ -1,0 +1,20 @@
+<?xml version="1.0" ?>
+<!--GENERATED FILE, PLEASE DO NOT EDIT!!!--><EXT object="DBselftables" version="4">
+  <OBJECT>
+    <ID name="DBselftables" mc="Standard.Project" uid="3f723fb4-846a-4fef-a99c-645f1fd91643"/>
+    <ATTRIBUTES>
+      <ATT name="ProjectContext"></ATT>
+      <ATT name="ProjectDescr"></ATT>
+      <ATT name="Name"><![CDATA[DBselftables]]></ATT>
+      <ATT name="status">1970354901745664</ATT>
+    </ATTRIBUTES>
+    <DEPENDENCIES>
+      <COMP relation="Model">
+        <COMPID name="dbselftables" mc="Standard.Package" uid="c3e7dc8a-1e9e-40ff-bf50-a4a2840f521b"/>
+      </COMP>
+      <COMP relation="DiagramRoot">
+        <COMPID name="DBselftables" mc="Infrastructure.DiagramSet" uid="524c268c-28bd-4535-b780-c311630f5387"/>
+      </COMP>
+    </DEPENDENCIES>
+  </OBJECT>
+</EXT>

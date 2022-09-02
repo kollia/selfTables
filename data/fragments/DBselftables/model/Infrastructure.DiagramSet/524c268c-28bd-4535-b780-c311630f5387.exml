@@ -1,0 +1,12 @@
+<?xml version="1.0" ?>
+<!--GENERATED FILE, PLEASE DO NOT EDIT!!!--><EXT object="DBselftables" version="4">
+  <OBJECT>
+    <ID name="DBselftables" mc="Infrastructure.DiagramSet" uid="524c268c-28bd-4535-b780-c311630f5387"/>
+    <PID name="DBselftables" mc="Standard.Project" uid="3f723fb4-846a-4fef-a99c-645f1fd91643"/>
+    <ATTRIBUTES>
+      <ATT name="Name"><![CDATA[DBselftables]]></ATT>
+      <ATT name="status">1970354901745664</ATT>
+    </ATTRIBUTES>
+    <DEPENDENCIES></DEPENDENCIES>
+  </OBJECT>
+</EXT>
