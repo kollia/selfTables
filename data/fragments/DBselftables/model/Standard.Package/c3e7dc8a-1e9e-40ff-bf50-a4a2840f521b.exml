@@ -43,6 +43,7 @@
         <COMPID name="STCheck" mc="Standard.Class" uid="2ad00c48-949c-4b5a-8eb5-be89551e6da1"/>
         <COMPID name="STChooseBox" mc="Standard.Class" uid="f4f44a4d-e3a9-4267-acd7-97cc8f9c0d72"/>
         <COMPID name="STFrameContainer" mc="Standard.Class" uid="24ac53e1-4b55-4dac-86b3-99e39e7c2339"/>
+        <COMPID name="STUserManagementSession" mc="Standard.Class" uid="4d25646c-112f-48e9-83f8-1e2f31f29df8"/>
       </COMP>
       <COMP relation="Product">
         <COMPID name="dbselftables Class diagram" mc="Standard.ClassDiagram" uid="6652e321-2600-4e11-9d7f-79f738cfc311"/>
