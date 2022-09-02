@@ -1,2 +1,2 @@
 # DB selfTables
-create automatic API interface from database tables to fill content
+Automatically creates a table listing of an existing MySql database to navigate between tables and insert or edit content
