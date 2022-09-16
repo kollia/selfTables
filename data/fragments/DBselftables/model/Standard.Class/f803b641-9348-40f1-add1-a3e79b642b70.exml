@@ -17,14 +17,14 @@
     <DEPENDENCIES>
       <COMP relation="DependsOnDependency">
         <OBJECT>
-          <ID name="" mc="Infrastructure.Dependency" uid="01a663f8-12c8-4087-887b-b9ab482cd1a2"/>
+          <ID name="" mc="Infrastructure.Dependency" uid="a9782834-b915-4bad-b92d-630b6a6d1be6"/>
           <ATTRIBUTES>
             <ATT name="Name"></ATT>
             <ATT name="status">1970354901745664</ATT>
           </ATTRIBUTES>
           <DEPENDENCIES>
             <LINK relation="DependsOn">
-              <ID name="STDbSideCreator" mc="Standard.Class" uid="6002aaf1-57b5-41f1-b101-95d19d114e62"/>
+              <ID name="STDbSideCreator" mc="Standard.Class" uid="ed8a706e-030b-482f-ba1f-bab8fce05142"/>
             </LINK>
           </DEPENDENCIES>
         </OBJECT>

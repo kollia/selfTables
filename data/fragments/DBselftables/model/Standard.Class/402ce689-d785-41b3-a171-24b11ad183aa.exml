@@ -15,6 +15,32 @@
       <ATT name="status">1970354901745664</ATT>
     </ATTRIBUTES>
     <DEPENDENCIES>
+      <COMP relation="OwnedAttribute">
+        <OBJECT>
+          <ID name="Db" mc="Standard.Attribute" uid="320f3973-5790-4bfb-adbd-cedc04f7efc1"/>
+          <ATTRIBUTES>
+            <ATT name="TypeConstraint"></ATT>
+            <ATT name="Value"></ATT>
+            <ATT name="TargetIsClass">false</ATT>
+            <ATT name="Changeable">AccesNone</ATT>
+            <ATT name="IsDerived">false</ATT>
+            <ATT name="IsOrdered">false</ATT>
+            <ATT name="IsUnique">false</ATT>
+            <ATT name="MultiplicityMin"><![CDATA[1]]></ATT>
+            <ATT name="MultiplicityMax"><![CDATA[1]]></ATT>
+            <ATT name="Visibility">Public</ATT>
+            <ATT name="IsClass">false</ATT>
+            <ATT name="IsAbstract">false</ATT>
+            <ATT name="Name"><![CDATA[Db]]></ATT>
+            <ATT name="status">1970354901745664</ATT>
+          </ATTRIBUTES>
+          <DEPENDENCIES>
+            <LINK relation="Type">
+              <ID name="STDatabase" mc="Standard.Class" uid="dea7280d-9daf-49a8-9bfb-fe0254058c71"/>
+            </LINK>
+          </DEPENDENCIES>
+        </OBJECT>
+      </COMP>
       <COMP relation="DependsOnDependency">
         <OBJECT>
           <ID name="" mc="Infrastructure.Dependency" uid="6bff2517-4677-4f5c-838c-00d2e0d8c81b"/>
@@ -24,7 +50,7 @@
           </ATTRIBUTES>
           <DEPENDENCIES>
             <LINK relation="DependsOn">
-              <ID name="STAlaisTable" mc="Standard.Class" uid="d339f0f9-7bf9-4dca-a2c3-623a79582995"/>
+              <ID name="STAliasTable" mc="Standard.Class" uid="d339f0f9-7bf9-4dca-a2c3-623a79582995"/>
             </LINK>
           </DEPENDENCIES>
         </OBJECT>

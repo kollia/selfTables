@@ -31,20 +31,6 @@
           <DEPENDENCIES></DEPENDENCIES>
         </OBJECT>
         <OBJECT>
-          <ID name="addObj" mc="Standard.Operation" uid="a8abe9e9-8606-46b0-a64e-038f0a06e955"/>
-          <ATTRIBUTES>
-            <ATT name="Concurrency">false</ATT>
-            <ATT name="Final">false</ATT>
-            <ATT name="Passing">MethodOut</ATT>
-            <ATT name="Visibility">Public</ATT>
-            <ATT name="IsClass">false</ATT>
-            <ATT name="IsAbstract">false</ATT>
-            <ATT name="Name"><![CDATA[addObj]]></ATT>
-            <ATT name="status">1970354901745664</ATT>
-          </ATTRIBUTES>
-          <DEPENDENCIES></DEPENDENCIES>
-        </OBJECT>
-        <OBJECT>
           <ID name="display" mc="Standard.Operation" uid="ef193af7-cc41-493f-81ce-021e4f90550c"/>
           <ATTRIBUTES>
             <ATT name="Concurrency">false</ATT>
