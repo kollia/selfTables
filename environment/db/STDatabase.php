@@ -182,7 +182,7 @@ abstract class STDatabase extends STObjectContainer
 		*  Konstruktor f�r Zugriffs-deffinition
 		*
 		*/
-  	function __construct($identifName= "main-menue", $defaultTyp= MYSQL_NUM, $DBtype= "BLINDDB")
+	function __construct($identifName= "main-menue", $defaultTyp= STSQL_ASSOC, $DBtype= "BLINDDB")
    	{
 		$this->defaultTyp= $defaultTyp;
 		$this->error= false;
@@ -228,6 +228,18 @@ abstract class STDatabase extends STObjectContainer
 	function hasTables()
 	{
 		return $this->bHasTables;
+	}
+	function haveTable($tableName)
+	{
+	    if(STObjectContainer::haveTable($tableName))
+	        return true;
+        if($this->name === $this->db->getName())
+        {
+            $tableName= $this->getTableName($tableName);
+            if(in_array($tableName, $this->asExistTableNames))
+                return true;
+        }
+        return false;
 	}
 	function setTimeFormat($sFormat)
 	{
@@ -494,6 +506,7 @@ abstract class STDatabase extends STObjectContainer
 		
 		if($this->dbType=="BLINDDB")
 			return;
+		
 		// alex 12/05/2005:	statement kann nun auch
 		//					ein objekt von STDbTable sein
 		if(typeof($statement, "STDbTable"))
@@ -1158,17 +1171,15 @@ abstract class STDatabase extends STObjectContainer
 			$stget= $stget["stget"];
 		}else
 			$stget= array();
-		$nIntented= Tag::echoDebug("db.statements.where", "modify foreign Keys in table ".$oTable->getName());
+		
     	$where= new STDbWhere();
     	$fks= $this->getForeignKeyModification($oTable);
-		if(Tag::isDebug("db.statements.where"))
+    	if(STCheck::isDebug("db.statements.where"))
 		{
-			for($n= 0; $n < $nIntented; ++$n)
-				echo " ";
-			echo "<b>[</b>db.statements.where<b>]</b> need foreign Keys from quiry: ";
-			st_print_r($fks, 2, 55);
-			//if(!count($fks))
-				echo "<br />";
+		    STCheck::echoDebug("db.statements.where", "modify foreign Keys in table ".$oTable->getName());
+		    $nIntented= STCheck::echoDebug("db.statements.where", "need foreign Keys from query: ");
+			st_print_r($fks, 2, $nIntented + 55);
+			echo "<br />";
 		}
     	foreach($fks as $table=>$aColumnType)
     	{
@@ -1230,10 +1241,50 @@ abstract class STDatabase extends STObjectContainer
 	{		
 		STCheck::paramCheck($oTable, 1, "STDbTable");
 
+		$aMade= array();
 		$statement= "";
 		$ostwhere= $oTable->getWhere();
 		if(typeof($ostwhere, "STDbWhere"))
-			$statement= $ostwhere->getStatement($oTable, $aktAlias, $aliases);
+		{
+		    $statement= $ostwhere->getStatement($oTable, $aktAlias, $aliases);
+		    if( STCheck::isDebug("db.statements.where") &&
+		        typeof($oTable, "STDbSelector") &&
+		        $oTable->Name == "MUProject"          )
+		    {
+		        st_print_r($ostwhere);
+		        $space= STCheck::echoDebug("db.statements.where", "statement:'$statement'");
+		        st_print_r($aktAlias, 1, $space);echo "<br>";
+		        st_print_r($aliases, 1, $space);
+		    }
+		    $aMade[]= $oTable->getName();
+		}
+		if(is_array($aliases))
+		{
+    		foreach($aliases as $tableName=>$alias)
+    		{
+    		    if(!in_array($tableName, $aMade))
+    		    {
+        		    $table= $this->getTable($tableName);
+        		    if(typeof($table, "STAlaisTable"))
+        		    {
+            		    $ostwhere= $table->getWhere();
+                		//echo "table:".$fromTable->getName()."<br />";
+                		//st_print_r($fromTable->oWhere,10);
+            		    if(typeof($ostwhere, "STDbWhere"))
+            		    {
+                		    $whereStatement= $ostwhere->getWhereStatement($table, $sTableAlias, $aTableAlias);
+                    		if($whereStatement)
+                    		{
+                    		    if(!preg_match("/^[ \t]*where/", $whereStatement))
+                    		        $whereStatement= "and $whereStatement";
+                    		    $statement.= " ".$whereStatement;
+                    		}
+                    		$aMade[]= $tableName;
+            		    }
+        		    }
+    		    }
+    		}
+		}
 		return $statement;
 	}
 	function isSqlSelectKeyWord($column, $needInherit= false)
@@ -1386,6 +1437,17 @@ abstract class STDatabase extends STObjectContainer
 
 		STCheck::flog("create select statement");
 		$this->removeNoDbColumns($aNeededColumns, $aTableAlias);
+		if(!isset($withAlias))
+		{
+		    $withAlias= false;
+		    foreach($aNeededColumns as $columns)
+		    {
+		        if(!in_array($columns['table'], $aUseAliases))
+		            $aUseAliases[]= $columns['table'];
+		    }
+		    if(count($aUseAliases) > 1)
+		        $withAlias= true;
+		}
 		if(STCheck::isDebug("db.statements.select"))
 		{//st_print_r($oTable->identification,2);
 			//echo "<b>[</b>db.statements.select<b>]:</b> make select statement";
@@ -1401,10 +1463,10 @@ abstract class STDatabase extends STObjectContainer
 			$dbgstr.= "<b>".$tableName."(</b>".$displayName."<b>)</b>";
 			$dbgstr.= " from container:<b>".$oTable->container->getName()."</b>";
 			$dbgstr.= " for columns:";
-			STCheck::echoDebug("db.statements.select", $dbgstr);
-			echo "<pre>";
-			st_print_r($aNeededColumns, 2);
-			echo "</pre>";
+			$space= STCheck::echoDebug("db.statements.select", $dbgstr);
+			st_print_r($aNeededColumns, 2,$space+55);
+			STCheck::echoDebug("db.statements.select", "defined with alias tables:");
+			st_print_r($aTableAlias, 2, $space+55);
 		}
 		$aShowTypes= $oTable->showTypes;
 		/*if(typeof($oTable, "STDbSelector"))
@@ -1503,18 +1565,29 @@ abstract class STDatabase extends STObjectContainer
 					}
 				}else
 				{
-					Tag::echoDebug("db.statements.select", "");//Bitte nicht l�schen
+					STCheck::echoDebug("db.statements.select", "");//Bitte nicht l�schen
+					STCheck::echoDebug("db.statements.select", "need column from foreign table");
 					//$oOther= $oTable->FK[$table]["table"]->container->getTable;
 					$containerName= $oTable->getFkContainerName($column["column"]);
 					$container= $this->getContainer($containerName);
 					// 13/06/2008:	alex
 					//				fetch table from own table because
-					//				if own table is an DBSelector maype only
+					//				if own table is an DBSelector maybe only
 					//				in him can be deleted an column or identif-column
 					$oOther= $oTable->getTable($table);
 					$bFirstSelectStatement= $this->bFirstSelectStatement;
 					$this->bFirstSelectStatement= false;
-					$fkStatement= $this->getSelectStatement($oOther, $aTableAlias, $oMainTable, $withAlias);
+					echo __FILE__.__LINE__."<br>alias tables before FK select from table ".$oOther->getName()."<br>";
+					st_print_r($aTableAlias);
+					$allAliases= $aTableAlias;
+					$withAlias= true;
+					$fkStatement= $this->getSelectStatement($oOther, $allAliases, $oMainTable, $withAlias);
+					st_print_r($allAliases);
+					//create new using alaises
+					foreach($allAliases as $tabName=>$a)
+					    $aUseAliases[]= $tabName;
+					echo __FILE__.__LINE__."<br>use now tables for aliases<br>";
+					st_print_r($aUseAliases);
 					Tag::echoDebug("db.statements.select", "FK String is \"".$fkStatement."\"");
 					if(!$fkStatement)
 					{// is no columns selected in the FK-table
@@ -1552,13 +1625,40 @@ abstract class STDatabase extends STObjectContainer
 				$statement.= ",";
 				$singleStatement.= ",";
 			}
+			if(STCheck::isDebug("db.statements.aliases"))
+			{
+			    $space= STCheck::echoDebug("db.statements.aliases", "need now follow alias tables:");
+			    st_print_r($aUseAliases, 2, $space+55);
+			}
+		}
+		$whereClause= $oTable->getWhere();
+		if( isset($whereClause) &&
+		    isset($whereClause->aValues)  )
+		{
+		    foreach($whereClause->aValues as $tableName=>$content)
+		    {
+		        $aUseAliases[]= $this->db->getTableName($tableName);// search for original table name
+		    }
 		}
 		foreach($aTableAlias as $tableName=>$alias)
 		{
 		    if(!in_array($tableName, $aUseAliases))
 		        unset($aTableAlias[$tableName]);
 		}
-		if(count($aTableAlias) <= 1)
+		if( STCheck::isDebug("db.statements.aliases") )
+		{
+		    $space= STCheck::echoDebug("db.statements.aliases", "need table aliases:");		    
+		    st_print_r($aTableAlias, 2, $space+40);
+		    //STCheck::echoDebug("user", "all aliases wich need for joins between tables:");
+		    //st_print_r($aUseAliases, 2, $space+40);
+		    if(   typeof($oTable, "STDbSelector") &&
+		          $oTable->Name == "MUProject"        )
+		    {
+    		    STCheck::echoDebug("user", "where clause need for select statement");
+    		    st_print_r($whereClause,10, $space+30);
+		    }
+		}
+		if($withAlias == false)
 		    $statement= $singleStatement;
 		Tag::echoDebug("db.statements.select", "createt String is \"".$statement."\"");
 		$statement= substr($statement, 0, strlen($statement)-1);
@@ -1568,7 +1668,9 @@ abstract class STDatabase extends STObjectContainer
 	//var $counter= 1;
 	function getTableStatement($oMainTable, $tableName, &$aTableAlias, &$maked, $bMainTable)
 	{
+	    
 		$statement= "";
+		$tableStructure= $this->getTableStructure($this);
 		if($oMainTable->getName()!==$tableName)
 			$oTable= &$oMainTable->getTable($tableName);
 		else
@@ -1579,14 +1681,14 @@ abstract class STDatabase extends STObjectContainer
 			$aNeededColumns= $oTable->getIdentifColumns();
 		if(Tag::isDebug("db.statements.table"))
 		{
-		    STCheck::echoDebug("db.statements.table", "needed columns for table ".$oTable->getName());
+		    $space= STCheck::echoDebug("db.statements.table", "needed columns for table ".$oTable->getName());
 			echo "<pre>";
-			st_print_r($aTableAlias);
-			st_print_r($aNeededColumns, 2);
+			st_print_r($aTableAlias, 1, $space);
+			st_print_r($aNeededColumns, 2, $space);
 			echo "</pre><br />";
 		}
 		$ownTableAlias= $aTableAlias[$oTable->getName()];
-		$mainWhereStatement= "";
+/*		$mainWhereStatement= "";
 		if($bMainTable)
 		{// need the where-clausl for the second on-clausl
 			$mainWhereStatement= $this->getWhereStatement($oTable, $ownTableAlias, $aTableAlias);
@@ -1596,9 +1698,12 @@ abstract class STDatabase extends STObjectContainer
 			    $ereg= null;
 				if(preg_match("/^(and|or) (\\\\())?/i", $mainWhereStatement, $ereg))
 				{
-    				echo __FILE__.__LINE__."<br>";
-    				echo "search in '$mainWhereStatement'<br>";
-    				st_print_r($ereg);
+				    if( STCheck::isDebug("db.statements.table") )
+				    {
+        				echo __FILE__.__LINE__."<br>";
+        				echo "search in '$mainWhereStatement'<br>";
+        				st_print_r($ereg);
+				    }
     				if($ereg != "(")
     				{
     					if($ereg[1] == "and")
@@ -1609,14 +1714,24 @@ abstract class STDatabase extends STObjectContainer
 				}
 			}
 			//echo "mainWhere:$mainWhereStatement<br />";
-		}
-
-	echo __FILE__.__LINE__."<br>";
-	echo "statement:$statement<br>";
-	$fk= $oTable->getForeignKeys();
-	echo __FILE__.__LINE__."<br>";
-	echo "foreign Keys for ".get_class($oTable).":'".$oTable->getName()."' width ID:".$oTable->ID."<br>";
-	st_print_r($fk);
+		}*/
+		
+	if($bMainTable)
+	   $this->searchJoinTables($aTableAlias);
+	$fk= $oTable->getForeignKeys();	
+	if( STCheck::isDebug("db.statements.table") )
+    {
+    	$exist= count($fk);
+    	if($exist > 0)
+    	    $msg= "make ";
+    	else
+    	    $msg= "do not need ";
+    	$msg.= "foreign Keys for table ".get_class($oTable).":'".$oTable->getName()."' width ID:".$oTable->ID;
+    	$space= STCheck::echoDebug("db.statements.table", $msg);
+    	
+    	if($exist > 0)
+    	   st_print_r($fk,3,$space);
+    }
 	foreach($fk as $table=>$content)
 	{
 		foreach($content as $join)
@@ -1692,7 +1807,6 @@ abstract class STDatabase extends STObjectContainer
 				}else
 					$sTableAlias= $aTableAlias[$table];
 
-
 				if(Tag::isDebug())
 				{
 					$joinArt= $join["join"];
@@ -1716,13 +1830,6 @@ abstract class STDatabase extends STObjectContainer
 				//echo "table:".$fromTable->getName()."<br />";
 				//st_print_r($fromTable->oWhere,10);
 				$whereStatement= $this->getWhereStatement($fromTable, $sTableAlias, $aTableAlias);
-				if($mainWhereStatement)
-				{
-					//if($whereStatement)
-					//	$whereStatement= " and ";
-					$whereStatement.= $mainWhereStatement;
-					$mainWhereStatement= "";
-				}
 				//echo "where:".$whereStatement."<br />";
 				if($whereStatement)
 					$statement.= " ".$whereStatement;
@@ -1753,10 +1860,25 @@ abstract class STDatabase extends STObjectContainer
 			}// end of if(	$bNeedColumn && isset($aTableAlias[$table])	)
    		}//end of foreach($content)
 	}// end of foreach($fk)
+
 	
-	echo __FILE__.__LINE__."<br>";
-	echo "backjoin:<br>";
-	st_print_r($oTable->aBackJoin);
+	if( STCheck::isDebug("db.statements.table") )
+	{
+	    $exist= count($oTable->aBackJoin);
+	    if($exist > 0)
+	        $msg= "found ";
+	    else
+	        $msg= "no ";
+        $msg.= "foreign Keys (BackJoin's) ";
+        if($exist == 0)
+            $msg.= "found ";
+        $msg.= "to own table '".$oTable->getName()."' ";
+        if($exist > 0)
+            $msg.= "from follow tables:";
+        $space= STCheck::echoDebug("db.statements.table", $msg);
+        if($exist > 0)
+            st_print_r($oTable->aBackJoin,3,$space);
+	}
 		//look for tables which have an BackJoin
 		foreach($oTable->aBackJoin as $sBackTableName)
 		{
@@ -1787,31 +1909,73 @@ abstract class STDatabase extends STObjectContainer
 						Tag::echoDebug("db.statements.table", "make ".$joinArt." join to table ".$database.$sBackTableName.
 													" with alias-name ".$sTableAlias);
 					}
-                    //$fromTable= $join["table"];// wenn die Tabelle von einer anderen DB kommt, steht sie im $join vom foreach des $oTable->FK
-                    //if(!$fromTable)// sonst muss sie erst aus der aktuellen DB geholt werden
-                    //$fromTable= $oTable->getTable($table);
-                    //echo "table:".$fromTable->getName()."<br />";
-                    //st_print_r($fromTable->oWhere,10);
-					$whereStatement= $this->getWhereStatement($BackTable, $sTableAlias, $aTableAlias);
-                    if($mainWhereStatement)
-                    {
-                    	//if($whereStatement)
-                    	//	$whereStatement= " and ";
-                    	$whereStatement.= $mainWhereStatement;
-                    	$mainWhereStatement= "";
-                    }
-                	if($whereStatement)
-                	{
-                	    if(!preg_match("/^[ \t]*where/", $whereStatement))
-                	        $whereStatement= "and $whereStatement";
-                		$statement.= " ".$whereStatement;
-                	}
             		$statement.= $this->getTableStatement($oMainTable, $sBackTableName, $aTableAlias, $maked, false);
     			}// end of if(!Tag::warning(!$join))
 				unset($BackTable);
 			}// end of if($join)
-		}// end of foreach($oTable->aBackJoin
+		}// end of foreach($oTable->aBackJoin)
+		if(count($maked) < count($aTableAlias))
+		{
+		    if(STCheck::isDebug("db.statements.table"))
+		    {
+    		    $space= STCheck::echoDebug("db.statements.table", "need select for tables:");
+    		    STCheck::echoDebug("db.statements.table", "but have now made only for");
+    		    st_print_r($maked, 2, $space+55);
+		    }
+		    $tableStructure= $this->getTableStructure(STBaseContainer::getContainer("UserManagement"));
+		    if(STCheck::isDebug("db.statements.table"))
+		    {
+    		    $space= STCheck::echoDebug("db.statements.table", "structure of tables are");
+    		    st_print_r($tableStructure, 20, $space+55);
+		    }
+		}
+		STCheck::echoDebug("db.statements.table", "TableStatement - Result from table '".$oTable->getName()."'= '$statement'");
 		return $statement;
+	}
+	private function searchJoinTables(&$aAliases)
+	{
+	    if(STCheck::isDebug("db.table.fk"))
+	    {
+	        $space= STCheck::echoDebug("db.table.fk", "search join tables where need also for existing tables:");
+	        st_print_r($aAliases, 2, $space+55);
+	    }
+	    $this->searchJoinTablesR($this->aTableStructure['struct'], $aAliases, false);
+	    if(STCheck::isDebug("db.table.fk"))
+	    {
+	        $space= STCheck::echoDebug("db.table.fk", "result of joining tables need inside selection-statement:");
+	        st_print_r($aAliases, 2, $space+55);
+	    }
+	}
+	private function searchJoinTablesR($aTableStructure, &$aAliases, $bNeedBefore)
+	{ 
+	    $debugFunction= false;
+	    $c= 0;
+	    if(!is_array($aTableStructure))
+	        return 0;
+	    foreach($aTableStructure as $tableName=>$fks)
+	    {
+	        if($debugFunction) echo "search for table $tableName<br>";
+	        $needTable= false;
+	        if(isset($aAliases[$tableName]))
+	        {
+	            if($debugFunction) echo " need table $tableName inside statement<br>";
+	            $needTable= true;
+	        }
+	        $needBranch= $this->searchJoinTablesR($fks, $aAliases, $needTable);
+	        if($debugFunction) echo " for table $tableName need $needBranch branches<br>";
+            if( $needTable ||
+                $needBranch > 1 )
+            {
+                $c++;
+                if(!$needTable)
+                {
+                    $allAliases= array();
+                    $this->createAliases($allAliases);
+                    $aAliases[$tableName]= $allAliases[$tableName];
+                }
+            }
+	    }	    
+	    return $c;
 	}
 	function getReachedTables($table, $reached= null)
 	{
@@ -1957,40 +2121,47 @@ abstract class STDatabase extends STObjectContainer
 		}
 		return $aliasTables;
 	}
+	private function newUnsearchedTables($bFromAll)
+	{
+	    STCheck::paramCheck($bFromAll, 1, "bool");
+	    
+	    if(	isset($this->aTableStructure[STALLDEF]) &&
+	        $this->aTableStructure[STALLDEF]["fromAll"]===true	)
+	    {// if STALLDEF is false and also bFromAll is false,
+	        // do search again, because maybe an new table exists
+	        return false;
+	    }
+	    if(	$bFromAll===false &&
+	        (	!isset($this->aTableStructure[STALLDEF]) ||
+	            $this->aTableStructure[STALLDEF]["fromAll"]===false	)	)
+	    {
+	        if($this->wait){echo __FILE__.__LINE__."<br>";st_print_r($this->asExistTableNames);}
+	        if($this->wait){echo __FILE__.__LINE__."<br>";st_print_r($this->aTableStructure);}
+	        $bSearch= false;
+	        foreach($this->asExistTableNames as $tableName)
+	        {
+	            if(	!isset($this->aTableStructure[STALLDEF]["in"][$tableName])
+	                and
+	                $this->haveTable($tableName)								)
+	            {// if an new table founded in tableName list
+	                // search for all tables again
+	                $bSearch= true;
+	                unset($this->aTableStructure);
+	                return true;
+	            }
+	        }
+	        if($this->wait){echo __FILE__.__LINE__."<br>";st_print_r($bSearch);}
+	        if(!$bSearch)
+	            return false;
+	    }
+	}
 	function getTableStructure($container, $bFromAll= false)
 	{
 		Tag::paramCheck($container, 1, "STObjectContainer");
 		Tag::paramCheck($bFromAll, 2, "bool");
 
-		if(	isset($this->aTableStructure[STALLDEF]) &&
-			$this->aTableStructure[STALLDEF]["fromAll"]===true	)
-		{// if STALLDEF is false and also bFromAll is false,
-		 // do search again, because maybe an new table exists
-			return $this->aTableStructure["struct"];
-		}
-		if(	$bFromAll===false &&
-			(	!isset($this->aTableStructure[STALLDEF]) ||
-				$this->aTableStructure[STALLDEF]["fromAll"]===false	)	)
-		{
-		    if($this->wait){echo __FILE__.__LINE__."<br>";st_print_r($this->asExistTableNames);}
-		    if($this->wait){echo __FILE__.__LINE__."<br>";st_print_r($this->aTableStructure);}
-			$bSearch= false;
-    		foreach($this->asExistTableNames as $tableName)
-    		{
-				if(	!isset($this->aTableStructure[STALLDEF]["in"][$tableName])
-					and
-					$this->haveTable($tableName)								)
-				{// if an new table founded in tableName list
-				 // search for all tables again
-					$bSearch= true;
-					unset($this->aTableStructure);
-					break;
-				}
-    		}
-    		if($this->wait){echo __FILE__.__LINE__."<br>";st_print_r($bSearch);}
-			if(!$bSearch)
-				return $this->aTableStructure["struct"];
-		}
+		if(!$this->newUnsearchedTables($bFromAll))
+		    return $this->aTableStructure["struct"];
 		$this->aTableStructure[STALLDEF]["fromAll"]= $bFromAll;
 		$aHaveFks= array();
 		
@@ -2003,7 +2174,10 @@ abstract class STDatabase extends STObjectContainer
     		if(!$bFromAll)
     		{
     			if(!$container->haveTable($tableName))
+    			{
+    			    STCheck::echoDebug("db.statements.table", "table $tableName do not exist inside container:".$container->getName());
     				$bGetTable= false;
+    			}
     		}
     		if($bGetTable)
     		{
@@ -2013,15 +2187,19 @@ abstract class STDatabase extends STObjectContainer
 				$tableName= $fromTable->getName();
         		$this->aTableStructure["struct"][$tableName]= array();
 				$this->aTableStructure[STALLDEF]["in"][$tableName]= true;
-				echo __FILE__.__LINE__."<br>";
-				st_print_r($fromTable->columns,5);
+				$aNewTableStructure= array();
 				if(count($fromTable->aFks))
 				{
 					$aHaveFks[$tableName]= true;
-        			foreach($fromTable->FK as $fromTableName=>$toColumn)
+        			foreach($fromTable->aFks as $fromTableName=>$toColumn)
         				$this->aTableStructure["struct"][$tableName][$fromTableName]= array();
 				}else
-				    STCheck::echoDebug("table", "$tableName has no FK to an other table");
+				    STCheck::echoDebug("db.statments.table", "$tableName has no FK to an other table");
+				if(STCheck::isDebug("db.table.fk"))
+				{
+    			    $space= STCheck::echoDebug("db.table.fk", "Foreign Key structure from tables grow to:");
+    			    st_print_r($this->aTableStructure,20,$space+55);
+				}
     		}
 		}
 		foreach($this->aTableStructure["struct"] as $tableName=>$fkTables)
@@ -2052,10 +2230,31 @@ abstract class STDatabase extends STObjectContainer
 			st_print_r($this->aTableStructure,50, $nlength);
 			echo "<br />";
 		}
-		if($this->wait){echo __FILE__.__LINE__."<br>";st_print_r($this->aTableStructure["struct"]);}
+		
+		// create now backjoins
+		STCheck::echoDebug("db.table.fk", "create backjoins inside tables from database container ".$this->getName());
+		$this->createBackJoins($this->aTableStructure["struct"]);
 		return $this->aTableStructure["struct"];
 	}
-	function searchTableStructure($fromTableName, $rootTableName, $aHaveFks)
+	private function createBackJoins($tableStructure)
+	{
+	    if(is_array($tableStructure))
+    	    foreach ($tableStructure as $toTableName=>$fks)
+    	    {
+    	        if(is_array($fks))
+    	        {
+        	        foreach ($fks as $fromTableName=>$ofks)
+        	        {
+        	            $fromTable= &$this->getTable($fromTableName);
+        	            STCheck::echoDebug("db.table.fk", "set backjoin in table $fromTableName to table $toTableName");
+        	            $fromTable->setBackJoin($toTableName);
+        	            $ntable= $this->getTable($fromTableName);
+        	        }    	        
+        	        $this->createBackJoins($fks);
+    	        }
+    	    }
+	}
+	private function searchTableStructure($fromTableName, $rootTableName, $aHaveFks)
 	{
 		if(!isset($this->aTableStructure["struct"][$fromTableName]))
 		{
@@ -2064,25 +2263,25 @@ abstract class STDatabase extends STObjectContainer
 		}
 		$this->aTableStructure[STALLDEF]["in"][$fromTableName]= true;
 		$fkTables= $this->aTableStructure["struct"][$fromTableName];
-		foreach($fkTables as $inTableName=>$inFkTables)
+		foreach($fkTables as $toTableName=>$ownTableColumns)
 		{
-			if(	isset($this->aTableStructure["struct"][$inTableName])
+			if(	isset($this->aTableStructure["struct"][$toTableName])
 				and
-				$inTableName!=$rootTableName
+				$toTableName!=$rootTableName
 				and
-				$inTableName!=$fromTableName				)
+				$toTableName!=$fromTableName				)
 			{
-				$this->searchTableStructure($inTableName, $rootTableName, $aHaveFks);
-				$this->aTableStructure["struct"][$fromTableName][$inTableName]= $this->aTableStructure["struct"][$inTableName];
-				unset($this->aTableStructure["struct"][$inTableName]);
+				$this->searchTableStructure($toTableName, $rootTableName, $aHaveFks);
+				$this->aTableStructure["struct"][$fromTableName][$toTableName]= $this->aTableStructure["struct"][$toTableName];
+				unset($this->aTableStructure["struct"][$toTableName]);
 			}else
 			{
-				if(	$this->aTableStructure[STALLDEF]["in"][$inTableName] &&
-					!count($this->aTableStructure["struct"][$fromTableName][$inTableName]) &&
-					isset($aHaveFks[$inTableName]) &&
-					$aHaveFks[$inTableName]														)
+				if(	$this->aTableStructure[STALLDEF]["in"][$toTableName] &&
+					!count($this->aTableStructure["struct"][$fromTableName][$toTableName]) &&
+					isset($aHaveFks[$toTableName]) &&
+					$aHaveFks[$toTableName]														)
 				{
-					$this->aTableStructure["struct"][$fromTableName][$inTableName]= "before";
+					$this->aTableStructure["struct"][$fromTableName][$toTableName]= "before";
 				}
 			}
 		}
@@ -2453,7 +2652,7 @@ abstract class STDatabase extends STObjectContainer
 	 * @param boolean:$bFromIdentifications need aliases from identification columns
 	 * @return boolean false if not found any alias, otherwise true
 	 */
-	function createAliases(&$aliases, &$oTable, $bFromIdentifications)
+	function createAliases(&$aliases) //, &$oTable, $bFromIdentifications)
 	{
 	    if(isset($this->aAliases))
 	    {
@@ -2468,221 +2667,22 @@ abstract class STDatabase extends STObjectContainer
 	    //                     take only all tables from container
 	    //                     is much more easy and have better performance
 	    return true;
-	    
-	    
-	    STCheck::echoDebug("db.statements.aliases", "create sql aliases for table ".$oTable->getName());
-	    echo __FILE__.__LINE__."<br>";
-	    echo "from table ";st_print_r($oTable,0);echo "(".$oTable->getName().")<br>";
-	    st_print_r($aliases);
-		if(!$oTable->createAliases($aliases, $oTable, $bFromIdentifications))
-			return false;
-
-			
-		echo __FILE__.__LINE__."<br>";
-		echo "from table ";st_print_r($oTable,0);echo "(".$oTable->getName().")<br>";
-		st_print_r($aliases);
-/*		$aliases= array_flip($this->asExistTableNames);
-		foreach($aliases as $tableName=>&$alias)
-		{
-		    $newAlias= "t" . strval(intval($alias)+1);
-		    $alias= $newAlias;
-		}
-		st_print_r($aliases);	*/	
-		$unreach= $this->db->getUnreachedAliases($aliases, $oTable);
-		st_print_r($unreach);
-		echo __FILE__.__LINE__."<br>";
-		if(count($unreach))
-		{
-		    if($this->wait){echo __FILE__.__LINE__."<br>";st_print_r($unreach);}
-			if(STCheck::isDebug())
-			{
-				$debugString= "<b>do not reache table";
-				if(count($unreach)>1)
-					$debugString.= "s";
-				$debugString.= " ";
-				foreach($unreach as $tableName=>$alias)
-					$debugString.= $tableName.", ";
-				$debugString= substr($debugString, 0, strlen($debugString)-2);
-				STCheck::echoDebug("db.statements.aliases", $debugString."</b>");
-			}
-			if($this->wait){echo __FILE__.__LINE__."<br>";st_print_r($aliases);}
-			$first= $this->db->getFirstSelectTableNames($oTable->container, $aliases);
-			{echo __FILE__.__LINE__."<br>";st_print_r($first);}
-			if(count($first))
-			{// found an table before, which reach all other
-			 // this should be the normaly thing
-			 // but sometimes it needs also more back-joins
-			 // and the way is the else complicated way
-				$firstTableName= current($first);
-				if($this->wait){echo __FILE__.__LINE__."<br>";st_print_r($first);exit;}
-				$currentTableName= $oTable->getName();
-				$structure= $this->db->getTableStructure($oTable->container);
-				STCheck::echoDebug("db.statements.aliases", "found the table ".$firstTableName." before ".$currentTableName." which reach all others");
-				STCheck::echoDebug("db.statements.aliases", "and make backjoins to this one");
-				// set BackJoin flags to the first table
-				while($firstTableName!==$currentTableName)
-				{
-					$before= $this->db->getTableStructFromStructBefore($currentTableName, $structure);
-					$beforeTable= key($before);
-					$table= &$oTable->getTable($currentTableName);
-
-					$table->setBackJoin($beforeTable);
-					if(!isset($aliases[$beforeTable]))
-						$aliases[$beforeTable]= "t".(count($aliases)+1);
-					unset($table);
-					STCheck::echoDebug("db.statements.aliases", "set back-join from ".$currentTableName." to ".$beforeTable.
-											" in container ".get_class($oTable->container)."(".$oTable->container->getName().")");
-					$currentTableName= $beforeTable;
-				}
-			}else
-			{// no table found which reach all other
-
-				STCheck::echoDebug("db.statements.aliases", "found no table before which reach all others");
-				//look for all tables how will be reach
-				$newConnect= array();
-				$structure= $this->getTableStructure($oTable->container);
-				$tableStruct= $this->getTableStructFromStruct($oTable->getName(), $structure);
-
-				reset($tableStruct);
-				$reach= $this->getReachedTables($oTable->getTable(key($tableStruct)));
-				STCheck::write("reached tables:");
-				STCheck::write($reach);
-				do{//while($structureTable)
-
-					// for all unreached tables search an connection
-					// to the reached tables
-					$nUnreached= 0;
-					$nReached= 0;
-					$nOldUnreached= count($unreach);
-					$nOldReached= count($reach);
-					STCheck::write("scroll throug \$unreach");
-					STCheck::write($unreach);
-					while(count($unreach))
-					{
-						reset($unreach);
-						$unreachTable= key($unreach);
-						if(	!isset($newConnect[$unreachTable]) ||
-							!$newConnect[$unreachTable]				)
-						{
-							$tableStruct= $this->getStructureTableGroup($unreachTable, $structure);
-							$toConnectTable= "";
-							// toDo: funciton findConnectTable use always the first connect table
-							//		 in the $raeach array, but maybe the table to which need an back-join
-							//		 isn't in this array or not on the first place'
-							$connect= $this->findConnectTable($tableStruct, $reach, $toConnectTable);
-							if($connect)
-							{
-        						$oConnect= &$oTable->getTable($toConnectTable);
-        						$connectTableName= key($tableStruct);
-        						STCheck::echoDebug("db.statements.aliases", "set back-join from ".$toConnectTable." in the structure-tablegroup, to ".
-														$connect." in container ".$oConnect->container->getName());
-        						$oConnect->setBackJoin($connect);
-      							$newConnect[$toConnectTable]= true;
-      							$reach[$connect]= true;
-        						//unset the variable for the next
-        						//getTable reference in the foreach-loop
-        						unset($oConnect);
-        						unset($unreach[$connect]);
-        						//$oConnect= $oTable->getTable($beforeTableName);
-        						//$oConnect->noColumnSelects();
-        						//unset($oConnect);
-								if(!isset($aliases[$connect]))
-	        						$aliases[$connect]= "t".(count($aliases)+1);
-        						if(!isset($aliases[$connectTableName]))
-	        						$aliases[$connectTableName]= "t".(count($aliases)+1);
-							}// end of if($connect)
-						}// end of if(!$newConnect[unreachTable])
-
-						// break loop if not found an new table
-						$nUnreached= count($unreach);
-						$nReached= count($reach);
-						if(	$nUnreached == $nOldUnreached
-							&&
-							$nReached == $nOldReached		)
-						{
-							break;
-						}
-						$nOldReached= $nReached;
-						$nOldUnreached= $nUnreached;
-					}// end of foreach($unreach)
-
-					reset($tableStruct);
-					$groupTableName= key($tableStruct);
-					$newReach= $this->getReachedTables($oTable->getTable($groupTableName));
-
-					foreach($newReach as $newTable=>$exist)
-					{
-						if(isset($unreach[$newTable]))
-						{
-							unset($unreach[$newTable]);
-							$reach[$newTable]= true;
-						}
-					}
-					//$unreach= $this->db->getUnreachedAliases($aliases, $oTable->getTable($groupTableName));
-
-				}while(count($unreach));//($structureTable);
-
-    			if(count($unreach)>count($newConnect))
-    			{
-    				$unreachTable= "";
-    				foreach($unreach as $table=>$alias)
-    				{
-    					if(!isset($newConnect[$table]))
-    						$unreachTable.= $table.", ";
-    				}
-    				$unreachTable= substr($unreachTable, 0, strlen($unreachTable)-2);
-        			echo "<br />";
-        			STCheck::error(1, "STDatabase::createAliases()", "<b>Fatal ERROR:</b> found no connection from reached tables to table(s) ".$unreachTable);
-        			echo "\n";
-        			echo "<b>reached tables:</b>";
-        			echo "<pre>";
-        			st_print_r($reach);
-    				if(!count($reach))
-    					echo "<br />";
-        			echo "<b>table-structure from selected tables with existing foreign keys</b>";
-        			st_print_r($structure,50);
-    				if(!count($structure))
-    					echo "<br />";
-    				$structure= $this->getTableStructure($oTable->container, true/*bForAll*/);
-    				echo "\n<b>table-sturcure from all foreign key settings in the hole project:</b>";
-    				st_print_r($structure,50);
-        			echo "</pre>";
-        			exit;
-    			}
-			}
-		}// end of if(count($unreach))
-		
-		if($this->wait){echo __FILE__.__LINE__."<br>";exit;}
-
-		$oTable->aAliases= $aliases;
-		if(Tag::isDebug("db.statements.aliases"))
-		{
-				echo "<b>[</b>db.statements.aliases<b>]</b> need tables:<br /><pre>";
-				st_print_r($aliases,3,24);
-				if($oTable->getName()=="MUCluster")
-				    showErrorTrace();
-				echo "</pre><b>[</b>db.statements.aliases<b>]</b>";
-				echo " end of function <b>createAliases()</b><br /><br />";
-		}
-		return true;
 	}
 	var $wait= false;
-	function getStatement($oTable, $bFromIdentifications= false, $withAlias= true)
+	function getStatement($oTable, $bFromIdentifications= false, $withAlias= null)
 	{
 		STCheck::param($oTable, 0, "STDbTable");
 		STCheck::param($bFromIdentifications, 1, "bool");
-		STCheck::param($withAlias, 2, "bool");
+		STCheck::param($withAlias, 2, "bool", "null");
 		
 		STCheck::echoDebug("db.statements", "create sql statement from table <b>".
 											$oTable->getName()."</b> inside container <b>".
 											$oTable->container->getName()."</b>");
-
+		    
 		$this->foreignKeyModification($oTable);
 		$aliasTables= array();
 		//STCheck::write("search for aliases");
 		$this->createAliases($aliasTables, $oTable, $bFromIdentifications);
-		//$aliasTables= $this->getAliases($oTable, $bFromIdentifications);
-		//st_print_r($aliasTables);
 		// Statement zusammen bauen
 		$statement= "select ";
 		$bMainTable= !$bFromIdentifications;// wenn der erste ->getSlectStatement() Aufruf nicht für
@@ -2703,8 +2703,8 @@ abstract class STDatabase extends STObjectContainer
 			$maked= array();
 			$maked[$tableName]= "finished";
 			$statement.= " as ".$aliasTables[$tableName];
-            $statement.= " ".$this->getTableStatement($oTable, $tableName, $aliasTables, $maked, /*first access*/true);
-		}else
+			$statement.= " ".$this->getTableStatement($oTable, $tableName, $aliasTables, $maked, /*first access*/true);
+		}//else
 		{
 				// create $bufferWhere to copy the original
 				// behind the function getWhereStatement()
@@ -2882,27 +2882,22 @@ abstract class STDatabase extends STObjectContainer
 		//					nicht aktualiesiert, muss diese Funktion �berladen werden
 		return $this;
 	}
-	function &getTable($tableName= "")//, $bAllByNone= false)
+/*	function &getTable($tableName= "")//, $bAllByNone= false)
 	{
 		Tag::paramCheck($tableName, 1, "string", "empty(string)", "null");
 		$nParams= func_num_args();
 		STCheck::lastParam(1, $nParams);
 		Tag::alert($this->dbType=="BLINDDB", "STDatabase::getTable() ::needTable()", "can not read any Table from STDatabase BLINDDB");
-
-		$table= null;
-		// method needs initialization properties
-		// only if he is not initializised
-		// and not in the create or initialize phase
-		// to know which tables are defined
-		if(	$this->bCreated===null
-			or
-			(	$this->bCreated===true
-				and
-				$this->bInitialize===null	)	)
-		{
-			$this->initContainer();
-		}
-
+		
+		echo __FILE__.__LINE__."<br>";
+		echo "----------------------------------------------------------------------------------------------------------------------------<br>";
+		$table= STObjectContainer::getTable($tableName);
+		if(isset($table))
+		    return $table;
+	}*/
+    function &createTable($tableName)
+    {
+        $table= null;
 		if(!$tableName)
 		{
 			$tableName= $this->getTableName();
@@ -2918,14 +2913,6 @@ abstract class STDatabase extends STObjectContainer
 			Tag::echoDebug("table", "or it not be showen on the first status");
 			return $table;
 		}
-/*		$this->aCount[$tableName][$this->getName()]+= 1;
-		if($this->aCount[$tableName][$this->getName()] > 20)
-		{
-			echo "__________________________________________________________________________________________________<br>";
-			echo "ask rekursive for table $tableName<br>";
-			showErrorTrace();
-			exit();
-		}*/        
 		if(STCheck::isDebug())
 		{
 		    $msg= "get table \"$tableName\" from DB <b>".$this->getName()."</b> as original table <b>$orgTableName</b>";
@@ -2934,51 +2921,27 @@ abstract class STDatabase extends STObjectContainer
 		    else
 		        STCheck::echoDebug("db.statements.table", $msg);     
 		}
-		$tableName= strtolower($tableName);
-		// alex 12/04/2005: mit getTable werden nun alle Tabellen erstellt
-		//					wenn zuvor keine Tabelle mit needTable erzeugt wurde
-		// alex 17/05/2005: (ausser wenn $bAllByNone false ist)
-		// alex 12/04/2005: es kann jedoch auch eine Tabelle die normaler weise nicht gebraucht wird
-		//					damit geholt werden. Sie wird jedoch damit, nicht in die Liste der gebrauchten
-		//					aufgenommen
-		//if($bAllByNone)
-		//	$this->getTables();
-		$table= null;
-		if(isset($this->tables[$orgTableName]))
-		    $table= &$this->tables[$orgTableName];
-		else
+		$table= new STDbTable($orgTableName, $this);
+		$desc= &STDbTableDescriptions::instance($this->getName());
+		$aFks= $desc->getForeignKeys($orgTableName);
+		foreach($aFks as $fk)
 		{
-		    unset($this->tables[$orgTableName]);	// beim Abfragen auf Reference von tableName
-												// wird ein Eintrag mit null-Value erstellt
-		    if(isset($this->oGetTables[$orgTableName]))
-		        $table= &$this->oGetTables[$orgTableName];
+			$fkTable= $fk["table"];
+			if($fkTable===$orgTableName)
+				$fkTable= $table;
+			$table->foreignKey($fk["own"], $fkTable, $fk["other"]);
 		}
-		if(	!isset($table)
-			and
-		    $this->isTable($orgTableName)	)
-		{
-			$table= new STDbTable($orgTableName, $this);
-			$desc= &STDbTableDescriptions::instance($this->getName());
-			$aFks= $desc->getForeignKeys($orgTableName);
-			foreach($aFks as $fk)
-			{
-				$fkTable= $fk["table"];
-				if($fkTable===$orgTableName)
-					$fkTable= $table;
-				$table->foreignKey($fk["own"], $fkTable, $fk["other"]);
-			}
-			$this->oGetTables[$orgTableName  ]= &$table;
-			// alex 12/04/2005: entf. $this->tables[$tableName]= &$table;
-			// alex 18/11/2005:	wieder eingef�gt, da sonst alles im kreis l�uft
-			//					erkl�rung f�r ausdokumentieren nicht vorhanden
-			//$this->tables[$tableName]= &$table;
-		}
+		$this->oGetTables[strtolower($tableName)]= &$table;
+		// alex 12/04/2005: entf. $this->tables[$tableName]= &$table;
+		// alex 18/11/2005:	wieder eingef�gt, da sonst alles im kreis l�uft
+		//					erkl�rung f�r ausdokumentieren nicht vorhanden
+		//$this->tables[$tableName]= &$table;
 		if(STCheck::isDebug())
 		{
 			if(!$table)
 				STCheck::echoDebug("table", "table ".$orgTableName." not exist in database");
 			else
-			    STCheck::echoDebug("table", "return table:".get_class($table)." <b>$tableName</b> with ID:".$table->ID);
+			    STCheck::echoDebug("table", "return table:".get_class($table)." <b>$orgTableName</b> with ID:".$table->ID);
 		}
 		return $table;
 	}

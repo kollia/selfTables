@@ -180,15 +180,15 @@ class STCheck
 		 * 					with STDatabase class where an error function
 		 * 					be with no parameters
 		 */
-		function is_error($trigger, $functionName, $message, $outFunc= 0)
+		public static function is_error($trigger, $functionName, $message, $outFunc= 0)
 		{
-			if(!Tag::isDebug())
+			if(!STCheck::isDebug())
 			{
 				if($trigger)
 					return true;
 				return false;
 			}
-			return Tag::error_message("Error", $trigger, $functionName, $message, $outFunc);
+			return STCheck::error_message("Error", $trigger, $functionName, $message, $outFunc);
 		}
 		public static function alert($trigger, $functionName, $message, $outFunc= 0)
 		{

@@ -181,7 +181,7 @@ class STUserManagementSession extends STSession
 	{
 	    Tag::paramCheck($table, 1, "STDbTable");
 
-	    $clusters= $this->session_vars["ST_USER_DEFINED_VARS"]["dynamic"][$table->getName()];
+	    $clusters= $this->getSessionVar("ST_USER_DEFINED_VARS", "dynamic", $table->getName());
     	if(!is_array($clusters))
   		{//echo __file__.__line__."<br />";
    		    //st_print_r($this->sAcessClusterColumn,3);
@@ -204,8 +204,7 @@ class STUserManagementSession extends STSession
   				        $clusters[$clusterInfo["action"]][$row[0]]= $row[$key+1];
   				    }
   		    }
-  		    //st_print_r($created,5);
-  		    $this->session_vars["ST_USER_DEFINED_VARS"]["dynamic"][$table->getName()]= $clusters;
+  		    $this->setRecursiveSessionVar($clusters, "ST_USER_DEFINED_VARS", "dynamic", $table->getName());
         }
     	return $clusters;
 	}
@@ -218,8 +217,8 @@ class STUserManagementSession extends STSession
 
 		if(typeof($table, "STDbTable"))
 		    $table= $table->getName();
-		$this->session_vars["ST_USER_DEFINED_VARS"]["dynamic"][$table][$action][$pkValue]= $cluster;
-		$this->session_vars["ST_EXIST_CLUSTER"][$cluster]= true;
+		$this->setRecursiveSessionVar($cluster, "ST_USER_DEFINED_VARS", "dynamic", $table, $action, $pkValue);
+		$this->setRecursiveSessionVar(true, "ST_EXIST_CLUSTER", $cluster);
 	}
 	function projectColumn($defined, $column, $alias= null)
 	{
@@ -474,15 +473,17 @@ class STUserManagementSession extends STSession
 	}
   	function getUserID()
   	{
-  		if(isset($this->session_vars["ST_USERID"]))
-	  		return $this->session_vars["ST_USERID"];
-  		return 0;
+  	    $userID= $this->getSessionVar("ST_USERID");
+  	    if(!isset($userID))
+	  		return 0;
+  		return $userID;
   	}
 	function getUserName()
 	{
-  		if(isset($this->session_vars["ST_USER"]))
-			return $this->session_vars["ST_USER"];
-  		return "";
+	    $user= $this->getSessionVar("ST_USER");
+	    if(!isset($user))
+	        return "";
+	    return $user;
 	}
 	function getProjectID()
 	{
@@ -496,7 +497,8 @@ class STUserManagementSession extends STSession
 	{
 		Tag::deprecated("is died", "STUserSession::hasManagementAccess()");
 
-		if(	isset($this->session_vars["ST_CLUSTER_MEMBERSHIP"][$this->allAdminCluster])
+		$membership= $this->getSessionVar("ST_CLUSTER_MEMBERSHIP");
+		if(	isset($membership[$this->allAdminCluster])
 			and
 			$this->isLoggedIn())
 		{
@@ -506,9 +508,9 @@ class STUserManagementSession extends STSession
   		}
 		$anyAccess= false;
 		$projectAccess= false;
-		if(is_array($this->session_vars["ST_CLUSTER_MEMBERSHIP"]))
+		if(is_array($membership))
 		{
-			foreach($this->session_vars["ST_CLUSTER_MEMBERSHIP"] as $project)
+		    foreach($membership as $project)
 			{
 				if(	$project["addUser"]=="Y"
 					or
@@ -576,7 +578,7 @@ class STUserManagementSession extends STSession
 		{
 			$this->project= "";
 			$this->projectID= 0;
-			$this->session_vars["ST_PROJECTID"]= 0;
+			$this->setSessionVar("ST_PROJECTID", 0);
 		}else
 		{
   			// deffiniere Projekt
@@ -602,7 +604,7 @@ class STUserManagementSession extends STSession
 				/**/Tag::echoDebug("user", "set startPage from database to ".$row[2]);
 				$this->startPage= $row[2];
 			}
-  			$this->session_vars["ST_PROJECTID"]= $this->projectID;
+			$this->setSessionVar("ST_PROJECTID", $this->projectID);
 		}
 	}
   	function setProperties($ProjectName= "")
@@ -680,33 +682,34 @@ class STUserManagementSession extends STSession
 			$this->setExistCluster($row["ID"], $row["ProjectID"]);
 		/**/if( Tag::isDebug("user") )
 		{
-			echo "<b>found existing clusters:</b><br /><pre>";
-			print_r($this->getExistClusters());
-			echo "</pre><br />";
+			$space= STCheck::echoDebug("user", "<b>found existing clusters:</b>");
+			st_print_r($this->getExistClusters(), 2, $space+40);
 		}
 
 		$oProject= &$this->database->getTable("Project");
-		echo __FILE__.__LINE__."<br>selector will be create<br>";//exit;
 		if(!typeof($oProject, "STDbSelector"))
 		  $projectCluster= new STDbSelector($oProject, STSQL_ASSOC);
 		else
 		  $projectCluster= &$oProject;
-		echo __FILE__.__LINE__."<br>selector created<br>";//exit;
 		$projectCluster->distinct();
 		$projectCluster->select("Cluster", "ID");
 		$projectCluster->select("Project", "Name");
 		$projectCluster->select("Cluster", "ProjectID");
-		echo __FILE__.__LINE__."<br>";//exit;
-		if($this->userID)
-		{
+		if( isset($this->userID) &&
+		    $this->userID != -1        )
+		{//$this->$loggedinGroup;
 			$groupWhere= new STDbWhere("Name='".$this->onlineGroup."'", "Group", "or");
 			$groupWhere->orWhere("Name='".$this->loggedinGroup."'");
 			$usergroupWhere= new STDbWhere("UserID=".$this->userID, "UserGroup");
 			$groupWhere->orWhere($usergroupWhere);
-		}else
-			$groupWhere= new STDbWhere("Name='".$this->onlineGroup."'", "Group", "and");
+		}else		    
+		    $groupWhere= new STDbWhere("Name='".$this->onlineGroup."'", "Group", "and");
+	    if( STCheck::isDebug("user"))
+	    {
+	        $space= STCheck::echoDebug("user", "make where statement for project table:");
+	        st_print_r($groupWhere, 10, $space+30);
+	    }
 		$projectCluster->where($groupWhere);
-		echo __FILE__.__LINE__."<br>";//exit;
 		//st_print_r($groupWhere, 5);
 		
 		//$projectWhere= new STDbWhere("ID=0", "Project");
@@ -726,30 +729,38 @@ class STUserManagementSession extends STSession
 		echo "manuel statement:$statement<br/>";*/
 		if(STCheck::isDebug("user"))
 		{
-			$statement= $projectCluster->getStatement();
-			Tag::echoDebug("user", "checking in database for ".$statement);
+		    $statement= $projectCluster->getStatement();
+			STCheck::echoDebug("user", "checking in database for statement:");
+			STCheck::echoDebug("user", $statement);
 		}
 		$projectCluster->wait= true;
 		$projectCluster->execute();
 		$aCluster= $projectCluster->getResult();
+		if(STCheck::isDebug("user"))
+		{
+		    $space= STCheck::echoDebug("user", "<b>found follow memberships inside database:</b>");
+		    st_print_r($aCluster, 2, 34+$space);
+		}
 		//$aCluster= $this->database->fetch_array($statement, MYSQL_ASSOC);
 		$this->aCluster= array();
-		/*$access["ID"]= 0;
-		$access["project"]= "allProjects";
-		$access["addUser"]= "N";
-		$access["addGroup"]= "N";
-		$this->aCluster["LOGGED_IN"]= $access;*/
 		foreach($aCluster as $row)
 		{// Projekt ID f�r Cluster nur anzeigen,
 		 // wenn dieser zugriff auf das UserManagement hat
-		 	$this->setMemberCluster($row["ID"], $row["Name"], $row["ProjectID"]);
+		    if( isset($row['ID']) &&
+		        $row['ID'] != null    )
+		    {
+		 	    $this->setMemberCluster($row["ID"], $row["Name"], $row["ProjectID"]);
+		    }
 		}
 		/**/if( Tag::isDebug("user") )
 		{
-			echo "<b>found following cluster Memberships:</b><br /><pre>";
-			st_print_r($this->getMemberClusters(), 2);
-			if(Tag::isDebug("user.cluster"))
-				echo "</pre><br />";
+		    $memberClusters= $this->getMemberClusters();
+		    if($memberClusters)
+		    {
+		        $space= STCheck::echoDebug("user", "<b>found following cluster Memberships set inside SESSION:</b>");
+    			st_print_r($memberClusters, 2, $space+34);
+		    }else
+		        STCheck::echoDebug("user", "<b>no cluster for Memberships be set</b>");
 		}
 	}
 	function selectGroupID($groupname)
@@ -810,53 +821,78 @@ class STUserManagementSession extends STSession
 		$userTable= $this->database->getTable("User");
 		$userTable->clearSelects();
 		$userTable->clearGetColumns();
-		$userTable->select("ID");
+		$userTable->select("ID", "ID2");
 		$userTable->select("UserName");
-		$userTable->select("GroupType");
+		$userTable->getColumn("GroupType");
 		if(is_string($user))
 			$userTable->where("UserName='".$user."'");
 		else
 			$userTable->where("ID=".$user);
 		$selector= new STDbSelector($userTable);
 		$selector->execute();
-		$row= $selector->getRowResult();
+		$row= $selector->getResult();
 
-	  	$ID= $row[0];
-		$user= $row[1];
-		$this->user= $row[1];
-		$this->session_vars["ST_USER"]= $row[1];
-		$groupType= $row[2];
-		if(is_numeric($row[2]))
+		$ID= -1;
+		$groupType= "";
+		$user= "";
+		$existrows= count($row);
+		if($existrows > 0 )
 		{
-			$groupType= $this->database->getTable("GroupType");
-			$groupType->clearSelects();
-			$groupType->clearGetColumns();
-			$groupType->select("GroupType", "Label");
-			$groupType->where("ID=".$row[2]);
-			$selector= new STDbSelector($groupType);
-			$selector->execute();
-			$groupType= $selector->getSingleResult();
+		    $rownr= 0;
+		    if(count($row) > 1)
+		    {
+		        foreach($row as $line)
+		        {
+		            if($line['GroupType'] == "LKHGraz")
+		                break;
+		        }
+		    }
+    	  	$ID= $row[$rownr]['ID'];
+    	  	$user= $row[$rownr]['UserName'];
+    	  	$groupType= $row[$rownr]['GroupType'];
+    		
 		}
 		if( Tag::isDebug("user") )
 		{
-			if(isset($ID))
+		    $msg= "";
+			if($existrows > 0)
 			{
-				echo "founded first row with ID:".$row[0]." and Grouptype:'".$row[1]."' in database from table MUUser:<br />";
+			    if(count($row) > 1)
+			        STCheck::echoDebug("user", "found more than one user '$user', take first with group-type $groupType");
+				$msg= "found user '$user' with ID:$ID and Grouptype:'$groupType' inside database table MUUser";
 			}else
-				echo "do not found user in Database";
+				$msg= "do not found any user with name '$user' in Database";
+			STCheck::echoDebug("user", $msg);
 		}
-	  	if(	!isset($ID)
-	  		or
-			$groupType!="custom"	)
+	  	if(	$ID == -1 ||
+			$groupType != "custom"	)
 	  	{
-			Tag::echoDebug("user", "user from type ".$row[1]." so check accepting about ->getFromOtherConnections()");
-			$result= $this->getFromOtherConnections($ID, $user, $password, $row[1]);
-			//echo "accept is $result";exit;
+	  	    if($ID == -1)
+	  	    {
+	  	        $msg= "user do not exist inside database";
+	  	        $type= "unknown";	  	        
+	  	    }else
+	  	    {
+	  	        $msg= "user from type ".$groupType;
+	  	        $type= $groupType;
+	  	    }
+	  	        
+	  	    $msg.= ", so check accepting about ->getFromOtherConnections()";
+	  	    STCheck::echoDebug("user", $msg);
+			$result= $this->getFromOtherConnections($ID, $user, $password, $type);
+			if($result === 0)
+			{
+    			$this->setSessionVar("ST_USER", $user);
+    			$this->setSessionVar("ST_USERID", $ID);
+			}
 			return $result;
 		}
-	  	//kein �berpr�fung �ber LDAP-Server
-		if( !$ID )
+	  	//kein Ueberpruefung ueber LDAP-Server
+		if( $ID == -1 )
+		{
+		    STCheck::echoDebug("user", "user do not exist inside database");
 			 return 1;// kein User mit diesem Namen vorhanden
+		}
 
 		$oUserTable= $this->database->getTable("User");
 		$userSelector= new STDbSelector($userTable);
@@ -876,6 +912,8 @@ class STUserManagementSession extends STSession
 		$this->sGroupType= "custom";
 		$this->userID= $ID;
 		$this->user= $user;
+		$this->setSessionVar("ST_USER", $user);
+		$this->setSessionVar("ST_USERID", $ID);
 		//$this->checkForLoggedIn();
 		return 0;
 	}
@@ -955,7 +993,7 @@ class STUserManagementSession extends STSession
 		//$cluster= $clusterContent["ID"];
 		if($insert->execute(noErrorShow)) //$this->database->fetch($statement, noDebugErrorShow))
 			return "NOCLUSTERCREATE";
-		$this->session_vars["ST_CLUSTER_MEMBERSHIP"][$clusterName]= $this->projectID;
+		$this->setRecursiveSessionVar($this->projectID, "ST_CLUSTER_MEMBERSHIP", $clusterName);
 
 		if(!$addGroup)
 			return "NOERROR";

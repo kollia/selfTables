@@ -56,7 +56,7 @@ class Tag extends STCheck
 		 * 					with STDatabase class where an error function
 		 * 					be with no parameters
 		 */
-		function is_error($trigger, $functionName, $message, $outFunc= 0)
+		public static function is_error($trigger, $functionName, $message, $outFunc= 0)
 		{
 			return Tag::error_message("Error", $trigger, $functionName, $message, $outFunc);
 		}

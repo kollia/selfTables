@@ -1,7 +1,7 @@
 <?php
 
 require_once($php_html_description);
-require_once($php_htmltag_class);
+//require_once($php_htmltag_class);
 require_once($_stbasecontainer);
 require_once($_stdbtablecreator);
 require_once($_stdbtabledescriptions);
@@ -16,7 +16,7 @@ class STObjectContainer extends STBaseContainer
 	var $chooseTitle;
 	var $language= "en";
 	var $sDefaultCssLink;
-	var	$parentContainerName; // name of the parent container
+	var	$parentContainer= null; // parent container produced before
 	var	$oGetTables= array(); // all tables which are geted but not needed
 	var $tables= array(); // alle STDbTable Objekte welche f�r die Auflistung gebraucht werden
 	var	$sFirstTableName; //erste Tabelle
@@ -47,8 +47,8 @@ class STObjectContainer extends STBaseContainer
 		Tag::paramCheck($name, 1, "string");
 		Tag::paramCheck($container, 2, "STObjectContainer");
 
+		$this->parentContainer= &$container;
 		$this->db= &$container->getDatabase();
-		$this->parentContainerName= $container->getName();
 		STBaseContainer::__construct($name);
 	}
 	function setLanguage($lang)
@@ -123,7 +123,7 @@ class STObjectContainer extends STBaseContainer
 
 		$this->initContainer();
 		$orgTableName= $this->getTableName($sTableName);
-    	if($orgTableName)
+    	if(isset($orgTableName))
     	    $sTableName= $orgTableName;
 		else
 		// not all databases save the tables case sensetive
@@ -133,13 +133,23 @@ class STObjectContainer extends STBaseContainer
 		$table= null;
 		if(isset($this->tables[$sTableName]))
 		  $table= &$this->tables[$sTableName];
-		if(isset($this->oGetTables[$sTableName]))
-		  $table= &$this->oGetTables[$sTableName];
+		else
+		{ 
+		    $gettable= $this->getTable($sTableName);
+            if(isset($gettable))
+            {
+                $this->tables[$sTableName]= clone($gettable);
+                $table= &$this->tables[$sTableName];
+                $table->abNewChoice= array();
+                $table->bSelect= false;
+                $table->bTypes= false;
+                $table->bIdentifColumns= false;
+                $this->table[$sTableName]= &$table;
+            }
+		}
+		return $table;
 		
-		if(isset($table))
-		{
-			$this->tables[$sTableName]= &$table;
-		}else
+/*		if(!isset($table))
 		{
 		    if(STCheck::isDebug())
 		    {
@@ -187,7 +197,7 @@ class STObjectContainer extends STBaseContainer
 			}
 			return $newTable;
 		}
-		return $table;
+		return $table;*/
 	}
 	function &getTable($tableName= null)//, $bAllByNone= true)
 	{
@@ -208,7 +218,8 @@ class STObjectContainer extends STBaseContainer
 		{
 			$this->initContainer();
 		}
-
+		
+		// check first right name of table
 		if($tableName==null)
 		{
 		    $tableName= $this->getTableName();
@@ -228,24 +239,32 @@ class STObjectContainer extends STBaseContainer
 		// not all databases save the tables case sensetive
 			$orgTableName= $tableName;
 		$tableName= strtolower($tableName);
+		// ----------------------------------------------------------------------------------------------------
+		
+		
 		// alex 08/07/2005: die Tabelle wird nun auch ohne Referenz geholt
 		//					�nderungen jetzt ausserhalb m�glich
 		//					und die Tabelle ist dann nicht automatisch in $this->tables eingetragen
 		//					wenn hier eine Referenz geholt w�rde w�re sie automatisch
 		//					bei $this->db->getTable in $this->tables eingetragen
-		$table= &$this->tables[$tableName];
-		if(!$table)
+		if(isset($this->tables[$tableName]))
 		{
-			unset($this->tables[$tableName]);
-			$table= &$this->oGetTables[$tableName];
-		}
-		if(!$table)
+		    Tag::echoDebug("table", "get used table <b>$tableName</b> from container <b>".$this->getName()."</b>");
+		    $table= &$this->tables[$tableName];
+		    
+		}else if(isset($this->oGetTables[$tableName]))
+		{
+		    Tag::echoDebug("table", "get table <b>$tableName</b> from container <b>".$this->getName()."</b>");
+		    $table= &$this->oGetTables[$tableName];
+		    
+		}else if( $this->parentContainer != null &&
+		          $this->name !== $this->parentContainer->getName()   )
 		{	// alex 24/05/2005:	// alex 17/05/2005:	die Tabelle wird von der �berschriebenen Funktion
 			//					getTable() aus dem Datenbank-Objekt geholt.
-			//					nat�rlich wird die Tabelle kopiert, da sie wom�glich noch ge�ndert wird
-			$container= &STBaseContainer::getContainer($this->parentContainerName);
-			$table= clone $container->getTable($orgTableName);//, $bAllByNone);
-			if($table)
+		    //					nat�rlich wird die Tabelle kopiert, da sie wom�glich noch ge�ndert wird
+		    Tag::echoDebug("table", "clone table <b>$tableName</b> from parent container <b>".$this->parentContainer->getName()."</b>");
+			$table= clone $this->parentContainer->getTable($orgTableName);//, $bAllByNone);
+			if(isset($table))
 			{
 				$table->abNewChoice= array();
 				$table->bSelect= false;
@@ -254,11 +273,20 @@ class STObjectContainer extends STBaseContainer
 				unset($table->container);
 				$table->container= $this;
 				$this->oGetTables[$tableName]= &$table;
-			}else
-				unset($this->oGetTables[$tableName]);
+			}
+		}else
+		{
+		    Tag::echoDebug("table", "create table <b>$tableName</b> inside database container <b>".$this->getName()."</b>");
+		    $table= &$this->createTable($orgTableName);
+		    $this->oGetTables[$tableName]= &$table;
 		}
-		Tag::echoDebug("table", "get table <b>$tableName</b> from container <b>".$this->getName()."</b>");
+		
 		return $table;
+	}
+	function &createTable($tableName)
+	{
+	    $table= new STAliasTable();
+	    return $table;
 	}
 	function &getTables($onError= onErrorStop)
 	{
@@ -283,14 +311,17 @@ class STObjectContainer extends STBaseContainer
 			// alex 17/05/2005:	die Tabellen werden nun von der �berschriebenen Funktion
 			//					getTable() aus dem Datenbank-Objekt erzeugt.
 			foreach($tableNames as $name)
-				$this->tables[$name]= $this->db->getTable($name);//, $bAllByNone);
+			{
+			    $keyTableName= strtolower($name); 
+			    $this->tables[$keyTableName]= $this->db->getTable($name);//, $bAllByNone);
+			}
 		}
 		//st_print_r($this->tables, 1);
 		return $this->tables;
 	}
 	function setInTableNewColumn($tableName, $columnName, $type)
 	{
-		$tableName= $this->getTableName($tableName);
+		$tableName= strtolower($this->getTableName($tableName));
 		if(isset($this->tables[$tableName]))
 		{
 			$this->tables[$tableName]->dbColumn($columnName, $type, $len);
@@ -298,7 +329,7 @@ class STObjectContainer extends STBaseContainer
 	}
 	function setInTableColumnNewFlags($tableName, $columnName, $flags)
 	{
-		$tableName= $this->getTableName($tableName);
+	    $tableName= strtolower($this->getTableName($tableName));
 		if(isset($this->tables[$tableName]))
 		{
 			$this->tables[$tableName]->columnFlags($columnName, $flags);
@@ -328,12 +359,14 @@ class STObjectContainer extends STBaseContainer
 		// method needs initialization properties
 		// to know which tables are defined
 		$this->createContainer();
-
-		$tableName= $this->getTableName($tableName);
-		foreach($this->oGetTables as $table=>$content)
+		
+		$tableName= strtolower($this->getTableName($tableName));
+		if(isset($this->oGetTables[$tableName]))
+		    return true;
+		if(   isset($this->parentContainer) &&
+		      $this->name !== $this->parentContainer->getName()   )
 		{
-			if(preg_match("/".$table."/i", $tableName))
-				return true;
+		    return $this->parentContainer->haveTable();
 		}
 		return false;
 	}

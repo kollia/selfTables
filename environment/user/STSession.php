@@ -1,9 +1,8 @@
 <?php
 
-
 require_once( $php_html_description );
 require_once( $_stquerystring );
-//require_once( $php_htmltag_class );
+require_once( $_stdbupdater );
 
 
 /*	-------------------------------------------------------------------
@@ -43,10 +42,6 @@ class STSession
 	var $oLoginMask;
 	var $noRegister= false;
 	var $aSessionVars= array();
-	var	$session_vars;	// hier wird eine Referenz von HTTP_SESSION_VARS gesetzt,
-						// oder wenn _st_set_session_global auf true steht
-						// werden alle Globalen Session-Variblen aus aSessionVars
-						// mit einer Referenz darin gespeichert
 	/** 
 	 * @var ID of project
 	 */
@@ -64,7 +59,7 @@ class STSession
 								"class STSession is private, choose STSession::init()");
 		$this->aCluster= array();
 		$this->startPage= "";
-
+		
 		$this->aSessionVars[]= "ST_LOGGED_IN";
 		$this->aSessionVars[]= "ST_CLUSTER_MEMBERSHIP";
 		$this->aSessionVars[]= "ST_EXIST_CLUSTER";
@@ -104,14 +99,6 @@ class STSession
 				return true;
 		return false;
 	}
-	function setVarInSession($var, $value)
-	{
-	    $this->session_vars["ST_USER_DEFINED_VARS"]["var"][$var]= $value;
-	}
-	function &getVarFromSession($var)
-	{
-	    return $this->session_vars["ST_USER_DEFINED_VARS"]["var"][$var];
-	}
 	function startPage($url)
 	{
 		if($url)
@@ -136,6 +123,7 @@ class STSession
   	function registerSession()
   	{
 		global	$host,
+		        $globalVar,
 				$HTTP_COOKIE_VARS,
 				$php_session_name,
 				$php_session_save_path,
@@ -152,31 +140,45 @@ class STSession
 			session_name($php_session_name);
 		}else
 			$this->sessionName= session_name();
-			
-		session_set_cookie_params( 0, '/', $client_root);
-		register_global_SESSION_VAR($globalVar);
-		if(Tag::isDebug())
-		{// if defined Debug-Session,
-			$bSetSession= @session_start();// warning for cookie set is normaly
-		}else
-			$bSetSession= session_start();
-		$this->session_vars= &$globalVar;
-		//echo "session will be activated for ".session_cache_expire()." minutes<br>";
-
+		
+		if(!isset($_SESSION))
+		{
+		    // WARNING: since my last test php version 8.1.2
+		    //          if third parameter of session_set_cookie_params() is value null, not a null String "",
+		    //          session_start() do not work
+		    //          and otherwise also when correct (set only 2 parameters) time changing not works ???
+		    session_set_cookie_params( 60*5, '/');
+    		if(STCheck::isDebug())
+    		{// if defined Debug-Session,
+    			$bSetSession= @session_start();// warning for cookie set is normaly
+    		}else
+    		    $bSetSession= session_start();
+		}
+		
+		if(	isset($_GET["debug"]) ||
+		    isset($_GET["DEBUG"]) 	)
+		{
+		    STCheck::debug("query");
+		    STCheck::debug("user");
+		}
 		/**/if( Tag::isDebug("user") )
 		{
-			echo "<b>entering registerSession()</b><br />";
-			echo "register session variable ".$this->sessionName." on root '/' from host <b>".$_SERVER["HTTP_HOST"]."</b><br />";
-			echo "session_start was";
+		    $space= STCheck::echoDebug("user", "now <b>registerSession()</b>");
+			STCheck::echoDebug("user", "register session variable ".$this->sessionName." on root '/' from host $host<b>".$_SERVER["HTTP_HOST"]."</b>");
+			$msg= "session_start was";
 			if(!$bSetSession)
-				echo " <b>not</b>";
-			echo " succefully<br />";
-			echo "session-ID on <b>var</b> ".$this->sessionName." is ".session_id()."<br />";
-			echo "session will be activated for ".session_cache_expire()." minutes<br>";
+				$msg.= " <b>not</b>";
+			$msg.= " succefully";
+			STCheck::echoDebug("user", $msg);
+			STCheck::echoDebug("user", "session-ID on <b>var</b> ".$this->sessionName." is ".session_id());
+			STCheck::echoDebug("user", "session will be activated for ".session_cache_expire()." minutes");
 			echo "<br />";
-			echo "cookies set on host <b>".$_SERVER["HTTP_HOST"]."</b><br />";
-			var_dump($HTTP_COOKIE_VARS);
-			echo "<br />";
+			STCheck::echoDebug("user", "cookies set on host <b>".$_SERVER["HTTP_HOST"]."</b>");
+			st_print_r($HTTP_COOKIE_VARS, 5, $space+55);
+			STCheck::echoDebug("user", "session variables are:");
+		    st_print_r($_SESSION, 5, $space+55);
+		    if($_SESSION == null)
+		        echo "<br /><br />";
 		}
 		//$this->LOG(STACCESS, 0, $session_txt);
   	}
@@ -186,23 +188,25 @@ class STSession
 	}
 	function isLoggedIn()
 	{
-		if(Tag::isDebug())
+	    $loggedin= false;
+	    if( isset($_SESSION) &&
+	        is_array($_SESSION) &&
+	        isset($_SESSION["ST_LOGGED_IN"]) &&
+	        $_SESSION["ST_LOGGED_IN"] 			)
+	    {
+	        $loggedin= true;
+	    }
+	    if(STCheck::isDebug("user"))
 		{
-			Tag::echoDebug("user", "entering ::isLoggedIn() ...");
-			if(	isset($this->session_vars["ST_LOGGED_IN"]) &&
-				$this->session_vars["ST_LOGGED_IN"]				)
+		    STCheck::echoDebug("user", "entering ::isLoggedIn() ...");
+			if(	$loggedin )
 			{
 				$string= "user is Logged, so return true";
 			}else
 				$string= "user is not logged, so return false";
-			Tag::echoDebug("user", $string);
+			STCheck::echoDebug("user", $string);		    
 		}
-      	if( isset($this->session_vars["ST_LOGGED_IN"]) &&
-      		$this->session_vars["ST_LOGGED_IN"] 			)
-      	{
-	  		return true;
-      	}else
-	  	  	return false;
+		return $loggedin;
 	}
 	function hasAccess($authorisationString, $toAccessInfoString, $customID= null, $gotoLoginMask= false, $action= STALLDEF)
 	{
@@ -229,10 +233,11 @@ class STSession
 		Tag::deprecated("is died", "STSession::hasProjectAccess()");
 		if($this->noRegister)
 		{
-			/**/Tag::echoDebug("user", "-&gt; User must not be registered so return TRUE<br />");
+			/**/Tag::echoDebug("user", "-&gt; User do not have to be registered so return TRUE<br />");
 			return true;
 		}
-		if(	isset( $this->session_vars["ST_CLUSTER_MEMBERSHIP"][$this->allAdminCluster])
+		$cluster_membership= $this->getSessionVar("ST_CLUSTER_MEMBERSHIP");
+		if(	isset( $cluster_membership[$this->allAdminCluster])
 			and
 			$this->isLoggedIn())
 		{
@@ -290,6 +295,7 @@ class STSession
 			/**/Tag::echoDebug("user", "-&gt; User must not be registered so return TRUE<br />");
 			return true;
 		}
+		$cluster_membership= $this->getSessionVar("ST_CLUSTER_MEMBERSHIP");
 		/**/if( Tag::isDebug("user") )
 		{
 			$sAccess= $toAccessInfoString;
@@ -316,15 +322,22 @@ class STSession
 				$staction= "STADMIN";
 			echo "<b>[</b>user<b>]:</b> <b>entering hasAccess(<em>&quot;".htmlspecialchars( $clusterString )."&quot;, ".$sAccess.", ".$sID.", ".$staction."</em>)</b><br />";
 			echo "<b>[</b>user<b>]:</b> User is currently member of following clusters: ";
-			if(is_array($this->session_vars["ST_CLUSTER_MEMBERSHIP"]) && count($this->session_vars["ST_CLUSTER_MEMBERSHIP"]))
+			
+			if(is_array($cluster_membership) && count($cluster_membership))
 			{
-				foreach( $this->session_vars["ST_CLUSTER_MEMBERSHIP"] as $myCluster=>$Project )
+			    foreach( $cluster_membership as $myCluster=>$Project )
 					echo $myCluster.";";
 			}else
 				echo "<em>NO CLUSTER</em>";
 			echo "<br />";
 			echo "<b>[</b>user<b>]:</b> sessionvar ST_LOGGED_IN is ";
-			var_dump($this->session_vars["ST_LOGGED_IN"]);echo "<br />";
+			$loggedin= $this->getSessionVar("ST_LOGGED_IN");
+			if(isset($loggedin))
+			{
+			    var_dump($loggedin);
+			    echo "<br />";
+			}else
+			    echo "<b>not</b> defined<br />";
 		}
 		// alex 09/10/2005:	User muss nicht eingeloggt sein
 		//					um auf Projekte zugriff zu haben
@@ -337,21 +350,21 @@ class STSession
 		$clusters= preg_split("/[\s,]/", $clusterString, -1, PREG_SPLIT_NO_EMPTY);
 		if(STCheck::isDebug())
 		{
+		    $cluster_exist= $this->getSessionVar("ST_EXIST_CLUSTER");
 			foreach($clusters as $cluster)
 			{
 				$cluster= trim($cluster);
-				STCheck::warning(!isset($this->session_vars["ST_EXIST_CLUSTER"][$cluster]), "STSession::access()",
+				STCheck::warning(!isset($cluster_exist[$cluster]), "STSession::access()",
 										"cluster <b>\"</b>".$cluster."<b>\"</b> not exist in database", 1);
-				STCheck::warning(	isset($this->session_vars["ST_EXIST_CLUSTER"][$cluster])
+/*				STCheck::warning(	isset($this->session_vars["ST_EXIST_CLUSTER"][$cluster])
 									and
 									$this->session_vars["ST_EXIST_CLUSTER"][$cluster]!==$this->projectID
 									and
 									$this->project!=0														, "STSession::access()",
-											"cluster <b>\"</b>".$cluster."<b>\"</b> is not for the current project"						);
-
+											"cluster <b>\"</b>".$cluster."<b>\"</b> is not for the current project"						);*/
 			}
 		}
-		if(	isset( $this->session_vars["ST_CLUSTER_MEMBERSHIP"][$this->allAdminCluster])
+		if(	isset( $cluster_membership[$this->allAdminCluster])
 			and
 			$this->isLoggedIn())
 		{
@@ -361,7 +374,7 @@ class STSession
   		}
 		foreach($clusters as $cluster)
 		{
-			if(isset( $this->session_vars["ST_CLUSTER_MEMBERSHIP"][ trim($cluster) ]))
+		    if(isset( $cluster_membership[ trim($cluster) ]))
 			{
 				if($toAccessInfoString)
 					$this->LOG(STACCESS, $customID, $toAccessInfoString);
@@ -382,9 +395,9 @@ class STSession
 			foreach($clusters as $cluster)
 			{
 				Tag::echoDebug("access", "look for dynamic access to cluster <b>$cluster</b>");
-				if(is_array($this->session_vars["ST_CLUSTER_MEMBERSHIP"]))
+				if(is_array($cluster_membership["ST_CLUSTER_MEMBERSHIP"]))
 				{
-					foreach($this->session_vars["ST_CLUSTER_MEMBERSHIP"] as $dynamic_cluster=>$project)
+				    foreach($cluster_membership as $dynamic_cluster=>$project)
 					{
 						Tag::echoDebug("access", "with having cluster <b>$dynamic_cluster</b>");
 						if($action==STLIST)
@@ -413,8 +426,8 @@ class STSession
             					return true;
 							}
 						} // end of if($action==STLIST)
-					}// end of	foreach($this->session_vars["ST_CLUSTER_MEMBERSHIP"])
-				}// end of if(is_array($this->session_vars["ST_CLUSTER_MEMBERSHIP"]))
+					}// end of	foreach($cluster_membership["ST_CLUSTER_MEMBERSHIP"])
+				}// end of if(is_array($cluster_membership["ST_CLUSTER_MEMBERSHIP"]))
 			}// end of foreach($clusters)
 		}// end of if($action!=STALLDEF)
 
@@ -457,49 +470,156 @@ class STSession
 			echo "<br />";
 		}
 	}
+	public function getSessionVar($var1, $var2= null, $var3= null, $var4= null, $var5= null)
+	{
+	    if(isset($var5))
+	    {
+	        if(!isset($_SESSION[$var1][$var2][$var3][$var4][$var5]))
+	            return null;
+	        return $_SESSION[$var1][$var2][$var3][$var4][$var5];
+	        
+	    }else if(isset($var4))
+	    {
+	        if(!isset($_SESSION[$var1][$var2][$var3][$var4]))
+	            return null;
+	        return $_SESSION[$var1][$var2][$var3][$var4];
+	        
+	    }else if(isset($var3))
+	    {
+	        if(!isset($_SESSION[$var1][$var2][$var3]))
+	            return null;
+	        return $_SESSION[$var1][$var2][$var3];
+	        
+	    }else if(isset($var2))
+	    {
+	        if(!isset($_SESSION[$var1][$var2]))
+	            return null;
+	        return $_SESSION[$var1][$var2];	        
+	    }
+    	if(!isset($_SESSION[$var1]))
+    	    return null;
+    	return $_SESSION[$var1];
+	}
+	public function setSessionVar($var, $value)
+	{
+	    $_SESSION[$var]= $value;
+	}
+	public function setRecursiveSessionVar($value, $var1, $var2= null, $var3= null, $var4= null, $var5= null)
+	{
+	    if(isset($var5))
+	    {
+	        $_SESSION[$var1][$var2][$var3][$var4][$var5]= $value;
+	        
+	    }else if(isset($var4))
+	    {
+	        $_SESSION[$var1][$var2][$var3][$var4]= $value;
+	        
+	    }else if(isset($var3))
+	    {
+	        $_SESSION[$var1][$var2][$var3]= $value;
+	        
+	    }else if(isset($var2))
+	    {
+	        $_SESSION[$var1][$var2]= $value;
+	        
+	    }else
+	    {
+	        $_SESSION[$var1]= $value;	        
+	    }
+	}
+	public function addSessionVar($var, $value)
+	{
+	    if( !isset($_SESSION[$var]) ||
+	        !is_array($_SESSION[$var]) )
+	    {
+	        $_SESSION[$var]= array();
+	    }
+	    $_SESSION[$var][]= $value;
+	}
+	public function addRecursiveSessionVar($value, $var1, $var2= null, $var3= null, $var4= null, $var5= null)
+	{
+	    if(isset($var5))
+	    {
+	        if( !isset($_SESSION[$var1][$var2][$var3][$var4][$var5]) ||
+	            !is_array($_SESSION[$var1][$var2][$var3][$var4][$var5]) )
+	        {
+	            $_SESSION[$var1][$var2][$var3][$var4][$var5]= array();
+	        }
+	        $_SESSION[$var1][$var2][$var3][$var4][$var5][]= $value;
+	        
+	    }else if(isset($var4))
+	    {
+	        if( !isset($_SESSION[$var1][$var2][$var3][$var4]) ||
+	            !is_array($_SESSION[$var1][$var2][$var3][$var4]) )
+	        {
+	            $_SESSION[$var1][$var2][$var3][$var4]= array();
+	        }
+	        $_SESSION[$var1][$var2][$var3][$var4][]= $value;
+	        
+	    }else if(isset($var3))
+	    {
+	        if( !isset($_SESSION[$var1][$var2][$var3]) ||
+	            !is_array($_SESSION[$var1][$var2][$var3]) )
+	        {
+	            $_SESSION[$var1][$var2][$var3]= array();
+	        }
+	        $_SESSION[$var1][$var2][$var3][]= $value;
+	        
+	    }else if(isset($var2))
+	    {
+	        if( !isset($_SESSION[$var1][$var2]) ||
+	            !is_array($_SESSION[$var1][$var2]) )
+	        {
+	            $_SESSION[$var1][$var2]= array();
+	        }
+	        $_SESSION[$var1][$var2][]= $value;
+	        
+	    }else
+	    {
+	        if( !isset($_SESSION[$var1]) ||
+	            !is_array($_SESSION[$var1]) )
+	        {
+	            $_SESSION[$var1]= array();
+	        }
+	        $_SESSION[$var1][]= $value;
+	    }
+	}
 	function setExistCluster($cluster, $project= 1)
 	{
-		$this->session_vars["ST_EXIST_CLUSTER"][$cluster]= $project;
+	    $this->setRecursiveSessionVar($project, "ST_EXIST_CLUSTER", $cluster);
 	}
 	function setMemberCluster($cluster, $projectName, $projectID= 1)
 	{
-		$this->session_vars["ST_CLUSTER_MEMBERSHIP"][$cluster]= array("ID"=>$projectID, "project"=>$projectName);
-		$this->aCluster[$cluster]= $this->session_vars["ST_CLUSTER_MEMBERSHIP"][$cluster];
+	    if( !isset($cluster) ||
+	        !is_string($cluster) ||
+	        trim($cluster) == ""   )
+	    {
+	        if(STCheck::isDebug("user"))
+	        {
+    	        STCheck::echoDebug("user", "cannot write null cluster into SESSION");
+    	        showErrorTrace();
+	        }
+	        return;
+	    }
+	    $memberCluster= array("ID"=>$projectID, "project"=>$projectName);
+	    $this->setRecursiveSessionVar($memberCluster, "ST_CLUSTER_MEMBERSHIP", $cluster);
+		$this->aCluster[$cluster]= $memberCluster;
 	}
 	function getExistClusters()
 	{
-		return $this->session_vars["ST_EXIST_CLUSTER"];
+	    return $this->getSessionVar("ST_EXIST_CLUSTER");
 	}
 	function getMemberClusters()
 	{
-		return $this->session_vars["ST_CLUSTER_MEMBERSHIP"];
+	    return $this->getSessionVar("ST_CLUSTER_MEMBERSHIP");
 	}
 	function setProperties($ProjectName= "")
   	{
 		/**/Tag::echoDebug("user", "entering STSession::setProperties ...");
 		// define Login-Flag
-		$this->session_vars["ST_LOGGED_IN"]= 1;
+  	    $this->setSessionVar("ST_LOGGED_IN", 1);
 		$this->aExistCluster= $this->getExistClusters();
   	}
-		/*function checkForLoggedIn()
-		{
-			$userID= $this->userID;
-
-			// hole ID aus der Datenbank f�r Gruppe LOGGED_IN
-			$statement= "select ID from MUGroup where Name='LOGGED_IN'";
-			$loggedIn= $this->database->fetch_single($statement);
-			if(!$loggedIn)
-			{
-				echo "<b>ERROR:</b> no LOGGED_IN Group exist in table MUGroup<br />";
-			}
-			// kontrolliere ob dort User eingetragen ist
-			$statement= "select ID from MUUserGroup where UserID=$userID and GroupID=$loggedIn";
-			if(!$this->database->fetch_single($statement))
-			{// wenn nicht eingetragen, dann du es jetzt
-				$statement= "insert into MUUserGroup values(0, $userID, $loggedIn, sysdate())";
-				$this->database->fetch($statement);
-			}
-		}*/
 	function getFromOtherConnections($foundedID, $user, $password, $groupType)
 	{// diese Funktion ist zum �berladen verschiedener �berpr�fungen
 	 // user sollte f�r die n�chste session gespeichert werden
@@ -526,7 +646,7 @@ class STSession
 
 		return $result;
 	}
-	function private_verifyLogin($Project)
+	private function private_verifyLogin($Project)
 	{
 		/**/ if( STCheck::isDebug("user") ){ echo "<b>entering verifyLogin( ";print_r( $Project ); echo " ):</b> ..<br />"; }
 		global	$HTTP_SERVER_VARS,
@@ -560,10 +680,10 @@ class STSession
 	   	{// wir empfangen gerade ein eingegebenes login
 		//Tag::debug("db.statement");
 		//Tag::debug("user");
-			/**/Tag::echoDebug("user", "receiving new login data, start performing login verification");
-			/**/Tag::echoDebug("user", "set ST_USERID and ST_CLUSTER_MEMBERSHIP to NULL");
-			$this->session_vars["ST_CLUSTER_MEMBERSHIP"]= null;
-			$this->session_vars["ST_USERID"]= null;
+			/**/STCheck::echoDebug("user", "receiving new login data, start performing login verification");
+			/**/STCheck::echoDebug("user", "set ST_USERID and ST_CLUSTER_MEMBERSHIP to NULL");
+			$this->setSessionVar("ST_CLUSTER_MEMBERSHIP", null);
+			$this->setSessionVar("ST_USERID", null);
     	   	$error= $this->acceptUser($HTTP_POST_VARS["user"], $HTTP_POST_VARS["pwd"]);
       		if(!$error)
 			{
@@ -603,37 +723,40 @@ class STSession
 			exit;
     	}else
     	{
-    		/**/ if( Tag::isDebug("user") )
+    		/**/ if( STCheck::isDebug("user") )
 			{
-				echo "....no login status change, set properties to Project <em>";
+				$msg= "....no login status change, set properties to Project <em>";
 				if(is_numeric($Project))
-					echo "Nr. ";
-				echo $Project."</em>,<br />";
+					$msg.= "Nr. ";
+				$msg.= $Project."</em>,<br />";
+				STCheck::echoDebug("user", $msg);
 			}
 			$this->setUserProject( $Project );
-  			if( isset($this->session_vars["ST_LOGGED_IN"]) &&
-  				$this->session_vars["ST_LOGGED_IN"] == 1 		)
+			$loggedin= $this->getSessionVar("ST_LOGGED_IN");
+  			if( isset($loggedin) &&
+  				$loggedin == 1 		)
   			{
-  				/**/ if( Tag::isDebug("user") )
-						echo "user logged in return TRUE<br />";
+  				/**/ STCheck::echoDebug("user", "user <b>logged in</b> return <b>TRUE</b>");
   			 	return true;
   		 	}else
 			{
-				if(	!isset($this->session_vars["ST_CLUSTER_MEMBERSHIP"]) ||
-					!$this->session_vars["ST_CLUSTER_MEMBERSHIP"]			)
+			    $cluster_membership= $this->getSessionVar("ST_CLUSTER_MEMBERSHIP");
+			    if(	!isset($cluster_membership) ||
+			        !is_array($cluster_membership) ||
+			        !count($cluster_membership)       )
 				{
 					Tag::echoDebug("user", "read Cluster with ONLINE group staus from database");
 					$this->readCluster();
-					$this->session_vars["ST_CLUSTER_MEMBERSHIP"]= $this->aCluster;
+					$this->setSessionVar("ST_CLUSTER_MEMBERSHIP", $this->aCluster);
 				}else
-					$this->aCluster= $this->session_vars["ST_CLUSTER_MEMBERSHIP"];
+				    $this->aCluster= $cluster_membership;
 			}
-  		 	/**/ if( Tag::isDebug("user") )
-					echo "user not logged in return FALSE<br />";
+  		 	/**/ STCheck::echoDebug("user", "user <b>not logged in</b> return <b>FALSE</b>");
 			return false;
     	}
+		STCheck::echoDebug("user", "end of verifyLogin, ST_LOGGED_IN is:");
 		echo "end of verifyLogin, ST_LOGGED_IN is ";
-		var_dump($this->session_vars["ST_LOGGED_IN"]);echo "<br />";
+		var_dump($this->getSessionVar("ST_LOGGED_IN"));echo "<br />";
   	}
 	function readCluster()
 	{
@@ -643,10 +766,10 @@ class STSession
     {
     	if(Tag::isDebug("user"))
         {
-        	$pwd= str_repeat("*", strlen($password));
-            echo "<b>entering acceptUser(<em>&quot;".$user."&quot;, &quot;".$pwd."&quot;,</em>)</b><br />";
+        	$pwd= getPlaceholdPassword($password);
+            STCheck::echoDebug("user", "<b>entering acceptUser(<em>&quot;".$user."&quot;, &quot;".$pwd."&quot;,</em>)</b>");
         }
-        $this->session_vars["ST_USER"]= $user;
+        $this->setSessionVar("ST_USER", $user);
         $this->user= $user;
         if($this->aUsers[$user])
         {
@@ -698,34 +821,36 @@ class STSession
 		/**/Tag::echoDebug("user", "<b>entering setUserProject(</b>$ProjectName<b>)</b>");
 
 		$this->projectID= 0;
-		$this->session_vars["ST_PROJECTID"]= 0;
+		$this->setSessionVar("ST_PROJECTID", 0);
 		$this->project= $ProjectName;
 
 		// deffiniere User-Name
-		if(isset($this->session_vars["ST_USERID"]))
+		$userID= $this->getSessionVar("ST_USERID");
+		if(isset($userID))
 		{//wenn ST_USERID gesetzt ist, weiss die Klasse
-			$this->userID= $this->session_vars["ST_USERID"];//die UserID nicht.
-			/**/Tag::echoDebug("user", "set userID from session-var ".$this->session_vars["ST_USERID"]);
+			$this->userID= $userID;//die UserID nicht.
+			/**/Tag::echoDebug("user", "set userID from session-var ".$userID);
 		}else// sonst wurde bereits eine Authentifizierung �ber Datenbank/ELDAP gemacht
 		{
 			if(isset($this->userID))
 			{
 				/**/Tag::echoDebug("user", "set ST_USERID from database to ".$this->userID);
-				$this->session_vars["ST_USERID"]= $this->userID;
+				$this->setSessionVar("ST_USERID", $this->userID);
 			}else
 				STCheck::echoDebug("user", "no user ID be set ------------");
 		}
-		if(isset($this->session_vars["ST_USER"]))//selbiges!!
+		$user= $this->getSessionVar("ST_USER");
+		if(isset($user))//selbiges!!
 		{
-			STCheck::echoDebug("user", "set user from session-var ".$this->session_vars["ST_USER"]);
-			$this->user= $this->session_vars["ST_USER"];
+			STCheck::echoDebug("user", "set user from session-var ".$this->getSessionVar("ST_USER"));
+			$this->user= $user;
 		}else
 		{
 			if(	isset($this->user) &&
 				$this->user != ""		)
 			{
 				STCheck::echoDebug("user", "set user from session-var ".$this->user);
-				$this->session_vars["ST_USER"]= $this->user;
+				$this->setSessionVar("ST_USER", $this->user);
 			}else
 				STCheck::echoDebug("user", "no user name be set ----------");
 		}
@@ -993,18 +1118,19 @@ class STSession
                 if($type != STACCESS)
                 {
 	                $searchText= $type." ".$customID." ".$logText;
-	                if(	!isset($this->session_vars["ST_LOGGED_MESSAGES"]) ||
-	                	!is_array($this->session_vars["ST_LOGGED_MESSAGES"])	)
+	                $loggedmsg= $this->getSessionVar("ST_LOGGED_MESSAGES");
+	                if(	!isset($loggedmsg) ||
+	                	!is_array($loggedmsg)	)
 	                {
-	                        $this->session_vars["ST_LOGGED_MESSAGES"]= array();
-	                }elseif( array_search($searchText, $this->session_vars["ST_LOGGED_MESSAGES"]) ||
+	                        $this->setSessionVar("ST_LOGGED_MESSAGES", array());
+	                }elseif( array_search($searchText, $loggedmsg) ||
 	                         !$logText       														)
 	                {// diese Seite wurde bereits geloggd
 	                 // oder der Log ist nicht n�tig, da kein logText vorhanden
 	                        return;
 	                }
 	                if($type != STDEBUG)
-	                	$this->session_vars["ST_LOGGED_MESSAGES"][]= $searchText;
+	                	$this->addSessionVar("ST_LOGGED_MESSAGES", $searchText);
                 }
                 if($type==STDEBUG)
                         $Typ= "'DEBUG'";

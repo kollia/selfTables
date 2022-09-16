@@ -1871,7 +1871,7 @@ class STBox extends STBaseTableBox
 						{
 							$PK= $this->asDBTable->aAuto_increment["PK"];
 							$value= $post[$PK];
-							$where= new STDbWhere($PK."=".$value);
+							$where= new STDbWhere($this->db, $PK."=".$value);
 							$statement= $this->db->getUpdateStatement($table, $where, $post);
 						}
 					}

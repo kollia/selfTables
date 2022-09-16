@@ -3,7 +3,7 @@
 require_once($php_html_description);
 require_once($_stmessagehandling);
 require_once($php_javascript);
-require_once($php_htmltag_class);
+//require_once($php_htmltag_class);
 require_once($_stcallbackclass);
 
 class STBaseTableBox extends TableTag

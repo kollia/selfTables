@@ -36,7 +36,7 @@ class STDbMySql extends STDatabase
 	private $columnTypes= array();
 
   /**
-	*  Konstruktor f�r Zugriffs-deffinition
+	*  Konstruktor für Zugriffs-deffinition
 	*
 	*/
 	function __construct($identifName= "main-menue", $defaultTyp= MYSQL_NUM, $DBtype= "MYSQL")
@@ -141,6 +141,7 @@ class STDbMySql extends STDatabase
 		}
 		// read all tables in database
 		$this->asExistTableNames= $this->fetch_single_array("show tables");
+		
 		// save also in db on wich must be an reference,
 		// do not know why not
 		//$this->db->asExistTableNames= $this->asExistTableNames;
@@ -316,7 +317,7 @@ class STDbMySql extends STDatabase
 				if (preg_match('/^MYSQLI_TYPE_(.*)/', $c, $m))
 					$this->existTypes[$n]= $m[1];
 			}
-			// all not listet types are not handled inside STBox
+			// all not listet types are not handled inside STItemBox
 			// so it should throw an exception when it should be used
 			// to know for the developer to handle it!
 			$this->columnTypes= array(	"DECIMAL"     => "real",

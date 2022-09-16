@@ -40,7 +40,7 @@
 	$HTTP_GET_VARS= &$_GET;
 	$HTTP_POST_VARS= &$_POST;
 	$HTTP_COOKIE_VARS= &$_COOKIE;
-	$HTTP_SESSION_VARS= &$_SESSION;
+	//$HTTP_SESSION_VARS= &$_SESSION;
 	/**
 	 * function to define the global SESSION variable
 	 * after session_start() inside method <code>STSession::registerSession()</code>	 * 
@@ -53,7 +53,7 @@
 		global $HTTP_SESSION_VARS;
 		
 		$globalVar= $_SESSION;
-		$HTTP_SESSION_VARS= $_SESSION;
+		//$HTTP_SESSION_VARS= $_SESSION;
 	}
 	//--------------------------------------------------------------------------
 

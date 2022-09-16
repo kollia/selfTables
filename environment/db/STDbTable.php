@@ -534,11 +534,7 @@ class STDbTable extends STAliasTable
 		$selector->execute($sqlType);
 		return $selector->getSingleResult();
 	}
-	function getStatment(int $limit)
-	{
-		
-	}
-	function getStatement(bool $bFromIdentifications= false, bool $withAlias= true)
+	function getStatement(bool $bFromIdentifications= false, bool $withAlias= null)
 	{
 		if(STCheck::isDebug("db.statements.where"))
 		{

@@ -1,6 +1,6 @@
 <?php
 
-require_once($_stusersession);
+require_once($_stusermanagementsession);
 
 class STDbInserter
 {
@@ -74,16 +74,16 @@ class STDbInserter
 	}
 	function createCluster(&$row)
 	{
-		// if it is generate an STUserSession
+		// if it is generate an STUserManagementSession
 		// and in the STAliasTable are be set columns
 		// to create cluster for spezific actions
 		// prodjuce this
 		$error= "NOERROR";
-		if(	STUserSession::sessionGenerated()
+		if(	 global_sessionGenerated()
 			and
 			count($this->table->sAcessClusterColumn)	)
 		{
-			$session= STUserSession::instance();
+			//$session= STUserSession::instance();
             $identification= "";
         	foreach($this->table->identification as $identifColumn)
             {
@@ -139,7 +139,7 @@ class STDbInserter
 		{
 			$this->lastInsertID= $this->getLastInsertID();
 
-    		$_instance= &STUserSession::instance();
+    		$_instance= &STUserManagementSession::instance();
             $identification= "";
         	foreach($this->table->identification as $identifColumn)
             {

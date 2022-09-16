@@ -1,7 +1,7 @@
 <?php
 
 require_once($php_html_description);
-require_once($php_htmltag_class);
+//require_once($php_htmltag_class);
 
 
 class STBaseContainer extends BodyTag

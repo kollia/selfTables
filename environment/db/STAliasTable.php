@@ -121,7 +121,7 @@ class STAliasTable
     	$this->bOrder= NULL;
 		if(typeof($oTable, "STAliasTable"))
 		{
-		    if(STCheck::isDebug("db.table.fk"))
+		    if(STCheck::isDebug("table"))
 		    {
     		    STCheck::echoDebug("db.table.fk", "create new ".get_class($this)."::<b>".$oTable->Name."</b> with ID:".$this->ID." from ".get_class($oTable)."::<b>".$oTable->Name."</b> with ID:".$oTable->ID);
     		    echo "old <b>FKs</b>:<br>";
@@ -791,9 +791,9 @@ class STAliasTable
 			$toTable= null;//$this->container->getTable($toTableName);
 		}
 		// alex 26/04/2005:	where und otherColumn tauschen wenn n�tig
-		if(	typeof($otherColumn, "stdbwhere")
-			or
-			preg_match("/^.+[!=<>].+$/", $otherColumn)	)
+		if(	typeof($otherColumn, "stdbwhere") ||
+			($otherColumn != null &&
+			 preg_match("/^.+[!=<>].+$/", $otherColumn)	)    )
 		{
 			$buffer= $where;
 			$where= $otherColumn;
@@ -872,8 +872,14 @@ class STAliasTable
 
 		$exists= array_value_exists($tableName, $this->aBackJoin);
 		if($exists !== false)
-			return;
+		    return;// backjoin was set befor
+		
 		$this->aBackJoin[]= $tableName;
+		if(STCheck::isDebug("db.table.fk"))
+		{
+		    $space= STCheck::echoDebug("db.table.fk", "backjoin in table <b>".$this->getName()."</b> was new defined to:");
+		    st_print_r($this->aBackJoin, 2, 55);
+		}
 	}
 	function createAliases(&$aliasTables)
 	{
@@ -2046,6 +2052,7 @@ class STAliasTable
 		 	STCheck::parameter($stwhere, 1, "STDbWhere", "string", "empty(string)", "null");
 		 	STCheck::parameter($operator, 2, "check", $operator === "", $operator == "and", $operator == "or");
 
+		 	
 		 	if(	!isset($stwhere) ||
 				$stwhere == null ||
 				$stwhere == ""	||
@@ -2083,15 +2090,11 @@ class STAliasTable
 	 		}else
 	 		{// no where be set
 	 			if(is_string($stwhere))
-	 			{
 	 				$this->oWhere= new STDbWhere($stwhere);
-					$this->oWhere->forTable($this->Name);
-	 			}else
-	 			{
-	 				if($stwhere->forTable() == "")
-	 					$stwhere->forTable($this->Name);
-	 				$this->oWhere= $stwhere;
-	 			}
+ 				else
+ 				    $this->oWhere= $stwhere;
+ 				$this->oWhere->setDatabase($this->db);
+				$this->oWhere->forTable($this->Name);
 	 		}
 	 		
 		 	return $this->oWhere;

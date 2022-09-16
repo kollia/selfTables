@@ -36,10 +36,7 @@ class STDbTableDescriptions
 			STCheck::alert("(global selfTable database = NULL) no database be defined");
 			exit;
 		}
-		if(count($global_sttabledescriptions_class_instance) > 0)
-		{
-			STCheck::warning("more than one database be defined -> take first");
-		}
+		STCheck::warning(count($global_sttabledescriptions_class_instance) > 0, "getDatabaseName", "more than one database be defined -> take first");
 		$dbName= rewind($global_sttabledescriptions_class_instance);
 		return $dbName;
 	}

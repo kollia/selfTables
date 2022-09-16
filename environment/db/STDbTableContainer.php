@@ -341,13 +341,17 @@ class STDbTableContainer
 		Tag::paramCheck($tableName, 1, "string");
 		$nParams= func_num_args();
 		Tag::lastParam(1, $nParams);
+		
+		$table= null;
+		//echo "----------------------------------------------------------------------------------------------------------------------------<br>";
 		// alex 08/07/2005: die Tabelle wird nun auch ohne Referenz geholt
 		//					�nderungen jetzt ausserhalb m�glich
 		//					und die Tabelle ist dann nicht automatisch in $this->tables eingetragen
 		//					wenn hier eine Referenz geholt w�rde w�re sie automatisch
 		//					bei $this->db->getTable in $this->tables eingetragen
-		$table= &$this->tables[$tableName];
-		if(!$table)
+		if(isset($this->tables[$tableName]))
+		  $table= &$this->tables[$tableName];
+		if($table === null)
 		{	// alex 24/05/2005:	// alex 17/05/2005:	die Tabelle wird von der �berschriebenen Funktion
 			//					getTable() aus dem Datenbank-Objekt geholt.
 			//					nat�rlich ohne Referenz, da sie wom�glich noch ge�ndert wird
@@ -387,6 +391,8 @@ class STDbTableContainer
 	}
 	function haveTable($tableName)
 	{
+	    //echo __FILE__.__LINE__."<br>";
+	    //echo "----------------------------------------------------------------------------------------------------------------------------<br>";
 		if($this->getTable($tableName))
 			return true;
 		return false;

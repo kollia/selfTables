@@ -4,7 +4,7 @@ require_once($_stsession);
 //require_once($database_selector);
 //require_once($_stusermanagement_install);
 
-class STUserSession extends STSession
+class OSTUserSession extends STSession
 {
 	var $database= null;
 	var $user;
@@ -52,6 +52,7 @@ class STUserSession extends STSession
    		$this->database= &$Db;
 		$this->bLog= true;
 
+		echo __file__.__line__."<br>--------------------------------------------------------------------------------------------<br>";
 		$this->aSessionVars[]= "ST_USER";
 		$this->aSessionVars[]= "ST_USERID";
 		$this->aSessionVars[]= "ST_PROJECTID";
@@ -411,7 +412,7 @@ class STUserSession extends STSession
 
 		Tag::alert(global_sessionGenerated(), "STUserSession::init()",
 								"session was already created");
-		$global_selftable_session_class_instance[0]= new STUserSession($Db, $prefix, "selfTables_STUserSession_private_String");
+		$global_selftable_session_class_instance[0]= new OSTUserSession($Db, $prefix, "selfTables_STUserSession_private_String");
 	}
 	/* fault whether I do not know
 	static public function sessionGenerated()

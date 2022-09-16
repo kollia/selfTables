@@ -9,23 +9,27 @@ class STDbWhere
 	 * In the 'array' array also can be rekursive new where clausels (STDbWhere).
 	 * @private
 	 */
- 	var $array= array();
+    var $array= array();
  	/**
  	 * for wich table the where clausel be
  	 * @private
  	 */
-	var	$sForTable= "";
+    var	$sForTable= "";
 	/**
 	 * if the clausel will be add to an other table,
 	 * use this operator
 	 * @private
 	 */
-	var $sOp;
+    var $sOp;
 	/**
 	 * splitted where claus
 	 * @private
 	 */
-	var $aValues= array();
+    var $aValues= array();
+	/**
+	 * database name for which where-caluse is
+	 */
+    var $sDbName= "";
 	/**
 	 * create instance of where clausel
 	 *
@@ -34,7 +38,7 @@ class STDbWhere
 	 * @param string $clauselOp can be the string 'and' or 'or', default if you not set this parameter the operator is 'and'
 	 * @public
 	 */
-	function __construct($statement= null, $tableName= null, $clauselOp= null)
+	public function __construct($statement= null, $tableName= null, $clauselOp= null)
 	{
 		STCheck::param($statement, 0, "string", "empty(string)", "null");
 		STCheck::param($tableName, 1, "string", "empty(string)", "null");
@@ -57,6 +61,17 @@ class STDbWhere
 			$this->table($tableName);
 		}
 	}
+	public function setDatabase($db)
+	{
+	    STCheck::param($db, 0, "STDatabase", "STDbTable", "string");
+	    
+	    if(typeof($db, "STDatabase"))
+	        $this->sDbName= $db->getName();
+	    else if(typeof($db, "STDbTable"))
+	        $this->sDbName= $db->getDatabase()->getName();
+	    else
+	        $this->sDbName= $db;
+	}
 	function isModified()
 	{
 		if(count($this->array))
@@ -70,48 +85,69 @@ class STDbWhere
 
 		return $this->table($tableName, $overwrite);
 	}
+	/**
+	 * define where clause for witch table
+	 * 
+	 * @param STAliasTable|string|null $table Table name, object or NULL when be later should defined or only want to ask to get the table name return
+	 * @param boolean $overwrite whether new defnition should overwrite the old table name if exist
+	 * @return string for whitch table where clause is defined
+	 */
 	function table($table= null, $overwrite= false)
 	{
 		STCheck::param($table, 0, "string", "STAliasTable", "null");
-		STCheck::param($overwrite, 1, "boolean");
+		STCheck::param($overwrite, 1, "boolean");		
 		
 		if(!$table)
 			return $this->sForTable;
 
 		if(is_string($table))
 		{
-			$dbName= "";
 			$pos= strpos($table, ".");
 			if($pos !== false)
 			{
 				$dbName= substr($table, 0, $pos);
-				$tableName= substr($table, $pos+1);
-				
+				$tableName= substr($table, $pos+1);				
 			}else
+			{
 				$tableName= $table;
-		}else
+				$dbName= "";
+			}
+		}else if(typeof($table, "STDbTable"))
 		{
 			$tableName= $table->getName();
 			$db= $table->getDatabase();
 			$dbName= $db->getName();
+		}else if(typeof($table, "STAliasTable"))
+		{
+		    $dbName= "";
+		    $tableName= $table->getName();
+		}else
+		{
+		    $tableName= "";
+		    $dbName= "";
+		}
+                
+		if( $dbName == "" ||
+		    (   $overwrite &&
+		        $this->sDbName != ""    )   )
+		{
+		    $dbName= $this->sDbName;
 		}
 
 		$desc= NULL;
 		if($dbName != "")
 		{
 			$desc= STDbTableDescriptions::instance($dbName);
-			if($desc)
+			if(isset($desc))
 				$tableName= $desc->getTableName($tableName);
 		}
 		if($desc == NULL)
 			STCheck::echoDebug("db.where", "cannot read instance of database $dbName");
 
 		$overName= "";
-		if(	!$this->sForTable
-			or
-			$this->sForTable == ""
-			or
-			$overwrite				)
+		if(	!isset($this->sForTable) ||
+			$this->sForTable == "" ||
+			$overwrite				   )
 		{
 			// if the tableName the same as
 			// before saved, search only for null-string
@@ -242,6 +278,7 @@ class STDbWhere
 				$this->addValues($statement->aValues);
 				return true;
 			}
+			$preg= array();
 			preg_match("/^([^=><!]*| +'.*' *)(is +not|is|between|like|not +like|in|not +in|>=|<=|<>|!=|<|>|=)([^=><!]*| *'.*' *)$/i", $statement, $preg);
 			//echo "where:";st_print_r($preg);
 			if(	!isset($preg[1])
@@ -256,6 +293,7 @@ class STDbWhere
 			if($preg[2] == "between")
 			{
 				$column= $preg[1];
+				$preg2= array();
 			  //if(preg_match("/[ \t]([^ \t]+|'.*')[ ]+and +([^ \t]+|'.*')[ \t]/i", $preg[3], $preg2))
 				if(preg_match(   "/([^ \t]+|'.*')[ \t]+and[ \t]+([^ \t]+|'.*')/i", $preg[3], $preg2))
 				{
@@ -334,21 +372,16 @@ class STDbWhere
 					$message.= " with alias-table ".$aktAlias;
 				else
 					$message.= " without alias-table";
-				$nIntented= STCheck::echoDebug("db.statements.where", $message);
 				if(STCheck::isDebug("db.statements.where"))
 				{
+				    $nIntented= STCheck::echoDebug("db.statements.where", $message);
 					for($n= 0; $n < $nIntented; ++$n)
 						echo " ";
 					echo "                                                    has ";
 					if(!$oTable->modify())
 						echo "no ";
 					echo "permission to use query constraints<br>";
-					st_print_r($this, 3);
-					if(	$this == null ||
-						count($this) == 0	)
-					{
-						echo "<br />";
-					}
+					st_print_r($this, 10, $nIntented);
 				}
 			}
 
@@ -378,12 +411,17 @@ class STDbWhere
 					//echo $statement."<br>";
 					return $statement;
 			}
-			//st_print_r($this);
 			$array= $this->getArray();
 		
-			$sForTable= $this->sForTable;
+			$desc= null;
+			if($this->sDbName != "")
+			    $desc= STDbTableDescriptions::instance($this->sDbName);
+			if(isset($desc))
+			    $sForTable= $desc->getTableName($this->sForTable);
+			else
+			    $sForTable= $this->sForTable;
 			if(	!isset($sForTable) ||
-					!isset($aliases[$sForTable])	)
+				!isset($aliases[$sForTable])	)
 			{
 				$aliasName= $aktAlias;
 				if(!isset($aliases[$sForTable]))
@@ -407,7 +445,7 @@ class STDbWhere
 				for($n= 0; $n < $nIntented; ++$n)
 					echo " ";
 				echo "<b>[</b>db.statements.where<b>]</b>                                ";
-				st_print_r($aliases, 1, $nIntented + 53);
+				st_print_r($aliases, 1, 51);
 				echo "<br />";
 				if(!$sForTable)
 				{
@@ -421,7 +459,7 @@ class STDbWhere
 					else
 						Tag::echoDebug("db.statements.where", "no alias, because it only one alias set, do not need alias for table");
 			}
-			$statementForAkt= "";
+			//$statementForAkt= "";
 			foreach($array as $content)
 			{
 				if(is_string($content))
@@ -433,7 +471,7 @@ class STDbWhere
 					//					existieren d�rfen
 					if(	!preg_match("/^[ ]*and[ ]*$/", $content) &&
 						!preg_match( "/^[ ]*or[ ]*$/", $content)		)
-					{
+					{  
 						$old_content= $content;
 						//echo $content."<br />";
 						//$content= preg_quote($content); // preg_quote makes before = an backslash
@@ -490,6 +528,8 @@ class STDbWhere
 					}
 				}elseif(typeof($content, "StDbWhere"))
 				{
+				    if($this->sDbName != "")
+				        $content->setDatabase($this->sDbName);
 					$statement.= $plusContent.$content->getStatement($oTable, $aktAlias, $aliases);
 					// alex 03/08/2005:	content must be an new object from STDbWhere
 /*					$oTable->where($content);
@@ -526,9 +566,9 @@ class STDbWhere
 					if(typeof("StDbWhere"))
 						echo "content is type of StDbWhere<br>";
 					echo get_class()."<br>";
-			st_print_r($array, 3);
-			echo __file__.__line__;
-			exit;
+        			st_print_r($array, 3);
+        			echo __file__.__line__;
+        			exit;
 				}
 			}//foreach($array as $content)
 			if(	$sForTable!==$aktTableName
@@ -537,16 +577,17 @@ class STDbWhere
 			{
 				if(!preg_match("/^\(.*\)$/", trim($statement)))
 					$statement= "(".$statement.")";
-					if(isset($this->aOtherTableWhere[$sForTable]))
-					{
-						//echo "other table ".$this->aOtherTableWhere[$sForTable]." plus ".$statement."<br>";
-						$this->aOtherTableWhere[$sForTable].= $tableOperator.$statement;
-					}else
-						$this->aOtherTableWhere[$sForTable]= $tableOperator.$statement;
-						Tag::echoDebug("db.statements.where", "write where-statement '$statement' into buffer for table <b>$sForTable</b>");
-						Tag::echoDebug("db.statements.where", "result is '$statementForAkt'");
-						//echo "where result:$statement<br>";
-						return $this->addBraces($statementForAkt);
+				if(isset($this->aOtherTableWhere[$sForTable]))
+				{
+					//echo "other table ".$this->aOtherTableWhere[$sForTable]." plus ".$statement."<br>";
+					$this->aOtherTableWhere[$sForTable].= $tableOperator.$statement;
+				}else
+					$this->aOtherTableWhere[$sForTable]= $tableOperator.$statement;
+				STCheck::echoDebug("db.statements.where", "write where-statement '$statement' into buffer for table <b>$sForTable</b>");
+				//STCheck::echoDebug("db.statements.where", "current table:$aktTableName result is '$statementForAkt'");
+				//echo "where result:$statement<br>";
+				//return $this->addBraces($statementForAkt);
+				return $this->addBraces($statement);
 			}
 	//		if(!preg_match("/^(or|and)/i", $statement))
 	//			$statement= $tableOperator.$statement;
@@ -558,11 +599,12 @@ class STDbWhere
 		 * add braces before and behind the statement
 		 * and consider words of 'and' or 'or' on beginning
 		 * 
-		 * @param $statement normaly statement
-		 * @return statement with brackets 
+		 * @param string $statement normaly statement
+		 * @return string statement with brackets 
 		 */
 		private function addBraces($statement)
 		{
+		    $ereg= array();
 			if(preg_match("/^(and|or)[ \t]+(.*)$/", trim($statement), $ereg))
 			{
 				//st_print_r($ereg);

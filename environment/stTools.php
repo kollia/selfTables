@@ -87,6 +87,14 @@ function showErrorTrace($from= 0, $much= -3)
 		$from++; // damit der n�chste Aufruf  nicht angezeigt wird
 		myTools::showErrorTrace($from, $much);
 }
+function printPassword($password, $placeholder= "*")
+{
+    echo myTools::getPlaceholdPassword($password, $placeholder, /*show password*/false);
+}
+function getPlaceholdPassword($password, $placeholder= "*")
+{
+    return myTools::getPlaceholdPassword($password, $placeholder, /*show password*/false);
+}
 
 /**
  * does first parameter exist as value in array.<br>
@@ -427,6 +435,18 @@ class myTools
         }
     }
 
+    static function getPlaceholdPassword($password, $placeholder= "*", $showPWD= false)
+    {
+        $string= "";
+        if(!$showPWD)
+        {
+            $count= strlen($password);
+            for($n= 0; $n < $count; ++$n)
+                $string.= $placeholder;
+        }else
+            $string= htmlspecialchars($password);
+        return $string;
+    }
 	function out($value, $debug)
 	{echo "Function out";exit;
 			$type= gettype($value);

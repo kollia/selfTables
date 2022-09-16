@@ -3,9 +3,28 @@
 
 class STDbUpdater
 {
+    /**
+     * current database table
+     * @var STDbTable table
+     */
 	var	$table;
-	var $columns;
+	/**
+	 * updating content of columns
+	 * for more than one row
+	 * @var array columns
+	 */
+	var $columns= array();
+	/**
+	 * current row which can be filled
+	 * with new content
+	 * @var integer
+	 */
 	var $nAktRow= 0;
+	/**
+	 * where statement for all rows
+	 * @var array
+	 */
+	//var $wheres= array();
 	
 	function __construct(&$oTable)
 	{
@@ -35,8 +54,10 @@ class STDbUpdater
 		//st_print_r($this->columns,2);
 		foreach($this->columns as $nr=>$row)
 		{
-			$statement= $db->getUpdateStatement($this->table, $this->wheres[$nr], $row);
-			//echo $statement."<br />";
+		    $where= null;
+		    if(isset($this->wheres[$nr]))
+		        $where= $this->wheres[$nr];
+			$statement= $db->getUpdateStatement($this->table, $where, $row);
 			$db->fetch($statement, $onError);
 			if($db->errno())
 			{
