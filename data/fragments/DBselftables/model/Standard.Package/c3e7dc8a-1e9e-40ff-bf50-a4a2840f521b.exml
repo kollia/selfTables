@@ -39,7 +39,6 @@
         <COMPID name="STSession" mc="Standard.Class" uid="078e7ed4-e8b1-4be8-b1fe-ca1d0bd04fed"/>
         <COMPID name="STTableTag" mc="Standard.Class" uid="52d0ba69-c9cf-4e35-afc1-724932ab3a8c"/>
         <COMPID name="STUserManagementSession" mc="Standard.Class" uid="4d25646c-112f-48e9-83f8-1e2f31f29df8"/>
-        <COMPID name="STUserSession" mc="Standard.Class" uid="830e6620-b838-4e50-b0f2-0ee09de04ec7"/>
         <COMPID name="STUserSideCreator" mc="Standard.Class" uid="696d3add-f83e-4003-8715-3c1668c76094"/>
         <COMPID name="STAliasTable" mc="Standard.Class" uid="d339f0f9-7bf9-4dca-a2c3-623a79582995"/>
         <COMPID name="TableTag" mc="Standard.Class" uid="7bc81890-1aaf-4945-a1a2-6813af39840b"/>
