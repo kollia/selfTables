@@ -202,6 +202,24 @@
 		$_stpostarray=				$_stenvironmenttools_path."/html/STPostArray.php";
 		$php_javascript=			$_stenvironmenttools_path."/html/JavascriptTag.php";
 		
+		$_stmessagehandling=		$_stenvironmenttools_path."/base/STMessageHandling.php";
+		$_stcallbackclass=			$_stenvironmenttools_path."/base/STCallbackClass.php";
+		$_stbasetablebox=			$_stenvironmenttools_path."/base/STBaseTableBox.php";
+		$_stbox=					$_stenvironmenttools_path."/base/STBox.php";
+		$_sttable=					$_stenvironmenttools_path."/base/STTable.php";
+		$_stsearchbox=				$_stenvironmenttools_path."/base/STSearchBox.php";
+		$_stcategorygroup=			$_stenvironmenttools_path."/base/STCategoryGroup.php";
+		$_stbasesearch=				$_stenvironmenttools_path."/base/STBaseSearch.php";
+		$choose_table=				$_stenvironmenttools_path."/base/STChooseTable.php";
+		$stselectbox=				$_stenvironmenttools_path."/base/STSelectBox.php";
+		$_stdownload=				$_stenvironmenttools_path."/base/STDownload.php";
+		$_stbasecontainer=			$_stenvironmenttools_path."/base/STBaseContainer.php";
+		$_stframecontainer=			$_stenvironmenttools_path."/base/STFrameContainer.php";
+		$_stobjectcontainer=		$_stenvironmenttools_path."/base/STObjectContainer.php";
+		$_tinymce=					$_stenvironmenttools_path."/base/TinyMCE.php";
+		$_tinymce_row=				$_stenvironmenttools_path."/base/TinyMCE_row.php";
+		$_stsitecreator=			$_stenvironmenttools_path."/base/STSiteCreator.php";
+		
 		$_stdatabase=				$_stenvironmenttools_path."/db/STDatabase.php";
 		$_stdbmysql=				$_stenvironmenttools_path."/db/STDbMySql.php";
 		$_staliastable=				$_stenvironmenttools_path."/db/STAliasTable.php";
@@ -215,32 +233,15 @@
 		$_stdbdeleter=				$_stenvironmenttools_path."/db/STDbDeleter.php";
 		$_stdbtablecreator= 		$_stenvironmenttools_path."/db/STDbTableCreator.php";
 		$_stdbtabledescriptions=	$_stenvironmenttools_path."/db/STDbTableDescriptions.php";
-
-		$_stmessagehandling=		$_stenvironmenttools_path."/box/STMessageHandling.php";
-		$_stcallbackclass=			$_stenvironmenttools_path."/box/STCallbackClass.php";
-		$_stbasetablebox=			$_stenvironmenttools_path."/box/STBaseTableBox.php";
-		$_stbox=					$_stenvironmenttools_path."/box/STBox.php";
-		$_sttable=					$_stenvironmenttools_path."/box/STTable.php";
-		$_stsearchbox=				$_stenvironmenttools_path."/box/STSearchBox.php";
-		$_stcategorygroup=			$_stenvironmenttools_path."/box/STCategoryGroup.php";
-		$_stbasesearch=				$_stenvironmenttools_path."/box/STBaseSearch.php";
-		$choose_table=				$_stenvironmenttools_path."/box/STChooseTable.php";
-		$_stsidecreator=			$_stenvironmenttools_path."/box/STSideCreator.php";
-		$_stsessionsidecreator=		$_stenvironmenttools_path."/box/STSessionSideCreator.php";
-		$_stusersidecreator=		$_stenvironmenttools_path."/box/STUserSideCreator.php";
-		$stselectbox=				$_stenvironmenttools_path."/box/STSelectBox.php";
-		$_stdownload=				$_stenvironmenttools_path."/box/STDownload.php";
-		$_stbasecontainer=			$_stenvironmenttools_path."/box/STBaseContainer.php";
-		$_stframecontainer=			$_stenvironmenttools_path."/box/STFrameContainer.php";
-		$_stobjectcontainer=		$_stenvironmenttools_path."/box/STObjectContainer.php";
-		$_tinymce=					$_stenvironmenttools_path."/box/TinyMCE.php";
-		$_tinymce_row=				$_stenvironmenttools_path."/box/TinyMCE_row.php";
+		$_stdbsitecreator=          $_stenvironmenttools_path."/db/STDbSiteCreator.php";
 		
 		$_stuser=					$_stenvironmenttools_path."/user/STUser.php";
 		$_stsession=				$_stenvironmenttools_path."/user/STSession.php";
 		$_stdbsession=              $_stenvironmenttools_path."/user/STDbSession.php";
 		$_stdbsessionhandler=       $_stenvironmenttools_path."/user/STDbSessionHandler.php";
 		$_stusersession=            $_stenvironmenttools_path."/user/STUserSession.php";
+		$_stsessionsitecreator=		$_stenvironmenttools_path."/user/STSessionSiteCreator.php";
+		$_stusersitecreator=		$_stenvironmenttools_path."/base/STUserSiteCreator.php";
 
 
 		/**********************************************************************\

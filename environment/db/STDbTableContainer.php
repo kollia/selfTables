@@ -13,7 +13,7 @@ class STDbTableContainer
 				// und f�r den Button wenn kein identifName angegeben wird
 	var $get_vars;
 	var	$identifName= null; // Name des Containers wenn er als Button angezeigt wird
-	var $projectIdentif= null; // Name des Projektes, wenn er nicht gesetzt wird, wird der Projekt-Name aus STSideCreator genommen
+	var $projectIdentif= null; // Name des Projektes, wenn er nicht gesetzt wird, wird der Projekt-Name aus STSiteCreator genommen
 	var $db; // Datenbank-Objekt
 	var $tables= array(); // alle OSTDbTable Objekte welche f�r die Auflistung gebraucht werden
 	var	$sFirstTableName; //erste Tabelle

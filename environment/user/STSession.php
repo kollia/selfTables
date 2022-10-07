@@ -217,6 +217,7 @@ class STSession
 				$string= "user is not logged, so return false";
 			STCheck::echoDebug("user", $string);		    
 		}
+		session_create_id();
 		return $loggedin;
 	}
 	function hasAccess($authorisationString, $toAccessInfoString, $customID= null, $gotoLoginMask= false, $action= STALLDEF)

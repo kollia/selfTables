@@ -4,7 +4,7 @@ require_once($user_admin);
 require_once($table_out);
 require_once($_stdatabase);
 
-class STSessionSideCreator extends STSideCreator
+class STSessionSiteCreator extends STSiteCreator
 {
 	var $userDb;
 	var $nProjectID;
@@ -17,7 +17,7 @@ class STSessionSideCreator extends STSideCreator
 	{
 		STCheck::paramCheck($container, 1, "STBaseContainer", "null");
 
-		STSideCreator::__construct($container);
+		STSiteCreator::__construct($container);
 	}
 		function getProjectID()
 		{
@@ -64,7 +64,7 @@ class STSessionSideCreator extends STSideCreator
 		}*/
 		function hasAccess($clusters)
 		{
-        	Tag::alert(!$this->userManagement, "STUserSideCreator::hasAccess()",
+        	Tag::alert(!$this->userManagement, "STUserSiteCreator::hasAccess()",
             						"you must invoke before this function initSession()");
 
 			Tag::paramCheck($clusters, 1, "string", "array");
@@ -128,7 +128,7 @@ class STSessionSideCreator extends STSideCreator
 		}
 		function hasTableAccess($table, $action, $gotoLoginMask= false)
 		{
-			Tag::alert(!$this->userManagement, "STUserSideCreator::hasTableAccess()",
+			Tag::alert(!$this->userManagement, "STUserSiteCreator::hasTableAccess()",
 											"you must invoke before this function initSession()");
 
 			if(!$table)
@@ -286,7 +286,7 @@ class STSessionSideCreator extends STSideCreator
 			if(isset($table))
 				$this->accessTable($table, $action, $additionalText);
 
-			return STSideCreator::execute();
+			return STSiteCreator::execute();
 		}
 		/*function hasTableAccess($forTable, $toAccessInfoString= "", $customID= null, $logout= false)
 		{

@@ -6,7 +6,7 @@ require_once($php_html_description);
 require_once($_stdownload);
 
 
-class STSideCreator extends HtmlTag
+class STSiteCreator extends HtmlTag
 {
 		var	$db;
 		var	$defaultTitles= array();
@@ -48,7 +48,7 @@ class STSideCreator extends HtmlTag
 				global	$_st_page_starttime_;
 
 				STCheck::setPageStartTime();
-				STCheck::echoDebug("performance", "creating object of class STSideCreator ".date("H:i:s")." ".(time()-$_st_page_starttime_));
+				STCheck::echoDebug("performance", "creating object of class STSiteCreator ".date("H:i:s")." ".(time()-$_st_page_starttime_));
 			}
 			HtmlTag::__construct();
 			if($container)
@@ -140,7 +140,7 @@ class STSideCreator extends HtmlTag
 		}
 		protected function closeUserDbConnection()
 		{
-			// Dummy function for STSessionSideCreator
+			// Dummy function for STSessionSiteCreator
 			// there is eventually defined an extra user database
 			// which should also be closed
 		}
@@ -168,7 +168,7 @@ class STSideCreator extends HtmlTag
 			{
 				global	$_st_page_starttime_;
 
-				Tag::echoDebug("performance", "END of hole page-display in class STSideCreator ".date("H:i:s")." needed ".(time()-$_st_page_starttime_)." sec.");
+				Tag::echoDebug("performance", "END of hole page-display in class STSiteCreator ".date("H:i:s")." needed ".(time()-$_st_page_starttime_)." sec.");
 			}
 		}
 		function doContainerManagement($bManagement)
@@ -232,12 +232,12 @@ class STSideCreator extends HtmlTag
 		}
 		function setProjectIdentifier($project)
 		{
-			Tag::deprecated("STSideCreator::setProjectDisplayName()", "STSideCreator::setProjectIdentifier()");
+			Tag::deprecated("STSiteCreator::setProjectDisplayName()", "STSiteCreator::setProjectIdentifier()");
 			$this->setProjectDisplayName($project);
 		}
 		function getProjectIdentifier()
 		{
-			Tag::deprecated("STSideCreator::getProjectDisplayName()", "STSideCreator::getProjectIdentifier()");
+			Tag::deprecated("STSiteCreator::getProjectDisplayName()", "STSiteCreator::getProjectIdentifier()");
 			$this->getProjectDisplayName();
 		}
 		function getProjectDisplayName()
@@ -249,7 +249,7 @@ class STSideCreator extends HtmlTag
 		}
 		function chooseTitle($title)
 		{
-			Tag::deprecated("STSideCreator::title()", "STSideCreator::chooseTitle()");
+			Tag::deprecated("STSiteCreator::title()", "STSiteCreator::chooseTitle()");
 			$this->chooseTitle= $title;
 		}
 		function setStartPage($file)
@@ -270,7 +270,7 @@ class STSideCreator extends HtmlTag
 		{
 			if(!typeof($this->tableContainer, "STObjectContainer"))
 			{
-				STCheck::warning(1, "STSideCreator::getResult()",
+				STCheck::warning(1, "STSiteCreator::getResult()",
 								"this function is only for an STObjectContainer");
 				return null;
 			}
@@ -281,7 +281,7 @@ class STSideCreator extends HtmlTag
 		{
 			if(!typeof($this->tableContainer, "STObjectContainer"))
 			{
-				STCheck::warning(1, "STSideCreator::getResult()",
+				STCheck::warning(1, "STSiteCreator::getResult()",
 								"this function is only for an STObjectContainer and action STINSERT and STUPDATE");
 				return null;
 			}
@@ -290,7 +290,7 @@ class STSideCreator extends HtmlTag
 				or
 				$action !==STUPDATE	)
 			{
-				STCheck::warning(1, "STSideCreator::getResult()",
+				STCheck::warning(1, "STSiteCreator::getResult()",
 									"this function is only for action STINSERT and STUPDATE");
 				return null;
 			}
@@ -528,7 +528,7 @@ class STSideCreator extends HtmlTag
 		function setAccessForColumnsInTable(&$oTable, &$oList)
 		{
 			STCheck::warning(1, "", "");
-			echo "wrong function access in STSideCreator<br />";
+			echo "wrong function access in STSiteCreator<br />";
 			echo "function now in STObjectContainer<br />";
 			exit;
 		}
@@ -627,7 +627,7 @@ class STSideCreator extends HtmlTag
 			and
 			!STDatabase::existDatabaseClassName($className)	)
 		{
-			STCheck::alert(	!$_selftable_first_main_database_name, "STSideCreator::getContainer()",
+			STCheck::alert(	!$_selftable_first_main_database_name, "STSiteCreator::getContainer()",
 							"first pulled container must be for an database-object"						);
 			if(!$className)
 				$className= "STObjectContainer";
@@ -635,7 +635,7 @@ class STSideCreator extends HtmlTag
 		}
 		if(STCheck::isDebug())
 		{
-			STCheck::alert($containerName && !STBaseContainer::existContainer($containerName) && !$className, "STSideCreator::getContainer()",
+			STCheck::alert($containerName && !STBaseContainer::existContainer($containerName) && !$className, "STSiteCreator::getContainer()",
 								"on first call of getContainer() for '$containerName' second parameter must be an defined class-name");
 		}
 		$newContainer= &STBaseContainer::getContainer($containerName, $className, $fromContainer);

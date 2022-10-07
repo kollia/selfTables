@@ -13,7 +13,7 @@ class STBaseContainer extends BodyTag
 	var $defaultTitles= array(); // Titel spezifisch für jede Aktion (INSERT, UPDATE, LIST)
 	var $get_vars;
 	var	$identifName= null; // Name des Containers wenn er als Button angezeigt wird
-	var $projectIdentif= null; // Name des Projektes, wenn er nicht gesetzt wird, wird der Projekt-Name aus STSideCreator genommen
+	var $projectIdentif= null; // Name des Projektes, wenn er nicht gesetzt wird, wird der Projekt-Name aus STSiteCreator genommen
 	var $aContainer= array(); // alle STBaseContainer welche zur Auswahl aufgelistet werden
 
 	var $aBehindHeadLineButtons= array();
@@ -1336,37 +1336,37 @@ class STBaseContainer extends BodyTag
 	function &getTable()
 	{
 		$Rv= null;
-		// dummy function for STSideCreator
+		// dummy function for STSiteCreator
 		// this container STBaseContainer contains no table
 		return $Rv;
 	}
 	function getTables()
 	{
-		// dummy function for STSessionSideCreator
+		// dummy function for STSessionSiteCreator
 		// this container STBaseContainer contains no table
 		return array();
 	}
 	function getFirstTableName()
 	{
-		// dummy function for STSideCreator
+		// dummy function for STSiteCreator
 		// this container STBaseContainer contains no table
 		return null;
 	}
 	function getTableName()
 	{
-		// dummy function for STSessionSideCreator
+		// dummy function for STSessionSiteCreator
 		// this container STBaseContainer contains no table
 		return null;
 	}
 	function getAction()
 	{
-		// dummy function for STSessionSideCreator
+		// dummy function for STSessionSiteCreator
 		// this container STBaseContainer need no action
 		return null;
 	}
 	function getDatabase()
 	{
-		// dummy function for STSessionSideCreator
+		// dummy function for STSessionSiteCreator
 		// this container STBaseContainer contains no database
 		return null;
 	}

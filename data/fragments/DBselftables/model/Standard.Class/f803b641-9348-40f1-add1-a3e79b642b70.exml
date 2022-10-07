@@ -1,7 +1,7 @@
 <?xml version="1.0" ?>
-<!--GENERATED FILE, PLEASE DO NOT EDIT!!!--><EXT object="STDbSessionSideCreator" version="4">
+<!--GENERATED FILE, PLEASE DO NOT EDIT!!!--><EXT object="STDbSessionSiteCreator" version="4">
   <OBJECT>
-    <ID name="STDbSessionSideCreator" mc="Standard.Class" uid="f803b641-9348-40f1-add1-a3e79b642b70"/>
+    <ID name="STDbSessionSiteCreator" mc="Standard.Class" uid="f803b641-9348-40f1-add1-a3e79b642b70"/>
     <PID name="dbselftables" mc="Standard.Package" uid="c3e7dc8a-1e9e-40ff-bf50-a4a2840f521b"/>
     <ATTRIBUTES>
       <ATT name="IsActive">false</ATT>
@@ -11,7 +11,7 @@
       <ATT name="IsLeaf">false</ATT>
       <ATT name="IsRoot">false</ATT>
       <ATT name="Visibility">Public</ATT>
-      <ATT name="Name"><![CDATA[STDbSessionSideCreator]]></ATT>
+      <ATT name="Name"><![CDATA[STDbSessionSiteCreator]]></ATT>
       <ATT name="status">1970354901745664</ATT>
     </ATTRIBUTES>
     <DEPENDENCIES>
@@ -24,7 +24,7 @@
           </ATTRIBUTES>
           <DEPENDENCIES>
             <LINK relation="DependsOn">
-              <ID name="STDbSideCreator" mc="Standard.Class" uid="ed8a706e-030b-482f-ba1f-bab8fce05142"/>
+              <ID name="STDbSiteCreator" mc="Standard.Class" uid="ed8a706e-030b-482f-ba1f-bab8fce05142"/>
             </LINK>
           </DEPENDENCIES>
         </OBJECT>

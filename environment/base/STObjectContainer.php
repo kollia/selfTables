@@ -817,7 +817,7 @@ class STObjectContainer extends STBaseContainer
 	}
 	function execute(&$externSideCreator, $onError)
 	{
-		Tag::paramCheck($externSideCreator, 1, "STSideCreator");
+		Tag::paramCheck($externSideCreator, 1, "STSiteCreator");
 
 		$this->createMessages();
 		$this->initContainer();
@@ -1215,7 +1215,7 @@ class STObjectContainer extends STBaseContainer
 				or
 				$action !==STUPDATE	)
 			{
-				STCheck::warning(1, "STSideCreator::getResult()",
+				STCheck::warning(1, "STSiteCreator::getResult()",
 									"this function is only for action STINSERT and STUPDATE");
 				return null;
 			}
@@ -1322,7 +1322,7 @@ class STObjectContainer extends STBaseContainer
 					&&
 					!$oTable	)
 				{
-					STCheck::echoDebug(true, "no tables exist, install anyone before, or use STDbSideCreator->install()");
+					STCheck::echoDebug(true, "no tables exist, install anyone before, or use STDbSiteCreator->install()");
 					exit;
 				}else
 					$oTable->hasAccess($get_vars["action"], true);

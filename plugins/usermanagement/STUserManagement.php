@@ -2,6 +2,7 @@
 
 global $_stdbinserter;
 require_once($_stdbinserter);
+require_once($_stsitecreator);
 
 class STUserManagement extends STObjectContainer
 {
@@ -157,7 +158,7 @@ class STUserManagement extends STObjectContainer
 			$this->createCluster($instance->allAdminCluster, "Zugriff auf alle CLUSTER in jedem Projekt");
 
 			$db= &$instance->getUserDb();
-			$creator= new STSideCreator($db);
+			$creator= new STSiteCreator($db);
 			$creator->setMainContainer("um_install");
 			$container= &$creator->getContainer("um_install");
 			STCheck::debug(false);

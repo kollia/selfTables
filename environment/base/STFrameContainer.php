@@ -53,7 +53,7 @@ class STFrameContainer extends STBaseContainer
 	}
 	function execute(&$externSideCreator, $onError= onErrorMessage)
 	{
-		Tag::paramCheck($externSideCreator, 1, "STSideCreator");
+		Tag::paramCheck($externSideCreator, 1, "STSiteCreator");
 
 		STBaseContainer::execute($externSideCreator);
 		if(!$this->sBackButton)

@@ -1,6 +1,6 @@
 <?php
 
-class STUserSideCreator extends STSessionSideCreator
+class STUserSiteCreator extends STSessionSiteCreator
 {
 	var	$sProject;
 	var $nProject;
@@ -19,13 +19,13 @@ class STUserSideCreator extends STSessionSideCreator
 		$this->sProject= $projectNameNr;
 		if(is_numeric($projectNameNr))
 			$this->nProjectID= $projectNameNr;
-		STSessionSideCreator::__construct($container);
+		STSessionSiteCreator::__construct($container);
 	}
 	function initSession($userDb= null)
 	{
 		global	$PHP_SELF;
 
-		Tag::alert(!$userDb&&!$this->db, "STUserSideCreator::initSession()",
+		Tag::alert(!$userDb&&!$this->db, "STUserSiteCreator::initSession()",
 									"before invoke initSession() without DB set DB with setMainContainer()");
 		if($userDb)
 		{
@@ -43,7 +43,7 @@ class STUserSideCreator extends STSessionSideCreator
 		if($this->bDoInstall)
 		{
 			$this->bDoInstall= false;
-			STSideCreator::install();
+			STSiteCreator::install();
 		}
 		$this->userManagement->registerSession();
 		$project= $this->getProjectID();
@@ -77,12 +77,12 @@ class STUserSideCreator extends STSessionSideCreator
 	}
 	function install()
 	{
-		STCheck::warning(STUserSession::sessionGenerated(), "STUserSideCreator::install()", "invoke this function before initSession()");
+		STCheck::warning(STUserSession::sessionGenerated(), "STUserSiteCreator::install()", "invoke this function before initSession()");
 		$this->bDoInstall= true;
 	}
 	function setPrefixForUserTables($prefix)
 	{
-		Tag::alert($this->userManagement, "STUserSideCreator::setPrefixToTables()",
+		Tag::alert($this->userManagement, "STUserSiteCreator::setPrefixToTables()",
 											"you must invoke this function before initSession()");
 		$this->sUserTablePrefix= $prefix;
 	}
@@ -111,7 +111,7 @@ class STUserSideCreator extends STSessionSideCreator
 		}*/
 		function hasAccess($clusters, $toAccessInfoString= "", $customID= null, $makeError= false, $action= STALLDEF)
 		{
-			Tag::alert(!$this->userManagement, "STUserSideCreator::hasAccess()",
+			Tag::alert(!$this->userManagement, "STUserSiteCreator::hasAccess()",
 											"you must invoke before this function initSession()");
 			Tag::paramCheck($clusters, 1, "string", "array");
 			Tag::paramCheck($toAccessInfoString, 2, "string", "empty(string)", "null");
