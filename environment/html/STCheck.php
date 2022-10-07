@@ -2,6 +2,7 @@
 
 require_once($_stquerystring);
 
+$member_tag_def= false;
 /**
 * when file cannot open, display error message only
 * on first time
@@ -253,6 +254,7 @@ class STCheck
 			//			echo ", ";st_print_r($type1, 0); 
 			//			echo ", ";st_print_r($type2, 0);
 			//			echo "<br />";
+		    global $member_tag_def;
 			if(!Tag::isDebug())
 				return;
 			//showErrorTrace();echo "<br><br>";
@@ -286,9 +288,6 @@ class STCheck
 					else
 						$types[]= $args[$n];
 				}
-				//st_print_r($types);
-				//st_print_r($empty);
-				//echo "Error:";st_print_r($bError);echo "<br />";
 				$bError= !typeof($param, $types, $empty, 0);
 				$begin= 2;
 			}

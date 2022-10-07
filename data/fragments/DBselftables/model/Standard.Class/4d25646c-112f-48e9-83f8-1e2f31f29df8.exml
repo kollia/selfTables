@@ -54,7 +54,7 @@
           </ATTRIBUTES>
           <DEPENDENCIES>
             <LINK relation="DependsOn">
-              <ID name="STSession" mc="Standard.Class" uid="078e7ed4-e8b1-4be8-b1fe-ca1d0bd04fed"/>
+              <ID name="STDbSession" mc="Standard.Class" uid="078e7ed4-e8b1-4be8-b1fe-ca1d0bd04fed"/>
             </LINK>
           </DEPENDENCIES>
         </OBJECT>

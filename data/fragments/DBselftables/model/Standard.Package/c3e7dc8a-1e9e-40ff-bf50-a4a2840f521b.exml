@@ -36,7 +36,7 @@
         <COMPID name="STObjectContainer" mc="Standard.Class" uid="1d13219e-3d49-44b6-a6df-f2627c40244c"/>
         <COMPID name="STPostArray" mc="Standard.Class" uid="6bdf5741-18c3-4a42-ac95-21d66e66b922"/>
         <COMPID name="STQueryString" mc="Standard.Class" uid="b58caf4c-5d96-4554-bc90-bd48393af730"/>
-        <COMPID name="STSession" mc="Standard.Class" uid="078e7ed4-e8b1-4be8-b1fe-ca1d0bd04fed"/>
+        <COMPID name="STDbSession" mc="Standard.Class" uid="078e7ed4-e8b1-4be8-b1fe-ca1d0bd04fed"/>
         <COMPID name="STTableTag" mc="Standard.Class" uid="52d0ba69-c9cf-4e35-afc1-724932ab3a8c"/>
         <COMPID name="STUserManagementSession" mc="Standard.Class" uid="4d25646c-112f-48e9-83f8-1e2f31f29df8"/>
         <COMPID name="STUserSideCreator" mc="Standard.Class" uid="696d3add-f83e-4003-8715-3c1668c76094"/>
@@ -45,6 +45,7 @@
         <COMPID name="Tag" mc="Standard.Class" uid="db32eb30-3e05-45b3-9e26-ace6e73cb347"/>
         <COMPID name="STCallbackClass" mc="Standard.Class" uid="72101935-5ce7-426f-99ed-b84261c5ae91"/>
         <COMPID name="STDbSideCreator" mc="Standard.Class" uid="ed8a706e-030b-482f-ba1f-bab8fce05142"/>
+        <COMPID name="STSession" mc="Standard.Class" uid="c9082104-64bb-4054-b78f-1286be6f2a0e"/>
       </COMP>
       <COMP relation="Product">
         <COMPID name="dbselftables Class diagram" mc="Standard.ClassDiagram" uid="6652e321-2600-4e11-9d7f-79f738cfc311"/>

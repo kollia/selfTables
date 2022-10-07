@@ -18,6 +18,7 @@
 	//     container             -  show container creation and initialling
 	//     table                 -  show table creation and initialling
 	//     access                -  show whether user has access to different objects
+	//     session               -  show all about a session
 	//     log                   -  tracing recursive function names passed to calling one or more before defined position 
 	//
 	//--------------------------------------------------------------------------
@@ -237,6 +238,8 @@
 		
 		$_stuser=					$_stenvironmenttools_path."/user/STUser.php";
 		$_stsession=				$_stenvironmenttools_path."/user/STSession.php";
+		$_stdbsession=              $_stenvironmenttools_path."/user/STDbSession.php";
+		$_stdbsessionhandler=       $_stenvironmenttools_path."/user/STDbSessionHandler.php";
 		$_stusersession=            $_stenvironmenttools_path."/user/STUserSession.php";
 
 

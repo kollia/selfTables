@@ -12,6 +12,7 @@ class STDbSelector extends STDbTable
 		var $columns= array();
 		var $SqlResult= null;
 		var $onError;
+		var $errorID= 0;
 		var $search= array();
 		var $fetchArrayCount= 0;
 		var $count= 0;
@@ -38,10 +39,10 @@ class STDbSelector extends STDbTable
 
 			$this->defaultTyp= $defaultTyp;
 			$this->onError= $onError;
-			$db= &$oTable->getDatabase();
+			//$db= &$oTable->getDatabase();
 			//$this->oMainTable= &$oTable;
-			$this->aoToTables[$oTable->getName()]= &$oTable;
 			STCheck::echoDebug("table", "copy ".get_class($oTable)."::".$oTable->getName()." into ".get_class($this)." from ID:".$oTable->ID);
+			$this->aoToTables[$oTable->getName()]= &$oTable;
 			STDbTable::__construct($oTable);
 			STCheck::echoDebug("table", "copy ".get_class($oTable)."::".$oTable->getName()." into ".get_class($this)." to ID:".$this->ID);
 		}
@@ -442,8 +443,8 @@ class STDbSelector extends STDbTable
 			$result= array();
 			foreach($this->SqlResult as $row)
 			{
-				$each= each($row);
-				$result[]= $row[$each["key"]];
+			    reset($row);
+				$result[]= current($row);
 			}
 			return $result;
 		}
@@ -591,6 +592,7 @@ class STDbSelector extends STDbTable
   			if(!$sqlResult)
   			{
   				$sqlErrorMessage= $this->db->getError();
+  				$this->errorID= $this->db->errno();
 				if($this->db->errno()!=0)
 				{//
 					$messageId= "SQLERROR_".$this->db->errno();

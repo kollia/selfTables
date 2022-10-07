@@ -892,6 +892,7 @@ abstract class STDatabase extends STObjectContainer
 	abstract public function field_autoIncrement($tableName, $field_offset);
 	abstract public function field_count($dbResult);
 	abstract protected function allowedTypeNames($allowed);
+	abstract public function real_escape_string(string $str);
 	function setInTableNewColumn($tableName, $columnName, $type)
 	{
 		$objs= &STBaseContainer::getAllContainer();

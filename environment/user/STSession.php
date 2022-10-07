@@ -2,7 +2,6 @@
 
 require_once( $php_html_description );
 require_once( $_stquerystring );
-require_once( $_stdbupdater );
 
 
 /*	-------------------------------------------------------------------
@@ -53,10 +52,8 @@ class STSession
 	var $UserLoginMask= null;
 
 
-	function __construct($private)
+	protected function __construct()
   	{
-		Tag::alert($private!="selfTables_STSession_private_String", "STSession::constructor()",
-								"class STSession is private, choose STSession::init()");
 		$this->aCluster= array();
 		$this->startPage= "";
 		
@@ -71,11 +68,8 @@ class STSession
 	{
 		global	$global_selftable_session_class_instance;
 
-		if(isset($global_selftable_session_class_instance[0])) {
-			Tag::warning($global_selftable_session_class_instance[0], "STSession::init()",
-									"session was already created");							}
-
-		$global_selftable_session_class_instance[0]= new STSession("selfTables_STSession_private_String");
+		if(!isset($global_selftable_session_class_instance[0]))
+		  $global_selftable_session_class_instance[0]= new STSession();
 	}
 	public static function &instance()
 	{
@@ -120,20 +114,28 @@ class STSession
 	{
 		return !$this->noRegister;
 	}
+	protected function session_storage_place()
+	{
+	    global $php_session_save_path;
+	    
+	    if($php_session_save_path)
+	        session_save_path($php_session_save_path);
+	}
   	function registerSession()
   	{
 		global	$host,
 		        $globalVar,
 				$HTTP_COOKIE_VARS,
-				$php_session_name,
-				$php_session_save_path,
-				$_st_set_session_global;
+				$php_session_name;
 
 		if($this->noRegister)
 			return;
-		$client_root= "http://".$host;
-		if($php_session_save_path)
-			session_save_path($php_session_save_path);
+		//$client_root= "http://".$host;
+		
+		// save session on default harddisk position
+		// or other places
+		$this->session_storage_place();
+		
 		if($php_session_name)
 		{
 			$this->sessionName= $php_session_name;
@@ -185,6 +187,15 @@ class STSession
 	function getSessionID()
 	{
 		return session_id();
+	}
+	/**
+	 * allow session variables defined inside URL<br />
+	 * Enabling this setting prevents attacks involved passing session ids in URLs.
+	 */
+	public static function allowUrlSession()
+	{
+	    STCheck::echoDebug("session", "Enabling to allow session variables set also in <b>URL</b>");
+	    ini_set("session.use_only_cookies", "0");
 	}
 	function isLoggedIn()
 	{

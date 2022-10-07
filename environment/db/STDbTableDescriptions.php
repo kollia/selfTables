@@ -183,7 +183,7 @@ class STDbTableDescriptions
 	/*public*/function setPrefixToTables($prefix)
 	{
 		foreach($this->aExistTables as $name=>$table)
-			$this->setPrefixToTable($prefix, $name);
+		    $this->setPrefixToTable($prefix, $name);
 	}
 	/*protected*/function column($tableName, $column, $type, $null= true)
 	{

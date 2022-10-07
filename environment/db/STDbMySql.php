@@ -168,6 +168,10 @@ class STDbMySql extends STDatabase
 			echo "<b>WARNING:</b> does not found any table in database <b>".$this->dbName."</b><br />";
 		}
 	}
+	public function real_escape_string(string $str)
+	{
+	    return $this->conn->real_escape_string($str);
+	}
 	function getLastInsertedPk()
 	{
 		return $this->insert_id();
@@ -175,14 +179,13 @@ class STDbMySql extends STDatabase
 	protected function querydb($statement)
 	{
 		global $_st_page_starttime_;
-
-
-		$this->lastDbResult = $this->conn->query($statement);
+		
 		if(STCheck::isDebug())
 		{
-			STCheck::echoDebug("db.statement", $statement);
-			STCheck::echoDebug("db.statement.time", date("H:i:s")." ".(time()-$_st_page_starttime_));
+		    STCheck::echoDebug("db.statement", $statement);
+		    STCheck::echoDebug("db.statement.time", date("H:i:s")." ".(time()-$_st_page_starttime_));
 		}
+		$this->lastDbResult = $this->conn->query($statement);
 		return $this->lastDbResult;
 	}
 	protected function list_dbtable_fields($TableName)

@@ -1,10 +1,10 @@
 <?php
 
-require_once($_stsession);
+require_once($_stdbsession);
 //require_once($database_selector);
 require_once($_stusermanagement_install);
 
-class STUserManagementSession extends STSession
+class STUserManagementSession extends STDbSession
 {
 	var $database= null;
 	var $user;
@@ -20,22 +20,6 @@ class STUserManagementSession extends STSession
 	var	$allAdminCluster= "allAdmin";	// user has in every project
 										// access to all clusters
 	var	$sGroupTable= "Group";
-	/*var	$sProjectTable= "Project";
-	var	$asProjectTableColumns= array();
-	var $sClusterTable= "Cluster";
-	var	$sPartitionTable= "Partition";
-	var	$asClusterTableColumns= array();
-	var	$sClusterGroupTable= "ClusterGroup";
-	var	$asClusterGroupTableColumns= array();
-	var	$asGroupTableColumns= array();
-	var	$sGroupTypeTable= "GroupType";
-	var	$asGroupTypeTableColumns= array();
-	var	$sUserGroupTable= "UserGroup";
-	var	$asUserGroupTableColumns= array();
-	var	$sUserTable= "User";
-	var	$asUserTableColumns= array();
-	var	$sLogTable= "Log";
-	var	$asLogTableColumns= array();*/
 
 	// all for own Projects
 	var $projectAccessTable;
@@ -44,11 +28,9 @@ class STUserManagementSession extends STSession
 	var $sAuthorisationColumn= "Authorisation";
 	var $aProjectAccessCluster= array();
 
-	function __construct(&$Db, $prefix= null, $private= "")
+	protected function __construct(&$Db)
 	{
-		Tag::alert($private!="selfTables_STUserSession_private_String", "STUserSession::constructor()",
-								"class STUserSession is private, choose STUserSession::init(\$Db)");
-		STSession::__construct("selfTables_STSession_private_String");
+		STDbSession::__construct();
    		$this->database= &$Db;
 		$this->bLog= true;
 
@@ -56,97 +38,47 @@ class STUserManagementSession extends STSession
 		$this->aSessionVars[]= "ST_USERID";
 		$this->aSessionVars[]= "ST_PROJECTID";
 		$this->aSessionVars[]= "ST_LOGGED_MESSAGES";
-
-		/*$this->asProjectTableColumns=	 	array(	"ID"=>			array(	"column"=>	"ID"	),
-													"Name"=>		array(	"column"=>	"Name",
-																			"alias"=>	"Projekt-Name"	),
-													"Path"=>		array(	"column"=>	"Path",
-																			"alias"=>	"Projekt-Pfad"	),
-													"Description"=>	array(	"column"=>	"Description",
-																			"alias"=>	"Beschreibung"		),
-													"DateCreation"=>array(	"column"=>	"DateCreation",
-																			"alias"=>	"Erzeugungs-Datum"	)	);
-		$this->asClusterTableColumns=	 	array(	"ID"=>			array(	"column"=>	"ID"			),
-													"ProjectID"=>	array(	"column"=>	"ProjectID",
-																			"alias"=>	"Projekt"		),
-													"Description"=>	array(	"column"=>	"Description",
-																			"alias"=>	"Beschreibung"		),
-													"identification"=>	array(	"column"=>	"identification",
-																				"alias"=>	"Identifikation"		),
-													"DateCreation"=>array(	"column"=>	"DateCreation",
-																			"alias"=>	"Erzeugungs-Datum"	)	);
-		$this->asClusterGroupTableColumns= 	array(	"ID"=>			array(	"column"=>	"ID"	),
-													"ClusterID"=>	array(	"column"=>	"ClusterID",
-																			"alias"=>	"Cluster"	),
-													"GroupID"=>		array(	"column"=>	"GroupID",
-																			"alias"=>	"Gruppe"	),
-													"Description"=>	array(	"column"=>	"Description",
-																			"alias"=>	"Beschreibung"		),
-													"DateCreation"=>array(	"column"=>	"DateCreation",
-																			"alias"=>	"Erzeugungs-Datum"	)	);
-		$this->asGroupTableColumns=		 	array(	"ID"=>			array(	"column"=>	"ID"	),
-													"Name"=>		array(	"column"=>	"Name",
-																			"alias"=>	"Gruppe"	),
-													"DateCreation"=>array(	"column"=>	"DateCreation",
-																			"alias"=>	"Erzeugungs-Datum"	)	);
-		$this->asGroupTypeTableColumns=	 	array(	"ID"=>			array(	"column"=>	"ID"	),
-													"Label"=>		array(	"column"=>	"Label",
-																			"alias"=>	"Bezeichnung"	),
-													"Description"=>	array(	"column"=>	"Description",
-																			"alias"=>	"Beschreibung"		),
-													"DateCreation"=>array(	"column"=>	"DateCreation",
-																			"alias"=>	"Erzeugungs-Datum"	)	);
-		$this->asUserGroupTableColumns=	 	array(	"ID"=>			array(	"column"=>	"ID"	),
-													"UserID"=>		array(	"column"=>	"UserID",
-																			"alias"=>	"User"	),
-													"GroupID"=>		array(	"column"=>	"GroupID",
-																			"alias"=>	"Gruppe"	),
-													"DateCreation"=>array(	"column"=>	"DateCreation",
-																			"alias"=>	"Erzeugungs-Datum"	)	);
-		$this->asUserTableColumns=		 	array(	"ID"=>			array(	"column"=>	"ID"	),
-													"UserName"=>	array(	"column"=>	"UserName",
-																			"alias"=>	"Nickname"	),
-													"NrLogin"=>		array(	"column"=>	"NrLogin",
-																			"alias"=>	"Eingelogged"	),
-													"LastLogin"=>	array(	"column"=>	"LastLogin",
-																			"alias"=>	"letzter Login"		),
-													"GroupType"=>	array(	"column"=>	"GroupType",
-																			"alias"=>	"Log-Gruppe"	),
-													"Pwd"=>			array(	"column"=>	"Pwd",
-																			"alias"=>	"Paswort"		),
-													"DateCreation"=>array(	"column"=>	"DateCreation",
-																			"alias"=>	"Erzeugungs-Datum"	)	);
-		$this->asLogTableColumns=		 	array(	"ID"=>			array(	"column"=>	"ID"	),
-													"UserID"=>		array(	"column"=>	"UserID",
-																			"alias"=>	"User"	),
-													"ProjectID"=>	array(	"column"=>	"ProjectID",
-																			"alias"=>	"Projekt"		),
-													"Type"=>		array(	"column"=>	"Typ",
-																			"alias"=>	"Log-Type"	),
-													"CustomID"=>	array(	"column"=>	"CustomID",
-																			"alias"=>	"CustomID"	),
-													"Description"=>	array(	"column"=>	"Description",
-																			"alias"=>	"Beschreibung"		),
-													"DateCreation"=>array(	"column"=>	"DateCreation",
-																			"alias"=>	"Erzeugungs-Datum"	)	);
-		if($prefix)
-			$this->setPrefixToTables($prefix);*/
 	}
+	public static function init(&$Db, $prefix= null)
+	{
+	    global $global_selftable_session_class_instance;
+	    
+	    $define_table= false;
+	    if(!isset($global_selftable_session_class_instance[0]))
+	    {
+	        $global_selftable_session_class_instance[0]= new STUserManagementSession($Db, $prefix);
+	        $define_table= true;
+	    }
+	    STDbSession::init($Db, $prefix);
+	    if($define_table && isset($prefix))
+	    {
+	        $desc= &STDbTableDescriptions::instance($Db->getName());
+	        $desc->setPrefixToTables($prefix);
+	    }
+	}
+	/* fault whether I do not know
+	 static public function sessionGenerated()
+	 {
+	 /**
+	 * when this function making problems!
+	 * Strict Standards:  Non-static method STSession::sessionGenerated() should not be called statically
+	 * there is also a globaly method global_sessionGenerated() which do the same
+	 *
+	 global $global_selftable_session_class_instance;
+	 
+	 if(	isset($global_selftable_session_class_instance[0]) &&
+	 typeof($global_selftable_session_class_instance[0], "STUserSession")	)
+	 {
+	 return true;
+	 }
+	 return false;
+	 }*/
 	function setPrefixToTables($prefix)
 	{
 		STCheck::param($prefix, 0, "string");
 
 		$desc= &STDbTableDescriptions::instance($this->database->getName());
-
-		$desc->setPrefixToTable($prefix, "Partition");
-		$desc->setPrefixToTable($prefix, "Project");
-		$desc->setPrefixToTable($prefix, "Cluster");
-		$desc->setPrefixToTable($prefix, "ClusterGroup");
-		$desc->setPrefixToTable($prefix, "Group");
-		$desc->setPrefixToTable($prefix, "UserGroup");
-		$desc->setPrefixToTable($prefix, "User");
-		$desc->setPrefixToTable($prefix, "GroupType");
-		$desc->setPrefixToTable($prefix, "Log");
+		$desc->setPrefixToTables($prefix);
 	}
 	function verifyLogin($Project= 1)
 	{// method only to check param -> must be set
@@ -404,31 +336,6 @@ class STUserManagementSession extends STSession
 
 		$this->groupTypeColumn($column, $column, $alias);
 	}
-	public static function init(&$Db, $prefix= null)
-	{
-		global $global_selftable_session_class_instance;
-
-		Tag::alert(global_sessionGenerated(), "STUserSession::init()",
-								"session was already created");
-		$global_selftable_session_class_instance[0]= new STUserManagementSession($Db, $prefix, "selfTables_STUserSession_private_String");
-	}
-	/* fault whether I do not know
-	static public function sessionGenerated()
-	{
-		/**
-		 * when this function making problems!
-		 * Strict Standards:  Non-static method STSession::sessionGenerated() should not be called statically
-		 * there is also a globaly method global_sessionGenerated() which do the same
-		 *
-		global $global_selftable_session_class_instance;
-
-		if(	isset($global_selftable_session_class_instance[0]) &&
-			typeof($global_selftable_session_class_instance[0], "STUserSession")	)
-		{
-			return true;
-		}
-		return false;
-	}*/
 	function &getUserDb()
 	{
 		return $this->database;

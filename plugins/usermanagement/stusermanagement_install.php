@@ -2,6 +2,7 @@
 
 		require_once($_stobjectcontainer);
 		require_once($_stdbtabledescriptions);
+		
 		$_stusermanagement_table_description= &STDbTableDescriptions::instance($DBin_UserDatabase);
 
 		$_stusermanagement_table_description->table("Query");

@@ -424,8 +424,17 @@ class myTools
                             $params.= "array(), ";
                 }
                 echo substr($params, 0, strlen($params)-2)."<b>)</b>";
-                echo " <b>file</b> ".$function["file"];
-                echo " <b>line:</b>".$function["line"];
+                echo " <b>file</b> ";
+                if(isset($function["file"]))
+                    echo $function["file"];
+                else
+                    echo "no file";
+                
+                echo " <b>line:</b>";
+                if(isset($function["line"]))
+                    echo $function["line"];
+                else
+                    echo "no line";
                 echo "<br />";
 				--$much;
 				if($much==0)
