@@ -219,7 +219,7 @@
 		$_tinymce=					$_stenvironmenttools_path."/base/TinyMCE.php";
 		$_tinymce_row=				$_stenvironmenttools_path."/base/TinyMCE_row.php";
 		$_stsitecreator=			$_stenvironmenttools_path."/base/STSiteCreator.php";
-		
+		  
 		$_stdatabase=				$_stenvironmenttools_path."/db/STDatabase.php";
 		$_stdbmysql=				$_stenvironmenttools_path."/db/STDbMySql.php";
 		$_staliastable=				$_stenvironmenttools_path."/db/STAliasTable.php";
