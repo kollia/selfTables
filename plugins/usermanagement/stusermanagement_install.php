@@ -29,12 +29,12 @@
 		$_stusermanagement_table_description->column("Project", "Name", "varchar(70)", false);
 		$_stusermanagement_table_description->uniqueKey("Project", "Name", 1);
 		$_stusermanagement_table_description->column("Project", "Path", "varchar(255)", false);
-		$_stusermanagement_table_description->column("Project", "description", "text");
+		$_stusermanagement_table_description->column("Project", "Description", "text");
 		$_stusermanagement_table_description->column("Project", "DateCreation", "datetime", false);
-		$_stusermanagement_table_description->column("Project", "has_access", "varchar(255)", false);
-		$_stusermanagement_table_description->column("Project", "can_insert", "varchar(255)", false);
-		$_stusermanagement_table_description->column("Project", "can_update", "varchar(255)", false);
-		$_stusermanagement_table_description->column("Project", "can_delete", "varchar(255)", false);
+		//$_stusermanagement_table_description->column("Project", "has_access", "varchar(255)", false);
+		//$_stusermanagement_table_description->column("Project", "can_insert", "varchar(255)", false);
+		//$_stusermanagement_table_description->column("Project", "can_update", "varchar(255)", false);
+		//$_stusermanagement_table_description->column("Project", "can_delete", "varchar(255)", false);
 
 		$_stusermanagement_table_description->table("Partition");
 		$_stusermanagement_table_description->column("Partition", "ID", "SMALLINT", false);

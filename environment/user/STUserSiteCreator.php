@@ -1,5 +1,7 @@
 <?php
 
+require_once( $_stsessionsitecreator);
+
 class STUserSiteCreator extends STSessionSiteCreator
 {
 	var	$sProject;

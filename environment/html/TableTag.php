@@ -1,17 +1,16 @@
 <?php
 
-define("TH", true);
-define("TD", false);
+define("TR", "tr");
+define("TH", "th");
+define("TD", "td");
+define("LU", "lu");
+define("LI", "li");
 
 class ColumnTag extends Tag
 {
-		function __construct($headline, $class= null)
+        function __construct($class= null, $headline= TD)
 		{
-			if($headline)
-				$name= "th";
-			else
-				$name= "td";
-			Tag::__construct($name, true, $class);
+			Tag::__construct($headline, true, $class);
 		}
 		function align($value)
 		{
@@ -35,6 +34,10 @@ class ColumnTag extends Tag
 		{
 			$this->insertAttribute("width", $width);			
 		}
+		function style($value)
+		{
+		    $this->insertAttribute("style", $value);
+		}
 		function height($height)
 		{
 			$this->insertAttribute("height", $height);			
@@ -43,13 +46,21 @@ class ColumnTag extends Tag
 		{
 			$this->insertAttribute("bgcolor", $color);
 		}
+		function background($image)
+		{
+		    $this->insertAttribute("background", $image);
+		}
+		function nowrap()
+		{
+		    $this->insertAttribute("nowrap", "nowrap");
+		}
 }
 
 class RowTag extends Tag
 {
-		function __construct($class= null)
+		function __construct($class= null, $type= TR)
 		{
-			Tag::__construct("tr", true, $class);
+			Tag::__construct($type, true, $class);
 		}
 		function align($value)
 		{

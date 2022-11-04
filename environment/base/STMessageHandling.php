@@ -56,7 +56,7 @@ class STMessageHandling // implements STMessageHandlingInterface <- ab version 5
 		{
 			$this->messageId= "NOERROR";
 		}
-		/*protected*/function setMessageId($messageId, $newString= null)
+		/*protected*/function setMessageId(string $messageId, string $newString= null)
 		{
 			if(Tag::isDebug())
 			{

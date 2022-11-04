@@ -41,7 +41,7 @@ class STSiteCreator extends HtmlTag
 		{
 			global	$_selftable_first_main_database_name;
 
-			STCheck::paramCheck($container, 1, "STObjectContainer", "STFrameContainer", "null");
+			STCheck::paramCheck($container, 1, "STBaseContainer", "STFrameContainer", "null");
 
 			if(STCheck::isDebug())
 			{
@@ -53,14 +53,21 @@ class STSiteCreator extends HtmlTag
 			HtmlTag::__construct();
 			if($container)
 			{
-				// alex 11/09/2005:	da der container keine Referenz ist
-				//					diesen aus der liste holen
+				// alex 11/09/2005:	maybe the container is no refference,
+				//					so took the container from globaly list
 				$containerName= $container->getName();
-				$container= &STBaseContainer::getContainer($containerName);
-				$this->setMainContainer($container);
+				$listContainer= &STBaseContainer::getContainer($containerName);
+				// alex 11/10/2022: if the container from list not the same as from parameter
+				//                  tooke the pareameter container
+				if( !isset($listContainer) ||
+				    $listContainer->getName() != $container->getName()  )
+				{
+				    $this->setMainContainer($container);
+				}else
+				    $this->setMainContainer($listContainer);
 				if(!$_selftable_first_main_database_name)
 				{
-					$db= &$container->getDatabase();
+					$db= $container->getDatabase();
 					$_selftable_first_main_database_name= $db->getName();
 					$this->db= &$db;
 				}
@@ -106,36 +113,32 @@ class STSiteCreator extends HtmlTag
 				$msgHandling->setMessageContent("DELETEACCESSERROR@", "Benutzer hat keine Berechtigung Eintraege in der Tabelle @ zu loeschen");
 			}
 			
-			if(	$action == STLIST
-				and
-				!$oTable->hasAccess(STLIST, true)	)
+			if(isset($oTable))
 			{
-				$msgHandling->setMessageId("LISTACCESSERROR@", $oTable->getDisplayName());
-				
-			}elseif(	$action == STDELETE
-					and
-					(	!$oTable->canDelete()
-  						or
-						!$oTable->hasAccess(STDELETE, true)	)	)
-			{
-				$msgHandling->setMessageId("DELETEACCESSERROR@", $oTable->getDisplayName());
-				
-  			}elseif(	$action == STINSERT
-						and
-						(	!$oTable->canInsert()
-							or
-							!$oTable->hasAccess(STINSERT, true)	)	)
-			{
-				$msgHandling->setMessageId("INSERTACCESSERROR@", $oTable->getDisplayName());
-				
-			}elseif(	$action == STUPDATE
-						and
-						(	!$oTable->canUpdate()
-							or
-							!$oTable->hasAccess(STUPDATE, true)	)	)
-			{
-				$msgHandling->setMessageId("UPDATEACCESSERROR@", $oTable->getDisplayName());
-			}		
+    			if(	$action == STLIST &&
+    				!$oTable->hasAccess(STLIST, true)	)
+    			{
+    				$msgHandling->setMessageId("LISTACCESSERROR@", $oTable->getDisplayName());
+    				
+    			}elseif(	$action == STDELETE &&
+        					(	!$oTable->canDelete() ||
+        						!$oTable->hasAccess(STDELETE, true)	)	)
+    			{
+    				$msgHandling->setMessageId("DELETEACCESSERROR@", $oTable->getDisplayName());
+    				
+      			}elseif(	$action == STINSERT &&
+    						(	!$oTable->canInsert() ||
+    							!$oTable->hasAccess(STINSERT, true)	)	)
+    			{
+    				$msgHandling->setMessageId("INSERTACCESSERROR@", $oTable->getDisplayName());
+    				
+    			}elseif(	$action == STUPDATE &&
+    						(	!$oTable->canUpdate() ||
+    							!$oTable->hasAccess(STUPDATE, true)	)	)
+    			{
+    				$msgHandling->setMessageId("UPDATEACCESSERROR@", $oTable->getDisplayName());
+    			}		
+			}
 			return $msgHandling;
 		}
 		protected function closeUserDbConnection()
@@ -146,7 +149,14 @@ class STSiteCreator extends HtmlTag
 		}
 		function display($bCloseConnection= true)
 		{
-			$aClosed= array();
+		    //-------------------------------------------------------------------------------------------------------
+		    // alex:  19/10/2022
+		    //        since use database session
+		    //        do not close connection
+		    //        because after finished site,
+		    //        STDbSessionHandler try to write session data
+		    //        into database
+			/*$aClosed= array();
 			if($bCloseConnection)
 			{
 				$containers= &STBaseContainer::getAllContainer();
@@ -159,7 +169,8 @@ class STSiteCreator extends HtmlTag
 					}
 				}
 				$this->closeUserDbConnection();
-			}
+			}*/
+			//-------------------------------------------------------------------------------------------------------
 			echo "<!DOCTYPE html>";
 			if(STCheck::isDebug())
 				echo "\n";
@@ -201,7 +212,7 @@ class STSiteCreator extends HtmlTag
 			// 					die Datenbank wird nun �ber dieses Objekt geholt
 			$this->tableContainer= &$container;
 			if(!$this->db)
-				$this->db= &$container->getDatabase();
+				$this->db= $container->getDatabase();
 		}
 		function needVar($name, &$value)
 		{
@@ -613,13 +624,9 @@ class STSiteCreator extends HtmlTag
 				$this->aCallbacks[$action][$tableName]= array();
 			$this->aCallbacks[$action][$tableName][$columnName]= $callbackFunction;
 		}
-	function &getContainer($containerName= null, $className= null, $fromContainer= null)
+	function &getContainer(string $containerName= null, string $className= null, string $fromContainer= null)
 	{
 		global	$_selftable_first_main_database_name;
-
-		STCheck::paramCheck($containerName, 1, "string", "null");
-		STCheck::paramCheck($className, 2, "string", "null");
-		STCheck::paramCheck($fromContainer, 3, "string", "null");
 
 		if(	$containerName
 			and
@@ -644,10 +651,12 @@ class STSiteCreator extends HtmlTag
 			$this->tableContainer= $newContainer;
 			$this->setMainContainer($newContainer);
 		}
-		if(!$_selftable_first_main_database_name)
+		if( isset($newContainer) &&
+		    !$_selftable_first_main_database_name )
 		{
-			$db= &$newContainer->getDatabase();
-			$_selftable_first_main_database_name= $db->getName();
+			$db= $newContainer->getDatabase();
+			if(isset($db))
+			   $_selftable_first_main_database_name= $db->getName();
 		}
 		return $newContainer;
 	}

@@ -38,6 +38,7 @@ class STSession
 	var $aCluster;
 	var $aExistCluster;
 	var $startPage;
+	var $loginSite= "";
 	var $oLoginMask;
 	var $noRegister= false;
 	var $aSessionVars= array();
@@ -50,6 +51,13 @@ class STSession
 	 */
 	var $project= "";
 	var $UserLoginMask= null;
+	/**
+	 * user currently try to logged in
+	 * otherwise (no login) an null terminated string
+	 * @var string
+	 */
+	var $loginUser= "";
+	var $loginError= 0;
 
 
 	protected function __construct()
@@ -152,37 +160,35 @@ class STSession
 		    session_set_cookie_params( 60*5, '/');
     		if(STCheck::isDebug())
     		{// if defined Debug-Session,
-    			$bSetSession= @session_start();// warning for cookie set is normaly
+    		    
+    		    $bSetSession= @session_start();// warning for cookie set is normaly
     		}else
     		    $bSetSession= session_start();
 		}
 		
-		if(	isset($_GET["debug"]) ||
-		    isset($_GET["DEBUG"]) 	)
+	    if( STCheck::isDebug("user") ||
+	        STCheck::isDebug("session")   )
 		{
-		    STCheck::debug("query");
-		    STCheck::debug("user");
-		}
-		/**/if( Tag::isDebug("user") )
-		{
-		    $space= STCheck::echoDebug("user", "now <b>registerSession()</b>");
-			STCheck::echoDebug("user", "register session variable ".$this->sessionName." on root '/' from host $host<b>".$_SERVER["HTTP_HOST"]."</b>");
+		    $debug= "user";
+		    if(STCheck::isDebug("session"))
+		        $debug= "session";
+		    $space= STCheck::echoDebug($debug, "now <b>registerSession()</b>");
+		    STCheck::echoDebug($debug, "register session variable ".$this->sessionName." on root '/' from host $host<b>".$_SERVER["HTTP_HOST"]."</b>");
 			$msg= "session_start was";
 			if(!$bSetSession)
 				$msg.= " <b>not</b>";
 			$msg.= " succefully";
-			STCheck::echoDebug("user", $msg);
-			STCheck::echoDebug("user", "session-ID on <b>var</b> ".$this->sessionName." is ".session_id());
-			STCheck::echoDebug("user", "session will be activated for ".session_cache_expire()." minutes");
+			STCheck::echoDebug($debug, $msg);
+			STCheck::echoDebug($debug, "session-ID on <b>var</b> ".$this->sessionName." is ".session_id());
+			STCheck::echoDebug($debug, "session will be activated for ".session_cache_expire()." minutes");
 			echo "<br />";
-			STCheck::echoDebug("user", "cookies set on host <b>".$_SERVER["HTTP_HOST"]."</b>");
-			st_print_r($HTTP_COOKIE_VARS, 5, $space+55);
-			STCheck::echoDebug("user", "session variables are:");
-		    st_print_r($_SESSION, 5, $space+55);
+			STCheck::echoDebug($debug, "cookies set on host <b>".$_SERVER["HTTP_HOST"]."</b>");
+			st_print_r($HTTP_COOKIE_VARS, 5, $space);
+			STCheck::echoDebug($debug, "session variables are:");
+		    st_print_r($_SESSION, 5, $space);
 		    if($_SESSION == null)
 		        echo "<br /><br />";
 		}
-		//$this->LOG(STACCESS, 0, $session_txt);
   	}
 	function getSessionID()
 	{
@@ -217,7 +223,6 @@ class STSession
 				$string= "user is not logged, so return false";
 			STCheck::echoDebug("user", $string);		    
 		}
-		session_create_id();
 		return $loggedin;
 	}
 	function hasAccess($authorisationString, $toAccessInfoString, $customID= null, $gotoLoginMask= false, $action= STALLDEF)
@@ -332,24 +337,7 @@ class STSession
 				$staction= "STALLDEF";
 			elseif($action==STADMIN)
 				$staction= "STADMIN";
-			echo "<b>[</b>user<b>]:</b> <b>entering hasAccess(<em>&quot;".htmlspecialchars( $clusterString )."&quot;, ".$sAccess.", ".$sID.", ".$staction."</em>)</b><br />";
-			echo "<b>[</b>user<b>]:</b> User is currently member of following clusters: ";
-			
-			if(is_array($cluster_membership) && count($cluster_membership))
-			{
-			    foreach( $cluster_membership as $myCluster=>$Project )
-					echo $myCluster.";";
-			}else
-				echo "<em>NO CLUSTER</em>";
-			echo "<br />";
-			echo "<b>[</b>user<b>]:</b> sessionvar ST_LOGGED_IN is ";
-			$loggedin= $this->getSessionVar("ST_LOGGED_IN");
-			if(isset($loggedin))
-			{
-			    var_dump($loggedin);
-			    echo "<br />";
-			}else
-			    echo "<b>not</b> defined<br />";
+			STCheck::echoDebug("user", "entering hasAccess(<b><em>&quot;".htmlspecialchars( $clusterString )."&quot;</b>, ".$sAccess.", ".$sID.", ".$staction."</em>)");
 		}
 		// alex 09/10/2005:	User muss nicht eingeloggt sein
 		//					um auf Projekte zugriff zu haben
@@ -390,7 +378,7 @@ class STSession
 			{
 				if($toAccessInfoString)
 					$this->LOG(STACCESS, $customID, $toAccessInfoString);
-				/**/Tag::echoDebug("user", "-&gt; User is Member of '$cluster' Cluster so return TRUE<br />");
+				/**/Tag::echoDebug("user", "-&gt; User is Member of '$cluster' Cluster so return <b>TRUE</b>");
 				return true;
 			}
 		}
@@ -451,7 +439,7 @@ class STSession
 			//$this->logHimOut(7, "ACCESS_ERROR");
 			$this->gotoLoginMask(5);
 		}
-		/**/Tag::echoDebug("user", "User is in none of the Specified Clusters so return FALSE<br />");
+		/**/Tag::echoDebug("user", "User is in none of the Specified Clusters so return <b>FALSE</b>");
 		return false;
 	}
     function logHimOut($CustomID, $logTXT= "")
@@ -658,17 +646,76 @@ class STSession
 
 		return $result;
 	}
+	/**
+	 * return error number by fault login, or elsewher 0.<br />
+	 * <table>
+	 *   <tr>
+	 *     <td>
+	 *       0
+	 *     </td>
+	 *       No Error defined.
+	 *     <td>
+	 *     </td>
+	 *   </tr>
+	 *   <tr>
+	 *     <td>
+	 *       1
+	 *     </td>
+	 *     <td>
+	 *       This user name has no access.
+	 *     </td>
+	 *   </tr>
+	 *   <tr>
+	 *     <td>
+	 *       2
+	 *     </td>
+	 *     <td>
+	 *       Password is incorrect.
+	 *     </td>
+	 *   </tr>
+	 *   <tr>
+	 *     <td>
+	 *       3
+	 *     </td>
+	 *     <td>
+	 *       Multiple UserName in LDAP found!
+	 *     </td>
+	 *   </tr>
+	 *   <tr>
+	 *     <td>
+	 *       4
+	 *     </td>
+	 *     <td>
+	 *       Unknown error in LDAP authentication!
+	 *     </td>
+	 *   </tr>
+	 *   <tr>
+	 *     <td>
+	 *       5
+	 *     </td>
+	 *     <td>
+	 *       You have no access to this data. Please try an other user.
+	 *     </td>
+	 *   </tr>
+	 * </table>
+	 * 
+	 * @return login error number
+	 */
+	public  function getLoginError()
+	{
+	    return $this->loginError;
+	}
 	private function private_verifyLogin($Project)
 	{
-		/**/ if( STCheck::isDebug("user") ){ echo "<b>entering verifyLogin( ";print_r( $Project ); echo " ):</b> ..<br />"; }
 		global	$HTTP_SERVER_VARS,
 				$HTTP_GET_VARS,
 				$HTTP_POST_VARS,
 				$HTTP_COOKIE_VARS;
-
+				
+		STCheck::echoDebug("user", "entering verifyLogin( <b>".print_r( $Project, /*return str*/true ). "</b> ): ...");
 		if($this->noRegister)
 		{
-			/**/ if( STCheck::isDebug("user") ) echo "disabled registration for DEBUGGING purposes<br /><br />";
+			STCheck::echoDebug("user", "disabled registration for DEBUGGING purposes");
 			return;
 		}
 		$this->project= $Project;
@@ -676,16 +723,34 @@ class STSession
 			or
 			isset($HTTP_GET_VARS[ "doLogout" ]))
  		{
- 			/**/ if( STCheck::isDebug("user") ) echo "start performing LOGOUT<br />";
+ 			STCheck::echoDebug("user", "start performing LOGOUT");
  			$this->logHimOut(0);
-			$this->gotoLoginMask(0);
-			exit;
+ 			if($this->loginSite != "")
+ 			{
+ 			    if(STCheck::isDebug())
+ 			    {
+ 			        echo "<h1>got login site <a href='".$this->loginSite."'>";
+ 			        echo $this->loginSite."</a></h1>";
+ 			        exit;
+ 			    }
+ 			    $this->gotoLoginMask(0);
+ 			    exit;
+ 			}
     	}elseif( isset( $HTTP_GET_VARS[ "timeout" ] ) )
 		{
 			/**/ if( STCheck::isDebug("user") ) echo "perform (javascript automatic timeout triggered ) LOGOUT<br />";
-			$this->logHimOut(6, "TIMEOUT");
-			$this->gotoLoginMask(0);
-			exit;
+		    $this->logHimOut(6, "TIMEOUT");
+/*		    if($this->loginSite != "")
+		    {
+		        if(STCheck::isDebug())
+		        {
+		            echo "<h1>got login site <a href='".$this->loginSite."'>";
+		            echo $this->loginSite."</a></h1>";
+		            exit;
+		        }
+		        $this->gotoLoginMask(0);
+		        exit;
+		    }*/
 		}
 		else if( 	isset($HTTP_POST_VARS[ "doLogin" ]) &&
 					$HTTP_POST_VARS[ "doLogin" ] == 1 		)
@@ -696,13 +761,16 @@ class STSession
 			/**/STCheck::echoDebug("user", "set ST_USERID and ST_CLUSTER_MEMBERSHIP to NULL");
 			$this->setSessionVar("ST_CLUSTER_MEMBERSHIP", null);
 			$this->setSessionVar("ST_USERID", null);
-    	   	$error= $this->acceptUser($HTTP_POST_VARS["user"], $HTTP_POST_VARS["pwd"]);
+			$this->loginUser= $HTTP_POST_VARS["user"];
+			$error= $this->acceptUser($HTTP_POST_VARS["user"], $HTTP_POST_VARS["pwd"]);
+			$this->loginError= $error;
       		if(!$error)
 			{
 				/**/ if( Tag::isDebug("user") )
 				{
-					echo "....login Successfull, set Project to <em>$Project</em>, ";
-					echo "update LastLogin and increase NrLogin counter<br />";
+				    $msg= "....login Successfull, set Project to <em>$Project</em>, ";
+				    $msg.= "update LastLogin and increase NrLogin counter";
+					STCheck::echoDebug("user", $msg);
 				}
 
 
@@ -731,9 +799,10 @@ class STSession
 			if(!isset($user))
 				$user= "unknown";
 			$this->LOG(STLOGIN_ERROR, $error);
-			$this->gotoLoginMask($error);
-			exit;
-    	}else
+			//return false;
+			//$this->gotoLoginMask($error);
+			//exit;
+    	}//else
     	{
     		/**/ if( STCheck::isDebug("user") )
 			{
@@ -1032,34 +1101,31 @@ class STSession
 		STCheck::echoDebug("user", "set UserLoginMask to ".$address);
 		$this->UserLoginMask= $address;
 	}
-	function &getLogoutButton($ButtonText, $class= null)
+	function &getLogoutButton($ButtonText, $class= "button")
   	{
         global $HTTP_SERVER_VARS;
         global $st_user_login_mask;
 
-		$startPage= $this->startPage;
-		if(preg_match("/\?/", $startPage))
-			$delimiter= "&";
-		else
-			$delimiter= "?";
-		$startPage.= $delimiter;
-		$query= $HTTP_SERVER_VARS["QUERY_STRING"];
-		//echo "startPage:$startPage<br />query:$query<br />";
-		if($query)
-			$startPage.= $query."&";
-		$startPage.= "doLogout";
-		//echo "finishd:$startPage";exit;
+        $get= new STQueryString();
+        $get->delete("show");
+        $get->delete("ProjectID");
+        $get->update("doLogout");
+        if($this->isLoggedIn())
+            $get->update("user=".$this->getUserName());
+            
+        $curUrl= $this->startPage.$get->getStringVars();
+        STCheck::echoDebug("user", "set url for logout button to '$curUrl'");
 
 		$button= new ButtonTag($class);
 			$button->type("button");
 			$button->add($ButtonText);
-			$button->onClick("javascript:self.location.href='".$startPage."'");
+			$button->onClick("javascript:top.location.href='".$curUrl."'");
 
 		return $button;
   	}
   	function setLoginAddress($toAddress)
   	{
-  		$this->startPage($toAddress);
+  	    $this->loginSite= $toAddress;
   	}
 	function getLoginAddress($toAddress= null)
 	{

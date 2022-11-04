@@ -1004,6 +1004,31 @@ class STAliasTable
 			return true;
 		return false;
 	}
+	function orderBy(string $column, $bASC= true)
+	{
+	    STCheck::paramCheck($bASC, 2, "bool");
+	    
+	    $this->orderByI($this->getName(), $column, $bASC);
+	}
+	protected function orderByI(string $tableName, string $column, bool $bASC)
+	{
+	    $tableName= $this->container->getTableName($tableName);
+	    $field= $this->findAliasOrColumn($column);
+	    $column= $field["column"];
+	    
+	    if(!isset($this->abNewChoice["order"]))
+	    {
+	        $this->asOrder= array();
+	        $this->abNewChoice["order"]= true;
+	    }
+	    if($bASC)
+	        $sort= "ASC";
+        else
+            $sort= "DESC";
+        $this->asOrder[]= array(    "table" => $tableName,
+                                    "column"=> $column,
+                                    "sort"  => $sort        );
+	}
 	/*public*/function getOrderStatement(&$aTableAlias, $tableName= null, $bIsOrdered= false)
 	{
 		$statement= "";
@@ -1021,18 +1046,22 @@ class STAliasTable
 			$oTable= &$this->getTable($tableName);
 			$aNeededColumns= $oTable->getIdentifColumns();
 		}
-		$alias= "";
-		if(	count($aTableAlias)>1)
+		if(!$oTable->asOrder)
 		{
-			$alias= $aTableAlias[$tableName];
-			$alias.= ".";
-		}elseif(!$oTable->asOrder)
-		{
-			return "";
+		    return "";
 		}
-		foreach($oTable->asOrder as $column=>$sort)
+		$bAlias= false;
+		if(count($aTableAlias)>1)
+		    $bAlias= true;
+		foreach($oTable->asOrder as $sortArray)
 		{
-			$statement.= $alias.$column." ".$sort;
+		    $alias= "";		    
+		    if($bAlias)
+		    {
+		        $alias= $aTableAlias[$sortArray['table']];
+		        $alias.= ".";
+		    }
+			$statement.= $alias.$sortArray['column']." ".$sortArray['sort'];
 			$statement.= ",";
 			if($bIsOrdered)
 			{
@@ -1352,7 +1381,7 @@ class STAliasTable
 				$this->deleteCallback($fillCallback, $alias);
 			}
 		}
-		/*protected*/function selectA($table, $column, $alias, $nextLine, $add)
+		protected function selectA($table, $column, $alias, $nextLine, $add)
 		{
 			if(STCheck::isDebug())
 			{
@@ -2134,25 +2163,6 @@ class STAliasTable
 			else
 				$this->oWhere= $stwhere;
 		}*/
-		function orderBy($column, $bASC= true)
-		{
-			Tag::paramCheck($bASC, 2, "bool");
-
-			$field= $this->findAliasOrColumn($column);
-			$column= $field["column"];
-
-			if(!isset($this->abNewChoice["order"]))
-			{
-				$this->asOrder= array();
-				$this->abNewChoice["order"]= true;
-			}
-			if($bASC)
-				$sort= "ASC";
-			else
-				$sort= "DESC";
-			$this->asOrder[$column]= $sort;
-			//st_print_r($this->asOrder);
-		}
 		function getName()
 		{
 			return $this->Name;

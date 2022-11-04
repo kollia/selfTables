@@ -25,6 +25,11 @@ class STDbUpdater
 	 * @var array
 	 */
 	//var $wheres= array();
+	/**
+	 * exist sql statement
+	 * @var string array
+	 */
+	private $statements= array();
 	
 	function __construct(&$oTable)
 	{
@@ -45,19 +50,27 @@ class STDbUpdater
 	{
 		++$this->nAktRow;
 	}
-	function execute($onError= onErrorStop)
+	public function getStatement($nr= 0) : string
+	{
+	    if(!isset($this->statements[$nr]))
+	    {
+	        $where= null;
+	        if(isset($this->wheres[$nr]))
+	            $where= $this->wheres[$nr];
+	        $this->statement[$nr]= $this->table->db->getUpdateStatement($this->table, $where, $this->columns[$nr]);
+	    }
+	    return $this->statement[$nr];
+	}
+	public function execute($onError= onErrorStop)
 	{
 	  if(!count($this->columns))
 		    return 0;
 		$db= &$this->table->db;
 		$this->nErrorRowNr= null;
 		//st_print_r($this->columns,2);
-		foreach($this->columns as $nr=>$row)
+		foreach($this->columns as $nr=>$columns)
 		{
-		    $where= null;
-		    if(isset($this->wheres[$nr]))
-		        $where= $this->wheres[$nr];
-			$statement= $db->getUpdateStatement($this->table, $where, $row);
+		    $statement= $this->getStatement($nr);
 			$db->fetch($statement, $onError);
 			if($db->errno())
 			{

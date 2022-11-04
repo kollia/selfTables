@@ -11,10 +11,11 @@ class STUserManagementSession extends STDbSession
 	var $userID;
 	var $bLog;
 	var	$userManagementProjectName= "UserManagement";
+	// ATTENTION - group name has to be exist inside SQL Group Table
 	var $loggedinGroup= "LOGGED_IN"; // user hat auf die Cluster zugriff,
 									// wenn sie mit dieser Gruppe spezifiziert wurden,
 									// sobald er sich registriert hat
-	var $onlineGroup= "ONLINE";	// user hat immer auf diese Cluster Zugriff
+	var $onlineGroup= "ONLINE#";	// user hat immer auf diese Cluster Zugriff
 								// wenn sie mit dieser Gruppe spezifiziert wurden.
 								// auch wenn er sich gar nicht registriert hat
 	var	$allAdminCluster= "allAdmin";	// user has in every project
@@ -388,6 +389,12 @@ class STUserManagementSession extends STDbSession
 	function getUserName()
 	{
 	    $user= $this->getSessionVar("ST_USER");
+	    $session= STSession::instance();
+	    if( !$this->isLoggedIn() &&
+	        $this->loginUser != "" )
+	    {
+	        $user= $this->loginUser;
+	    }
 	    if(!isset($user))
 	        return "";
 	    return $user;
@@ -590,10 +597,10 @@ class STUserManagementSession extends STDbSession
 		/**/if( Tag::isDebug("user") )
 		{
 			$space= STCheck::echoDebug("user", "<b>found existing clusters:</b>");
-			st_print_r($this->getExistClusters(), 2, $space+40);
+			st_print_r($this->getExistClusters(), 2, $space);
 		}
 
-		$oProject= &$this->database->getTable("Project");
+		$oProject= $this->database->getTable("Project");
 		if(!typeof($oProject, "STDbSelector"))
 		  $projectCluster= new STDbSelector($oProject, STSQL_ASSOC);
 		else
@@ -617,7 +624,8 @@ class STUserManagementSession extends STDbSession
 	        st_print_r($groupWhere, 10, $space+30);
 	    }
 		$projectCluster->where($groupWhere);
-		//st_print_r($groupWhere, 5);
+		
+		
 		
 		//$projectWhere= new STDbWhere("ID=0", "Project");
 		//$projectCluster->orWhere($projectWhere);
@@ -640,7 +648,6 @@ class STUserManagementSession extends STDbSession
 			STCheck::echoDebug("user", "checking in database for statement:");
 			STCheck::echoDebug("user", $statement);
 		}
-		$projectCluster->wait= true;
 		$projectCluster->execute();
 		$aCluster= $projectCluster->getResult();
 		if(STCheck::isDebug("user"))
@@ -648,7 +655,11 @@ class STUserManagementSession extends STDbSession
 		    $space= STCheck::echoDebug("user", "<b>found follow memberships inside database:</b>");
 		    st_print_r($aCluster, 2, 34+$space);
 		}
-		//$aCluster= $this->database->fetch_array($statement, MYSQL_ASSOC);
+		
+		// toDo: clear setting where statement inside STDbSelector $projectCluster
+		//       but shouldn't be set inside project table (18.10.2022)
+		$oProject->clearWhere();
+		
 		$this->aCluster= array();
 		foreach($aCluster as $row)
 		{// Projekt ID f�r Cluster nur anzeigen,
@@ -722,7 +733,7 @@ class STUserManagementSession extends STDbSession
 		if(Tag::isDebug("user"))
 		{
 			$pwd= str_repeat("*", strlen($password));
-			echo "<b>entering acceptUser(<em>&quot;".$user."&quot;, &quot;".$pwd."&quot;,</em>)</b><br />";
+			STCheck::echoDebug("user", "<b>entering acceptUser(<em>&quot;".$user."&quot;, &quot;".$pwd."&quot;,</em>)</b>");
 		}
 
 		$userTable= $this->database->getTable("User");

@@ -33,7 +33,7 @@ class ScriptTag extends Tag
 			}
 			Tag::add($tag);
 		}
-		function bevorSubTags()
+		protected function getBevorSubTagString()
 		{
 			global	$tag_spaces,
 					$HTML_CLASS_DEBUG_CONTENT;
@@ -41,10 +41,11 @@ class ScriptTag extends Tag
 			if($HTML_CLASS_DEBUG_CONTENT)
 			{
 				$this->spaces($tag_spaces);
-				echo "<!--";
+				return "<!--";
 			}
+			return "";
 		}
-		function behindSubTags()
+		protected function getBehindSubTagString()
 		{
 			global	$tag_spaces,
 					$HTML_CLASS_DEBUG_CONTENT;
@@ -52,8 +53,9 @@ class ScriptTag extends Tag
 			if($HTML_CLASS_DEBUG_CONTENT)
 			{
 				$this->spaces($tag_spaces);
-				echo "//-->";
+				return "//-->";
 			}
+			return "";
 		}
 }
 

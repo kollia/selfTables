@@ -129,6 +129,10 @@ class STQueryString
 		function getUrlVars()
 		{
 			return $this->getStringVars(/*encode*/true);
+		}		
+		public function getUrlParamString($bEncode= false)
+		{
+		    return $this->getStringVars($bEncode);
 		}
 		function getStringVars($bEncode= false)
 		{
@@ -330,6 +334,12 @@ class STQueryString
 				return false;
 			}
 			return true;
+		}
+		public function getUrlParamValue(string $parameter)
+		{
+		    if(isset($this->param_vars[$parameter]))
+		        return $this->param_vars[$parameter];
+		    return null;
 		}
 		private function getArrayValue(/*array*/$param_array, /*array*/$aQuery)
 		{
@@ -689,14 +699,10 @@ class STQueryString
 			$session_id= session_id();
 			if($session_id)
 			{
-				if(	!isset($HTTP_COOKIE_VARS[$session_name]) ||
-					$HTTP_COOKIE_VARS[$session_name] != $session_id	)
-				{
-					$this->update($session_name."=".$session_id);
+				$this->update($session_name."=".$session_id);
 					
-				}else
-					$this->delete($session_name);
-			}
+			}else
+			    $this->delete($session_name);
 		}
 		function &getHiddenParamTags($without= null)
 		{

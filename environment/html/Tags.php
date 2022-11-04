@@ -15,19 +15,24 @@ class Tag extends STCheck
 		var $aNames;
 		var $isScript= false;
 
-		function __construct($name, $bEndTag, $class= null)
+		function __construct(string $name, bool $bEndTag, string $class= null)
 		{
-/*			global $tagCount;
-			$tagCount++;
-			echo "create $tagCount $name-Tag<br />";*/
 			$this->tag= $name;
 			$this->bEndTag= $bEndTag;
-			$this->class= $class;
+			$this->class($class);
 			$this->inherit= array();
 
 			$this->aNames= array();
 			if($class)
 				$this->insertAttribute("class", $class);
+		}
+		function id($name)
+		{
+		    $this->insertAttribute("id", $name);
+		}
+		function class($name)
+		{
+		    $this->insertAttribute("class", $name);
 		}
 		protected static function error_message($symbol, $trigger, $functionName, $message, $outFunc)
 		{
@@ -185,8 +190,9 @@ class Tag extends STCheck
 			}
 			return true;
 		}
-		function spez($require= false)
+		private function spez(bool &$require) : string
 		{
+		    $displayString= "";
 			$include= $require;
 			foreach($this->aNames as $key => $value)
 			{
@@ -209,54 +215,69 @@ class Tag extends STCheck
 				{
 					if($include==false)
 					{
-						echo " ".$key;
+					    $displayString.= " ".$key;
 						if(isset($value))
-							echo "=\"".$value."\"";
+						    $displayString.= "=\"".$value."\"";
 					}
 				}
 			}
-			return $require;
+			return $displayString;
 		}
-		function insertAttribute($name, $term)
+		public function insertAttribute($name, $term)
 		{
 			$this->aNames[$name]= $term;
 		}
-		function spaces($num)
+		public function hasAttribut(string $name) : bool
 		{
-			echo "\n";
+		    foreach($this->aNames as $key => $value)
+		    {
+		        if($key == $name)
+		            return true;
+		    }
+		    return false;
+		}
+		protected function spaces($num)
+		{
+		    $displayString= "\n";
 			for($i= 0; $i<$num; $i++)
-				echo "  ";
+			    $displayString.= "  ";
+			return $displayString;
 		}
-		function bevorSubTags()
+		protected function getBevorSubTagString()
 		{//funktion zum �berladen
 		}
-		function behindSubTags()
+		protected function getBehindSubTagString()
 		{//funktion zum �berladen
 		}
-		function display()
+		public function display()
+		{
+		    echo $this->getDisplayString();
+		}
+		public function getDisplayString()
 		{
 			global 	$tag_spaces,
 					$HTML_CLASS_DEBUG_CONTENT,
 					$HTML_CLASS_DEBUG_CONTENT_SHOWN;
 
-
+            $displayString= "";
+            
 			if($HTML_CLASS_DEBUG_CONTENT)
 			{
-				$this->spaces($tag_spaces);
+			    $displayString.= $this->spaces($tag_spaces);
 				if(!$HTML_CLASS_DEBUG_CONTENT_SHOWN)
 				{
-  				echo "</pre></td></tr></table>";
-				echo "<table width='100%' bgcolor='white'><tr><td>";
-				echo "<center>this side is set for <b>DEBUG-session</b> ";
-  				echo "(STCheck::debug(<font color='blue'>true</font>))</center>";
-					echo "</td></tr></table>";
+      				$displayString.= "</pre></td></tr></table>";
+    				$displayString.= "<table width='100%' bgcolor='white'><tr><td>";
+    				$displayString.= "<center>this side is set for <b>DEBUG-session</b> ";
+      				$displayString.= "(STCheck::debug(<font color='blue'>true</font>))</center>";
+					$displayString.= "</td></tr></table>";
 					$HTML_CLASS_DEBUG_CONTENT_SHOWN= true;
 				}
 			}
-			echo $this->startTag();
+			$displayString.= $this->startTag();
 			if(!$this->bEndTag)
-				return;
-			$this->bevorSubTags();
+			    return $displayString;
+			$displayString.= $this->getBevorSubTagString();
 			foreach($this->inherit as $tag)
 			{
         		if($HTML_CLASS_DEBUG_CONTENT)
@@ -264,42 +285,47 @@ class Tag extends STCheck
 				if(is_String($tag) or is_numeric($tag))
 				{
             		if($HTML_CLASS_DEBUG_CONTENT)
-						$this->spaces($tag_spaces);
-					echo $tag; //htmlspecialchars($tag);
+						$displayString.= $this->spaces($tag_spaces);
+					$displayString.= $tag; //htmlspecialchars($tag);
 				}else
 				{
 					if($HTML_CLASS_DEBUG_CONTENT and !is_subclass_of($tag, "TAG") and !$this->isScript)
 					{
+					    echo $displayString;
 						echo "\n<br><b>ERROR:</b> bei den HTML-Tags d�rfen nur Strings und HTML-Tags hinzugef�gt werden<br>\n";
 						st_print_r($tag);
 						exit();
 					}
-					$tag->display();
+					$displayString.= $tag->getDisplayString();
 				}
         		if($HTML_CLASS_DEBUG_CONTENT)
 					$tag_spaces--;
 			}
-			$this->behindSubTags();
+			$displayString.= $this->getBehindSubTagString();
 			if($HTML_CLASS_DEBUG_CONTENT)
-				$this->spaces($tag_spaces);
-			echo $this->endTag();
+			    $displayString.= $this->spaces($tag_spaces);
+			$displayString.= $this->endTag();
+			return $displayString;
 		}
-		function startTag()
+		protected function startTag()
 		{
-			echo "<";
-			echo $this->tag;
-			$require= $this->spez();
+		    $displayString= "<";
+		    $displayString.= $this->tag;
+			$require= false;
+			$displayString.= $this->spez($require);
 			if(!$this->bEndTag)
-				echo " /";
-			echo ">";
+			    $displayString.= " /";
+			$displayString.= ">";
 			if($require)
-				$this->spez(true);
+				$displayString.= $this->spez($require);
+			return $displayString;
 		}
-		function endTag()
+		protected function endTag()
 		{
-			echo "</";
-			echo $this->tag;
-			echo ">";
+		    $displayString= "</";
+		    $displayString.= $this->tag;
+		    $displayString.= ">";
+		    return $displayString;
 		}
 		function addBefore($tag)
 		{//echo get_class($tag)."<br />";
@@ -583,5 +609,6 @@ require_once($_stenvironmenttools_path."/html/StyleTag.php");
 require_once($_stenvironmenttools_path."/html/FieldSetTag.php");
 require_once($_stenvironmenttools_path."/html/LegendTag.php");
 require_once($_stenvironmenttools_path."/html/IFrameTag.php");
+require_once($_stenvironmenttools_path."/html/FrameSetTag.php");
 
 ?>

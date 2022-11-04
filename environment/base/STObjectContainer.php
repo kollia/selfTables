@@ -14,7 +14,6 @@ class STObjectContainer extends STBaseContainer
 	var $db; // Datenbank-Objekt
 	var $headTag;
 	var $chooseTitle;
-	var $language= "en";
 	var $sDefaultCssLink;
 	var	$parentContainer= null; // parent container produced before
 	var	$oGetTables= array(); // all tables which are geted but not needed
@@ -50,21 +49,6 @@ class STObjectContainer extends STBaseContainer
 		$this->parentContainer= &$container;
 		$this->db= &$container->getDatabase();
 		STBaseContainer::__construct($name);
-	}
-	function setLanguage($lang)
-	{
-		STCheck::param($lang, 1, "string");
-		
-		if(	$lang != "en" &&
-			$lang != "de"	)
-		{
-			echo "<b>only follow languages are allowed:</b><br />";
-			echo "                   en   -   english<br />";
-			echo "                   de   -   german<br />";
-			printErrorTrace();
-			exit;
-		}
-		$this->language= $lang;
 	}
 	function createMessages()
 	{
@@ -464,6 +448,8 @@ class STObjectContainer extends STBaseContainer
 		}
 		if( ( !isset($tableName) ||
 		      !trim($tableName)     ) &&
+		    isset($this->parentContainerName) &&
+		    trim($this->parentContainerName) != "" &&
 		    $this->parentContainerName != $this->getName()    )
 		{
 		    $container= &STBaseContainer::getContainer($this->parentContainerName);
@@ -583,6 +569,8 @@ class STObjectContainer extends STBaseContainer
 		          trim($action) == "" )
 		    {
 		        $table= $this->getTable();
+		        if(!isset($table))// all trys to find table be ineffective
+		            return STLIST;// so return standard action
 		        $action= $table->getAction();
 		        if(   !isset($action) ||
 		              trim($action) == "" )
@@ -818,7 +806,8 @@ class STObjectContainer extends STBaseContainer
 	function execute(&$externSideCreator, $onError)
 	{
 		Tag::paramCheck($externSideCreator, 1, "STSiteCreator");
-
+		
+		echo __FILE__.__LINE__."<br>";
 		$this->createMessages();
 		$this->initContainer();
 		$this->oExternSideCreator= &$externSideCreator;
@@ -886,6 +875,8 @@ class STObjectContainer extends STBaseContainer
 		        $table= $this->getFirstTableName();
 		    $action= $this->getFirstAction();
 		}
+		echo __FILE__.__LINE__."<br>";
+		st_print_r($action);
 		if(	isset($get_vars["action"]) &&
 			(	$get_vars["action"]==STUPDATE ||
 				$get_vars["action"]==STINSERT	)	)
@@ -1408,7 +1399,7 @@ class STObjectContainer extends STBaseContainer
 		// execute ausgefuehrt werden.
 		//
 		// param $table muss ein objekt vom typ STBaseTableBox sein
-		/*private*/ function setAllMessagesContent($action, &$oBox)
+		private function setAllMessagesContent($action, &$oBox)
 		{
 			$oBox->setLanguage($this->language);
 			$table= &$oBox->getTable();

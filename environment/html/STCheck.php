@@ -485,6 +485,7 @@ class STCheck
     			}
     			$backtrace= array();
     			$pref= "";
+    			$space= 0;
 				if($string && phpVersionNeed("4.3.0"))
 				{
 					$backtrace= debug_backtrace();
@@ -493,8 +494,9 @@ class STCheck
 					$file= $ereg[1];
 					$pref= "<b>[</b>$inClassFunction<b>]</b> ";
 					$pref.= "<b>file:</b>".$file." <b>line:</b>".$line." <b>:</b> ";
+					$space+= STCheck::countHtmlCode($pref);
 				}
-				return STCheck::writeIntentedLineB(count($backtrace), $pref, $string, /*deep*/0, $break);
+				return STCheck::writeIntentedLineB(count($backtrace), $pref, $string, /*deep*/0, $break) + $space + 1;
 			}
 			return 0;
 		}

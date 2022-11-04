@@ -27,31 +27,6 @@ class STDbSessionHandler implements SessionHandlerInterface
         return true;
         
     }
-    public function write(string $sessionId, string $data) : bool
-    {
-        if(STCheck::isDebug("session"))
-            $this->sUsingFunctions.= "write('$sessionId', [\$data])<br />";
-        $oSessionTable= $this->database->getTable("Sessions");
-        if($this->existID != $sessionId)
-        {
-            $oInsert= new STDbInserter($oSessionTable);
-            $oInsert->fillColumn("ses_id", $this->database->real_escape_string($sessionId));
-            $oInsert->fillColumn("ses_time", time());
-            $oInsert->fillColumn("ses_value", $this->database->real_escape_string($data));
-            $res= $oInsert->execute();
-        }else
-        {
-            $oUpdater= new STDbUpdater($oSessionTable);
-            $oUpdater->update("ses_value", $this->database->real_escape_string($data));
-            $oUpdater->update("ses_time", time());
-            $oUpdater->where("ses_id='".$this->database->real_escape_string($sessionId)."'");
-            $res= $oUpdater->execute();
-        }
-        if($res == 0)
-            return true;
-        STCheck::warning(true, "cannot write session into database: ".$oInsert->getErrorString());
-        return false;
-    }
     public function read(string $sessionId) : string
     {
         $this->sUsingFunctions.= "read('$sessionId')<br>";
@@ -63,13 +38,12 @@ class STDbSessionHandler implements SessionHandlerInterface
         $oSelector->where("ses_id='".$this->database->real_escape_string($sessionId)."'");
         $oSelector->execute();
         $res= $oSelector->getRowResult();
-        //echo "result of reading:";st_print_r($res);echo "<br>";
         if($oSelector->getErrorId() != 0)
         {
             STCheck::warning(true, "cannot read session from database: ".$oSelector->getErrorMessage());
             return false;
         }
-        if(isset($res))
+        if(isset($res["ses_value"]))
             $this->existID= $sessionId;
         if( !isset($res["ses_value"]) ||
             (time() - $res["ses_time"]) > $lifetime )
@@ -77,13 +51,58 @@ class STDbSessionHandler implements SessionHandlerInterface
             $this->sUsingFunctions.= "do not found session";
             if(isset($res["ses_time"]))
                 $this->sUsingFunctions.= ", was ".(time() - $res["ses_time"] - $lifetime)." seconds to old";
-            $this->sUsingFunctions.= "<br>";
-            return false;
+                $this->sUsingFunctions.= "<br>";
+                return false;
         }
         $this->sUsingFunctions.= "found session was ".(time() - $res["ses_time"])." seconds alive<br>\n";
-        //$this->sUsingFunctions.= "$res<br>";
         return $res["ses_value"];
-        
+            
+    }
+    public function write(string $sessionId, string $data) : bool
+    {
+        $err_msg= "";
+        if(STCheck::isDebug("session"))
+            $this->sUsingFunctions.= "write('$sessionId', [\$data])<br />";
+        $oSessionTable= $this->database->getTable("Sessions");
+        $this->sUsingFunctions.= "  exist session: '".$this->existID."'<br />";
+        $this->sUsingFunctions.= "    new session: '$sessionId'<br />";
+        if($this->existID != $sessionId)
+        {
+            $this->sUsingFunctions.= "  so insert new session into database<br />";
+            $oInsert= new STDbInserter($oSessionTable);
+            $oInsert->fillColumn("ses_id", $this->database->real_escape_string($sessionId));
+            $oInsert->fillColumn("ses_time", time());
+            $oInsert->fillColumn("ses_value", $this->database->real_escape_string($data));
+            $res= $oInsert->execute();
+            $this->sUsingFunctions.= "result: ".print_r($res, true)."<br>";
+            if($res > 0)
+            {
+                $err_msg= "cannot write session into database: ".$oInsert->getErrorString()."<br />";
+                $err_msg.= " &#160;statement:'".$oInsert->getStatement()."'";
+            }
+            //$this->sUsingFunctions.= "  ".$oInsert->getStatement()."<br />";            
+        }else
+        {
+            $this->sUsingFunctions.= "  so update session inside database<br />";
+            $oUpdater= new STDbUpdater($oSessionTable);
+            $oUpdater->update("ses_value", $this->database->real_escape_string($data));
+            $oUpdater->update("ses_time", time());
+            $oUpdater->where("ses_id='".$this->database->real_escape_string($sessionId)."'");
+            $res= $oUpdater->execute();
+            $this->sUsingFunctions.= "result: ".print_r($res, true)."<br>";
+            if($res > 0)
+            {
+                $err_msg= "cannot update session inside database: ".$oUpdater->getErrorString()."<br />";
+                $err_msg.= " &#160;statement:'".$oUpdater->getStatement()."'";
+            }
+        }
+        if($err_msg != "")
+        {
+            $this->sUsingFunctions.= "  $err_msg<br />";
+            STCheck::warning(true, "STDbSessionHandler::write()", $err_msg);
+            return false;
+        }
+        return true;
     }
     public function destroy(string $sessionId) : bool
     {

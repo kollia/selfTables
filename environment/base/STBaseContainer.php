@@ -3,9 +3,9 @@
 require_once($php_html_description);
 //require_once($php_htmltag_class);
 
-
 class STBaseContainer extends BodyTag
 {
+    var $language= "en";
 	var $bFirstContainer= false; // ob der Container der erste fuer STDbSiteCreator ist
 	var $nLevel= null; // auf welcher Ebene sich der Contiainer befindet
 	var $name;  // Name des Containers mit dem er als Objekt gehandelt wird
@@ -41,9 +41,10 @@ class STBaseContainer extends BodyTag
 	var $chooseTitle= "";
 	var $sDefaultCssLink= null;
 
-	function __construct($name)
+	function __construct($name, $bodyClass= "body_content")
 	{
-		global	$global_array_all_exist_stobjectcontainers;
+	    global $global_first_objectContainerName,
+	           $global_array_all_exist_stobjectcontainers;
 		
 		Tag::paramCheck($name, 1, "string");
 		Tag::echoDebug("container", "create new container-object <b>$name</b>(".get_class($this).")");
@@ -53,13 +54,24 @@ class STBaseContainer extends BodyTag
 					"STBaseContainer::STBaseContainer(\"$name\"",
 					"container \"$name\" already exists");
 		$global_array_all_exist_stobjectcontainers[$name]= &$this;
-		BodyTag::__construct($name);
+		if( !isset($global_first_objectContainerName) ||
+		    trim($global_first_objectContainerName) == "" )
+		{
+		    $global_first_objectContainerName= $name;
+		}
+		BodyTag::__construct($bodyClass);
 	}
-	function containerLevel($nLevel)
+	public function clearFirstObjectContainer()
+	{
+	    global $global_first_objectContainerName;
+	    
+	    $global_first_objectContainerName= "";
+	}
+	function containerLevel(int $nLevel)
 	{
 	    $this->nLevel= $nLevel;
 	}
-	function getContainerLevel()
+	function getContainerLevel() : int
 	{
 	    return $this->nLevel;
 	}
@@ -74,7 +86,7 @@ class STBaseContainer extends BodyTag
 		}else
 			$this->defaultTitles[$action]= $title;
 	}
-	function getTitle()
+	function getTitle() : string
 	{
 		$action= $this->getAction();
 		if(	isset($action) &&
@@ -86,8 +98,25 @@ class STBaseContainer extends BodyTag
 		$table= $this->getTable();
 		if(isset($table))
 			$title.= " ".$table->getTitle();
+		if(!isset($title))
+		    return "";
 		return trim($title);
 		
+	}
+	function setLanguage($lang)
+	{
+	    STCheck::param($lang, 1, "string");
+	    
+	    if(	$lang != "en" &&
+	        $lang != "de"	)
+	    {
+	        echo "<b>only follow languages are allowed:</b><br />";
+	        echo "                   en   -   english<br />";
+	        echo "                   de   -   german<br />";
+	        printErrorTrace();
+	        exit;
+	    }
+	    $this->language= $lang;
 	}
 	function showLogoutButton($buttonName= "log out", $align= "right", $buttonId= "logoutMainButton")
 	{
@@ -101,7 +130,7 @@ class STBaseContainer extends BodyTag
 		$table->columnAlign($align);
 		$this->addObj($table);
 	}
-	function setTitle($title)
+	function setTitle(string $title)
 	{
 		$this->chooseTitle= $title;
 	}
@@ -113,6 +142,11 @@ class STBaseContainer extends BodyTag
 			return $this->headTag;
   		$head= new HeadTag();
   		$titleString= $this->getTitle();
+  		if( !isset($titleString) ||
+  		    trim($titleString) == ""    )
+  		{
+  		    $titleString= $defaultTitle;
+  		}
   		$title= new TitleTag($titleString);
   		$head->add($title);
 			$head->add($this->oExternSideCreator->getCssLink());
@@ -265,8 +299,8 @@ class STBaseContainer extends BodyTag
 	}
 	function execute(&$externSideCreator, $onError)
 	{
-		// initial container
-    	$this->initContainer();
+	    // initial container
+	    $this->initContainer();
 
 		$action= $this->getAction();
 		$this->oExternSideCreator= &$externSideCreator;
@@ -291,7 +325,7 @@ class STBaseContainer extends BodyTag
 
 		if(!isset($this->sBackButton))
 			$this->sBackButton= $this->oExternSideCreator->sBackButton;
-
+		return "NOERROR";
 	}
 	protected function createContainer()
 	{
@@ -417,21 +451,13 @@ class STBaseContainer extends BodyTag
 		}
 		$global_first_objectContainerName= $container;
 	}
-	public static function &getContainer($containerName= null, $className= null, $fromContainer= null)
+	public static function &getContainer(string $containerName= null, string $className= null, string $fromContainer= null) : object
 	{
 		global	$global_first_objectContainerName,
 				$global_array_all_exist_stobjectcontainers,
 				$global_array_exist_stobjectcontainer_with_classname,
 				$_selftable_first_main_database_name;
 
-		STCheck::paramCheck($containerName, 1, "string", "null");
-		STCheck::paramCheck($className, 2, "string", "null");
-		STCheck::paramCheck($fromContainer, 3, "string", "null");
-
-/*		echo __file__.__line__."<br>";
-		echo "Class:          ".$className."<br>";
-		echo "Container:      ".$containerName."<br>";
-		echo "from Container: $fromContainer<br>";*/
 		if(!$containerName)
 		{
 			$query= new STQueryString();
@@ -439,7 +465,7 @@ class STBaseContainer extends BodyTag
 			//$containerName= $get["stget"]["container"];
 			if(!$containerName)
 			{
-				$containerName= $global_first_objectContainerName;
+			    $containerName= $global_first_objectContainerName;
 				if(!$containerName)
 					$containerName= $_selftable_first_main_database_name;
 				if(Tag::isDebug())
@@ -447,14 +473,16 @@ class STBaseContainer extends BodyTag
 																"no globaly container set");
 				if(!$containerName)
 				{
-					if(typeof($this, "STBaseContainer")	)// if ask globaly STBaseContainer::getContainer() $this is null
+					if( isset($this) &&
+					    typeof($this, "STBaseContainer")	)// if ask globaly STBaseContainer::getContainer() $this is null
 					{
 						// if the function is called with STBaseContainer::getContainer();
 						// inside from an Object, $this is the reference to this one
 						// so give back this reference only by an object from STBaseContainer
 						return $this;
 					}
-					return null;
+					$null= null;
+					return $null;
 				}
 			}
 		}
@@ -462,7 +490,7 @@ class STBaseContainer extends BodyTag
 		{
 			if($name==$containerName)
 			{
-				$containerObj= &$global_array_all_exist_stobjectcontainers[$name];
+			    $containerObj= &$global_array_all_exist_stobjectcontainers[$name];
 				return $containerObj;
 			}
 		}
@@ -670,21 +698,20 @@ class STBaseContainer extends BodyTag
 	}
 		function addAllInSide(&$createdTags)
 		{
-			/*$tableName= $get_vars["table"];
-			st_print_r($get_vars);
-			if(isset($tableName))
-				$table= &$this->getTable($tableName);*/
-			$action= $this->getAction();
-			$tableName= $this->getTableName();
-			$get_vars= array();
-			if($action)
-				$get_vars["action"]= $action;
-			if($tableName)
-				$get_vars["table"]= $tableName;
-			$get_vars["container"]= $this->getName();
-
-  			$headline= &$this->getHeadline($get_vars);
-			$this->appendObj($headline);
+		    if(typeof($createdTags, "IFrameTag"))
+		    {
+    			$action= $this->getAction();
+    			$tableName= $this->getTableName();
+    			$get_vars= array();
+    			if($action)
+    				$get_vars["action"]= $action;
+    			if($tableName)
+    				$get_vars["table"]= $tableName;
+    			$get_vars["container"]= $this->getName();
+    
+      			$headline= &$this->getHeadline($get_vars);
+    			$this->appendObj($headline);
+		    }
 
 
 			// navigationTables mit null-pos einbinden
@@ -698,7 +725,7 @@ class STBaseContainer extends BodyTag
 			if(typeof($this, "STObjectContainer"))
 				$currentTable= $this->getTableName();
 			else
-				$currentTable= STALLDEF;
+			    $currentTable= STALLDEF;
 			foreach($this->aNavigationTables as $key=>$navi)
 			{
 				if(	$navi["for"]===STALLDEF
@@ -746,7 +773,7 @@ class STBaseContainer extends BodyTag
 				}
 			}//end foreach(aNavigationTables)
 			/////////////////////////////////////////////////////////////////
-
+			
 			if($bNeedNavis)
 			{
 				$table= new TableTag();
@@ -857,8 +884,11 @@ class STBaseContainer extends BodyTag
 		function deleteContainer(&$oGetParam)
 		{
 			$params= $oGetParam->getArrayVars();
-			if(!$params["stget"]["container"])
+			if( !isset($params["stget"]["container"]) ||
+			    !$params["stget"]["container"]           )
+			{
 				return false;
+			}
 			$oGetParam->delete("stget[table]");
 			$oGetParam->delete("stget[action]");
 			$oGetParam->delete("stget[container]");

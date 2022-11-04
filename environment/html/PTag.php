@@ -10,6 +10,10 @@ class PTag extends Tag
 		{
 			$this->insertAttribute("align", $align);
 		}
+		function style($value)
+		{
+		    $this->insertAttribute("style", $value);
+		}
 }
 
 

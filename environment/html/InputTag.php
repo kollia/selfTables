@@ -42,6 +42,10 @@ class InputTag extends Tag
 		{
 			$this->insertAttribute("tabindex", $vlaue);
 		}
+		function autofocus($vlaue= "")
+		{
+		    $this->insertAttribute("autofocus", $vlaue);
+		}
 		function checked($checked= true)
 		{
 			if($checked)

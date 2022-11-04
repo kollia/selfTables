@@ -22,6 +22,10 @@ class FormTag extends Tag
 		{
 			$this->insertAttribute("enctype", $value);
 		}
+		function onSubmit($value)
+		{
+		    $this->insertAttribute("onSubmit", $value);
+		}
 }
 
 ?>

@@ -538,8 +538,8 @@ class STDbTable extends STAliasTable
 	{
 		if(STCheck::isDebug("db.statements.where"))
 		{
-			echo "STDbTable:<br>";
-			st_print_r($this->oWhere);
+			$space= STCheck::echoDebug("db.statements.where", "stored where statement for table ".$this->getName());
+			st_print_r($this->oWhere, 5, $space);
 		}
 		return $this->db->getStatement($this, $bFromIdentifications, $withAlias);
 	}

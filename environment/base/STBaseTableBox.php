@@ -40,6 +40,7 @@ class STBaseTableBox extends TableTag
 			$this->db= &$container->getDatabase();
 			$this->tableContainer= &$container;
 			$table= $container->getTable();
+			showErrorTrace();
 			$this->fieldArray[$table->getName()]= $table->columns;
 			$this->msg= new STMessageHandling($class);
 			STBaseTableBox::init();

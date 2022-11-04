@@ -6,7 +6,7 @@ require_once($php_htmltag_class);
  
 $global_array_all_exist_stdbtableContainers= array();
 
-class STDbTableContainer
+class unknown_STDbTableContainer
 {
 	var $bFirstContainer= false; // ob der Container der erste f�r STDbSiteCreator ist
 	var $name;  // Name des Containers mit dem er als Objekt gehandelt wird
@@ -99,13 +99,13 @@ class STDbTableContainer
 		{
 			$containerName= $container->getName();
 			// container is a copy, so take it from List for return
-			$container= STDbTableContainer::getContainer($containerName);
+			$container= unknown_STDbTableContainer::getContainer($containerName);
 		}else
 		{
 			$containerName= $container;
-			$container= STDbTableContainer::getContainer($containerName);
+			$container= unknown_STDbTableContainer::getContainer($containerName);
 			if(!$container)
-				$container= new STDbTableContainer($containerName, $this);
+				$container= new unknown_STDbTableContainer($containerName, $this);
 		} 
 		$this->aContainer[]= $containerName;
 		if($identification!==null)

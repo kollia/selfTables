@@ -1252,7 +1252,7 @@ abstract class STDatabase extends STObjectContainer
 		        typeof($oTable, "STDbSelector") &&
 		        $oTable->Name == "MUProject"          )
 		    {
-		        st_print_r($ostwhere);
+		        st_print_r($ostwhere, 2);
 		        $space= STCheck::echoDebug("db.statements.where", "statement:'$statement'");
 		        st_print_r($aktAlias, 1, $space);echo "<br>";
 		        st_print_r($aliases, 1, $space);
@@ -1273,7 +1273,7 @@ abstract class STDatabase extends STObjectContainer
                 		//st_print_r($fromTable->oWhere,10);
             		    if(typeof($ostwhere, "STDbWhere"))
             		    {
-                		    $whereStatement= $ostwhere->getWhereStatement($table, $sTableAlias, $aTableAlias);
+                		    $whereStatement= $ostwhere->getStatement($table, $sTableAlias, $aTableAlias);
                     		if($whereStatement)
                     		{
                     		    if(!preg_match("/^[ \t]*where/", $whereStatement))
@@ -1901,7 +1901,7 @@ abstract class STDatabase extends STObjectContainer
     					$database= $dbName.".";
 					$joinArt= $join["join"];
 					if($joinArt==="outer")
-						$joinArt= "right";
+						$joinArt= "left";
                     $statement.= " ".$joinArt." join ".$database.$sBackTableName." as ".$sTableAlias;
                     $statement.= " on ".$ownTableAlias.".".$join["other"];
                     $statement.= "=".$sTableAlias.".".$join["own"];
@@ -2684,6 +2684,11 @@ abstract class STDatabase extends STObjectContainer
 		$aliasTables= array();
 		//STCheck::write("search for aliases");
 		$this->createAliases($aliasTables, $oTable, $bFromIdentifications);
+		if(STCheck::isDebug("db.statements"))
+		{
+		      $space= STCheck::echoDebug("db.statements", "need follow tables inside select-statement");
+		      st_print_r($aliasTables, 1, $space);
+		}
 		// Statement zusammen bauen
 		$statement= "select ";
 		$bMainTable= !$bFromIdentifications;// wenn der erste ->getSlectStatement() Aufruf nicht für
@@ -2697,14 +2702,27 @@ abstract class STDatabase extends STObjectContainer
 		$this->bFirstSelectStatement= true;
 		if($oTable->isDistinct())
 		    $statement.= "distinct ";
-		$statement.= $this->getSelectStatement($oTable, $aliasTables, $mainTable, $withAlias);
-		$statement.= " from ".$tableName;
+	    if(STCheck::isDebug("db.statements"))
+	    {
+	        $space= STCheck::echoDebug("db.statements", "need follow tables inside select-statement");
+	        st_print_r($aliasTables, 1, $space);
+	    }
+	    $statement.= $this->getSelectStatement($oTable, $aliasTables, $mainTable, $withAlias);
+	    if(STCheck::isDebug("db.statements"))
+	    {
+	        $space= STCheck::echoDebug("db.statements", "need follow tables inside select-statement");
+	        st_print_r($aliasTables, 1, $space);
+	    }
+	    $statement.= " from ".$tableName;
+	    STCheck::echoDebug("db.statements", "need follow <b>select</b> statement: $statement");
 		if(count($aliasTables)>1)
 		{
 			$maked= array();
 			$maked[$tableName]= "finished";
 			$statement.= " as ".$aliasTables[$tableName];
-			$statement.= " ".$this->getTableStatement($oTable, $tableName, $aliasTables, $maked, /*first access*/true);
+			$tableStatement= $this->getTableStatement($oTable, $tableName, $aliasTables, $maked, /*first access*/true);
+			STCheck::echoDebug("db.statements", "need follow aditional <b>table</b> statement: $tableStatement");
+			$statement.= " $tableStatement";
 		}//else
 		{
 				// create $bufferWhere to copy the original
@@ -2715,6 +2733,7 @@ abstract class STDatabase extends STObjectContainer
 				// but it comes back the changed values
 				$bufferWhere= $oTable->oWhere;
 				$whereStatement= $this->getWhereStatement($oTable, "t1", $aliasTables);
+				STCheck::echoDebug("db.statements", "need follow <b>where</b> statement: $whereStatement");
 				$oTable->oWhere= $bufferWhere;
 				if($whereStatement)
 				{
@@ -2740,11 +2759,15 @@ abstract class STDatabase extends STObjectContainer
 				trim($orderStat) != "DESC"		)
 			{
 				$statement.= " order by $orderStat";
+				STCheck::echoDebug("db.statements", "need follow <b>order</b> statement: order by $orderStat");
 			}
 		}
 		$limitStat= $this->getLimitStatement($oTable, false);
 		if($limitStat)
+		{
 			$statement.= $limitStat;
+			STCheck::echoDebug("db.statements", "<b>limit</b> result with: $limitStat");
+		}
 		if(count($this->aOtherTableWhere))
 		{
 			Tag::warning(1, "STDatabase::getStatement()", "does not reach all where-statements:");
@@ -2755,6 +2778,11 @@ abstract class STDatabase extends STObjectContainer
 				echo "-------------------------------------------------------<br />\n";
 			}
 			$this->aOtherTableWhere= array();
+		}
+		if(STCheck::isDebug())
+		{
+		    STCheck::echoDebug("db.statements", "<b>finisched <i>select</i> statement</b>:");
+		    STCheck::echoDebug("db.statements", $statement);
 		}
 		return $statement;
 	}

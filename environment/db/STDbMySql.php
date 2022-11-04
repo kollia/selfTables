@@ -170,7 +170,8 @@ class STDbMySql extends STDatabase
 	}
 	public function real_escape_string(string $str)
 	{
-	    return $this->conn->real_escape_string($str);
+	    $escaped= $this->conn->real_escape_string($str);
+	    return $escaped;
 	}
 	function getLastInsertedPk()
 	{

@@ -442,10 +442,7 @@ class STDbWhere
 			if(STCheck::isDebug("db.statements.where"))
 			{
 				$nIntented= STCheck::echoDebug("db.statements.where", "given alias Names:");
-				for($n= 0; $n < $nIntented; ++$n)
-					echo " ";
-				echo "<b>[</b>db.statements.where<b>]</b>                                ";
-				st_print_r($aliases, 1, 51);
+				st_print_r($aliases, 1, $nIntented);
 				echo "<br />";
 				if(!$sForTable)
 				{

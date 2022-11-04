@@ -184,9 +184,10 @@ class STDbSelector extends STDbTable
 			$sTableName= $this->container->getTableName($sTableName);
 			if($this->Name==$sTableName)
 				return $this;
-			$oTable= &$this->aoToTables[$sTableName];
-			if(!$oTable)
+			
+			if(!isset($this->aoToTables[$sTableName]))
 			{
+			    $oTable= null;
 				if(	!$this->bAddedFkTables
 					and
 					!$this->bAddedTabels		)
@@ -205,7 +206,8 @@ class STDbSelector extends STDbTable
 					$this->aoToTables[$sTableName]= &$oTable;
 				else
 					unset($this->aoToTables[$sTableName]);
-			}
+			}else
+			    $oTable= &$this->aoToTables[$sTableName];
 			// alex 24/05/2005:	f�r aoToTables als Key den Namen eingef�hrt
 			return $oTable;
 			/*foreach($this->aoToTables as $aTables)
@@ -284,6 +286,16 @@ class STDbSelector extends STDbTable
 			//$this->aoToTables[]= &$oTable;
 			STDbTable::foreignKeyObj($columnName, $oTable, $otherColumn);
 		}
+		public function orderBy($tableName, $column= true, $bASC= true)
+		{
+		    if(is_bool($column))
+		    {// method is as normaly table orderBy
+		        $bASC= $column;
+		        $column= $tableName;
+		        $tableName= $this->getName();
+		    }
+		    STDbTable::orderByI($tableName, $column, $bASC);
+		}
 		function select($tableName, $column= "", $alias= null, $nextLine= true, $add= false)
 		{
 			if(STCheck::isDebug())
@@ -295,7 +307,7 @@ class STDbSelector extends STDbTable
 				Tag::echoDebug("selector", $this->Name.": select column $column($alias) for table $tableName");
 			}
 			$desc= STDbTableDescriptions::instance($this->db->getName());
-			$column= $desc->getColumnName($tableName, $column);// if tableName is original function must not search
+			$orgColumn= $desc->getColumnName($tableName, $column);// if tableName is original function must not search
 			$tableName= $desc->getTableName($tableName);
 			if(STCheck::isDebug())
 			{
@@ -307,6 +319,8 @@ class STDbSelector extends STDbTable
 											"column $column not exist in table ".$tableName.
 											"(".$oTable->getDisplayName().")");
 			}
+			if(trim($orgColumn) == "")
+			    $orgColumn= $column;
 
 			//$tableName= $this->container->getTableName($tableName);
 			if(is_bool($alias))
@@ -315,7 +329,7 @@ class STDbSelector extends STDbTable
 			 $alias= null;
 			}
 			if(!$alias)
-				$alias= $column;
+			    $alias= $orgColumn;
 			//$table= &$this->getTable($tableName);
 			//Tag::alert($table==null, "OSTDBSelector::select", "tablename ".$tableName." not given in database");
 			/*if($table===null)
@@ -325,7 +339,7 @@ class STDbSelector extends STDbTable
 			}*/
 
 			$select= array(	"type"=>	"select",
-							"column"=>	$column,
+			    "column"=>	$orgColumn,
 							"alias"=>	$alias,
 							"next"=>	$nextLine	);
 			$this->aNewSelects[$tableName][]= $select;
@@ -355,7 +369,7 @@ class STDbSelector extends STDbTable
 				$this->clearSelects();
 				$this->bClearedByFirstSelect= true;
 			}
-			$this->selectA($tableName, $column, $alias, $nextLine, $add);
+			$this->selectA($tableName, $orgColumn, $alias, $nextLine, $add);
 		}
 		function limit($start, $limit= null)
 		{
@@ -504,11 +518,6 @@ class STDbSelector extends STDbTable
 			else
 				reset($this->SqlResult);
 		}
-		function exec2()
-		{
-		    st_print_r($this->wait);
-		    showErrorTrace();exit;
-		}
 		function execute($sqlType= null, $limit= null)
 		{
 			STCheck::param($sqlType, 0, "int", "null");
@@ -531,7 +540,7 @@ class STDbSelector extends STDbTable
 				$sqlType2= MYSQL_BOTH;
 				$bNormal= false;
 			}
-
+			
 			$statement= $this->getStatement();
 			$this->db->orderDates(false);
 			$this->SqlResult= $this->db->fetch_array($statement, $sqlType2, $this->onError);

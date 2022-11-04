@@ -124,6 +124,7 @@ class STDbTableDescriptions
 				$bfound= false;
 				foreach($this->asTableColumns[$table] as $array)
 				{
+				    //echo "found ".$array["column"]."<br>";
 					if($array["column"] == $column)
 					{
 						$bfound= true;
@@ -133,7 +134,7 @@ class STDbTableDescriptions
 				if($bfound)
 					STCheck::echoDebug("description.tables.ok", "asked column <b>$column</b> be the same as in database");
 				else
-					STCheck::echoWarning("description.tables.warning", "cannot find asked column as alias or original name in database");
+					STCheck::warning(true, "STDbTableDescriptor::getColumnName()", "cannot find column '$column' as alias or original name in database table $table");
 			}
 		}else
 		{

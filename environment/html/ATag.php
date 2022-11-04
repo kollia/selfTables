@@ -54,6 +54,10 @@ class ATag extends Tag
 		{
 			$this->insertAttribute("onkeyup", $value);
 		}
+		function style($value)
+		{
+		    $this->insertAttribute("style", $value);
+		}
 }
 
 ?>

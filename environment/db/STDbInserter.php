@@ -9,6 +9,11 @@ class STDbInserter
 	var $columns;
 	var $nAktRow= 0;
 	var $sAccessClusterColumn;
+	/**
+	 * exist sql statement
+	 * @var string array
+	 */
+	private $statements= array();
 
 	/**
 	 * Constructor
@@ -36,16 +41,24 @@ class STDbInserter
 	{
 		++$this->nAktRow;
 	}
-	function execute($onError= onErrorStop)
+	public function getStatement($nr= 0) : string
+	{
+	    if(!isset($this->statements[$nr]))
+	    {
+	        $this->createCluster($this->columns[$nr]);
+	        $this->statement[$nr]= $this->table->db->getInsertStatement($this->table, $this->columns[$nr]);
+	    }
+	    return $this->statement[$nr];
+	}
+	public function execute($onError= onErrorStop)
 	{
 	  if(!count($this->columns))
 		    return 0;
 		$db= &$this->table->db;
 		$this->nErrorRowNr= null;
-		foreach($this->columns as $nr=>$row)
+		foreach($this->columns as $nr=>$columns)
 		{
-			$this->createCluster($row);
-    		$statement= $db->getInsertStatement($this->table, $row);
+    		$statement= $this->getStatement($nr);
     		//echo "$statement<br>";
 			$db->fetch($statement, $onError);
 			if($db->errno())
@@ -55,7 +68,7 @@ class STDbInserter
 			}else
 			{
 				$this->lastInsertID= $db->getLastInsertID();
-				$this->updateCluster($row);
+				$this->updateCluster($columns);
 			}
 		}
 		if($this->nErrorRowNr!==null)

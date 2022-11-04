@@ -241,7 +241,7 @@
 		$_stdbsessionhandler=       $_stenvironmenttools_path."/user/STDbSessionHandler.php";
 		$_stusersession=            $_stenvironmenttools_path."/user/STUserSession.php";
 		$_stsessionsitecreator=		$_stenvironmenttools_path."/user/STSessionSiteCreator.php";
-		$_stusersitecreator=		$_stenvironmenttools_path."/base/STUserSiteCreator.php";
+		$_stusersitecreator=		$_stenvironmenttools_path."/user/STUserSiteCreator.php";
 
 
 		/**********************************************************************\
@@ -254,6 +254,7 @@
 		$_stusermanagement_install=		$_stcmstools_path."/usermanagement/stusermanagement_install.php";
 		$_stusermanagement=				$_stcmstools_path."/usermanagement/STUserManagement.php";
 		$_stusermanagementsession=		$_stcmstools_path."/usermanagement/STUserManagementSession.php";
+		$_stuserprojectcontainer=       $_stcmstools_path."/usermanagement/STUserProjectContainer.php";
 		$_stprojectmanagement=			$_stcmstools_path."/usermanagement/STProjectManagement.php";
 		$_stpartitionmanagement=		$_stcmstools_path."/usermanagement/STPartitionManagement.php";
 		$_stusergroupmanagement=		$_stcmstools_path."/usermanagement/STUserGroupManagement.php";

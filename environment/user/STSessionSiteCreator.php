@@ -1,8 +1,8 @@
 <?php
 
-require_once($user_admin);
-require_once($table_out);
 require_once($_stdatabase);
+//require_once($_stusersession);
+require_once($_stsitecreator);
 
 class STSessionSiteCreator extends STSiteCreator
 {
@@ -262,29 +262,29 @@ class STSessionSiteCreator extends STSiteCreator
 		}
 		protected function closeUserDbConnection()
 		{
-			if(STUserSession::sessionGenerated())
+			if(STSession::sessionGenerated())
 			{
-				$_instance= &STUserSession::instance();
+				$_instance= &STSession::instance();
 				$db= &$_instance->getUserDb();
-				if(!$aClosed[$db->getName()])
-					$db->closeConnection();
+				//$db->closeConnection();
 			}
 		}
 		function execute($additionalText= "")
 		{
-			global $HTTP_GET_VARS;
-
-			$query= new STQueryString();
-			$get_vars= $query->getArrayVars("stget");
-			$tableName= $this->getTableName();
-			$action= $this->getAction();
-			if($tableName)
-				$table= &$this->tableContainer->getTable($tableName);
-			$action= $this->getAction();
-			$additionalText= "";
-
-			if(isset($table))
-				$this->accessTable($table, $action, $additionalText);
+		    $tableName= $this->getTableName();
+		    if($tableName)
+		        $table= &$this->tableContainer->getTable($tableName);
+		    
+			if( isset($tableName) &&
+			    trim($tableName) != ""   )
+			{
+    			$action= $this->getAction();
+    			if(trim($additionalText) == "")
+    			    $additionalText= "user has access to table $tableName on container ".$this->getName();
+    
+    			if(isset($table))
+    				$this->accessTable($table, $action, $additionalText);
+			}
 
 			return STSiteCreator::execute();
 		}

@@ -19,67 +19,71 @@ class jsFunctionBase
 		var $inherit= array();
 		
 		function __construct($name, $aParams, $bInherit)
-		{	
-			$nParamsCount= count($aParams);		
-			for($i= 0; $i<$nParamsCount; $i++)
-				$params= $aParams[$i].",";
-			if($params)
-				$params= substr($params, 0, strlen($params)-1);
+		{
 			$functionName= $name."(";
 			foreach($aParams as $param)
 				$functionName.= $param.",";
-			$functionName= substr($functionName, 0, strlen($functionName)-1).")";
+			if(count($aParams))
+			    $functionName= substr($functionName, 0, strlen($functionName)-1);
+			$functionName.= ")";
 			$this->functionName= $functionName;
 			$this->bInherit= $bInherit;
 		}
 		function display()
 		{
+		    echo $this->getDisplayString();
+		}
+		function getDisplayString()
+		{
 			global $tag_spaces;
 			global $HTML_CLASS_DEBUG_CONTENT;
 			
+			$displayString= "";
 			if($HTML_CLASS_DEBUG_CONTENT)
-				$this->spaces($tag_spaces);
-			echo $this->functionName;	
+				$displayString.= $this->spaces($tag_spaces);
+			$displayString.= $this->functionName;	
 			if(!$this->bInherit)
 			{
-				echo ";";
+			    $displayString.= ";";
 				return;
 			}
 			if($HTML_CLASS_DEBUG_CONTENT)
-				$this->spaces($tag_spaces);
-			echo "{";
+			    $displayString.= $this->spaces($tag_spaces);
+			$displayString.= "{";
 			foreach($this->inherit as $function)
 			{	
-        	if($HTML_CLASS_DEBUG_CONTENT)
+        	   if($HTML_CLASS_DEBUG_CONTENT)
 					$tag_spaces++;
 				if(is_String($function) or is_numeric($function))
 				{	
-            	if($HTML_CLASS_DEBUG_CONTENT)
-						$this->spaces($tag_spaces);
-					echo $function;
+            	   if($HTML_CLASS_DEBUG_CONTENT)
+            	       $displayString.= $this->spaces($tag_spaces);
+            	   $displayString.= $function;
 				}else
 				{
 					if($HTML_CLASS_DEBUG_CONTENT and !is_subclass_of($function, "jsfunctionbase"))
 					{
 						out(get_parent_class($function));echo "\n";
-						echo "\n<br><b>ERROR:</b> bei den JavaScript-Funktionen d�rfen nur Strings und JavaScript-Funktionen hinzugef�gt werden<br>\n";
+						echo "\n<br><b>ERROR:</b> bei den JavaScript-Funktionen dürfen nur Strings und JavaScript-Funktionen hinzugefügt werden<br>\n";
 						out($function);
 						exit();
 					}
-					$tag->display();
+					$displayString.= $tag->getDisplayString();
 				}
         	if($HTML_CLASS_DEBUG_CONTENT)
 					$tag_spaces--;
 			}
 			if($HTML_CLASS_DEBUG_CONTENT)
-				$this->spaces($tag_spaces);
-			echo "}";
+			    $displayString.=$this->spaces($tag_spaces);
+			$displayString.= "}";
+			return $displayString;
 		}
 		function spaces($num)
 		{
-			echo "\n";
+		    $displayString= "\n";
 			for($i= 0; $i<$num; $i++)
-				echo "  ";
+			    $displayString.= "  ";
+			return $displayString;
 		}
 		function add($function)
 		{
