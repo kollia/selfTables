@@ -1,7 +1,6 @@
 <?php
 
 require_once($php_html_description);
-//require_once($php_htmltag_class);
 
 class STBaseContainer extends BodyTag
 {
@@ -19,7 +18,7 @@ class STBaseContainer extends BodyTag
 	var $aBehindHeadLineButtons= array();
 	var $aBehindProjectIdentif= array();
 
-	var $aNavigationTables= array(); // Alle Tabellen die im Container zusaetlich in einer STListTable angezeigt werden sollen
+	var $aNavigationTables= array(); // Alle Tabellen die im Container zusaelich in einem STListBox angezeigt werden sollen
 	var	$getParmNavigation= array(); // alle Parameter die bei einem link aus dem NavigationTable
 									 // eingestellt werden
 	var	$getParmListLinks= array();	// alle Parameter die bei einem link aus dem Main-Table
@@ -169,7 +168,7 @@ class STBaseContainer extends BodyTag
 	}
 	function navigationTable($table, $forTable= STALLDEF, $pos= null, $classId= "STNavigationTable")
 	{
-		Tag::paramCheck($table, 1, "string", "STAliasTable");
+		Tag::paramCheck($table, 1, "string", "STBaseTable");
 
 		if(typeof($table, "string"))
 			$table= $this->getTable($table);
@@ -651,7 +650,7 @@ class STBaseContainer extends BodyTag
 	}
 	function need(&$object)
 	{
-		Tag::paramCheck($object, 1, "STAliasTable", "STBaseContainer");
+		Tag::paramCheck($object, 1, "STBaseTable", "STBaseContainer");
 
 		if(typeof($object, "STBaseContainer"))
 			$this->needContainer($object);
@@ -714,8 +713,8 @@ class STBaseContainer extends BodyTag
 		    }
 
 
-			// navigationTables mit null-pos einbinden
-			// sowie die anderen abz�hlen
+			// include navigationTables with null-pos
+			// also count the others
 			/////////////////////////////////////////////////////////////////
 			$bNeedNavis= false;
 			$nNeedTopNavis= 0;
@@ -735,7 +734,7 @@ class STBaseContainer extends BodyTag
 					// to ask later only for YES
 					$this->aNavigationTables[$key]["for"]= "YES";
 
-    				$list= new OSTTable($this->db, $navi["class"]);
+    				$list= new STListBox($this->db, $navi["class"]);
     				$this->oExternSideCreator->setAccessForColumnsInTable($navi["table"], $list);
     				$list->table($navi["table"]);
     				$list->doContainerManagement($this->bContainerManagement);

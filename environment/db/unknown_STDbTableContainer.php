@@ -64,7 +64,7 @@ class unknown_STDbTableContainer
 	}
 	function navigationTable($table, $pos= null, $classId= "STNavigationTable")
 	{
-		Tag::paramCheck($table, 1, "string", "STAliasTable");
+		Tag::paramCheck($table, 1, "string", "STBaseTable");
 		
 		if(typeof($table, "string"))
 			$table= $this->getTable($table);
@@ -524,7 +524,7 @@ class unknown_STDbTableContainer
 	}
 	function doChoice($table, $choice= true)
 	{
-		if(typeof($table, "STAliasTable"))
+		if(typeof($table, "STBaseTable"))
 			$table= $table->getName();
 		if($choice)
 			unset($this->aNoChoice[$table]);
@@ -533,7 +533,7 @@ class unknown_STDbTableContainer
 	}
 	function tableChoice($table)
 	{
-		if(typeof($table, "STAliasTable"))
+		if(typeof($table, "STBaseTable"))
 			$table= $table->getName();
 		if($this->aNoChoice[$table])
 			return false;

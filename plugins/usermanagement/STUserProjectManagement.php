@@ -3,7 +3,7 @@
 require_once( $_stobjectcontainer );
 require_once( $_stframecontainer );
 
-class STUserProjectContainer extends STBaseContainer
+class STUserProjectManagement extends STBaseContainer
 {
     private $homepageLogo= null;
     private $homepageBanner= null;

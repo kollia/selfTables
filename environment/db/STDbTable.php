@@ -1,8 +1,8 @@
 <?php
 
-require_once($_staliastable);
+require_once($_stbasestable);
 
-class STDbTable extends STAliasTable
+class STDbTable extends STBaseTable
 {
 	var	$db; // database
     var $container;
@@ -11,7 +11,7 @@ class STDbTable extends STAliasTable
 
     function __construct($Table, $container= null, $onError= onErrorStop)
     {
-		Tag::paramCheck($Table, 1, "string", "STAliasTable");
+		Tag::paramCheck($Table, 1, "string", "STBaseTable");
 		Tag::paramCheck($container, 2, "STObjectContainer", "string", "null");
 
 		$this->abNewChoice= array();
@@ -19,7 +19,7 @@ class STDbTable extends STAliasTable
 		$this->bTypes= false;
 		$this->bIdentifColumns= false;
 
-		if(typeof($Table, "STAliasTable"))
+		if(typeof($Table, "STBaseTable"))
 		{
 			$tableName= $Table->Name;
 		}else
@@ -44,7 +44,7 @@ class STDbTable extends STAliasTable
 							!typeof($Table, "STDbTable")	),
 						"STDbTable::constructor()",
 						"if first parameter in constructor of <b>STDbTable</b> ".
-						"is an table-name(".$tableName."), or object from STAliasTable, ".
+						"is an table-name(".$tableName."), or object from STBaseTable, ".
 						"second parameter must be an object from STObjectContainer"			);
 			if(typeof($Table, "string"))
 				Tag::echoDebug("table", "create new object for table <b>".$Table."</b>");
@@ -52,11 +52,11 @@ class STDbTable extends STAliasTable
 				Tag::echoDebug("table", "make copy from table-object <b>".$Table->Name."</b> for an new one");
 		}
 		$this->created[$tableName]= true;
-		if(typeof($Table, "STAliasTable"))
+		if(typeof($Table, "STBaseTable"))
 		{
 		    $this->copy($Table);
 		}//else
-		STAliasTable::__construct($Table);
+		STBaseTable::__construct($Table);
 		if($container)
 		{
 			if(is_string($container))
@@ -67,7 +67,7 @@ class STDbTable extends STAliasTable
 		}else
 			$this->container= &$Table->container;
 		$this->db= &$this->container->getDatabase();
-		if(typeof($Table, "STAliasTable"))
+		if(typeof($Table, "STBaseTable"))
 		{
 			$this->columns= $Table->columns;
 			return;
@@ -112,7 +112,7 @@ class STDbTable extends STAliasTable
 	{
 		STCheck::param($oTable, 0, "STDbTable");
 		
-		STAliasTable::copy($oTable);
+		STBaseTable::copy($oTable);
 		// 08/09/2006 alex:	db and container should be change in constructor,
 		//					because before changed here and if an other db or container
 		//					witch is change again in the constructor,
@@ -144,14 +144,14 @@ class STDbTable extends STAliasTable
     	{
 			if(STCheck::isDebug())
 			{
-				STCheck::alert(!$this->columnExist($column), "STAliasTable::selectA()",
+				STCheck::alert(!$this->columnExist($column), "STBaseTable::selectA()",
 											"column '$column not exist in table ".$this->Name.
 											"(".$this->getDisplayName().")");
 			}else
 				echo "column '$column not exist in table ".$this->Name.
 											"(".$this->getDisplayName().")";
     	}
-		STAliasTable::select($column, $alias, $fillCallback, $nextLine);
+		STBaseTable::select($column, $alias, $fillCallback, $nextLine);
 	}
     function passwordNames($firstName, $secondName, $thirdName= null)
     {
@@ -174,10 +174,10 @@ class STDbTable extends STAliasTable
 		Tag::paramCheck($addGroup, 5, "boolean");
 		Tag::paramCheck($action, 6, "string", "int");
 		//Tag::paramCheck($parentCluster, 7, "string", "null");
-		Tag::alert(!$this->columnExist($column), "STAliasTable::addAccessClusterColumn()",
+		Tag::alert(!$this->columnExist($column), "STBaseTable::addAccessClusterColumn()",
 											"column $column not exist in table ".$this->Name.
 											"(".$this->getDisplayName().")", 1);
-		Tag::alert(!$this->columnExist($clusterfColumn), "STAliasTable::addAccessClusterColumn()",
+		Tag::alert(!$this->columnExist($clusterfColumn), "STBaseTable::addAccessClusterColumn()",
 											"column for cluster $clusterfColumn not exist in table ".$this->Name.
 											"(".$this->getDisplayName().")", 1);
 
@@ -226,7 +226,7 @@ class STDbTable extends STAliasTable
 		STCheck::paramCheck($clusterfColumn, 2, "string");
 		STCheck::paramCheck($accessInfoString, 3, "string", "empty(string)");
 		STCheck::paramCheck($addGroup, 4, "boolean");
-		STCheck::paramCheck($parentTable, 5, "STAliasTable", "string", "boolean", "null");
+		STCheck::paramCheck($parentTable, 5, "STBaseTable", "string", "boolean", "null");
 		STCheck::paramCheck($pkValue, 6, "string", "int", "float", "boolean", "null");
 
 		if(is_bool($parentTable))
@@ -263,7 +263,7 @@ class STDbTable extends STAliasTable
 		STCheck::paramCheck($clusterfColumn, 2, "string");
 		STCheck::paramCheck($accessInfoString, 3, "string", "empty(string)");
 		STCheck::paramCheck($addGroup, 4, "boolean");
-		STCheck::paramCheck($parentTable, 5, "STAliasTable", "string", "boolean", "null");
+		STCheck::paramCheck($parentTable, 5, "STBaseTable", "string", "boolean", "null");
 		STCheck::paramCheck($pkValue, 6, "string", "int", "float", "boolean", "null");
 
 		if(is_bool($parentTable))
@@ -296,7 +296,7 @@ class STDbTable extends STAliasTable
 		STCheck::paramCheck($clusterfColumn, 2, "string");
 		STCheck::paramCheck($accessInfoString, 3, "string", "empty(string)");
 		STCheck::paramCheck($addGroup, 4, "boolean");
-		STCheck::paramCheck($parentTable, 5, "STAliasTable", "string", "boolean", "null");
+		STCheck::paramCheck($parentTable, 5, "STBaseTable", "string", "boolean", "null");
 		STCheck::paramCheck($pkValue, 6, "string", "int", "float", "boolean", "null");
 
 		if(is_bool($parentTable))
@@ -329,7 +329,7 @@ class STDbTable extends STAliasTable
 		STCheck::paramCheck($clusterfColumn, 2, "string");
 		STCheck::paramCheck($accessInfoString, 3, "string", "empty(string)");
 		STCheck::paramCheck($addGroup, 4, "boolean");
-		STCheck::paramCheck($parentTable, 5, "STAliasTable", "string", "boolean", "null");
+		STCheck::paramCheck($parentTable, 5, "STBaseTable", "string", "boolean", "null");
 		STCheck::paramCheck($pkValue, 6, "string", "int", "float", "boolean", "null");
 
 		if(is_bool($parentTable))
@@ -362,7 +362,7 @@ class STDbTable extends STAliasTable
 		STCheck::paramCheck($clusterfColumn, 2, "string");
 		STCheck::paramCheck($accessInfoString, 3, "string", "empty(string)");
 		STCheck::paramCheck($addGroup, 4, "boolean");
-		STCheck::paramCheck($parentTable, 5, "STAliasTable", "string", "boolean", "null");
+		STCheck::paramCheck($parentTable, 5, "STBaseTable", "string", "boolean", "null");
 		STCheck::paramCheck($pkValue, 6, "string", "int", "float", "boolean", "null");
 
 		if(is_bool($parentTable))
@@ -420,7 +420,7 @@ class STDbTable extends STAliasTable
 	function column($name, $type, $len= null)
 	{
 		$res= $this->getDbColumnTypeLen($name, $type, $len= null);
-		STAliasTable::column($name, $res["type"], $res["length"]);
+		STBaseTable::column($name, $res["type"], $res["length"]);
 	}
 	function dbColumn($name, $type, $len= null)
 	{
@@ -429,12 +429,12 @@ class STDbTable extends STAliasTable
 		Tag::paramCheck($len, 3, "int", "null");
 
 		$res= $this->getDbColumnTypeLen($name, $type, $len);
-		STAliasTable::dbColumn($name, $res["type"], $res["length"]);
+		STBaseTable::dbColumn($name, $res["type"], $res["length"]);
 	}
 	function getDbColumnTypeLen($name, $type, $len= null)
 	{//echo "getDbColumnTypeLen($name, $type, $len= null)<br />";
 	    $type= strtolower(trim($type));
-      	Tag::alert($type=="string"&&$len===null, "STAliasTable::column()",
+      	Tag::alert($type=="string"&&$len===null, "STBaseTable::column()",
 													"if column $name is an string, \$len can not be NULL");
 
 		$type= strtoupper($type);
@@ -466,7 +466,7 @@ class STDbTable extends STAliasTable
 	protected function fk($ownColumn, &$toTable, $otherColumn= null, $bInnerJoin= null, $where= null)
 	{
 		Tag::paramCheck($ownColumn, 1, "string");
-		Tag::paramCheck($toTable, 2, "STAliasTable", "string");
+		Tag::paramCheck($toTable, 2, "STBaseTable", "string");
 		Tag::paramCheck($otherColumn, 3, "string", "empty(string)", "null");
 		Tag::paramCheck($bInnerJoin, 4, "check", $bInnerJoin===null || $bInnerJoin==="inner" || $bInnerJoin==="left" || $bInnerJoin==="right",
 											"null", "inner", "left", "right");
@@ -490,7 +490,7 @@ class STDbTable extends STAliasTable
     			$toTable= &$this->db->getTable($toTableName);//, false/*bAllByNone*/);
 			Tag::alert(!isset($toTable), "STDbTable::fk()", "second parameter '$toTableName' is no exist table");
     	}
-		STAliasTable::fk($ownColumn, $toTable, $otherColumn, $bInnerJoin, $where);
+		STBaseTable::fk($ownColumn, $toTable, $otherColumn, $bInnerJoin, $where);
 		//st_print_r($this->FK,2);
 		if($bOtherDatabase)
 		{
@@ -505,7 +505,7 @@ class STDbTable extends STAliasTable
 			$this->FK[$toTableName]["table"]= &$toTable;
 		}else// wenn keine andere Datenbank,
 		{	// Tabelle wieder l�schen, da sie automatisch
-			// in STAliasTable gesetzt wird
+			// in STBaseTable gesetzt wird
 			// weil keine Datenbank vorhanden ist
 			// in der die AliasTable aufgelistet sind
 			// (also w�re der FK einzige Referenz)
@@ -574,7 +574,7 @@ class STDbTable extends STAliasTable
 			$address= new STDbTableContainer($newContainerName, $this->db);
 			$address->needTable($tableName);
 		}
-		STAliasTable::linkA($which, $aliasColumn, $address, $valueColumn);
+		STBaseTable::linkA($which, $aliasColumn, $address, $valueColumn);
 	}
 }
 

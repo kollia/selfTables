@@ -55,7 +55,7 @@ function st_print_r($value, $deep=1, $space= 0, $bFirst= true)
 				count($value) == 0	)
 			{
 				echo $f."-empty- )";
-			}elseif (typeof($value, "STAliasTable"))
+			}elseif (typeof($value, "STBaseTable"))
 			{
 			    echo $f.$value->Name."::".$value->ID." )";
 			}else

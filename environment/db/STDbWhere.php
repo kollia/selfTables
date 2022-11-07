@@ -80,7 +80,7 @@ class STDbWhere
 	}
 	function forTable($tableName= null, $overwrite= false)
 	{
-			STCheck::param($tableName, 0, "string", "STAliasTable", "null");
+			STCheck::param($tableName, 0, "string", "STBaseTable", "null");
 			STCheck::param($overwrite, 1, "boolean");
 
 		return $this->table($tableName, $overwrite);
@@ -88,13 +88,13 @@ class STDbWhere
 	/**
 	 * define where clause for witch table
 	 * 
-	 * @param STAliasTable|string|null $table Table name, object or NULL when be later should defined or only want to ask to get the table name return
+	 * @param STBaseTable|string|null $table Table name, object or NULL when be later should defined or only want to ask to get the table name return
 	 * @param boolean $overwrite whether new defnition should overwrite the old table name if exist
 	 * @return string for whitch table where clause is defined
 	 */
 	function table($table= null, $overwrite= false)
 	{
-		STCheck::param($table, 0, "string", "STAliasTable", "null");
+		STCheck::param($table, 0, "string", "STBaseTable", "null");
 		STCheck::param($overwrite, 1, "boolean");		
 		
 		if(!$table)
@@ -117,7 +117,7 @@ class STDbWhere
 			$tableName= $table->getName();
 			$db= $table->getDatabase();
 			$dbName= $db->getName();
-		}else if(typeof($table, "STAliasTable"))
+		}else if(typeof($table, "STBaseTable"))
 		{
 		    $dbName= "";
 		    $tableName= $table->getName();

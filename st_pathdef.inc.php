@@ -205,8 +205,9 @@
 		$_stmessagehandling=		$_stenvironmenttools_path."/base/STMessageHandling.php";
 		$_stcallbackclass=			$_stenvironmenttools_path."/base/STCallbackClass.php";
 		$_stbasetablebox=			$_stenvironmenttools_path."/base/STBaseTableBox.php";
-		$_stbox=					$_stenvironmenttools_path."/base/STBox.php";
-		$_sttable=					$_stenvironmenttools_path."/base/STTable.php";
+		$_stbasestable=				$_stenvironmenttools_path."/base/STBaseTable.php";
+		$_stitembox=				$_stenvironmenttools_path."/base/STItemBox.php";
+		$_stlistbox=				$_stenvironmenttools_path."/base/STListBox.php";
 		$_stsearchbox=				$_stenvironmenttools_path."/base/STSearchBox.php";
 		$_stcategorygroup=			$_stenvironmenttools_path."/base/STCategoryGroup.php";
 		$_stbasesearch=				$_stenvironmenttools_path."/base/STBaseSearch.php";
@@ -222,7 +223,6 @@
 		  
 		$_stdatabase=				$_stenvironmenttools_path."/db/STDatabase.php";
 		$_stdbmysql=				$_stenvironmenttools_path."/db/STDbMySql.php";
-		$_staliastable=				$_stenvironmenttools_path."/db/STAliasTable.php";
 		$_stdbtable=				$_stenvironmenttools_path."/db/STDbTable.php";
 		$_stdbdeftable=				$_stenvironmenttools_path."/db/STDbDefTable.php";
 		$_stdbwhere=				$_stenvironmenttools_path."/db/STDbWhere.php";
@@ -239,7 +239,6 @@
 		$_stsession=				$_stenvironmenttools_path."/user/STSession.php";
 		$_stdbsession=              $_stenvironmenttools_path."/user/STDbSession.php";
 		$_stdbsessionhandler=       $_stenvironmenttools_path."/user/STDbSessionHandler.php";
-		$_stusersession=            $_stenvironmenttools_path."/user/STUserSession.php";
 		$_stsessionsitecreator=		$_stenvironmenttools_path."/user/STSessionSiteCreator.php";
 		$_stusersitecreator=		$_stenvironmenttools_path."/user/STUserSiteCreator.php";
 
@@ -250,21 +249,22 @@
 		$DBin_UserDatabase=       "UserManagement";
 		// UserManagement Login
 		$USERCLASS=               "STUser";
-		$_stum_installcontainer=		$_stcmstools_path."/usermanagement/STUM_InstallContainer.php";
-		$_stusermanagement_install=		$_stcmstools_path."/usermanagement/stusermanagement_install.php";
-		$_stusermanagement=				$_stcmstools_path."/usermanagement/STUserManagement.php";
-		$_stusermanagementsession=		$_stcmstools_path."/usermanagement/STUserManagementSession.php";
-		$_stuserprojectcontainer=       $_stcmstools_path."/usermanagement/STUserProjectContainer.php";
-		$_stprojectmanagement=			$_stcmstools_path."/usermanagement/STProjectManagement.php";
-		$_stpartitionmanagement=		$_stcmstools_path."/usermanagement/STPartitionManagement.php";
-		$_stusergroupmanagement=		$_stcmstools_path."/usermanagement/STUserGroupManagement.php";
-		$_stgroupgroupmanagement=		$_stcmstools_path."/usermanagement/STGroupGroupManagement.php";
-		$_stclustergroupmanagement=		$_stcmstools_path."/usermanagement/STClusterGroupManagement.php";
-		$_stgallerycontainer_install=	$_stcmstools_path."/gallery/STGalleryContainer_install.php";
-		$_stgallerycontainer=			$_stcmstools_path."/gallery/STGalleryContainer.php";
-		$_stsubgallerycontainer=		$_stcmstools_path."/gallery/STSubGalleryContainer.php";
-		$_stseriescontainer_install=	$_stcmstools_path."/calendar/stseriescontainer_install.php";
-		$_stcalendarserie=				$_stcmstools_path."/calendar/STCalendarSerieForm.php";
+		$_stusersession=                    $_stcmstools_path."/usermanagement/STUserSession.php";
+		$_stum_installcontainer=			$_stcmstools_path."/usermanagement/STUM_InstallContainer.php";
+		$_stusermanagement_install=			$_stcmstools_path."/usermanagement/stusermanagement_install.php";
+		$_stusermanagement=					$_stcmstools_path."/usermanagement/STUserManagement.php";
+		$_stusermanagementsession=			$_stcmstools_path."/usermanagement/STUserManagementSession.php";
+		$_stuserprojectmanagement=	        $_stcmstools_path."/usermanagement/STUserProjectManagement.php";
+		$_stprojectmanagement=				$_stcmstools_path."/usermanagement/STProjectManagement.php";
+		$_stpartitionmanagement=			$_stcmstools_path."/usermanagement/STPartitionManagement.php";
+		$_stusergroupmanagement=			$_stcmstools_path."/usermanagement/STUserGroupManagement.php";
+		$_stgroupgroupmanagement=			$_stcmstools_path."/usermanagement/STGroupGroupManagement.php";
+		$_stclustergroupmanagement=			$_stcmstools_path."/usermanagement/STClusterGroupManagement.php";
+		$_stgallerycontainer_install=		$_stcmstools_path."/gallery/STGalleryContainer_install.php";
+		$_stgallerycontainer=				$_stcmstools_path."/gallery/STGalleryContainer.php";
+		$_stsubgallerycontainer=			$_stcmstools_path."/gallery/STSubGalleryContainer.php";
+		$_stseriescontainer_install=		$_stcmstools_path."/calendar/stseriescontainer_install.php";
+		$_stcalendarserie=					$_stcmstools_path."/calendar/STCalendarSerieForm.php";
 
 		//st_check_require_once($_sttools);
 		require_once($_sttools);

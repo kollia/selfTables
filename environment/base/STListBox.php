@@ -5,7 +5,7 @@ require_once($_stbasetablebox);
 require_once($_stdbselector);
 
 
-class STTable extends STBaseTableBox
+class STListBox extends STBaseTableBox
 {
 		var $arrangement;
 		var $statement;
@@ -48,7 +48,7 @@ class STTable extends STBaseTableBox
 				global $user;
 				$debug= $user->isDebug();
 				$user->debug(true);
-				$user->LOG("start STTable->Konstructor", 0);
+				$user->LOG("start STListBox->Constructor", 0);
 				$user->debug($debug);
 			}
 
@@ -58,7 +58,7 @@ class STTable extends STBaseTableBox
 			{
 				$debug= $user->isDebug();
 				$user->debug(true);
-				$user->LOG("end STTable->Konstructor", 0);
+				$user->LOG("end STListBox->Constructor", 0);
 				$user->debug($debug);
 			}
 		}
@@ -145,7 +145,7 @@ class STTable extends STBaseTableBox
 				global $user;
 				$debug= $user->isDebug();
 				$user->debug(true);
-				$user->LOG("start STTable->check", 1);
+				$user->LOG("start STListBox->check", 1);
 				$user->debug($debug);
 			}
 
@@ -162,7 +162,7 @@ class STTable extends STBaseTableBox
 			{
 				$debug= $user->isDebug();
 				$user->debug(true);
-				$user->LOG("end STTable->check", 1);
+				$user->LOG("end STListBox->check", 1);
 				$user->debug($debug);
 			}
 			if(count($result))
@@ -219,7 +219,7 @@ class STTable extends STBaseTableBox
 				$this->bSetLinkByNull= $table->bSetLinkByNull;
 
 			// aufbau von showTypes in STDBTables ist nicht gleich
-			// wie in STTables, da dort mehrere Typen auf eine Column
+			// wie in STListBoxs, da dort mehrere Typen auf eine Column
 			// kommen k�nnen. zb. 'update' und 'image'
 			foreach($table->showTypes as $column=>$types)
 			{
@@ -486,7 +486,7 @@ class STTable extends STBaseTableBox
 					and
 					!count($this->asTable)	)
 		{
-			echo "<br /><b>ERROR</b> user dont create any table for object STTable";
+			echo "<br /><b>ERROR</b> user dont create any table for object STListBox";
 			exit;
 		}
 	}
@@ -497,7 +497,7 @@ class STTable extends STBaseTableBox
 			global $user;
 			$debug= $user->isDebug();
 			$user->debug(true);
-			$user->LOG("start STTable->makeResult", 2);
+			$user->LOG("start STListBox->makeResult", 2);
 			$user->debug($debug);
 		}
 
@@ -567,7 +567,7 @@ exit();
 		{
 			$debug= $user->isDebug();
 			$user->debug(true);
-			$user->LOG("end STTable->makeResult", 2);
+			$user->LOG("end STListBox->makeResult", 2);
 			$user->debug($debug);
 		}
 	}
@@ -747,7 +747,7 @@ exit();
 		}
 		function &getNumIndex($oTable)
 		{
-			Tag::paramCheck($oTable, 1, "STAliasTable");
+			Tag::paramCheck($oTable, 1, "STBaseTable");
 
 			$oNumIndex= null;
 			if(!$oTable) // for old versions
@@ -1766,7 +1766,7 @@ exit();
 
 					$input= new InputTag();
 						$input->type("hidden");
-						$input->name("sttable_make");
+						$input->name("stlisttable_make");
 						$input->value(1);
 					$td->add($input);
 				$tr->add($td);
@@ -1796,7 +1796,7 @@ exit();
 			global $HTTP_POST_VARS;
 			
 			$checked= array();
-			if(	isset($HTTP_POST_VARS["sttable_make"])
+			if(	isset($HTTP_POST_VARS["stlisttable_make"])
 				and
 				!$this->insertStatement					)
 			{// checkboxen mit Datenbank abgleichen
@@ -1877,7 +1877,7 @@ exit();
 			global $HTTP_POST_VARS;
 
 			$error= $this->msg->getAktualMessageId();
-			if(	isset($HTTP_POST_VARS["sttable_make"])
+			if(	isset($HTTP_POST_VARS["stlisttable_make"])
 				and
 				$error==="NOERROR"						)
 			{// checkboxen mit Datenbank abgleichen
@@ -2328,7 +2328,7 @@ exit();
 				global $user;
 				$debug= $user->isDebug();
 				$user->debug(true);
-				$user->LOG("start STTable->display", 4);
+				$user->LOG("start STListBox->display", 4);
 				$user->debug($debug);
 			}
 			STBaseTableBox::display();
@@ -2336,7 +2336,7 @@ exit();
 			{
 				$debug= $user->isDebug();
 				$user->debug(true);
-				$user->LOG("end STTable->display", 4);
+				$user->LOG("end STListBox->display", 4);
 				$user->debug($debug);
 			}
 			return true;
@@ -2361,7 +2361,7 @@ exit();
 	}
 	function table($table, $name= null)
 	{
-		if(typeof($table, "STAliasTable"))
+		if(typeof($table, "STBaseTable"))
 		{
 			$this->arrangement= $table->listArrangement;
 			$this->bCaption= $table->bListCaption;
@@ -2373,7 +2373,7 @@ exit();
 			}
 		}
 		STBaseTableBox::table($table, $name);
-		if(typeof($table, "STAliasTable"))
+		if(typeof($table, "STBaseTable"))
 			$this->takeTypesFromTable();
 	}
 	function setCaption($bSet)

@@ -1,12 +1,11 @@
 <?php
 
 require_once($php_html_description);
-//require_once($php_htmltag_class);
 require_once($_stbasecontainer);
 require_once($_stdbtablecreator);
 require_once($_stdbtabledescriptions);
-require_once($_sttable);
-require_once($_stbox);
+require_once($_stlistbox);
+require_once($_stitembox);
 
 
 class STObjectContainer extends STBaseContainer
@@ -132,56 +131,6 @@ class STObjectContainer extends STBaseContainer
             }
 		}
 		return $table;
-		
-/*		if(!isset($table))
-		{
-		    if(STCheck::isDebug())
-		    {
-		        $msg= "table <b>$orgTableName</b> do not exist insite current container <b>".$this->getName()."</b>";
-		        if(STCheck::isDebug("table"))
-		            STCheck::echoDebug("table", $msg);
-	            else
-	                STCheck::echoDebug("db.statements.table", $msg);
-		    }
-			// alex 17/05/2005:	die Tabelle wird nun von der �berschriebenen Funktion
-			//					getTable() aus dem Datenbank-Objekt erzeugt.
-			// alex 08/06/2005: 2. Parameter f�r getTable auf false gesetzt
-			//					da sonst wenn das erste mal needTable aufgerufen wird,
-			//					bei der funktion getTable aus der Datenbank,
-		    //					alle Tabellen in die this->tables geladen werden
-			if(!typeof($this, "STDatabase"))
-			{
-				$container= &STBaseContainer::getContainer($this->parentContainerName);
-				$newTable= clone $container->getTable($orgTableName);//, false);
-			}else
-			    $newTable= &$this->getTable($orgTableName);//, false)
-			if(	!isset($newTable) ||
-				!is_object($newTable)	)
-			{
-				if($bEmpty === true)
-				{
-					$table= new STAliasTable($sTableName);
-					$table->container= &$this;
-					$this->tables[$sTableName]= $table;
-				}else
-				    $table= null;
-				return $table;
-			}
-			if($this->getName()===$this->db->getName())
-			{// own container is database,
-			 // so table is inserted in ->oGetTables
-			 // and must only insert in ->tables
-			    $this->tables[$sTableName]= &$newTable;
-				return $newTable;
-			}
-			if(  !isset($this->tables[$sTableName]) ||
-			    !is_object($this->tables[$sTableName])   )
-			{
-			    $this->tables[$sTableName]= &$newTable;
-			}
-			return $newTable;
-		}
-		return $table;*/
 	}
 	function &getTable($tableName= null)//, $bAllByNone= true)
 	{
@@ -269,7 +218,7 @@ class STObjectContainer extends STBaseContainer
 	}
 	function &createTable($tableName)
 	{
-	    $table= new STAliasTable();
+	    $table= new STBaseTable();
 	    return $table;
 	}
 	function &getTables($onError= onErrorStop)
@@ -619,7 +568,7 @@ class STObjectContainer extends STBaseContainer
 		STCheck::param($table, 0, "string");
 		STCheck::param($choice, 1, "boolean");
 
-		if(typeof($table, "STAliasTable"))
+		if(typeof($table, "STBaseTable"))
 			$table= $table->getName();
 		else
 			$table= $this->getTableName($table);
@@ -630,9 +579,9 @@ class STObjectContainer extends STBaseContainer
 	}
 	function tableChoice($table)
 	{
-		STCheck::param($table, 0, "string", "STAliasTable");
+		STCheck::param($table, 0, "string", "STBaseTable");
 
-		if(typeof($table, "STAliasTable"))
+		if(typeof($table, "STBaseTable"))
 			$table= $table->getName();
 		else
 			$table= $this->getTableName($table);
@@ -1122,7 +1071,7 @@ class STObjectContainer extends STBaseContainer
 		function makeInsertUpdateTags($get_vars)
 		{	
 			$table= &$this->getTable($get_vars["table"]);
-			$box= new STBox($this);
+			$box= new STDisplayBox($this);
 			$box->align("center");
 			$get= new STQueryString();
 			if($this->sFirstAction==$get_vars["action"])
@@ -1216,7 +1165,7 @@ class STObjectContainer extends STBaseContainer
 		{
 			$table= &$this->getTable($get_vars["table"]);
 			//$PK= $table->getPkColumnName();
-			$box= new STBox($this);
+			$box= new STDisplayBox($this);
 			$box->table($table);
 			//$box->where($PK."=".$get_vars["link"]["VALUE"]);
 			//$box->onOkGotoUrl($get->getParamString(STDELETE, "stget[link][".$this->sDeleteAction."]"));
@@ -1331,7 +1280,7 @@ class STObjectContainer extends STBaseContainer
 					return $this->oCurrentListTable;
 			}
 
-			$this->oCurrentListTable= new STTable($this);
+			$this->oCurrentListTable= new STListBox($this);
 			$table= &$this->getTable($tableName);
 			$table->getSelectedColumns();	//fals noch keine Spalte gesetzt ist
 										//vor dem setzen von "aktualisieren" und "l�schen"

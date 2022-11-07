@@ -31,7 +31,7 @@ class STDbSelector extends STDbTable
 
 		function __construct(&$oTable, $defaultTyp= STSQL_ASSOC, $onError= onErrorStop)
 		{
-			STCheck::paramCheck($oTable, 1, "STAliasTable");
+			STCheck::paramCheck($oTable, 1, "STBaseTable");
 			STCheck::paramCheck($defaultTyp, 2, "check", $defaultTyp==STSQL_NUM || $defaultTyp==STSQL_ASSOC || $defaultTyp==STSQL_BOTH,
 														"STSQL_NUM, STSQL_ASSOC or STSQL_BOTH");
 			STCheck::paramCheck($onError, 3, "check", $onError==noErrorShow || $onError==onErrorShow || $onError==onErrorStop,
@@ -174,7 +174,7 @@ class STDbSelector extends STDbTable
 					return $this->getTable($table);
 			}
 		}
-		$nullob= new STAliasTable("NoForeignKeyTable");
+		$nullob= new STBaseTable("NoForeignKeyTable");
 		return $nullob;
 	}
 		function &getTable($sTableName)
@@ -225,7 +225,7 @@ class STDbSelector extends STDbTable
 		function where($where, $table= null)
 		{//echo "function where(";st_print_r($where,0);echo ", ";st_print_r($table);echo ")<br />";
 			Tag::paramCheck($where, 1, "string", "STDbWhere");
-			Tag::paramCheck($table, 2, "string", "STAliasTable", "null");
+			Tag::paramCheck($table, 2, "string", "STBaseTable", "null");
 
 			if(is_string($where))
 				$where= new STDbWhere($where, $this->Name);
@@ -315,7 +315,7 @@ class STDbSelector extends STDbTable
 					$oTable= &$this;
 				else
 					$oTable= &$this->db->getTable($tableName);
-				STCheck::alert(!$oTable->columnExist($column), "STAliasTable::selectA()",
+				STCheck::alert(!$oTable->columnExist($column), "STBaseTable::selectA()",
 											"column $column not exist in table ".$tableName.
 											"(".$oTable->getDisplayName().")");
 			}
@@ -404,7 +404,7 @@ class STDbSelector extends STDbTable
 			}
 			sort($sort);
 			$nr= reset($sort);
-			Tag::alert(count($selected)<1, "STAliasTable::nnTable()", "before use function nnTable, select leastwise an column with foreign keys", 2);
+			Tag::alert(count($selected)<1, "STBaseTable::nnTable()", "before use function nnTable, select leastwise an column with foreign keys", 2);
 			$fk[$selected[$nr]["table"]][$selected[$nr]["key"]]["join"]= "right";
 			$newFk= array();
 			// make an new sort of the foreign key array
@@ -417,7 +417,7 @@ class STDbSelector extends STDbTable
 		}
 		function newIdentifColumn($table, $column, $alias)
 		{
-			Tag::paramCheck($table, 1, "STAliasTable", "string");
+			Tag::paramCheck($table, 1, "STBaseTable", "string");
 			Tag::paramCheck($column, 2, "string");
 			Tag::paramCheck($alias, 3, "string");
 
@@ -727,10 +727,10 @@ class STDbSelector extends STDbTable
 		}
 		function count($column= "*", $alias= null, $add= false)
 		{
-			Tag::paramCheck($column, 1, "string", "STAliasTable");
+			Tag::paramCheck($column, 1, "string", "STBaseTable");
 			Tag::paramCheck($alias, 2, "string", "null");
 
-			if(typeof($column, "STAliasTable"))
+			if(typeof($column, "STBaseTable"))
 			{
 				$selected= $column->getSelectedColumns();
 				$columnString= "";

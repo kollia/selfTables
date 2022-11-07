@@ -4,7 +4,7 @@ require_once($_stsession);
 
 $__static_global_STAlias_ID= 0;
 
-class STAliasTable
+class STBaseTable
 {
     var $ID= 0;
 	var $Name;
@@ -62,7 +62,7 @@ class STAliasTable
 	var	$bSetLinkByNull= false;
 	var	$bModifyFk= true;//ob die Tabelle anhand der ForeignKeys Modifiziert werden soll
 	var	$onlyRadioButtons= array(); // wenn nur zwei Enumns vorhanden sind, trotzdem radio Buttons verwenden
-	var $listArrangement= STHORIZONTAL;//bestimmt das Layout der OSTTable
+	var $listArrangement= STHORIZONTAL;//bestimmt das Layout der STListBox
 	var $bListCaption= true;// Beschriftung (�berschrift) der Tabelle
 	var	$oSearchBox= null; // Suchen-Box bei Auflistung der Tabelle anzeigen
 
@@ -114,12 +114,12 @@ class STAliasTable
 	{
 	    global $__static_globl_STAlias_ID;
 	    
-		Tag::paramCheck($oTable, 1, "string", "STAliasTable", "null");
+		Tag::paramCheck($oTable, 1, "string", "STBaseTable", "null");
 
         $__static_globl_STAlias_ID++;
         $this->ID= $__static_globl_STAlias_ID;
     	$this->bOrder= NULL;
-		if(typeof($oTable, "STAliasTable"))
+		if(typeof($oTable, "STBaseTable"))
 		{
 		    if(STCheck::isDebug("table"))
 		    {
@@ -151,7 +151,7 @@ class STAliasTable
     	$this->error= false;
 		if($oTable !== null)
 		{
-		    if(typeof($oTable, "STAliasTable"))
+		    if(typeof($oTable, "STBaseTable"))
 	     	    $this->Name= $oTable->Name;
 		    else
 		        $this->Name= $oTable;
@@ -191,7 +191,7 @@ class STAliasTable
 	    $this->nAktSelectedRow= 0;
 	    $this->bAlwaysIndex= true;
 	    $this->bModifyFk= true;//ob die Tabelle anhand der ForeignKeys Modifiziert werden soll
-	    $this->listArrangement= STHORIZONTAL;//bestimmt das Layout der OSTTable
+	    $this->listArrangement= STHORIZONTAL;//bestimmt das Layout der STListBox
 	    $this->oSearchBox= null; // Suchen-Box bei Auflistung der Tabelle anzeigen
 	}
 	function title($title)
@@ -213,7 +213,7 @@ class STAliasTable
 	}
 	function copy($Table)
 	{
-		STCheck::param($Table, 0, "STAliasTable");
+		STCheck::param($Table, 0, "STBaseTable");
 		
 		$this->bOrder= NULL;
      	$this->error= $Table->error;
@@ -523,7 +523,7 @@ class STAliasTable
 	// deprecated new is clearIndexSelect
 	function clearMaxRowSelect()
 	{
-		Tag::deprecated("STAliasTable::clearIndexSelect()", "STAliasTable::clearMaxRowSelect()");
+		Tag::deprecated("STBaseTable::clearIndexSelect()", "STBaseTable::clearMaxRowSelect()");
 		$this->nMaxRowSelect= null;
 	}
 	function getMaxRowSelect()
@@ -574,7 +574,7 @@ class STAliasTable
 		}
 		function setIdentifier($identifier)
 		{
-			Tag::deprecated("STAliasTable::setDisplayName('$identifier')", "STAliasTable::setIdentifier('$identifier')");
+			Tag::deprecated("STBaseTable::setDisplayName('$identifier')", "STBaseTable::setIdentifier('$identifier')");
 			$this->setDisplayName($identifier);
 		}
 		function setDisplayName($string)
@@ -583,7 +583,7 @@ class STAliasTable
 		}
 		function getIdentifier()
 		{
-			Tag::deprecated("STAliasTable::getDisplayName()", "STAliasTable::getIdentifier()");
+			Tag::deprecated("STBaseTable::getDisplayName()", "STBaseTable::getIdentifier()");
 			return $this->getDisplayName();
 		}
 		function getDisplayName()
@@ -677,7 +677,7 @@ class STAliasTable
 			Tag::paramCheck($checkBoxColumnName, 1, "string");
 			Tag::paramCheck($position, 2, "int");
 
-			Tag::alert(!$this->sPKColumn, "STAliasTable::nnTable()", "primary key for function ::nnTable() must be set in table".$this->Name);
+			Tag::alert(!$this->sPKColumn, "STBaseTable::nnTable()", "primary key for function ::nnTable() must be set in table".$this->Name);
 			$this->select($this->sPKColumn, $checkBoxColumnName);
 			$this->checkBox($checkBoxColumnName, $submitButton, $formName, $action);
 			$this->bIsNnTable= true;
@@ -725,7 +725,7 @@ class STAliasTable
     						$selected[$column["own"]]= "selected";
     				}
     			}
-    			Tag::alert(count($selected)<1, "STAliasTable::nnTable()", "before use function nnTable, select leastwise an column with foreign key");
+    			Tag::alert(count($selected)<1, "STBaseTable::nnTable()", "before use function nnTable, select leastwise an column with foreign key");
 			}*/
 		}
 		function isNnTable()
@@ -735,7 +735,7 @@ class STAliasTable
 		function foreignKey($ownColumn, $toTable, $otherColumn= null, $where= null)
 		{
 			STCheck::param($ownColumn, 0, "string");
-			STCheck::param($toTable, 1, "STAliasTable", "string");
+			STCheck::param($toTable, 1, "STBaseTable", "string");
 			STCheck::param($otherColumn, 2, "string", "empty(string)", "null");
 			STCheck::param($where, 3, "string", "empty(String)", "STDbWhere", "null");
 						
@@ -744,7 +744,7 @@ class STAliasTable
 		function foreignKeyObj($ownColumn, &$toTable, $otherColumn= null, $where= null)
 		{
 			Tag::paramCheck($ownColumn, 1, "string");
-			Tag::paramCheck($toTable, 2, "STAliasTable");
+			Tag::paramCheck($toTable, 2, "STBaseTable");
 			Tag::paramCheck($otherColumn, 3, "string", "empty(string)", "null");
 			Tag::paramCheck($where, 4, "string", "empty(String)", "STDbWhere", "null");
 
@@ -753,7 +753,7 @@ class STAliasTable
 		function innerJoin($ownColumn, &$toTable, $otherColumn= null)
 		{
 			Tag::paramCheck($ownColumn, 1, "string");
-			Tag::paramCheck($toTable, 2, "STAliasTable", "string");
+			Tag::paramCheck($toTable, 2, "STBaseTable", "string");
 			Tag::paramCheck($otherColumn, 3, "string", "empty(string)", "null");
 
 			$this->fk($ownColumn, $toTable, $otherColumn, "inner", null);
@@ -761,7 +761,7 @@ class STAliasTable
 		function leftJoin($ownColumn, $toTable, $otherColumn= null)
 		{
 			Tag::paramCheck($ownColumn, 1, "string");
-			Tag::paramCheck($toTable, 2, "STAliasTable", "string");
+			Tag::paramCheck($toTable, 2, "STBaseTable", "string");
 			Tag::paramCheck($otherColumn, 3, "string", "empty(string)", "null");
 
 			$this->fk($ownColumn, $toTable, $otherColumn, "left", null);
@@ -769,7 +769,7 @@ class STAliasTable
 		function rightJoin($ownColumn, $toTable, $otherColumn= null)
 		{
 			Tag::paramCheck($ownColumn, 1, "string");
-			Tag::paramCheck($toTable, 2, "STAliasTable", "string");
+			Tag::paramCheck($toTable, 2, "STBaseTable", "string");
 			Tag::paramCheck($otherColumn, 3, "string", "empty(string)", "null");
 
 			$this->fk($ownColumn, $toTable, $otherColumn, "right", null);
@@ -777,13 +777,13 @@ class STAliasTable
     protected function fk($ownColumn, &$toTable, $otherColumn= null, $join= null, $where= null)
     {// echo "function fk($ownColumn, &$toTable, $otherColumn, $join, $where)<br />";
 		Tag::paramCheck($ownColumn, 1, "string");
-		Tag::paramCheck($toTable, 2, "STAliasTable", "string");
+		Tag::paramCheck($toTable, 2, "STBaseTable", "string");
 		Tag::paramCheck($otherColumn, 3, "string", "empty(string)", "null");
 		Tag::paramCheck($join, 4, "check", $join===null || $join==="inner" || $join==="left" || $join==="right",
 											"null", "inner", "left", "right");
 		Tag::paramCheck($where, 5, "string", "empty(String)", "STDbWhere", "null");
 		
-		if(typeof($toTable, "STAliasTable"))
+		if(typeof($toTable, "STBaseTable"))
 			$toTableName= $toTable->getName();
 		else
 		{
@@ -799,7 +799,7 @@ class STAliasTable
 			$where= $otherColumn;
 			$otherColumn= &$buffer;
 		}// end of tausch
-		STCheck::echoDebug("db.table.fk", "create FK from ".$this->getName().".$ownColumn to $toTableName.$otherColumn inside STAliasTable::ID'".$this->ID."'");
+		STCheck::echoDebug("db.table.fk", "create FK from ".$this->getName().".$ownColumn to $toTableName.$otherColumn inside STBaseTable::ID'".$this->ID."'");
 		
 			// alex 26/04/2005: where-clausel einfuegen
 			if($where)
@@ -1114,13 +1114,13 @@ class STAliasTable
 		}
 		function count($column= "*", $alias= null, $add= false)
 		{
-			Tag::paramCheck($column, 1, "string", "STAliasTable");
+			Tag::paramCheck($column, 1, "string", "STBaseTable");
 			Tag::paramCheck($alias, 2, "string", "null");
 
 			if(!isset($this->bOrder))
 				$this->bOrder= false;
 			$this->bHasGroupColumns= true;
-			if(typeof($column, "STAliasTable"))
+			if(typeof($column, "STBaseTable"))
 			{
 				$aliasTables= array();
 				$columns= $column->getSelectedColumns();
@@ -1151,9 +1151,9 @@ class STAliasTable
 				}*/
 			}
 			if($add)
-				STAliasTable::addSelect("count(".$column.")", $alias);
+				STBaseTable::addSelect("count(".$column.")", $alias);
 			else
-				STAliasTable::select("count(".$column.")", $alias);
+				STBaseTable::select("count(".$column.")", $alias);
 		}
 		function column($name, $type, $len)
 		{
@@ -1316,7 +1316,7 @@ class STAliasTable
 			$nParams= func_num_args();
 			Tag::lastParam(4, $nParams);
 
-			STAliasTable::select($column, $alias, $fillCallback, $nextLine, true);
+			STBaseTable::select($column, $alias, $fillCallback, $nextLine, true);
 		}
 		// alex 12/09/2005:	Alias kann jetzt auch eine Funktion
 		//					zum f�llen einer nicht vorhandenen Spalte sein
@@ -1334,7 +1334,7 @@ class STAliasTable
 			
 			if(STCheck::isDebug())
 			{
-				STCheck::alert(!$this->columnExist($column), "STAliasTable::selectA()",
+				STCheck::alert(!$this->columnExist($column), "STBaseTable::selectA()",
 											"column $column not exist in table ".$this->Name.
 											"(".$this->getDisplayName().")");
 			}
@@ -1402,7 +1402,7 @@ class STAliasTable
 					$oTable= &$this;
 				else
 					$oTable= &$this->db->getTable($table);
-				STCheck::alert(!$oTable->columnExist($column), "STAliasTable::selectA()",
+				STCheck::alert(!$oTable->columnExist($column), "STBaseTable::selectA()",
 											"column $column not exist in table ".$table.
 											"(".$oTable->getDisplayName().")");
 			}
@@ -1422,7 +1422,7 @@ class STAliasTable
 					and
 					$content["table"]===$table	)
 				{
-					Tag::warning(1, "STAliasTable::select()", "column $column with alias $alias in table $table, selected in two times", 1);
+					Tag::warning(1, "STBaseTable::select()", "column $column with alias $alias in table $table, selected in two times", 1);
 					return;
 				}
 			}
@@ -1897,7 +1897,7 @@ class STAliasTable
 			return $this->show;
 		}
 		if(!isset($this->columns))
-			return array();// own object is an empty table (STAliasTable)
+			return array();// own object is an empty table (STBaseTable)
 		foreach($this->columns as $column)
 		{
   			$aColumn["table"]= $this->Name;
@@ -2014,7 +2014,7 @@ class STAliasTable
 		}
 		function identifColumn($column, $alias= null)
 		{
-			Tag::alert(!$this->columnExist($column), "STAliasTable::identifColumn()", "column $column not exist in table ".$this->Name);
+			Tag::alert(!$this->columnExist($column), "STBaseTable::identifColumn()", "column $column not exist in table ".$this->Name);
 
 			if(	!isset($this->abNewChoice["identifColumn"]) ||
 				!$this->abNewChoice["identifColumn"]			)
@@ -2217,7 +2217,7 @@ class STAliasTable
 				$path= substr($path, 0, strlen($path)-strlen($_SERVER["SCRIPT_NAME"]));
 				$incomming= $path.$toPath;
 			}
-			Tag::alert(!is_dir($incomming), "STAliasTable::upload", "path ".$toPath." not exist");
+			Tag::alert(!is_dir($incomming), "STBaseTable::upload", "path ".$toPath." not exist");
 			$field= $this->findAliasOrColumn($column);
 			$column= $field["alias"];
 			$field= array();
@@ -2245,7 +2245,7 @@ class STAliasTable
 					$path= substr($path, 0, strlen($path)-strlen($_SERVER["SCRIPT_NAME"]));
 					$incomming= $path.$toPath;
 				}
-				Tag::alert(!is_dir($incomming), "STAliasTable::image", "path ".$toPath." not exist");
+				Tag::alert(!is_dir($incomming), "STBaseTable::image", "path ".$toPath." not exist");
 				$this->upload($column, $toPath, "image/gif,image/pjpeg", $byte, $width, $height);
 			}
 			$this->showTypes[$column]["image"]= $field;
@@ -2260,22 +2260,22 @@ class STAliasTable
 		function imageLink($column, $toPath= null, $byte= 0, $width= 0, $height= 0, $address= null)
 		{
 			Tag::paramCheck($column, 1, "string");
-			Tag::paramCheck($toPath, 2, "string", "null", "STAliasTable", "STObjectContainer");
+			Tag::paramCheck($toPath, 2, "string", "null", "STBaseTable", "STObjectContainer");
 			Tag::paramCheck($byte, 3, "int");
 			Tag::paramCheck($width, 4, "int");
 			Tag::paramCheck($height, 5, "int");
-			Tag::paramCheck($address, 6, "string", "null", "STAliasTable", "STObjectContainer");
+			Tag::paramCheck($address, 6, "string", "null", "STBaseTable", "STObjectContainer");
 
 			$this->imageLinkA($column, null, $toPath, $byte, $width, $height, $address, false);
 		}
 		function imageBorderLink($column, $toPath= null, $byte= 0, $width= 0, $height= 0, $address= null)
 		{
 			Tag::paramCheck($column, 1, "string");
-			Tag::paramCheck($toPath, 2, "string", "null", "STAliasTable", "STBaseContainer");
+			Tag::paramCheck($toPath, 2, "string", "null", "STBaseTable", "STBaseContainer");
 			Tag::paramCheck($byte, 3, "int");
 			Tag::paramCheck($width, 4, "int");
 			Tag::paramCheck($height, 5, "int");
-			Tag::paramCheck($address, 6, "string", "null", "STAliasTable", "STBaseContainer");
+			Tag::paramCheck($address, 6, "string", "null", "STBaseTable", "STBaseContainer");
 
 			$this->imageLinkA($column, null, $toPath, $byte, $width, $height, $address, true);
 		}
@@ -2283,7 +2283,7 @@ class STAliasTable
 		{
 			if($address==="")
 				$address= null;
-			if(typeof($toPath, "STAliasTable", "STBaseContainer"))
+			if(typeof($toPath, "STBaseTable", "STBaseContainer"))
 			{
 				$address= $toPath;
 				$toPath= null;
@@ -2300,22 +2300,22 @@ class STAliasTable
 		function imagePkLink($column, $toPath= null, $byte= 0, $width= 0, $height= 0, $address= null)
 		{
 			Tag::paramCheck($column, 1, "string");
-			Tag::paramCheck($toPath, 2, "string", "null", "STAliasTable", "STBaseContainer");
+			Tag::paramCheck($toPath, 2, "string", "null", "STBaseTable", "STBaseContainer");
 			Tag::paramCheck($byte, 3, "int");
 			Tag::paramCheck($width, 4, "int");
 			Tag::paramCheck($height, 5, "int");
-			Tag::paramCheck($address, 6, "string", "null", "STAliasTable", "STBaseContainer");
+			Tag::paramCheck($address, 6, "string", "null", "STBaseTable", "STBaseContainer");
 
 			$this->imageLinkA($column, $this->sPKColumn, $toPath, $byte, $width, $height, $address, false);
 		}
 		function imageBorderPkLink($column, $toPath= null, $byte= 0, $width= 0, $height= 0, $address= null)
 		{
 			Tag::paramCheck($column, 1, "string");
-			Tag::paramCheck($toPath, 2, "string", "null", "STAliasTable", "STBaseContainer");
+			Tag::paramCheck($toPath, 2, "string", "null", "STBaseTable", "STBaseContainer");
 			Tag::paramCheck($byte, 3, "int");
 			Tag::paramCheck($width, 4, "int");
 			Tag::paramCheck($height, 5, "int");
-			Tag::paramCheck($address, 6, "string", "null", "STAliasTable", "STBaseContainer");
+			Tag::paramCheck($address, 6, "string", "null", "STBaseTable", "STBaseContainer");
 
 			$this->imageLinkA($column, $this->sPKColumn, $toPath, $byte, $width, $height, $address, true);
 		}
@@ -2323,7 +2323,7 @@ class STAliasTable
 		{
 			Tag::paramCheck($column, 1, "string");
 			Tag::paramCheck($valueColumn, 2, "string");
-			Tag::paramCheck($toPath, 3, "string", "null", "STAliasTable", "STBaseContainer");
+			Tag::paramCheck($toPath, 3, "string", "null", "STBaseTable", "STBaseContainer");
 			Tag::paramCheck($byte, 4, "int");
 			Tag::paramCheck($width, 5, "int");
 			Tag::paramCheck($height, 6, "int");
@@ -2335,7 +2335,7 @@ class STAliasTable
 		{
 			Tag::paramCheck($column, 1, "string");
 			Tag::paramCheck($valueColumn, 2, "string");
-			Tag::paramCheck($toPath, 3, "string", "null", "STAliasTable", "STBaseContainer");
+			Tag::paramCheck($toPath, 3, "string", "null", "STBaseTable", "STBaseContainer");
 			Tag::paramCheck($byte, 4, "int");
 			Tag::paramCheck($width, 5, "int");
 			Tag::paramCheck($height, 6, "int");
@@ -2381,7 +2381,7 @@ class STAliasTable
 	{
 		STCheck::param($which, 0, "string");
 		STCheck::param($aliasColumn, 1, "string");
-		STCheck::param($address, 2, "STObjectContainer", "STAliasTable", "null");
+		STCheck::param($address, 2, "STObjectContainer", "STBaseTable", "null");
 		STCheck::param($valueColumn, 3, "string", "null");
 		
 		$field= $this->findAliasOrColumn($aliasColumn);
@@ -2389,7 +2389,7 @@ class STAliasTable
 		if(!isset($this->showTypes[$aliasColumn]))
 			$this->showTypes[$aliasColumn]= array();
 		$to= $which;
-		if(typeof($address, "STAliasTable"))
+		if(typeof($address, "STBaseTable"))
 		{// wenn ein AliasTabel hereinkommt
 		 // diesen in einen Container verpacken
 			$tableName= $address->getName();
@@ -2459,13 +2459,13 @@ class STAliasTable
 		$this->aActiveLink["column"]= $alias;
 		$this->aActiveLink["represent"]= $representColumnValue;
 	}
-	// alex 19/04/2005:	$address darf auch ein STAliasTable
+	// alex 19/04/2005:	$address darf auch ein STBaseTable
 	// alex 08/06/2005: oder STObjectContainer sein
 	function link($column, $address= null)
 	{
 		$this->linkA("link", $column, $address, null);
 	}
-	// alex 19/04/2005:	$address darf auch ein STAliasTable
+	// alex 19/04/2005:	$address darf auch ein STBaseTable
 	// alex 08/06/2005: oder STObjectContainer sein
 	function namedLink($column, $address= null)
 	{
@@ -2583,7 +2583,7 @@ class STAliasTable
 				$columnName= $field["column"];
 		}else
 			$columnName= $action;
-    	Tag::alert(!function_exists($callbackFunction), "STAliasTable::callback()",
+    	Tag::alert(!function_exists($callbackFunction), "STBaseTable::callback()",
     			"user defined function <b>$callbackFunction</b> does not exist<br />");
     	if(!isset($this->aCallbacks[$columnName]))
     		$this->aCallbacks[$columnName]= array();
@@ -2630,7 +2630,7 @@ class STAliasTable
 				}
 			}
 		}
-		return $this->null;// /*incorrect table*/STAliasTable();;
+		return $this->null;// /*incorrect table*/STBaseTable();;
 	}
 	function getFkTableName($fromColumn)
 	{
@@ -2693,11 +2693,11 @@ class STAliasTable
 	}
 	function &getFKs()
 	{
-		Tag::deprecated("STAliasTable::ForeignKeys()", "STAliasTable::FKs()");
+		Tag::deprecated("STBaseTable::ForeignKeys()", "STBaseTable::FKs()");
 		return $this->FK;
 	}
 	// alex 08/06/2005:	nun k�nnen Werte auch Statisch in der
-	//					STAliasTable gesetzt werden
+	//					STBaseTable gesetzt werden
 	function preSelect($columnName, $value, $action= STINSERT)
  	{
 		$field= $this->findAliasOrColumn($columnName);
@@ -2716,7 +2716,7 @@ class STAliasTable
 	}
 	function setAlso($columnName, $value, $action= "All")
 	{
-		Tag::deprecated("STAliasTable::preSelect(columnName, value, action)", "STAliasTable::setAlso(columnName, value, action)");
+		Tag::deprecated("STBaseTable::preSelect(columnName, value, action)", "STBaseTable::setAlso(columnName, value, action)");
 		$this->preSelect($columnName, $value, $action);
 	}
 	// alex 08/06/2005:	und ebenso auch entfernt werden

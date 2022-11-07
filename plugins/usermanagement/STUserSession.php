@@ -1,10 +1,9 @@
 <?php
 
 require_once($_stdbsession);
-//require_once($database_selector);
 require_once($_stusermanagement_install);
 
-class STUserManagementSession extends STDbSession
+class STUserSession extends STDbSession
 {
 	var $database= null;
 	var $user;
@@ -47,7 +46,7 @@ class STUserManagementSession extends STDbSession
 	    $define_table= false;
 	    if(!isset($global_selftable_session_class_instance[0]))
 	    {
-	        $global_selftable_session_class_instance[0]= new STUserManagementSession($Db, $prefix);
+	        $global_selftable_session_class_instance[0]= new STUserSession($Db, $prefix);
 	        $define_table= true;
 	    }
 	    STDbSession::init($Db, $prefix);

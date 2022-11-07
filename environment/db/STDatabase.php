@@ -757,7 +757,7 @@ abstract class STDatabase extends STObjectContainer
 			return $statement;
  	 	$count= 0;
  	 	$Array= array();
-		if(typeof($statement, "STAliasTable"))
+		if(typeof($statement, "STBaseTable"))
 			$statement= $this->getStatement($statement);
  		$res= $this->query($statement, $onError);
 		if(!$res)
@@ -801,7 +801,7 @@ abstract class STDatabase extends STObjectContainer
 	 */
 	function describeTable($statement, $onError= onErrorStop)
 	{
-		if(typeof($statement, "STAliasTable"))
+		if(typeof($statement, "STBaseTable"))
 		{
 			return $statement->columns;
 		}
@@ -982,11 +982,11 @@ abstract class STDatabase extends STObjectContainer
 	}
 	function getUpdateStatement($table, $where= "", $values= null)
 	{
-		Tag::paramCheck($table, 1, "STAliasTable", "string");
+		Tag::paramCheck($table, 1, "STBaseTable", "string");
 		Tag::paramCheck($where, 2, "STDbWhere", "string", "empty(string)", "null");
 
 		$update_string= "";
-		if(typeof($table, "STAliasTable"))
+		if(typeof($table, "STBaseTable"))
 			$tableName= $table->getName();
 		else
 			$tableName= $table;
@@ -2649,7 +2649,7 @@ abstract class STDatabase extends STObjectContainer
 	 * to set maybe an back-join
 	 *
 	 * @param array:$aliases empty array which get all tables with aliases
-	 * @param STAliasTable:$oTable object of current table
+	 * @param STBaseTable:$oTable object of current table
 	 * @param boolean:$bFromIdentifications need aliases from identification columns
 	 * @return boolean false if not found any alias, otherwise true
 	 */
@@ -2820,8 +2820,8 @@ abstract class STDatabase extends STObjectContainer
 	// und sonst den Tabellen-Namen
 	function isNoFkToTable($oTable, $where= null)
 	{
-		Tag::alert(!typeof($oTable, "STAliasTable"), "STDatabase::isNoFkToTable()",
-									"first parameter must be an object from STAliasTable");
+		Tag::alert(!typeof($oTable, "STBaseTable"), "STDatabase::isNoFkToTable()",
+									"first parameter must be an object from STBaseTable");
 		$oTable->clearSelects();
 		$oTable->clearGetColumns();
 		$oTable->clearFKs();
@@ -2977,7 +2977,7 @@ abstract class STDatabase extends STObjectContainer
 /*	public function &getTable($tableName)
 	{
 		$table= STObjectContainer::getTable($tableName);
-		if(typeof($table, "STAliasTable"))
+		if(typeof($table, "STBaseTable"))
 			return $table;
 		$orgTableName= $this->getTableName($tableName);
 		

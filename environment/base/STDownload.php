@@ -8,7 +8,7 @@ class STDownload
 	function __construct(&$db, $table)
 	{
 		Tag::paramCheck($db, 1, "STDatabase");
-		Tag::paramCheck($table, 2, "STAliasTable");
+		Tag::paramCheck($table, 2, "STBaseTable");
 		$this->oDb= &$db;
 		$this->oTable= $table;
 	}

@@ -3,7 +3,6 @@
 require_once($php_html_description);
 require_once($_stmessagehandling);
 require_once($php_javascript);
-//require_once($php_htmltag_class);
 require_once($_stcallbackclass);
 
 class STBaseTableBox extends TableTag
@@ -264,7 +263,7 @@ class STBaseTableBox extends TableTag
 		 // wird nicht die Reference übernommen
 		 // da die Tabelle in späterer folge vielleicht noch geändert wird
 
-			if(typeof($table, "STAliasTable"))
+			if(typeof($table, "STBaseTable"))
 			{
 				$this->tableName= $table->getName();
 				$this->asDBTable= $table;

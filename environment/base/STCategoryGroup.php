@@ -235,7 +235,7 @@ class STCategoryGroup extends TableTag
 	}
 	function tableCheckButtons($table, $columns= 1)
 	{
-		Tag::paramCheck($table, 1, "STAliasTable");
+		Tag::paramCheck($table, 1, "STBaseTable");
 		Tag::paramCheck($columns, 2, "int");
 		
 		$table->clearSelects();

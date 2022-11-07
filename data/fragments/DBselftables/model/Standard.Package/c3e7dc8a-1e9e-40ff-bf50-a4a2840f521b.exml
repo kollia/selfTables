@@ -26,8 +26,8 @@
         <COMPID name="STDbInserter" mc="Standard.Class" uid="2e7d2115-2fe1-4019-9913-b443982b67a4"/>
         <COMPID name="STDbMySql" mc="Standard.Class" uid="d2e88eb9-2821-421b-9bdb-492e1efcdcbf"/>
         <COMPID name="STDbSelector" mc="Standard.Class" uid="4b6d8a1e-2358-4146-bfdf-b44f78cedf37"/>
-        <COMPID name="STDbSessionSideCreator" mc="Standard.Class" uid="f803b641-9348-40f1-add1-a3e79b642b70"/>
-        <COMPID name="STSideCreator" mc="Standard.Class" uid="6002aaf1-57b5-41f1-b101-95d19d114e62"/>
+        <COMPID name="STDbSessionSiteCreator" mc="Standard.Class" uid="f803b641-9348-40f1-add1-a3e79b642b70"/>
+        <COMPID name="STSiteCreator" mc="Standard.Class" uid="6002aaf1-57b5-41f1-b101-95d19d114e62"/>
         <COMPID name="STDbTable" mc="Standard.Class" uid="402ce689-d785-41b3-a171-24b11ad183aa"/>
         <COMPID name="STDbUpdater" mc="Standard.Class" uid="75d67c60-c506-49cc-b3e4-e830ce620953"/>
         <COMPID name="STFrameContainer" mc="Standard.Class" uid="24ac53e1-4b55-4dac-86b3-99e39e7c2339"/>
@@ -38,13 +38,13 @@
         <COMPID name="STQueryString" mc="Standard.Class" uid="b58caf4c-5d96-4554-bc90-bd48393af730"/>
         <COMPID name="STDbSession" mc="Standard.Class" uid="078e7ed4-e8b1-4be8-b1fe-ca1d0bd04fed"/>
         <COMPID name="STTableTag" mc="Standard.Class" uid="52d0ba69-c9cf-4e35-afc1-724932ab3a8c"/>
-        <COMPID name="STUserManagementSession" mc="Standard.Class" uid="4d25646c-112f-48e9-83f8-1e2f31f29df8"/>
-        <COMPID name="STUserSideCreator" mc="Standard.Class" uid="696d3add-f83e-4003-8715-3c1668c76094"/>
-        <COMPID name="STAliasTable" mc="Standard.Class" uid="d339f0f9-7bf9-4dca-a2c3-623a79582995"/>
+        <COMPID name="STUserSession" mc="Standard.Class" uid="4d25646c-112f-48e9-83f8-1e2f31f29df8"/>
+        <COMPID name="STUserSiteCreator" mc="Standard.Class" uid="696d3add-f83e-4003-8715-3c1668c76094"/>
+        <COMPID name="STBaseTable" mc="Standard.Class" uid="d339f0f9-7bf9-4dca-a2c3-623a79582995"/>
         <COMPID name="TableTag" mc="Standard.Class" uid="7bc81890-1aaf-4945-a1a2-6813af39840b"/>
         <COMPID name="Tag" mc="Standard.Class" uid="db32eb30-3e05-45b3-9e26-ace6e73cb347"/>
         <COMPID name="STCallbackClass" mc="Standard.Class" uid="72101935-5ce7-426f-99ed-b84261c5ae91"/>
-        <COMPID name="STDbSideCreator" mc="Standard.Class" uid="ed8a706e-030b-482f-ba1f-bab8fce05142"/>
+        <COMPID name="STDbSiteCreator" mc="Standard.Class" uid="ed8a706e-030b-482f-ba1f-bab8fce05142"/>
         <COMPID name="STSession" mc="Standard.Class" uid="c9082104-64bb-4054-b78f-1286be6f2a0e"/>
       </COMP>
       <COMP relation="Product">

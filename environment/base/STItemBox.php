@@ -1,15 +1,14 @@
 <?php
 
 require_once($_stbasetablebox);
-//require_once($_stusersession);
 
 
 /**
-*	 src: STBox.php
-*	 class STBox: insert und update Box
+*	 src: STItemBox.php
+*	 class STItemBox: insert and update Box
 */
 
-class STBox extends STBaseTableBox
+class STItemBox extends STBaseTableBox
 {
 		var $action;
 		var $startTag;
@@ -613,7 +612,7 @@ class STBox extends STBaseTableBox
         	}else
         	{
         		$statement= "select * from $tableName where ".$this->where;
-        		Tag::alert(!$this->where, "STBox::makeBox()", "no where-clausel is defined");
+        		Tag::alert(!$this->where, "STItemBox::makeBox()", "no where-clausel is defined");
         	}
         	
 			STCheck::echoDebug("db.statement", "get actual database entrys");
@@ -1214,7 +1213,7 @@ class STBox extends STBaseTableBox
 
     				// add content (strings or HTML-Tags)
     				// whitch are added after selection of column
-    				// inside STAliasTable or STDbTable
+    				// inside STBaseTable or STDbTable
     				// with ->addContent()
     				if(isset($field["addContent"][$this->action]))
     					$td->add($field["addContent"][$this->action]);
@@ -1310,7 +1309,7 @@ class STBox extends STBaseTableBox
 							$innerTable->add($tr);
 			   				// add content (strings or HTML-Tags)
 			   				// whitch are added after selection of column
-			   				// inside STAliasTable or STDbTable
+			   				// inside STBaseTable or STDbTable
 							// or ->addBehind()
 			   				if(isset($field["addBehind"][$this->action]))
 			   				{
@@ -1337,7 +1336,7 @@ class STBox extends STBaseTableBox
 				$form->add($tr);
    				// add content (strings or HTML-Tags)
    				// whitch are added after selection of column
-   				// inside STAliasTable or STDbTable
+   				// inside STBaseTable or STDbTable
 				// or ->addBehind()
    				if(isset($field["addBehind"][$this->action]))
    				{
@@ -1485,7 +1484,7 @@ class STBox extends STBaseTableBox
 			and
 			!$this->asDBTable	)
 		{
-			echo "<br><b>ERROR </b> in object STBox<br />";
+			echo "<br><b>ERROR </b> in object STItemBox<br />";
 			echo "es wurde f&uuml;r die deffinierte Box keine Tabelle gesetzt<br>";
 			exit;
 		}
@@ -1547,7 +1546,7 @@ class STBox extends STBaseTableBox
 	function table($table, $name= null)
 	{
 		STBaseTableBox::table($table, $name= null);
-		if(typeof($table, "STAliasTable"))
+		if(typeof($table, "STBaseTable"))
 		{
 			// alex 08/09/2005:	onlyRadioButtons aus der Tabelle uebernehmen
 			// alex 30/10/2013: take enumField from table as onlyRadioButtons 
@@ -1631,7 +1630,7 @@ class STBox extends STBaseTableBox
 				}
 			}
 
-			// alex 07/06/2005: setAlso aus dem STAliasTable �bernehmen
+			// alex 07/06/2005: setAlso aus dem STBaseTable �bernehmen
 			if(is_array($aSetAlso))
 				foreach($aSetAlso as $column=>$content)
 				{
@@ -1753,7 +1752,7 @@ class STBox extends STBaseTableBox
 					$where= $this->where;
 			if($this->asDBTable)
 				if($this->action==STUPDATE)
-					Tag::alert(!($where && $where->isModified()), "STBox::box()",
+					Tag::alert(!($where && $where->isModified()), "STItemBox::box()",
 										"no where-clausel defined for update in database");
 			}else
 				$bError= true;
@@ -1784,7 +1783,7 @@ class STBox extends STBaseTableBox
 				isset($this->asDBTable)	)
 			{
 				// if it is generate an STUserSession
-				// and in the STAliasTable are be set columns
+				// and in the STBaseTable are be set columns
 				// to create cluster for spezific actions
 				// prodjuce this
 				$_instance= null;

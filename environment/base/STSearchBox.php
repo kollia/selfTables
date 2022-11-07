@@ -48,7 +48,7 @@ class STSearchBox extends STCategoryGroup
 		}
 		function table(&$table)
 		{
-			Tag::paramCheck($table, 1, "STAliasTable");
+			Tag::paramCheck($table, 1, "STBaseTable");
 			$this->asDBTable[]= &$table;
 		}
 		function makeButtonToShowAll()

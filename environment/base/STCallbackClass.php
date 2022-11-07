@@ -29,7 +29,7 @@ class STCallbackClass
 			$this->sqlResult= &$sqlResult;
 			$this->clear();
 		}
-		// functionen f�r STTable
+		// functions for STListBox
 		function clear()
 		{
 			$this->showType= null;
