@@ -724,10 +724,18 @@ class STUserSession extends STDbSession
         //$statement.= "values(".$user.",".$project.",".$Type.",".$customID.",'".$logText."',sysdate())";
         //$this->database->fetch($statement);
 	}
-	function acceptUser($user, $password= null)
+	/**
+	 * check wheter authentication with user password is correct
+	 * 
+	 * @param string|int $user user ID or name from database or LDAP<br />
+	 *                         user name can also be a domain with user separated with '\' 
+	 * @param string $password password also set like user before
+	 * @return int login error code or 0 by correct user/password @see STSession::getLoginError()
+	 */
+	function acceptUser($user, $password= null) : int
 	{
 		STCheck::paramCheck($user, 1, "string", "int");
-		STCheck::paramCheck($password, 2, "string");
+		STCheck::paramCheck($password, 2, "string", "empty(string)");
 
 		if(Tag::isDebug("user"))
 		{
@@ -735,6 +743,17 @@ class STUserSession extends STDbSession
 			STCheck::echoDebug("user", "<b>entering acceptUser(<em>&quot;".$user."&quot;, &quot;".$pwd."&quot;,</em>)</b>");
 		}
 
+		$domain= "";
+		if(is_string($user))
+		{
+		    $preg= preg_split("/\\\\/", $user);
+    		if( $preg !== false &&
+    	        count($preg) == 2  )
+    	    {
+                $domain= $preg[0];
+                $user= $preg[1];
+    	    }
+		}
 		$userTable= $this->database->getTable("User");
 		$userTable->clearSelects();
 		$userTable->clearGetColumns();
@@ -745,6 +764,10 @@ class STUserSession extends STDbSession
 			$userTable->where("UserName='".$user."'");
 		else
 			$userTable->where("ID=".$user);
+		if($domain != "")
+		{
+		    $userTable->andWhere("GroupType='$domain'");
+		}
 		$selector= new STDbSelector($userTable);
 		$selector->execute();
 		$row= $selector->getResult();
@@ -758,18 +781,25 @@ class STUserSession extends STDbSession
 		    $rownr= 0;
 		    if(count($row) > 1)
 		    {
-		        foreach($row as $line)
+		        if(STCheck::isDebug("user"))
 		        {
-		            if($line['GroupType'] == "LKHGraz")
-		                break;
+		            $domains= array();
+    		        foreach($row as $line)
+    		            $domains[$line['GroupType']]= "used";
+    		        $domain= "";
+    		        foreach($domains as $dom=>$used)
+    		            $domain.= "$dom/";
+    		        $domain= substr($domain, 0, strlen($domain)-1);
+    		        STCheck::echoDebug("user", "ambiguous user found by follow domains '$domain'");
 		        }
+		        return 3;
 		    }
     	  	$ID= $row[$rownr]['ID'];
     	  	$user= $row[$rownr]['UserName'];
     	  	$groupType= $row[$rownr]['GroupType'];
     		
 		}
-		if( Tag::isDebug("user") )
+		if( STCheck::isDebug("user") )
 		{
 		    $msg= "";
 			if($existrows > 0)
@@ -781,6 +811,7 @@ class STUserSession extends STDbSession
 				$msg= "do not found any user with name '$user' in Database";
 			STCheck::echoDebug("user", $msg);
 		}
+		showErrorTrace();
 	  	if(	$ID == -1 ||
 			$groupType != "custom"	)
 	  	{
@@ -811,17 +842,18 @@ class STUserSession extends STDbSession
 			 return 1;// kein User mit diesem Namen vorhanden
 		}
 
-		$oUserTable= $this->database->getTable("User");
+		$oWhere= new STDbWhere();
+		$oWhere->where("ID='$ID'");
+		$oWhere->andWhere("Pwd=password('".$password."')");
+		
+		//$oUserTable= $this->database->getTable("User");
 		$userSelector= new STDbSelector($userTable);
 		$userSelector->select("User", "ID");
-		$userSelector->where("UserName='".$user."'");
-		$userSelector->andWhere("Pwd=password('".$password."')");
+		$userSelector->where($oWhere);
 		$userSelector->execute();
-		$ID= $userSelector->getSingleResult();
-		//$statement=	 "select ID from ".$this->sUserTable." ";
-		//$statement.= "where UserName='$user' and Pwd=password('$password')";
-		//$ID= $this->database->fetch_single($statement);
-		if(!$ID)
+		$corrID= $userSelector->getSingleResult();
+		if( !$corrID ||
+		    $corrID != $ID    )
 		{
 		 	 Tag::echoDebug("user", "do not found user with given password ...");
 			 return 2;// Passwort ist falsch

@@ -678,7 +678,8 @@ class STSession
 	 *       3
 	 *     </td>
 	 *     <td>
-	 *       Multiple UserName in LDAP found!
+	 *       Multiple UserName in found!<br />
+	 *       Please use also a domain separated with a backslash '\'
 	 *     </td>
 	 *   </tr>
 	 *   <tr>
@@ -843,7 +844,14 @@ class STSession
 	{
 		// function to overwrite
 	}
-	function acceptUser($user, $password)
+	/**
+	 * check wheter authentication with user password is correct
+	 * 
+	 * @param string $user user name set befor with STSession::allowedUser() method 
+	 * @param string $password password also set like user before
+	 * @return int login error code or 0 by correct user/password @see STSession::getLoginError()
+	 */
+	function acceptUser($user, $password) : int
     {
     	if(Tag::isDebug("user"))
         {

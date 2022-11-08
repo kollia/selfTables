@@ -30,5 +30,35 @@ st_print_r($res);
 
 // selection should not set where clause
 $statement= $project->getStatement();
-echo "project statement:'$statement'<br>";
+echo "project statement:'$statement'<br><br><br>";
+
+//------------------------------------------------------------------------------------------------------------------------------
+// check incorrect where statement -> andWhere() delete where()
+
+$oUserTable= $db->getTable("MUUser");
+$userSelector= new STDbSelector($userTable);
+$userSelector->select("User", "ID");
+$userSelector->where("UserName='".$user."'");
+$userSelector->andWhere("Pwd=password('".$password."')");
+$userSelector->execute();
+
+$res= $userSelector->getResult();
+st_print_r($res);
+
+// selection should not set where clause
+$statement= $userSelector->getStatement();
+echo "project statement:'$statement'<br><br><br>";
+
+
+
+
+
+
+
+
+
+
+
+
+
 ?>

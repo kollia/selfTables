@@ -61,13 +61,3 @@ class FrameTag extends Tag
 }
 
 ?>
-
-
-
-
-
-
-
-
-
-

@@ -2093,8 +2093,7 @@ class STBaseTable
 		 	}
 		 	if($operator == "")
 		 		unset($this->oWhere);
-			if(!$stwhere)
-				return;
+		 	
 	 		if(	isset($this->oWhere) &&
 	 			(	is_string($stwhere) ||
 	 				$this->oWhere->isModified()	)	)
