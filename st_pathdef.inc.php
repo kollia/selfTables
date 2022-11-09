@@ -7,6 +7,7 @@
 	//
 	//     true		             -  only set to debug and check parameters in some method's (true is an boolean no string)
 	//     query                 -  show incomming query of GET or POST URL's
+	//     performance           -  show needed performance of time from hole site
 	//     db.statement          -  show created statements of self-Tables
 	//     db.statement.time     -  show how long statement need to fetch from database
 	//     db.statements.select  -  show select statement by creation

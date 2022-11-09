@@ -183,10 +183,44 @@ class STDbMySql extends STDatabase
 		
 		if(STCheck::isDebug())
 		{
+		    $tm= hrtime(false);
 		    STCheck::echoDebug("db.statement", $statement);
 		    STCheck::echoDebug("db.statement.time", date("H:i:s")." ".(time()-$_st_page_starttime_));
 		}
 		$this->lastDbResult = $this->conn->query($statement);
+		if(STCheck::isDebug("db.statement.time"))
+		{
+		    // toDo: time calculation maybe wrong
+		    $ntm= hrTime(false);
+		    $msg= "need ";
+		    $seconds= $ntm[0] - $tm[0];
+		    if($seconds > 0)
+		        $ntm[1]+= (1000*1000*1000);/*milli/micro/nano*/
+		    $fnano= $ntm[1] - $tm[1];
+		    
+		    // calculate nano seconds
+		    $lmicro= (int)($fnano / 1000);
+		    $nano= $fnano - ( $lmicro * 1000);
+		    
+		    // calculate micro seconds
+		    $lmilli= (int)($lmicro / 1000);
+		    $micro= $lmicro - ( $lmilli * 1000);
+		    
+		    // calculate milli seconds
+		    $milli= $lmilli;
+		    
+		    $m['seconds']= $seconds;
+		    $m['diff']= $ntm[1] - $tm[1];
+		    $m['milliseconds']= $milli;
+		    $m['microseconds']= $micro;
+		    $m['nanoseconds']= $nano;
+		    echo "from:";
+		    st_print_r($tm);
+		    echo "to:";
+		    st_print_r($ntm);
+		    echo "is:";
+		    st_print_r($m);
+		}
 		return $this->lastDbResult;
 	}
 	protected function list_dbtable_fields($TableName)

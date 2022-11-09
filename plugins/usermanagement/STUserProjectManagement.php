@@ -183,11 +183,11 @@ class STUserProjectManagement extends STBaseContainer
             $this->availableSite['show']= "project";
         return $this->availableSite;
     }
-    function addObj(&$tag, $showWarning = false)
+    public function addObj(&$tag, $showWarning = false)
     {
         $this->addedContent[]= $tag;
     }
-    function execute(&$externSideCreator, $onError)
+    public function execute(&$externSideCreator, $onError)
     {
         STBaseContainer::execute($externSideCreator, $onError);  
         $available= $this->showAvailableSite();
@@ -260,8 +260,8 @@ class STUserProjectManagement extends STBaseContainer
                             $div->add($b);
                         $table->add($div);
                         $table->columnBackground($this->homepageBanner);
-                        $table->width("100%");
-                        $table->align("right");
+                        //$table->width("100%");
+                        $table->columnAlign("right");
                     }
                 $this->append($table);    
             }
@@ -325,24 +325,31 @@ class STUserProjectManagement extends STBaseContainer
                     $table->columnClass("fontSmaller");
                     $table->columnStyle("font-weight:bold;");
                     $table->columnNowrap();
-                    if($user->isLoggedIn())
+                    $div= new DivTag();
+                    if($available['LoggedIn'])
+                    {                        
+                        $logout= $user->getLogoutButton( "Logout" );
+                        $div->add($logout);
+                        $div->add(br());
+                        $div->add("&#160;logged&#160;In&#160;as:&#160;");
+                        $b= new BTag();
+                            $span= new SpanTag("colorONE");
+                                $span->add($user->getUserName());
+                            $b->add($span);
+                            $b->add("&nbsp;&nbsp;");
+                        $div->add($b);
+                    }else
                     {
-                        $div= new DivTag();
-                            $logout= $user->getLogoutButton( "Logout" );
-                            $div->add($logout);
-                            $div->add(br());
-                            $div->add("&#160;logged&#160;In&#160;as:&#160;");
-                            $b= new BTag();
-                                $span= new SpanTag("colorONE");
-                                    $span->add($user->getUserName());
-                                $b->add($span);
-                                $b->add("&nbsp;&nbsp;");
-                            $div->add($b);
-                        $table->add($div);
-                        //$table->columnBackground($this->navigationBanner);
-                        $table->width("100%");
-                        $table->columnAlign("right");
+                        $login= $user->getLogoutButton("Login");
+                        $div->add($login);
+                        $div->add(br());
+                        $div->add(br());                        
                     }
+                    $table->add($div);
+                    if(!$available['LoggedIn'])
+                        $table->columnBackground($this->navigationBanner);
+                    $table->width("100%");
+                    $table->columnAlign("right");
                 $this->append($table);    
             }
         }
