@@ -811,7 +811,6 @@ class STUserSession extends STDbSession
 				$msg= "do not found any user with name '$user' in Database";
 			STCheck::echoDebug("user", $msg);
 		}
-		showErrorTrace();
 	  	if(	$ID == -1 ||
 			$groupType != "custom"	)
 	  	{
