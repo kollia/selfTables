@@ -1111,15 +1111,25 @@ class STBaseTable
 		if(isset($aGet["stget"]["sort"][$tableName]))
 		{
 			$aGet= $aGet["stget"]["sort"][$tableName];
-			$statement= "";
+			$query_statement= "";
 			foreach($aGet as $column)
 			{
 				//preg_match("/^([^_]+)_(ASC|DESC)$/i", $column, $inherit);
 			    preg_match("/^(.+)_(ASC|DESC)$/i", $column, $inherit);
 				$field= $this->searchByAlias($inherit[1]);
-				$statement.= $field["column"]." ".$inherit[2].",";
+				if( isset($field["column"]) )
+				{
+				    $query_statement.= $field["column"]." ".$inherit[2].",";
+				}elseif(STCheck::isDebug())
+				{
+				    $message= "column alias('".$inherit[1]."') from query string not found inside table '$tableName'";
+				    STCheck::write($message, 1);
+				    $message= "maybe not reach table definition for current action or container";
+				    STCheck::write($message, 1);
+				}
 			}
-			$statement= substr($statement, 0, strlen($statement)-1);
+			if(strlen($query_statement) > 0)
+			   $statement= substr($query_statement, 0, strlen($query_statement)-1);
 		}
 		return $statement;
 	}
