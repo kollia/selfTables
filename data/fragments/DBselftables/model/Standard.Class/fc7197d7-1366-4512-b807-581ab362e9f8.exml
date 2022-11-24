@@ -17,7 +17,7 @@
     <DEPENDENCIES>
       <COMP relation="DependsOnDependency">
         <OBJECT>
-          <ID name="" mc="Infrastructure.Dependency" uid="59dcc694-3a6e-4d42-97c3-a496a2f8c611"/>
+          <ID name="" mc="Infrastructure.Dependency" uid="683fd036-5d9a-484a-86b8-045c4e608717"/>
           <ATTRIBUTES>
             <ATT name="Name"></ATT>
             <ATT name="status">1970354901745664</ATT>
@@ -25,7 +25,7 @@
           <DEPENDENCIES>
             <LINK relation="DependsOn">
               <REFOBJ>
-                <ID name="" mc="Infrastructure.Dependency" uid="41251df7-95d7-41dd-8656-20485fc04797"/>
+                <ID name="" mc="Infrastructure.Dependency" uid="2a17aed3-8285-4f30-abb3-1da43821d7c6"/>
               </REFOBJ>
             </LINK>
           </DEPENDENCIES>

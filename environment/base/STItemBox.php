@@ -1,6 +1,6 @@
 <?php
 
-require_once($_stbasetablebox);
+require_once($_stbasebox);
 
 
 /**
@@ -8,7 +8,7 @@ require_once($_stbasetablebox);
 *	 class STItemBox: insert and update Box
 */
 
-class STItemBox extends STBaseTableBox
+class STItemBox extends STBaseBox
 {
 		var $action;
 		var $startTag;
@@ -44,7 +44,7 @@ class STItemBox extends STBaseTableBox
 			Tag::paramCheck($container, 1, "STBaseContainer");
 			Tag::paramCheck($class, 2, "string");
 
-			STBaseTableBox::__construct($container, $class);
+			STBaseBox::__construct($container, $class);
 			//$this->startTag= $tag;
 			$this->columns= "*";
 			$this->intersecBez= 0;
@@ -54,7 +54,7 @@ class STItemBox extends STBaseTableBox
 		}
 		function createMessages()
 		{
-			STBaseTableBox::createMessages();
+			STBaseBox::createMessages();
 			if($this->language == "de")
 			{
 				$this->aSelectNames["select"]= "&#160;&#160; bitte ausw&auml;hlen &#160;&#160;";
@@ -1546,11 +1546,11 @@ class STItemBox extends STBaseTableBox
 	{
 		if($action == "SAME AS columnNameAction")
 			$action= $columnNameAction;
-		STBaseTableBox::callback($columnNameAction, $callbackFunction, $action);
+		STBaseBox::callback($columnNameAction, $callbackFunction, $action);
 	}
 	function table($table, $name= null)
 	{
-		STBaseTableBox::table($table, $name= null);
+		STBaseBox::table($table, $name= null);
 		if(typeof($table, "STBaseTable"))
 		{
 			// alex 08/09/2005:	onlyRadioButtons aus der Tabelle uebernehmen

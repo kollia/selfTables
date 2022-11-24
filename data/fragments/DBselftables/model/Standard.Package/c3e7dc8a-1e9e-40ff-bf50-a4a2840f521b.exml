@@ -44,8 +44,8 @@
         <COMPID name="TableTag" mc="Standard.Class" uid="7bc81890-1aaf-4945-a1a2-6813af39840b"/>
         <COMPID name="Tag" mc="Standard.Class" uid="db32eb30-3e05-45b3-9e26-ace6e73cb347"/>
         <COMPID name="STCallbackClass" mc="Standard.Class" uid="72101935-5ce7-426f-99ed-b84261c5ae91"/>
-        <COMPID name="STDbSiteCreator" mc="Standard.Class" uid="ed8a706e-030b-482f-ba1f-bab8fce05142"/>
         <COMPID name="STSession" mc="Standard.Class" uid="c9082104-64bb-4054-b78f-1286be6f2a0e"/>
+        <COMPID name="STBaseBox" mc="Standard.Class" uid="7f32ab46-3f9c-40dd-accf-d4629113c9b6"/>
       </COMP>
       <COMP relation="Product">
         <COMPID name="dbselftables Class diagram" mc="Standard.ClassDiagram" uid="6652e321-2600-4e11-9d7f-79f738cfc311"/>

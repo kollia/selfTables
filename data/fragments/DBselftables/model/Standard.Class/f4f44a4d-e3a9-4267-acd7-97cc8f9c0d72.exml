@@ -17,7 +17,7 @@
     <DEPENDENCIES>
       <COMP relation="DependsOnDependency">
         <OBJECT>
-          <ID name="" mc="Infrastructure.Dependency" uid="eb53bfa2-648d-47c5-9a0e-78e51fbffeae"/>
+          <ID name="" mc="Infrastructure.Dependency" uid="12b3f61f-7fe0-4415-94a6-beadcee399e2"/>
           <ATTRIBUTES>
             <ATT name="Name"></ATT>
             <ATT name="status">1970354901745664</ATT>

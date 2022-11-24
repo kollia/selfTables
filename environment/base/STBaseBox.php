@@ -5,7 +5,7 @@ require_once($_stmessagehandling);
 require_once($php_javascript);
 require_once($_stcallbackclass);
 
-class STBaseTableBox extends TableTag
+class STBaseBox extends TableTag
 {
 		var	$db;
 		var $tableContainer;
@@ -35,7 +35,7 @@ class STBaseTableBox extends TableTag
 		 */
 		protected	$bContainerManagement= true;
 
-		function __construct(&$container, $class= "STBaseTableBox")
+		function __construct(&$container, $class= "STBaseBox")
 		{
 			global $HTTP_SERVER_VARS;
 
@@ -47,7 +47,7 @@ class STBaseTableBox extends TableTag
 			$table= $container->getTable();
 			$this->fieldArray[$table->getName()]= $table->columns;
 			$this->msg= new STMessageHandling($class);
-			STBaseTableBox::init();
+			STBaseBox::init();
 			$this->aktualScript= $HTTP_SERVER_VARS["SCRIPT_NAME"];
 			$this->Error= "NOERROR";
 			if($container==null)
@@ -106,7 +106,7 @@ class STBaseTableBox extends TableTag
 		function clear()
 		{
 			TableTag::clear();
-			STBaseTableBox::init();
+			STBaseBox::init();
 			$this->init();
 		}
 		function callback($columnName, $callbackFunction, $action)
@@ -608,7 +608,7 @@ class STBaseTableBox extends TableTag
 				$field= $this->searchByColumn($name);
 			if(!$field && !$firstAlias)
 				$field= $this->searchByAlias($name);
-			Tag::warning(!$field, "STBaseTableBox::findAliasOrColumn()", "column ".$name." is not declared in table ".$this->Name);
+			Tag::warning(!$field, "STBaseBox::findAliasOrColumn()", "column ".$name." is not declared in table ".$this->Name);
 			if(!$field)
 			{
 				$field= array();

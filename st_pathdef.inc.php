@@ -207,14 +207,14 @@
 		
 		$_stmessagehandling=		$_stenvironmenttools_path."/base/STMessageHandling.php";
 		$_stcallbackclass=			$_stenvironmenttools_path."/base/STCallbackClass.php";
-		$_stbasetablebox=			$_stenvironmenttools_path."/base/STBaseTableBox.php";
-		$_stbasestable=				$_stenvironmenttools_path."/base/STBaseTable.php";
+		$_stbasebox=			    $_stenvironmenttools_path."/base/STBaseBox.php";
+		$_stbasetable=				$_stenvironmenttools_path."/base/STBaseTable.php";
 		$_stitembox=				$_stenvironmenttools_path."/base/STItemBox.php";
 		$_stlistbox=				$_stenvironmenttools_path."/base/STListBox.php";
 		$_stsearchbox=				$_stenvironmenttools_path."/base/STSearchBox.php";
 		$_stcategorygroup=			$_stenvironmenttools_path."/base/STCategoryGroup.php";
 		$_stbasesearch=				$_stenvironmenttools_path."/base/STBaseSearch.php";
-		$choose_table=				$_stenvironmenttools_path."/base/STChooseTable.php";
+		$_stchoosebox=				$_stenvironmenttools_path."/base/STChooseBox.php";
 		$stselectbox=				$_stenvironmenttools_path."/base/STSelectBox.php";
 		$_stdownload=				$_stenvironmenttools_path."/base/STDownload.php";
 		$_stbasecontainer=			$_stenvironmenttools_path."/base/STBaseContainer.php";

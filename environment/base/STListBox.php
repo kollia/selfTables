@@ -1,11 +1,11 @@
 <?php
 
 
-require_once($_stbasetablebox);
+require_once($_stbasebox);
 require_once($_stdbselector);
 
 
-class STListBox extends STBaseTableBox
+class STListBox extends STBaseBox
 {
 		var $arrangement;
 		var $statement;
@@ -36,7 +36,7 @@ class STListBox extends STBaseTableBox
 			Tag::paramCheck($container, 1, "STBaseContainer");
 			Tag::paramCheck($class, 2, "string");
 
-			STBaseTableBox::__construct($container, $class);
+			STBaseBox::__construct($container, $class);
 			$this->logTime($logTime);
 
 			if($this->log)
@@ -71,7 +71,7 @@ class STListBox extends STBaseTableBox
 		}
 		function createMessages()
 		{
-			STBaseTableBox::createMessages();
+			STBaseBox::createMessages();
 			if($this->language == "de")
 			{
 				$this->msg->setMessageContent("NO_SOLUTION", "zuerst muss die Funktion solution() oder table() aufgerufen werden!");
@@ -255,7 +255,7 @@ class STListBox extends STBaseTableBox
 		$this->oSelector->createAliases($aliases);
 		$aliases= array_flip($aliases);
 		$oCallbackClass->aTables= $aliases;
-		return STBaseTableBox::makeCallback($action, $oCallbackClass, $columnName, $rownum);
+		return STBaseBox::makeCallback($action, $oCallbackClass, $columnName, $rownum);
 	}
 	function createStatement()
 	{
@@ -935,7 +935,7 @@ class STListBox extends STBaseTableBox
 		}
 		function callback($columnName, $callbackFunction, $action= STLIST)
 		{
-			STBaseTableBox::callback($columnName, $callbackFunction, $action);
+			STBaseBox::callback($columnName, $callbackFunction, $action);
 		}
 		function insertAttributes(&$tag, $element)
 		{
@@ -2211,7 +2211,7 @@ class STListBox extends STBaseTableBox
 				$user->LOG("start STListBox->display", 4);
 				$user->debug($debug);
 			}
-			STBaseTableBox::display();
+			STBaseBox::display();
 			if($this->log)
 			{
 				$debug= $user->isDebug();
@@ -2252,7 +2252,7 @@ class STListBox extends STBaseTableBox
 				$this->formAdr= $table->asForm["action"];
 			}
 		}
-		STBaseTableBox::table($table, $name);
+		STBaseBox::table($table, $name);
 		if(typeof($table, "STBaseTable"))
 			$this->takeTypesFromTable();
 	}

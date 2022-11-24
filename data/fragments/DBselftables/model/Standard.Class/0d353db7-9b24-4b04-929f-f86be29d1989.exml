@@ -17,14 +17,14 @@
     <DEPENDENCIES>
       <COMP relation="DependsOnDependency">
         <OBJECT>
-          <ID name="" mc="Infrastructure.Dependency" uid="41251df7-95d7-41dd-8656-20485fc04797"/>
+          <ID name="" mc="Infrastructure.Dependency" uid="2a17aed3-8285-4f30-abb3-1da43821d7c6"/>
           <ATTRIBUTES>
             <ATT name="Name"></ATT>
             <ATT name="status">1970354901745664</ATT>
           </ATTRIBUTES>
           <DEPENDENCIES>
             <LINK relation="DependsOn">
-              <ID name="Tag" mc="Standard.Class" uid="db32eb30-3e05-45b3-9e26-ace6e73cb347"/>
+              <ID name="TableTag" mc="Standard.Class" uid="7bc81890-1aaf-4945-a1a2-6813af39840b"/>
             </LINK>
           </DEPENDENCIES>
         </OBJECT>

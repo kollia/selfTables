@@ -4,6 +4,7 @@ require_once($php_html_description);
 require_once($_stbasecontainer);
 require_once($_stdbtablecreator);
 require_once($_stdbtabledescriptions);
+require_once($_stchoosebox);
 require_once($_stlistbox);
 require_once($_stitembox);
 
@@ -858,7 +859,7 @@ class STObjectContainer extends STBaseContainer
 		function makeChooseTags($get_vars)
 		{
 			$chooseTable= $this->getChooseTableTag($get_vars);
-			// alex 18/05/2005:	die Weiterleitung ist jetzt in den STChooseTable verschoben
+			// alex 18/05/2005:	die Weiterleitung ist jetzt in den STChoosBox verschoben
 			//					und muss von aussen angegeben werden
 			/*{
 				$Address= $chooseTable->getFirstButtonAddress();
@@ -1273,7 +1274,7 @@ class STObjectContainer extends STBaseContainer
     			}
 			}
 			
-			$chooseTable= new STChooseTable($this);
+			$chooseTable= new STChoosBox($this);
 			$chooseTable->align("center");
 			$chooseTable->setStartPage($this->oExternSideCreator->getStartPage());
 			$chooseTable->noChoise($this->aNoChoice);
@@ -1372,9 +1373,11 @@ class STObjectContainer extends STBaseContainer
 		// in den diversen Objekten, welche dann mit
 		// execute ausgefuehrt werden.
 		//
-		// param $table muss ein objekt vom typ STBaseTableBox sein
+		// param $table muss ein objekt vom typ STBaseBox sein
 		private function setAllMessagesContent($action, &$oBox)
-		{
+		{		    
+		    STCheck::paramCheck($oBox, 2, "STBaseBox");
+		    
 			$oBox->setLanguage($this->language);
 			$table= &$oBox->getTable();
 			$tableName= $table->getName();

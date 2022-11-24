@@ -1,6 +1,5 @@
 <?php
 
-require_once($choose_table);
 require_once($_stmessagehandling);
 require_once($php_html_description);
 require_once($_stdownload);

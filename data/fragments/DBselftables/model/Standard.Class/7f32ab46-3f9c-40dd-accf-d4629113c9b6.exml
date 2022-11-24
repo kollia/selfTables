@@ -1,7 +1,7 @@
 <?xml version="1.0" ?>
-<!--GENERATED FILE, PLEASE DO NOT EDIT!!!--><EXT object="TableTag" version="4">
+<!--GENERATED FILE, PLEASE DO NOT EDIT!!!--><EXT object="STBaseBox" version="4">
   <OBJECT>
-    <ID name="TableTag" mc="Standard.Class" uid="7bc81890-1aaf-4945-a1a2-6813af39840b"/>
+    <ID name="STBaseBox" mc="Standard.Class" uid="7f32ab46-3f9c-40dd-accf-d4629113c9b6"/>
     <PID name="dbselftables" mc="Standard.Package" uid="c3e7dc8a-1e9e-40ff-bf50-a4a2840f521b"/>
     <ATTRIBUTES>
       <ATT name="IsActive">false</ATT>
@@ -11,20 +11,20 @@
       <ATT name="IsLeaf">false</ATT>
       <ATT name="IsRoot">false</ATT>
       <ATT name="Visibility">Public</ATT>
-      <ATT name="Name"><![CDATA[TableTag]]></ATT>
+      <ATT name="Name"><![CDATA[STBaseBox]]></ATT>
       <ATT name="status">1970354901745664</ATT>
     </ATTRIBUTES>
     <DEPENDENCIES>
       <COMP relation="DependsOnDependency">
         <OBJECT>
-          <ID name="" mc="Infrastructure.Dependency" uid="fc1e4349-9e94-4735-8432-a24f418fac7a"/>
+          <ID name="" mc="Infrastructure.Dependency" uid="0fc4f4b4-0ff8-4267-93f0-9f014390d0f0"/>
           <ATTRIBUTES>
             <ATT name="Name"></ATT>
             <ATT name="status">1970354901745664</ATT>
           </ATTRIBUTES>
           <DEPENDENCIES>
             <LINK relation="DependsOn">
-              <ID name="Tag" mc="Standard.Class" uid="db32eb30-3e05-45b3-9e26-ace6e73cb347"/>
+              <ID name="TableTag" mc="Standard.Class" uid="7bc81890-1aaf-4945-a1a2-6813af39840b"/>
             </LINK>
           </DEPENDENCIES>
         </OBJECT>

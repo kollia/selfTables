@@ -1,6 +1,6 @@
 <?php
 
-require_once($_stbasestable);
+require_once($_stbasetable);
 
 class STDbTable extends STBaseTable
 {
