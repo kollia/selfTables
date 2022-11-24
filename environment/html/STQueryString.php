@@ -38,6 +38,25 @@ class STQueryString
 {
 		var $param_vars;
 		var $aNoSth;
+		/**
+		 * whether method was invoked
+		 * @var boolean
+		 */
+		private $bNewContainerShiftet= false;
+		/**
+		 * whether limitation should shift only into older state
+		 * otherwise value is false
+		 * @var false|array of limitation was set by last
+		 */
+		private $shiftOlderLimit= null;
+		/**
+		 * array of variables witch not
+		 * should be shifted to older
+		 * when linked to a new container
+		 * @var array of strings
+		 */
+		private $aNoShiftVars= array( 'limit',
+		                              'link'  );
 
 		function __construct($param_vars= null)
 		{
@@ -298,18 +317,179 @@ class STQueryString
 				$param_vars= false;
 			return $param_vars;
 		}
-		function insert($paramValue, $bAddLink= false)
+		/**
+		 * update given values inside container layer from query
+		 * 
+		 * @param array $paramValues new values should be defined.<br /> 
+		 *                            parameter can look like follow:<br />
+		 *                            <table>
+		 *                                <tr>
+		 *                                    <td>
+		 *                                        array(
+		 *                                    </td>
+		 *                                    <td>
+		 *                                        &quot;container&quot;
+		 *                                    </td>
+		 *                                    <td>
+		 *                                        =>
+		 *                                    </td>
+		 *                                    <td>
+		 *                                        &quot;main&quot;
+		 *                                    </td>
+		 *                                    <td>
+		 *                                    </td>
+		 *                                </tr>
+		 *                            </table>
+		 */
+		public function updateContainer(array $paramValues)
+		{
+		    foreach($paramValues as $key => $value)
+		        $this->param_vars['stget'][$key]= $value;
+		}
+		/**
+		 * create a new container layer inside the query
+		 * 
+		 * @param array $paramValues array defined with new container/table/action/link values<br />
+		 *                            not all have to be set, but all under stget layer will be push into older layer<br />
+		 *                            parameter can look like follow:<br />
+		 *                            <table>
+		 *                                <tr>
+		 *                                    <td>
+		 *                                        array(
+		 *                                    </td>
+		 *                                    <td>
+		 *                                        &quot;container&quot;
+		 *                                    </td>
+		 *                                    <td>
+		 *                                        =>
+		 *                                    </td>
+		 *                                    <td>
+		 *                                        &quot;main&quot;
+		 *                                    </td>
+		 *                                    <td>
+		 *                                    </td>
+		 *                                </tr>
+		 *                                <tr>
+		 *                                    <td>
+		 *                                    </td>
+		 *                                    <td>
+		 *                                        &quot;table&quot;
+		 *                                    </td>
+		 *                                    <td>
+		 *                                        =>
+		 *                                    </td>
+		 *                                    <td>
+		 *                                        &quot;NAMES&quot;
+		 *                                    </td>
+		 *                                    <td>
+		 *                                    </td>
+		 *                                </tr>
+		 *                                <tr>
+		 *                                    <td>
+		 *                                    </td>
+		 *                                    <td>
+		 *                                        &quot;action&quot;
+		 *                                    </td>
+		 *                                    <td>
+		 *                                        =>
+		 *                                    </td>
+		 *                                    <td>
+		 *                                        &quot;update&quot;
+		 *                                    </td>
+		 *                                    <td>
+		 *                                        )
+		 *                                    </td>
+		 *                                </tr>
+		 *                            </table>
+		 */
+		public function newContainer(array $paramValues)
+		{
+		    STCheck::echoDebug("query.limitation", "create query link to new container");
+		    STCheck::alert($this->bNewContainerShiftet, "STQueryString::newContainer()", "function should call only for one time.");
+		    $this->bNewContainerShiftet= true; 
+		    $this->pushStgetToOlder();
+		    $this->updateContainer($paramValues);
+		    if(STCheck::isDebug("query.limitation"))
+		    {
+		        $space= STCheck::echoDebug("query.limitation", "result of new query:");
+		        st_print_r($this->param_vars, 10, $space);
+		    }
+		}
+		public function removeContainer()
+		{
+		    if(!$this->defined("stget[older]"))
+		        return false;
+		    $this->restoreStgetOlder();
+		    $this->removeLimitation();
+		    return true;
+		}
+		public function insert($paramValue, $bAddLink= false)
 		{
 			$param_vars= &$this->param_vars;
 			$array= $this->splitParamValue($paramValue);
 			$update= $this->updateA($array, $param_vars);
-			while($update)
+			if($update)
 			{
-				if(!isset($param_vars["stget"]["older"]))
-					$param_vars["stget"]["older"]= array();
-				$param_vars= &$param_vars["stget"]["older"];
-				$update= $this->updateA($update, $param_vars);
+    			while($update)
+    			{
+    				if(!isset($param_vars["stget"]["older"]))
+    					$param_vars["stget"]["older"]= array();
+    				$param_vars= &$param_vars["stget"]["older"];
+    				$update= $this->updateA($update, $param_vars);
+    			}
 			}
+		}
+		/**
+		 * push given stget parameters into stget/older parameter layer
+		 * 
+		 * @param bool $bOnlyLimitation push only limitation link up to older container.<br />
+		 *                                (default is to push all beside limit and link values)
+		 */
+		private function pushStgetToOlder()
+		{
+		    $older= array();
+		    foreach($this->param_vars['stget'] as $param => $value)
+		    {
+		        if(!in_array($param, $this->aNoShiftVars))
+		            $older[$param]= $value;
+		    }
+		    if(isset($this->shiftOlderLimit))
+		        $older['limit']= $this->shiftOlderLimit;
+		    if(count($older))
+		    {
+		        foreach($older as $param => $value)
+		        {
+		            if($param != "limit")
+		                unset($this->param_vars['stget'][$param]);
+		        }
+		    }else
+		        $older['container']= "";
+		    if(!$this->shiftOlderLimit)
+		    {
+    		    if(isset($this->param_vars['stget']['older']))
+    		        $older['older']= $this->param_vars['stget']['older'];
+    		    $this->param_vars['stget']['older']= $older;
+		    }
+		        
+		}
+		private function restoreStgetOlder()
+		{
+	        foreach($this->param_vars['stget'] as $param => $value)
+	        {
+	            if(in_array($param, $this->aNoShiftVars))
+	                unset($this->param_vars['stget'][$param]);
+	        }
+		    foreach($this->param_vars['stget']['older'] as $param=>$value)
+		    {
+		        if($param != "older")
+		            $this->param_vars['stget'][$param]= $value;		        
+		    }
+		    if(isset($this->param_vars['stget']['older']['older']))
+		    {
+		        $older= $this->param_vars['stget']['older']['older'];
+		        $this->param_vars['stget']['older']= $older;
+		    }else
+		        unset($this->param_vars['stget']['older']);
 		}
 		/**
 		 * check whether an parameter be defined
@@ -523,13 +703,215 @@ class STQueryString
 				$aRv= $this->param_vars["stget"][$tableName];
 			return $aRv;
 		}
-		function getLimitation($tableName)
+		/**
+		 * return limitation of table
+		 * 
+		 * @param string $tableName name of table
+		 * @return array return an array with one entry where the key is the column
+		 *                with the value of column as value. If not limitation exist
+		 *                it will be return NULL
+		 */
+		public function getLimitation(string $tableName)
 		{
 			STCheck::paramCheck($tableName, 1, "string");
 
-			$description= &STDbTableDescriptions::instance();
-			$tableName= $description->getTableName($tableName);
-			return $this->param_vars["stget"][$tableName];
+			if(isset($this->param_vars['stget']['limit'][$tableName]))
+    			return $this->param_vars['stget']['limit'][$tableName];
+			return null;
+		}
+		public function getCurrentLimitations()
+		{
+		    if(isset($this->param_vars['stget']['limit']))
+		        return $this->param_vars['stget']['limit'];
+		    return array();
+		}
+		/**
+		 * set a limitation inside url parameter for current table
+		 * and also an link to see in which object-container will be set.
+		 * 
+		 * @param string $limitOrder set link depending on this order and can be 'true'/'false'/'older' for a new container
+		 *                           or 'insert'/'update'/'delete' with no link for new action.<br />
+		 *                            insert - write action insert and define limitation
+		 *                            update - define limitation with action update
+		 *                            delete - define also limitation with action delete
+		 *                            '+action+' - write this special action >>'+action*'<< special into URL-string
+		 *                                         defined for javascript and set also limitation
+		 *                                         (the string action can also be some other variable if want)
+		 *                            true - create this limitation for next new container
+		 *                                   and does not write a separate action, meaning that the
+		 *                                   first defined action is used by the container<br />
+		 *                            false - do not use for the new container the limitations of the current old container
+		 *                                    and write this into older section. For the action parameter is used the 'true' behavior<br />
+		 *                            older - allow a link for deleting which also made in an container before.
+		 *                                    For action parameter will be used the same behavior like before. 
+		 * @param string $containerName name of current object-container
+		 * @param string $tableName on which table the limitation was set
+		 * @param string $columnName on which column inside the table the limitation set
+		 * @param string|int $value value of the column
+		 */
+		public function setLimitation(string $limitOrder, string $containerName, string $tableName, string $columnName= "", $value= null)
+		{
+		    STCheck::echoDebug("query.limitation", "create query limitation");
+		    if($limitOrder != STINSERT)
+		    {
+		        STCheck::paramCheck($columnName, 4, "string", "can only be an Name of column");
+		        if($value === null)
+		          STCheck::paramCheck($value, 5, "int|string|array", "have to be set");
+		    }
+		    $bAction= false;
+		    if( $limitOrder == "insert" ||
+		        $limitOrder == "update" ||
+		        $limitOrder == "delete" ||
+		        preg_match("/^'\+.*\+'$/", $limitOrder)   )
+		    {
+		        $bAction= true;
+		    }
+		    STCheck::paramCheck($limitOrder, 1, "check", $bAction||$limitOrder=="false"||$limitOrder=="true"||$limitOrder=="older",
+		                              "first parameter '\$limitOrder' have to be an string of 'insert', 'update', delete', 'true', 'false' or 'order'");
+		    STCheck::alert(!$bAction && $this->bNewContainerShiftet, "STQueryString::newContainer()", "method for 'true', 'false' or 'order' limitOrder should always call before newContainer()!");
+		    
+		    
+		    if(!$bAction)
+		    {
+    		    $bDefineLink= true;
+    		    if( $limitOrder == "older" &&
+    		        isset($this->param_vars['stget']['link']['from']) )
+    		    {
+    		        foreach($this->param_vars['stget']['link']['from'] as $table)
+    		        {
+    		            if( isset($table[$tableName]) &&
+    		                $table[$tableName] == $columnName )
+    		            {
+    		                $bDefineLink= false;
+    		            }
+    		        }
+    		    }elseif($limitOrder == 'false')
+    		    {
+    		        if(!isset($this->shiftOlderLimit))
+    		        {
+        		        if(isset($this->param_vars['stget']['limit']))
+        		        {
+        		            $this->shiftOlderLimit= $this->param_vars['stget']['limit'];
+        		            unset($this->param_vars['stget']['limit']);    		            
+        		        }else
+        		            $this->shiftOlderLimit= array();
+    		        }
+    		    }
+		    }
+		    
+		    if($limitOrder != STINSERT)
+		    {
+    		    $limit= array(  'params'    => array(   "stget",
+                                        		        "limit",
+                                        		        $tableName,
+                                        		        $columnName ),
+                                'value'     => $value                   );
+                $this->updateA($limit, $this->param_vars);
+		    }
+            
+            if(!$bAction)
+            {
+                if(!$bDefineLink)
+                    return;
+    		    if( !isset($this->param_vars['stget']['link']['cont']) ||
+    		        count($this->param_vars['stget']['link']['cont']) == 0    )
+    		    {
+    		        $containerNr= 0;
+    		        $this->param_vars['stget']['link']['cont'][0]= $containerName;
+    		        
+    		    }else
+    		    {
+    		        $containerNr= array_search($containerName, $this->param_vars['stget']['link']['cont']);
+    		        if($containerNr === false)
+    		        {
+    		            $containerNr= count($this->param_vars['stget']['link']['cont']);
+    		            $this->param_vars['stget']['link']['cont'][$containerNr]= $containerName;
+    		        }
+    		    }
+    		    $this->param_vars['stget']['link']['from'][$containerNr][$tableName]= $columnName;
+            }else
+		    {
+		        if($limitOrder != STINSERT)
+		            $this->param_vars['stget']['link']['from'][$limitOrder]= $tableName;
+		        $this->param_vars['stget']['container']= $containerName; 
+		        $this->param_vars['stget']['action']= $limitOrder;
+		        $this->param_vars['stget']['table']= $tableName;
+		    }
+		     
+		    if(STCheck::isDebug("query.limitation"))
+		    {
+		        $space= STCheck::echoDebug("query.limitation", "result of new query");
+		        st_print_r($this->param_vars, 10, $space);
+		    }
+		}
+		/**
+		 * remove last limitation with link direction for container.<br />
+		 * Do not change any action, table or container values
+		 * 
+		 * @return boolean whether can remove limitation
+		 */
+		public function removeLimitation() : bool
+		{
+		    STCheck::echoDebug("query.limitation", "remove query limitation/container");
+		    if( !isset($this->param_vars['stget']['link']['from']) ||
+		        !is_array($this->param_vars['stget']['link']['from']) )
+		    {
+		        STCheck::echoDebug("limitation.query", "no link be set to remove last query limitation");
+		        return false;
+		    }
+		    $lastFromKey= array_key_last($this->param_vars['stget']['link']['from']);
+		    if($lastFromKey === null)
+		    {
+		        STCheck::echoDebug("limitation.query", "no link be set to remove last query limitation");
+		        return false;
+		    }
+		    $table= $this->param_vars['stget']['link']['from'][$lastFromKey];
+		    if(is_array($table))
+		    {
+		        $tableName= array_key_first($table);
+		        $columnName= $table[$tableName];
+		    }else
+		    {
+		        $tableName= $table;
+		        $columnName= null;
+		    }
+		    unset($this->param_vars['stget']['link']['from'][$lastFromKey]);
+		    
+		    // check whether also be set an second backlink to the same table/column
+		    // in this case do not delete the limitation
+		    $bExistSecondLink= false;
+		    if(count($this->param_vars['stget']['link']['from']))
+		    {
+		        foreach($this->param_vars['stget']['link']['from'] as $limitation)
+		        {
+		            if( isset($limitation[$tableName]) &&
+		                (   !isset($columnName) ||
+		                    $limitation[$tableName] == $columnName    )   )
+		            {
+		                $bExistSecondLink= true;
+		            }
+		        }
+		    }else
+		        unset($this->param_vars['stget']['link']);
+		    if(!$bExistSecondLink)
+		    {
+		        if(isset($columnName))
+		        {
+		            echo __FILE__.__LINE__."<br>";
+		            echo " unset array['stget']['limit'][$tableName][$columnName]<br>";
+		            unset($this->param_vars['stget']['limit'][$tableName][$columnName]);
+		            if(count($this->param_vars['stget']['limit'][$tableName]) == 0)
+		                unset($this->param_vars['stget']['limit'][$tableName]);
+		        }else
+		            unset($this->param_vars['stget']['limit'][$tableName]);
+    		    
+    	        if(count($this->param_vars['stget']['limit']) == 0)
+    	            unset($this->param_vars['stget']['limit']);
+		    }
+		    $space= STCheck::echoDebug("query.limitation", "result of removing:");
+		    if(STCheck::isDebug("query.limitation"))
+		        st_print_r($this->param_vars, 10, $space);
+	        return true;
 		}
 		function insertColumn($table, $column, $value)
 		{

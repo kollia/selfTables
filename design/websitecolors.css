@@ -1,6 +1,16 @@
 
 
-table.OSTBox,
+fieldset
+{
+	border-width:2; 
+	border-style:groove; 
+	border-darkcolor:#000000; 
+	border-lightcolor:#ffffff;
+	background-color:#f3C999; 
+	color:#000000;
+}
+
+table.STItemBox,
 table.STSearchBox,
 table.OSTSearchBox
 {
@@ -23,8 +33,16 @@ table.STCategoryGroup
 		border-lightcolor:#ffffff
 }
 
+table.loginTable
+{
+	font-family:Tahoma Verdena; 
+	font-size:8pt; 
+	background-color:#999999;
+}
+
 input.field,
-input.button
+input.button,
+input.loginInput
 {
 		font-family:Tahoma;
 		font-size:8pt;
@@ -35,23 +53,27 @@ table.OSTSearchBox td
 	font:bold 15pt Verdena, Times, serif;
 }
 
-table.OSTTable th,
-table.STTable th
+table.STListBox th
 {
 	background-color:#B6B5B5;
 }
 
-table.STTable tr.Tr0
+table.STListBox tr.Tr0
 {
 	background-color:#EDEBEB;
 	font:13pt 'Times New Roman', Times, serif;
 
 }
 
-table.OSTTable tr.Tr1,
-table.STTable tr.Tr1
+table.STListBox tr.Tr1
 {
 	background-color:#DBD7D7;
+	font:13pt 'Times New Roman', Times, serif;
+}
+
+div.loginError
+{
+	color:red;
 	font:13pt 'Times New Roman', Times, serif;
 }
 

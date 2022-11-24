@@ -28,6 +28,12 @@ class STBaseTableBox extends TableTag
 		 * css stylshet link
 		 */
 		protected string $css_link= "";
+		/**
+		 * whether should shifted and restore the container parameters
+		 * from stget/older parameter inside url string
+		 * @var boolean
+		 */
+		protected	$bContainerManagement= true;
 
 		function __construct(&$container, $class= "STBaseTableBox")
 		{
@@ -39,7 +45,6 @@ class STBaseTableBox extends TableTag
 			$this->db= &$container->getDatabase();
 			$this->tableContainer= &$container;
 			$table= $container->getTable();
-			showErrorTrace();
 			$this->fieldArray[$table->getName()]= $table->columns;
 			$this->msg= new STMessageHandling($class);
 			STBaseTableBox::init();
@@ -613,6 +618,10 @@ class STBaseTableBox extends TableTag
 				$field["type"]= "unknown";
 			}
 			return $field;
+		}
+		public function doContainerManagement($bManagement)
+		{
+		    $this->bContainerManagement= $bManagement;
 		}
 }
 

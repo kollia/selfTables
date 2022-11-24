@@ -1052,7 +1052,7 @@ class STSession
 				$typeT= $this->database->getTable("GroupType");
 				$typeT->select("Label");
 				$typeT->distinct();
-				$selector= new OSTDbSelector($typeT);
+				$selector= new STDbSelector($typeT);
 				$selector->execute();
 				$result= $selector->getRowResult();
 				if(count($result) > 1)

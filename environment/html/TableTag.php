@@ -8,7 +8,7 @@ define("LI", "li");
 
 class ColumnTag extends Tag
 {
-        function __construct($class= null, $headline= TD)
+        function __construct($headline= TD, $class= null)
 		{
 			Tag::__construct($headline, true, $class);
 		}

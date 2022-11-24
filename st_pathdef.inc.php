@@ -7,6 +7,7 @@
 	//
 	//     true		             -  only set to debug and check parameters in some method's (true is an boolean no string)
 	//     query                 -  show incomming query of GET or POST URL's
+    //     query.limitation      -  show manipulation of query for new container or action set
 	//     performance           -  show needed performance of time from hole site
 	//     db.statement          -  show created statements of self-Tables
 	//     db.statement.time     -  show how long statement need to fetch from database
@@ -17,6 +18,7 @@
 	//     db.table.fk           -  show FOREIGN KEY definitions
 	//     show.db.fields        -  by display db fields inside INSERT or UPDATE box, show flags of field
 	//     container             -  show container creation and initialling
+    //     containerChoice       -  show also choise of container for backbutton
 	//     table                 -  show table creation and initialling
 	//     access                -  show whether user has access to different objects
 	//     session               -  show all about a session
@@ -268,6 +270,7 @@
 		$_stcalendarserie=					$_stcmstools_path."/calendar/STCalendarSerieForm.php";
 
 		//st_check_require_once($_sttools);
+		//echo __FILE__.__LINE__."<br>";
 		require_once($_sttools);
 		require_once($_stcheck);
 ?>

@@ -221,7 +221,7 @@ class STSubGalleryContainer extends STObjectContainer
 		{
 			$this->oGalleryTable->modifyForeignKey(false);
 			$this->oGalleryTable->where($pkName."=".$selectorResult[$pkName]);
-			$this->oGalleryTable->noLimitationDelete();
+			$this->oGalleryTable->useNoLimitationBefore();
 			if(typeof($this, "STGalleryContainer"))
 			{
 				$this->oGalleryTable->select("type", "Typ");
@@ -230,7 +230,7 @@ class STSubGalleryContainer extends STObjectContainer
 				$this->oGalleryTable->disabled("type", "image");
 			}else
 			{
-				$this->oGalleryTable->noLimitationDelete();
+				$this->oGalleryTable->useNoLimitationBefore();
 				//$this->oGalleryTable->select("type", "Typ");
 				//$this->oGalleryTable->disabled("type");
 				$this->oGalleryTable->select("suborder", "Ordner-Name");
@@ -289,7 +289,7 @@ class STSubGalleryContainer extends STObjectContainer
     			$this->oGalleryTable->where($parentName."=".$parentID);
     			$this->oGalleryTable->setMaxRowSelect(1);
     			$this->oGalleryTable->LimitByOwn(false);//Tag::debug("db.statement");
-    			$this->oGalleryTable->noLimitationDelete();
+    			$this->oGalleryTable->useNoLimitationBefore();
 				$this->oGalleryTable->listLayout(STVERTICAL);
 				$bASC= true;
 				if($selectorResult[$orderName]=="DESC")
@@ -327,7 +327,7 @@ class STSubGalleryContainer extends STObjectContainer
     			}
     			$this->oGalleryTable->modifyForeignKey(false);
     			//$this->oGalleryTable->limitByOwn(false);
-    			$this->oGalleryTable->noLimitationDelete();
+    			$this->oGalleryTable->useNoLimitationBefore();
 				$bASC= true;
 				if($selectorResult[$orderName]=="DESC")
 					$bASC= false;
@@ -367,7 +367,7 @@ class STSubGalleryContainer extends STObjectContainer
 				$this->oGalleryTable->orderBy($sortName, $bASC);
 				
 				if(!typeof($this, "STGalleryContainer"))
-					$this->oGalleryTable->noLimitationDelete();
+					$this->oGalleryTable->useNoLimitationBefore();
 				if(!$this->bAdmin)
 					$this->oGalleryTable->andWhere($activeName."='Yes'");
 			}

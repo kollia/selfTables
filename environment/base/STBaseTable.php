@@ -67,16 +67,20 @@ class STBaseTable
 	var	$oSearchBox= null; // Suchen-Box bei Auflistung der Tabelle anzeigen
 
 	var $bLimitOwn= true;	// steht im URI eine Einschr�nkung der eigenen Tabelle
-							// soll diese Angewand werden und nur einen Eintrag zeigen
-	var $sDeleteLimitation= "true";	// wenn in einen Link von dieser Tabelle aus gesprungen wird,
-									// wird eine Einschr�nkung von dieser Tabelle gesetzt.
-									// das dient dazu, dass nur die Eintr�ge vom FK auf diesen link zur�ck
-									// verfolgt wird.
-									// springt der User nun �ber den BackButton auf diese Tabelle zur�ck
-									// wird die Einschr�nkung bei "true" gel�scht
-									// bei "false" nicht
-									// und bei "older" erst wenn auch aus dieser Tabelle mit dem BackButton
-									// zur�ckgesprungen wird
+                         	// soll diese Angewand werden und nur einen Eintrag zeigen
+    /**
+     * wenn in einen Link von dieser Tabelle aus gesprungen wird,
+     * wird eine Einschränkung von dieser Tabelle gesetzt.
+     * das dient dazu, dass nur die Einträge vom FK auf diesen link zurück
+     * verfolgt wird.
+     * springt der User nun über den BackButton auf diese Tabelle zurück
+     * wird die Einschränkung bei "true" gelöscht
+     * bei "false" nicht
+     * und bei "older" erst wenn auch aus dieser Tabelle mit dem BackButton
+     * zurückgesprungen wird
+     * @var string
+     */
+	protected $sDeleteLimitation= "true";
 	var $asAccessIds= array();
 	var $sAcessClusterColumn= array(); // in den angegebenen Columns wird ein Cluster f�r den Zugriff gespeichert
 	var	$aUnlink= array(); 	// wenn die Upgelodete Datei nicht gel�scht werden soll
@@ -463,21 +467,36 @@ class STBaseTable
 		}
 		return $customID;
 	}
-	function limitByOwn($bLimit)
+	public function limitByOwn(bool $bLimit)
 	{
 		$this->bLimitOwn= $bLimit;
 	}
-	function deleteLimitation()
-	{
+	/**
+	 * use also limitation of table from an older container
+	 * if one exist and was there set (default property)
+	 */
+	public function useLimitationBefore()
+	{// old function name was deleteLimitation()
 		$this->sDeleteLimitation= "true";
 	}
-	function noLimitationDelete()
-	{
+	/**
+	 * do not use limitations whitch was set in any
+	 * container before
+	 */
+	public function useNoLimitationBefore()
+	{// old function name was noLimitationDelete()
 		$this->sDeleteLimitation= "false";
 	}
-	function deleteLimitationByOlder()
+	public function deleteLimitationByOlder()
 	{
+	    echo "use limitation link set before<br>";
+		echo "depricated method never testet<br>";
+	    showErrorTrace();
 		$this->sDeleteLimitation= "older";
+	}
+	public function getDeleteLimitationOrder()
+	{
+	    return $this->sDeleteLimitation;
 	}
 	function withSearchBox(&$searchBox)
 	{
@@ -1087,8 +1106,8 @@ class STBaseTable
 		}
 		$statement= substr($statement, 0, strlen($statement)-1);
 		$tableName= $this->getName();
-		$oGet= new STQueryString();
-		$aGet= $oGet->getArrayVars();
+		$query= new STQueryString();
+		$aGet= $query->getArrayVars();
 		if(isset($aGet["stget"]["sort"][$tableName]))
 		{
 			$aGet= $aGet["stget"]["sort"][$tableName];

@@ -155,9 +155,8 @@ class STDbMySql extends STDatabase
 				$debugString= "db.statement";
 			if($this->asExistTableNames)
 			{
-				Tag::echoDebug($debugString, "found existing tables in database <b>".$this->dbName."</b>:");
-				echo "<b>[</b>".$debugString."<b>]:</b> ";
-				st_print_r($this->asExistTableNames, 1, (strlen($debugString)+4));
+				$space= STCheck::echoDebug($debugString, "found existing tables in database <b>".$this->dbName."</b>:");
+				st_print_r($this->asExistTableNames, 1, $space);
 				echo "<br />";
 			}else
 				STCheck::echoDebug("db.statement", "WARNING: does not found any table in database <b>".$this->dbName."</b>");

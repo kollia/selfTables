@@ -21,21 +21,17 @@ class STListBox extends STBaseTableBox
 		var $insertStatement;
 		var $deleteStatement;
 		var $showTypes;
-		var	$oGet; // Objekt f�r vorhandene Parameter (STQueryString)
+		var	$oQuery; // Objekt f�r vorhandene Parameter (STQueryString)
 		var $nShowFirstRow= 0;
 		var $bDropIndexButton= false;
 		var	$bSetLinkByNull= null;
 		var	$setParams= array(); // welche Parameter in der URI gesetzt werden sollen
 		var $bCaption= true; // Beschriftung (�berschrift) der Tabelle
-		var $limitColumnName; // nach welcher Column limitiert wird
-		var $shownLimitValues;  // hier werden alle Pks f�r die limitation aufgelistet
-								// da der einsprungpunkt in die Tabelle nicht die erste ist
-		var	$bContainerManagement= true; // ob die Container in das older verschoben werden soll
 		var $bLinkAccess= array(); // ob auf einen Link Zugriff besteht
 		var $dateIndex;
 		var $aSorts= null;
 
-		function __construct(&$container, $class= "STTable", $logTime= false)
+		function __construct(&$container, $class= "STListBox", $logTime= false)
 		{
 			Tag::paramCheck($container, 1, "STBaseContainer");
 			Tag::paramCheck($class, 2, "string");
@@ -69,7 +65,7 @@ class STListBox extends STBaseTableBox
 			$this->address= array();
 			$this->checkboxes= array();
 			$this->showTypes= array();
-			$this->oGet= new STQueryString();
+			$this->oQuery= new STQueryString();
 			$this->setParams["onActivate"]= array();
 			$this->setParams["asParam"]= array();
 		}
@@ -117,15 +113,11 @@ class STListBox extends STBaseTableBox
 		}
 		function resetParams()
 		{
-			$this->oGet->resetParams();
+			$this->oQuery->resetParams();
 		}
 		function hasAccess($aliasColumnName, $access)
 		{// Zugriff f�r links
 			$this->bLinkAccess[$aliasColumnName]= $access;
-		}
-		function doContainerManagement($bManagement)
-		{
-			$this->bContainerManagement= $bManagement;
 		}
 		function logTime($bLog= true)
 		{
@@ -268,12 +260,12 @@ class STListBox extends STBaseTableBox
 	function createStatement()
 	{
 		$inTableFirstRow= 0;
-		$params= new STQueryString();
-		$HTTP_GET_VARS= $params->getArrayVars();
+		$query= new STQueryString();
+		$HTTP_GET_VARS= $query->getArrayVars();
 
   		if(!$this->statement)
   		{
-			$oTable= &$this->getTable();
+  		    $oTable= &$this->getTable();
 			$tableName= $oTable->getName();
 			$from= $oTable->getFirstRowSelect();			
 			if(	$from == 0 &&
@@ -303,27 +295,14 @@ class STListBox extends STBaseTableBox
 				$this->makeCallback(STLIST, $callbackClass, STLIST, 0);
 				$this->asDBTable->oWhere= $callbackClass->getWhere();
 			}
-
+			
 			//alex 18/09/2005:	damit immer die gleiche auflistung erzielt wird
 			//					zb. fuer MaxRowSelect wenn nicht beim ersten eintrag
 			//					in die Tabelle gesprungen wird
 			//					mach ein order by auf den Pk
 			if(!$oTable->isOrdered())
 				$oTable->orderBy($oTable->getPkColumnName());
-			// ueberpruefe ob alle get-Columns aus der Db selektiert werden
-			// setze dabei abNewChoice, damit die zuvor selectierten Columns
-			// nicht geloescht werden
-			/*$oTable->abNewChoice["select"]= true;
-			foreach($this->showTypes as $column=>$type)
-			{
-				if($type=="get")
-				{
-					$field= $oTable->findAliasOrColumn($column);
-					if($field["type"]!="alias")
-						$oTable->select($column);
-				}
-			}*/
-
+					
 			// alex 09/06/2005:	abchecken welche Rows selectiert werden
 			$firstRow= 0;
 			$this->nShowFirstRow= 0;
@@ -331,40 +310,6 @@ class STListBox extends STBaseTableBox
 			if(0)//$nMaxSelect)
 			{
 				$tableName= $oTable->getName();
-				$limit= null;
-/*				if(isset($HTTP_GET_VARS["stget"]["firstrow"][$tableName]))
-				{
-					$limit= $HTTP_GET_VARS["stget"]["firstrow"][$tableName];
-					// alex 18/09/2005: wenn f�r die aktuelle Tabelle eine Einschr�nkung gesetzt ist
-					//					soll nicht mit der ersten row der Tabelle begonnen werden
-					$countTable= $oTable;
-					$countTable->clearSelects();
-					$countTable->clearMaxRowSelect();
-					$column= key($limit);
-					$field= $oTable->findAliasOrColumn($column);
-					$column= $field["column"];
-					$countTable->select($column);
-					$this->limitColumnName= $column;
-					echo "count statement: ".$countTable->getStatement()."<br>";
-					$this->shownLimitValues= $this->db->fetch_single_array($countTable);
-					foreach($this->shownLimitValues as $row=>$value)
-					{
-						if($value==$limit[$column])
-						{
-							$aktRow= $row;
-							break;
-						}
-					}
-					if(isset($aktRow))
-					{
-    					$firstRow= 0;
-    					while($firstRow<=$aktRow)
-    						$firstRow+= $nMaxSelect;
-						if($firstRow>$aktRow)
-							$firstRow-= $nMaxSelect;
-					}
-
-				}*/
 				if(	!isset($firstRow) &&
 					isset($HTTP_GET_VARS["stget"]["firstrow"][$oTable->getName()])	)
 				{
@@ -381,8 +326,8 @@ class STListBox extends STBaseTableBox
 						count($oTable->dateIndex)		)
 			{
 				echo __file__.__line__;
-    			$param= $this->oGet;
-    			$vars= $param->getArrayVars();
+    			$query= $this->oQuery;
+    			$vars= $query->getArrayVars();
 
     			$timestamp= $vars["stget"]["time"];
     			if(!isset($timestamp))
@@ -486,6 +431,7 @@ class STListBox extends STBaseTableBox
 					and
 					!count($this->asTable)	)
 		{
+  		    echo __FILE__.__LINE__."<br>";
 			echo "<br /><b>ERROR</b> user dont create any table for object STListBox";
 			exit;
 		}
@@ -501,8 +447,7 @@ class STListBox extends STBaseTableBox
 			$user->debug($debug);
 		}
 
-		$stget= $this->oGet;
-		$stget= $stget->getArrayVars();
+		$stget= $this->oQuery->getArrayVars();
 		if(isset($stget["stget"]))
 			$stget= $stget["stget"];
 		$bDone= false;
@@ -540,18 +485,18 @@ class STListBox extends STBaseTableBox
 				!$this->SqlResult	)
   			{
   				Tag::echoDebug("db.statement", "create result");
-				if(0)//$this->oSelector)
-				{ // toDo: STDbSelector defekt
-
-		STCheck::write("make list result");
-exit();
-					$this->oSelector->execute();
+				if($this->oSelector)
+				{   
+				    $this->oSelector->execute();
 					$this->SqlResult= $this->oSelector->getResult();
 					$this->setSqlError($this->SqlResult);
-
-						//$messageId= $this->oSelector->getErrorId();
-						//$sqlErrorMessage= $this->oSelector->getErrorMessage();
-						//$this->msg->setMessageId($messageId, $sqlErrorMessage);
+					$errId= $this->oSelector->getErrorId();
+					if($errId > 0)
+					{
+    					$sqlErrorMessage= "ERROR($errId): ";
+    					$sqlErrorMessage.= $this->oSelector->getErrorMessage();
+    					$this->msg->setMessageId("SQL_ERROR", $sqlErrorMessage);
+					}
 
 				}else
 				{
@@ -591,7 +536,7 @@ exit();
 		}
 		/*private*/function getHeadRowAddress($fromColumn)
 		{
-			$oGet= $this->oGet;
+			$query= $this->oQuery;
 			$tableName= $this->getTable()->getName();
 			if(!is_array($this->aSorts))
 			{
@@ -635,8 +580,8 @@ exit();
 			
 			// create new implementation inside url-bar
 			// and delete first the old one
-			$oGet->delete("stget[sort][$tableName]");
-			$oGet->insert("stget[sort][$tableName]");			
+			$query->delete("stget[sort][$tableName]");
+			$query->insert("stget[sort][$tableName]");			
 			$count= 0;
 			/**
 			 * variable to see which sorting parameters filld into the url
@@ -648,12 +593,12 @@ exit();
 			{
 				if(array_search($value["column"], $aSet) === false)
 				{
-					$oGet->update("stget[sort][$tableName][$count]=".$value["column"]."_".$value["sort"]);
+					$query->update("stget[sort][$tableName][$count]=".$value["column"]."_".$value["sort"]);
 					$aSet[]= $value["column"];
 				}
 				$count++;
 			}
-			return $oGet->getStringVars();
+			return $query->getStringVars();
 		}
 		function &getIndexTable()
 		{
@@ -674,11 +619,11 @@ exit();
 		}
 		function &getDateIndex($oTable)
 		{
-			if(isset($this->oGet))
-				$param= $this->oGet;
+			if(isset($this->oQuery))
+				$query= $this->oQuery;
 			else 
-				$param= new StQuerryString();
-			$vars= $param->getArrayVars();
+				$query= new StQuerryString();
+			$vars= $query->getArrayVars();
 
 			$timestamp= $vars["stget"]["time"];
 			if(!isset($timestamp))
@@ -727,10 +672,10 @@ exit();
 			elseif($oTable->dateIndex["type"]==STYEAR)
 				$dateString= $year;
 
-			$param->update("stget[time]=".$pTimestamp);
-			$nextParams= $param->getStringVars();
-			$param->update("stget[time]=".$mTimestamp);
-			$backParams= $param->getStringVars();
+			$query->update("stget[time]=".$pTimestamp);
+			$nextParams= $query->getStringVars();
+			$query->update("stget[time]=".$mTimestamp);
+			$backParams= $query->getStringVars();
 
 			$script= "javascript:document.location.href=";
 			$backParams= $script."'".$backParams."'";
@@ -755,8 +700,8 @@ exit();
 
 			Tag::paramCheck($oTable, 1, "STDbTable");
 
-			$params= new STQueryString();
-			$HTTP_GET_VARS= $params->getArrayVars();
+			$query= new STQueryString();
+			$HTTP_GET_VARS= $query->getArrayVars();
 			$tableName= $oTable->getName();
 			if(isset($HTTP_GET_VARS["stget"]["firstrow"][$tableName]))
 			{
@@ -791,7 +736,7 @@ exit();
 					$cTab->distinct(false);
     				$cTab->count("*");//$oTable, "count");
 				}else
-					$cTab->count("*");
+				    $cTab->count("*");
     			$cTab->execute();
     			$nMaxTableRows= $cTab->getSingleResult();
 				if(!isset($nMaxTableRows))
@@ -823,12 +768,9 @@ exit();
 					or
 					$needAlwaysIndex										)
 				{
-					$get= new STQueryString();//$this->oGet;
+					$query= new STQueryString();//$this->oQuery;
 					$script= "javascript:document.location.href='";
-					if($this->limitColumnName)
-						$param= "stget[".$oTable->getName()."][".$this->limitColumnName."]=";
-					else
-						$param= "stget[firstrow][$tableName]=";
+					$param= "stget[firstrow][$tableName]=";
 					$firstRow= 0;
 					$backRow= $this->nShowFirstRow-$this->nMaxRowSelect;
 					$nextRow= $this->nShowFirstRow+$this->nMaxRowSelect;
@@ -842,21 +784,14 @@ exit();
 						$lastRow= $nMaxTableRows;
 					if($this->nMaxRowSelect==1)
 						--$lastRow;
-					if($this->limitColumnName)
-					{
-						$firstRow= $this->shownLimitValues[($firstRow)];
-						$backRow= $this->shownLimitValues[($backRow)];
-						$nextRow= $this->shownLimitValues[($nextRow)];
-						$lastRow= $this->shownLimitValues[($lastRow)];
-					}
-					$get->update($param.$firstRow);
-			 		$firstRow= $script.$get->getStringVars()."'";
-					$get->update($param.$backRow);
-			 		$backRow= $script.$get->getStringVars()."'";
-					$get->update($param.$nextRow);
-			 		$nextRow= $script.$get->getStringVars()."'";
-					$get->update($param.$lastRow);
-					$lastRow= $script.$get->getStringVars()."'";
+					$query->update($param.$firstRow);
+			 		$firstRow= $script.$query->getStringVars()."'";
+					$query->update($param.$backRow);
+			 		$backRow= $script.$query->getStringVars()."'";
+					$query->update($param.$nextRow);
+			 		$nextRow= $script.$query->getStringVars()."'";
+					$query->update($param.$lastRow);
+					$lastRow= $script.$query->getStringVars()."'";
 
 					// create nameTags
 					$nameTags= new SpanTag("indexName");
@@ -1014,14 +949,14 @@ exit();
 			}
 		}
 		/**
-		 *	erzeugt den Html-Code der Tabelle
+		 *	create a Html-Code from the list box table
 		 *
-		 *	@param	onError:	gibt was bei einem Fehler geschehen soll.<br />
-		 * 						onErrorStop: gibt Fehlermeldung aus und beendet<br />
-		 *						onErrorShow: gibt nur Fehlermeldung aus<br />
-		 *						noErrorShow: zeigt keinen Fehler an und bricht auch nicht ab<br />
-		 *						onErrorMessage: zeigt ersten Fehler mittels Message-Box (default)<br />
-		 *	@return	gibt 0, 1, -1, -2 oder -5 zur�ck.<br>
+		 *	@param	onError:	define error handling.<br />
+		 * 						onErrorStop: write error message and ending with exit<br />
+		 *						onErrorShow: write only error message<br />
+		 *						noErrorShow: do not ouput any error and also no stopping<br />
+		 *						onErrorMessage: show first error with Message-Box (default)<br />
+		 *	@return	int return 0, 1, -1, -2 or -5.<br>
 		 *			 0 - Die Tabelle wurde erzeugt<br>
 		 *			 1 - Die Checkboxen wurden mit der Datenbank abgeglichen<br>
 		 *			-1 - die solution ergab kein Ergebnis<br>
@@ -1135,6 +1070,7 @@ exit();
 			}
 			/*****************************************************************/
 
+		// for debuggin show display properties HORIZONTAL or VERTICAL
 		$_showColumnProperties= false;
 		if($_showColumnProperties)
 		{
@@ -1282,7 +1218,7 @@ exit();
 
           					$alldef= [];
           					$array= [];
-							$get= new STQueryString();//$this->oGet;
+							$query= new STQueryString();//$this->oQuery;
 							if(isset($this->aGetParams[STINSERT][STALLDEF]))
 							    $alldef= $this->aGetParams[STINSERT][STALLDEF];
 							if(isset($this->aGetParams[STINSERT][$createdColumn]))
@@ -1298,7 +1234,7 @@ exit();
 							{
 								foreach($array as $param)
 								{
-									$get->insert($param);
+									$query->insert($param);
 								}
 							}
 							if(isset($this->aGetParams[STUPDATE][STALLDEF]))
@@ -1316,7 +1252,7 @@ exit();
 							{
 								foreach($array as $param)
 								{
-									$get->update($param);
+									$query->update($param);
 								}
 							}
 							if(isset($this->aGetParams[STDELETE][STALLDEF]))
@@ -1334,14 +1270,14 @@ exit();
 							{
 								foreach($array as $param)
 								{
-									$get->delete($param);
+									$query->delete($param);
 								}
 							}
 							/*if(preg_match("/^container_/", $extraField))
 							{
 								echo "�bergabe";
-								//print_r($get);
-								//st_print_r($get, 50);//$this->oGet->getArrayVars(),10);
+								//print_r($query);
+								//st_print_r($query, 50);//$this->oQuery->getArrayVars(),10);
 							}*/
 							// alex 02/09/2005:	wenn ein Link in der aufgelisteten Tabelle angeklickt wird
 							//					sollen zus�tzlich die gew�nschten Parameter gesetzt werden
@@ -1349,7 +1285,7 @@ exit();
 							{
 								foreach($this->setParams["onActivate"][$columnKey] as $work)
 								{
-									$get->make($work["do"], $work["param"]);
+									$query->make($work["do"], $work["param"]);
 								}
 							}
 							if(preg_match("/^container_/", $extraField))
@@ -1376,7 +1312,7 @@ exit();
 								$isValue= $columnValue;
 								//if(preg_match("/^(container_)?namedcolumnlink$/", $extraField))
 								if(isset($table->showTypes["valueColumns"][$createdColumn]))
-								{// wenn bei der Angabe des showTypes ein andere Value und Column gew�nscht wurde
+								{// if wished an other value/column inside variable showTapes
 									//st_print_r($table->showTypes, 2);
 									$represent= $table->showTypes["valueColumns"][$createdColumn];
 									//echo "represent:$represent<br />";
@@ -1387,86 +1323,27 @@ exit();
 									//st_print_r($rowArray);
 									$isValue= $rowArray[$createdRepresent];
 								}
-								//echo "get->update(stget[".$tableName."][".$represent."]=".$isValue.");<br />";
-								$get->update("stget[".$tableName."][".$represent."]=".$isValue);
-
-
-								/*if(preg_match("/^###STcolumn[0-9]+###_(.*)$/", $key, $preg))
-									$fromKey= $preg[1];
-								else
-									$fromKey= $key;*/
+								
 								$newContainer= $table->showTypes[$createdColumn][$extraField];
-								//$newTable= $this->db->getTable($newTableName);
-								//$containerName= $this->tableContainer->getName();
-								//$pkFromNewTable= $newTable->getPkColumnName();
-								$get_vars= $get->getArrayVars();
+								$container_data= array(  "container" =>  $newContainer->getName() );
+								$table_limitation= $table->getDeleteLimitationOrder();
+								STCheck::echoDebug("query.limitation", "<b>LINK</b> to new container '".$container_data["container"]."'");
+								$query->setLimitation($table_limitation, $container_data['container'], $tableName, $represent, $columnValue);
 								if($this->bContainerManagement)
-									$make= STINSERT;
-								else
-									$make= STUPDATE;
-			//echo "file:".__file__." line:".__line__."<br />";st_print_r($make);echo "<br />";
-								$get->make($make, "stget[table]=");//=".$newTableName);
-								$get->make($make, "stget[action]=");
-								$get->make($make, "stget[container]=".$newContainer->getName());
-								if($table->sDeleteLimitation=="older")
 								{
-									$count= 0;
-									$from= $get_vars["stget"]["link"]["from"];
-									if($from)
-										foreach($from as $countTable)
-										{
-											if($countTable==$tableName)
-											{// table is in array
-											 // need no second insert
-												$count= 0;
-												break;
-											}
-											$count++;
-										}
-
-									if($count)
-										$get->make($make, "stget[link][from][".$count."][".$tableName."]=".$represent);
-									$get->make($make, "stget[link][from]=");
-								}elseif($table->sDeleteLimitation=="true")
+								    $query->newContainer($container_data);
+									//$make= STINSERT;
+								}else
 								{
-									$oldlink= $get->getArrayVars();
-									if(isset($oldlink["stget"]["link"]["from"]))
-										$oldlink= $oldlink["stget"]["link"]["from"];
-									else 
-										$oldlink= null;
-									$countLink= 0;
-									if(	is_array($oldlink)
-										and
-										$make==STUPDATE	)
-									{
-										$countLink= count($oldlink);
-									}
-									if($make==STINSERT)
-										$get->insert("stget[link][from]=");
-									$aktParams= $get->getArrayVars();
-									$existParam= false;
-									if(	isset($oldlink["stget"]["link"]["from"]) &&
-										is_array($aktParams["stget"]["link"]["from"])	)
-									{
-										foreach($aktParams["stget"]["link"]["from"] as $paramLink)
-										{
-											if($paramLink[$tableName]==$represent)
-											{
-												$existParam= true;
-												break;
-											}
-										}
-									}
-									if(!$existParam)
-										$get->make($make, "stget[link][from][".$countLink."][".$tableName."]=".$represent);
-								}else // sDeleteLimitation ist "false"
-									$get->make($make, "stget[link][from]=");
+								    $query->updateContainer($container_data);
+								    //$make= STUPDATE;
+								}
 							}else
 							{
 								$asParam= $createdColumn;
 								if(isset($this->setParams["asParam"][$createdColumn]))
 									$asParam= $this->setParams["asParam"][$createdColumn];
-								$get->update("stget[".$extraField."][".$asParam."]=".$columnValue);
+								$query->update("stget[".$extraField."][".$asParam."]=".$columnValue);
 							}
 							$table= &$this->getTable();
 							//echo "value is $sValue<br />";
@@ -1478,15 +1355,15 @@ exit();
 								{
 									foreach($content as $newParam)
 									{
-										$get->make($newAction, $newParam);
+										$query->make($newAction, $newParam);
 										/*if($newAction==STDELETE)
 										{
 										}else
 										{
 											$setparam
-											$oldlink= $get->getArrayVars();
+											$oldlink= $query->getArrayVars();
 											$count= count($oldlink["stget"]["link"]["from"]);
-											$get->make($newAction, "stget[link][from][".$count."][".$tableName."]=
+											$query->make($newAction, "stget[link][from][".$count."][".$tableName."]=
 										}*/
 									}
 								}
@@ -1494,14 +1371,15 @@ exit();
 							/*if(preg_match("/^container_/", $extraField))
 							{
 								echo "create file<br />";
-								st_print_r($get->getArrayVars(),50);
+								st_print_r($query->getArrayVars(),50);
 							}*/
 
 					//echo "create query-string for:<br />";
 					//echo "column:$createdColumn<br />";
 					//echo "extraField:$extraField<br />";
-							$file.= $get->getStringVars();
+							$file.= $query->getStringVars();
 							$file.= "'";
+							
 
           			}else
           			{
@@ -1601,12 +1479,14 @@ exit();
 
 									$button= new ButtonTag("downloadButton");
 										$button->type("button");
-										$param= $this->oGet;
+										$query= $this->oQuery;
 										$address= "javascript:location.href='";
-										$param->update("stget[".$tableName."][".$represent."]=".$isValue);
+										$containerName= $this->asDBTable->container->getName();
+										// toDo: first parameter 'download' for limitOrder not implemented now (24/11/2022)
+										$query->setLimitation("download", $containerName, $tableName, $represent, $isValue);
 										$tableField= $table->findAliasOrColumn($createdColumn);
-										$param->update("stget[download]=".$tableField["column"]);
-										$address.= $param->getStringVars()."'";
+										$query->update("stget[download]=".$tableField["column"]);
+										$address.= $query->getStringVars()."'";
 										$button->onClick($address);
 										$button->add("Download");
 									$td->add($button);
@@ -2101,7 +1981,7 @@ exit();
 						$this->add($this->msg->getMessageEndScript());
 					else
 					{
-						$params= new STQueryString();
+						$query= new STQueryString();
 						if(count($this->asDBTable->aPostToGet))
 						{
 							$post= $HTTP_POST_VARS;
@@ -2117,10 +1997,10 @@ exit();
 									$varString.= $var;
 								}
 								$varString.= "=".$post;
-								$params->insert($varString);
+								$query->insert($varString);
 							}
 						}
-						$address= $params->getStringVars();
+						$address= $query->getStringVars();
 						if(Tag::isDebug())
 						{
 							$tr= new RowTag();
@@ -2226,7 +2106,7 @@ exit();
 			Tag::alert(!typeof($this->getTable(), "STDbTable") && !$this->statement,
 						get_class($this)."::execute()",
 						"no table or statement exist, take before methode ::table() or ::solution() for statement");
-				
+						
 			$this->createMessages();
 			$this->defaultOnError($onError);
 			$this->createStatement();
@@ -2236,7 +2116,7 @@ exit();
 				$this->makeResult($onError);
 
 			$this->createOldInsertDeleteStatements();
-
+			
 			// if the table has checkBoxes,
 			// or is an nnTable
 			// make changes in database/SqlResult

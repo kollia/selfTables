@@ -306,7 +306,7 @@ class STBaseContainer extends BodyTag
 		if(!isset($this->bBackButton))
 			$this->bBackButton= $this->oExternSideCreator->bBackButton;
 		if(!$this->backButtonAddress)
-			$this->backButtonAddress=  $this->oExternSideCreator->backButtonAddress;
+		    $this->backButtonAddress=  $this->oExternSideCreator->backButtonAddress;
 		if(	$action==STLIST
 			or
 			$action==STCHOOSE
@@ -888,7 +888,8 @@ class STBaseContainer extends BodyTag
 			{
 				return false;
 			}
-			$oGetParam->delete("stget[table]");
+			$oGetParam->removeContainer();
+/*			$oGetParam->delete("stget[table]");
 			$oGetParam->delete("stget[action]");
 			$oGetParam->delete("stget[container]");
 			$vars= $oGetParam->getArrayVars();
@@ -902,7 +903,7 @@ class STBaseContainer extends BodyTag
 							$oGetParam->delete("stget[".$table."][".$column."]");
 				}
 			}
-			$oGetParam->delete("stget[link][from]");
+			$oGetParam->delete("stget[link][from]");*/
 			return true;
 		}
 		function addParamsByButton(&$oParam, $name)
@@ -1030,8 +1031,8 @@ class STBaseContainer extends BodyTag
 							STCheck::echoDebug("containerChoice", "no backButtonAddress be set,");
 							STCheck::echoDebug("containerChoice", "so create an Address for back-button.");
 							echo "<br />";
-							STCheck::echoDebug("containerChoice", "incomming query fields before changing for back-Button");
-							st_print_r($get_vars,5);
+							$space= STCheck::echoDebug("containerChoice", "incomming query fields before changing for back-Button");
+							st_print_r($get_vars,5, $space);
 						}
 
 						if(	(	isset($get_vars["action"]) &&
@@ -1057,6 +1058,8 @@ class STBaseContainer extends BodyTag
 								$msgstr.= "])";
 								Tag::echoDebug("containerChoice", $msgstr);
 							}
+							if(isset($get_vars["table"]))
+							    $get->delete("stget[firstrow][".$get_vars["table"]."]");
 							$this->bBackButton= $this->deleteContainer($get);
 							if(!$this->bBackButton)
 							{
@@ -1064,8 +1067,6 @@ class STBaseContainer extends BodyTag
 								Tag::echoDebug("containerChoice", "or all before has set ->forwardByOneEntry()");
 								Tag::echoDebug("containerChoice", "and this tables have only one entry.");
 							}
-							if(isset($get_vars["table"]))
-								$get->delete("stget[firstrow][".$get_vars["table"]."]");
 
 						}elseif(isset($get_vars["action"]) &&	
 								(	$get_vars["action"]==STINSERT ||
@@ -1091,10 +1092,11 @@ class STBaseContainer extends BodyTag
 								$table= $this->getTable($get_vars["table"]);
 								// alex 2006/05/21:	delete limitation only
 								//					if the user wants
-								if($table->sDeleteLimitation=="true")
-									$get->delete("stget[".$get_vars["table"]."][".$table->getPkColumnName()."]");
+								if($table->getDeleteLimitationOrder()=="true")
+								{
+								    $get->removeLimitation();
+								}
 
-								$getarray= $get->getArrayVars();
 								$sBackButtonName= $this->sBackButton;
 								//$get->getParamString(STUPDATE, "stget[table]=".$get_vars["table"];
 							}
@@ -1110,7 +1112,7 @@ class STBaseContainer extends BodyTag
     						$get->getParamString(STDELETE, "stget[table]");
     						$get->getParamString(STDELETE, "stget[firstrow][".$get_vars["table"]."]");
     						$get->getParamString(STDELETE, "stget[container]");
-						}*/
+    						}*/
 
 						$sBackButtonContainerName= $this->sBackContainer;
 						if(!$sBackButtonContainerName)
@@ -1126,8 +1128,8 @@ class STBaseContainer extends BodyTag
 						if(STCheck::isDebug("containerChoice"))
 						{
 							echo "<br />";
-							STCheck::echoDebug("containerChoice", "query after changing for back-Button");
-							st_print_r($get->getArrayVars(),10);
+							$space= STCheck::echoDebug("containerChoice", "query after changing for back-Button");
+							st_print_r($get->getArrayVars(), 10, $space);
 							echo "<br />";
 						}
 
@@ -1152,7 +1154,7 @@ class STBaseContainer extends BodyTag
 					STCheck::echoDebug("containerChoice", "---------------------------------------------------------------------------");
 				//}
 			}//end if(display backbutton)
-			
+
 		$bNeededBackButton= false;
 		$containerButtons= array();
 		$tableName= $this->getTableName();

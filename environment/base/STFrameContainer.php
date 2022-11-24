@@ -24,6 +24,7 @@ class STFrameContainer extends STBaseContainer
 	{
 	    if(STCheck::isDebug())
 	    {
+	        $bExists= false;
     	    if( substr($address, 0, 7) == "http://" ||
     	        substr($address, 0, 8) == "https://"    )
     	    {

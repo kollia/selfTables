@@ -40,7 +40,7 @@ class st_tableTag extends TableTag
 		if($this->nRow===-1)
 		{
 		    $tr= new RowTag($rowClass, $this->rowType);
-			     $td= new ColumnTag($columnClass, $columnType);
+		        $td= new ColumnTag($columnType, $columnClass);
 					$td->addObj($value);
 				$tr->addObj($td);
 			TableTag::addObj($tr);
@@ -49,7 +49,7 @@ class st_tableTag extends TableTag
 		}elseif($this->nColumn===-1)
 		{
 		    $tr= new RowTag($rowClass);
-			    $td= new ColumnTag($columnClass, $columnType);
+		        $td= new ColumnTag($columnType, $columnClass);
 					$td->addObj($value);
 				$tr->addObj($td);
 			TableTag::addObj($tr);
@@ -57,7 +57,7 @@ class st_tableTag extends TableTag
 			$this->nColumn= 0;
 		}else
 		{
-		    $td= new ColumnTag($columnClass, $columnType);
+		    $td= new ColumnTag($columnType, $columnClass);
 				$td->add($value);
 			$this->inherit[$this->nRow]->addObj($td);
 			++$this->nColumn;

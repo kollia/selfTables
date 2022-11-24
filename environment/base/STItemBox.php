@@ -39,7 +39,7 @@ class STItemBox extends STBaseTableBox
 		 */
 		var $innerTabPos= array("pos"=>"begin", "count"=>0);
 
-		function __construct(&$container, $class= "STBox")
+		function __construct(&$container, $class= "STItemBox")
 		{
 			Tag::paramCheck($container, 1, "STBaseContainer");
 			Tag::paramCheck($class, 2, "string");
@@ -525,7 +525,11 @@ class STItemBox extends STBaseTableBox
   	{
         global $HTTP_POST_VARS;
 
-		$needChangeBox= false;//ob JavaScript-Funktion DB_changeBox ben�tigt wird
+        /**
+         * whether need javascript function DB_changeBox
+         * @var boolean $needChangeBox
+         */
+		$needChangeBox= false;
 		
 		if($HTTP_POST_VARS)
 		{//st_print_r($HTTP_POST_VARS);
@@ -607,7 +611,8 @@ class STItemBox extends STBaseTableBox
         		$oTable->clearAliases();// sowie alle orginal Spalten-Namen
         		$oTable->andWhere($this->where);
         		$where= $oTable->getWhere();
-        		Tag::alert(!($where && $where->isModified()), "OSTBox::makeBox()", "no where-clausel defined to display");
+        		$statement= $this->db->getStatement($oTable);
+        		Tag::alert(!($where && $where->isModified()), "STItemBox::makeBox()", "no where-clausel defined to display");
         		$statement= $this->db->getStatement($oTable);
         	}else
         	{
@@ -1596,7 +1601,7 @@ class STItemBox extends STBaseTableBox
 
 		$query= new STQueryString();
 		$get= $query->getArrayVars();
-		
+
 		if(!$this->asDBTable)
 		{
 			$table= reset($this->asTable);
@@ -1688,7 +1693,7 @@ class STItemBox extends STBaseTableBox
 			if($content === "")
 				unset($post[$column]);
 		}
-    	$bError= false;
+		$bError= false;
         if( isset($post["STBoxes_action"]) &&
         	$post["STBoxes_action"]=="make" 	)
         {
@@ -1729,7 +1734,7 @@ class STItemBox extends STBaseTableBox
   			// ladet die Funktion loadFiles() die Dateien hoch
             if(!$this->loadFiles($post))
 				$bError= true;
-
+			
 			// alle callbacks welche vom Anwender gesetzt wurden durchlaufen
 			$oCallbackClass= new STCallbackClass($this->tableContainer, $post);
 			$oCallbackClass->before= true;
@@ -1930,7 +1935,7 @@ class STItemBox extends STBaseTableBox
         }
         $changedPost= NULL;
         if(count($post) > 0)
-        	$changedPost= $post;
+            $changedPost= $post;
   		$this->makeBox($table, $join, $where, $changedPost);
         return !$bError;
 

@@ -23,7 +23,7 @@ class STDbSessionHandler implements SessionHandlerInterface
     {
         //echo "open session on path:$savePath as name:$sessionName<br />";
         // nothing to do
-        $this->sUsingFunctions.= "open()<br>";
+        $this->sUsingFunctions.= "open() // nothing to do<br>";
         return true;
         
     }
@@ -48,13 +48,31 @@ class STDbSessionHandler implements SessionHandlerInterface
         if( !isset($res["ses_value"]) ||
             (time() - $res["ses_time"]) > $lifetime )
         {
-            $this->sUsingFunctions.= "do not found session";
+            $this->sUsingFunctions.= " &#160;do not found session";
             if(isset($res["ses_time"]))
                 $this->sUsingFunctions.= ", was ".(time() - $res["ses_time"] - $lifetime)." seconds to old";
-                $this->sUsingFunctions.= "<br>";
-                return false;
+            $this->sUsingFunctions.= "<br>";
+            $this->sUsingFunctions.= " return <b>false</b><br>\n";
+            return false;
         }
-        $this->sUsingFunctions.= "found session was ".(time() - $res["ses_time"])." seconds alive<br>\n";
+        $this->sUsingFunctions.= " &#160;found session was ".(time() - $res["ses_time"])." seconds alive<br>\n";
+        $this->sUsingFunctions.= " &#160;session <b>OK</b>, return <b>all</b> session variables<br>\n";
+        //$this->sUsingFunctions.= " &#160;-------------------------------------------------------------------------------------<br />";
+        //$this->sUsingFunctions.= " &#160;".print_r($res["ses_value"], true)."<br>";
+        //$this->sUsingFunctions.= " &#160;-------------------------------------------------------------------------------------<br />";
+        if(false)
+        {
+            // toDo: decode of session string
+            if(isset($res["ses_value"]['ST_USER']))
+                $user= $res["ses_value"]['ST_USER'];
+            else
+                $user= "Unknown";
+            if(isset($res["ses_value"]['ST_LOGGED_IN']))
+                $loggedin= $res["ses_value"]['ST_LOGGED_IN'];
+            else
+                $loggedin= "false";
+            $this->sUsingFunctions.= " &#160;user $user is $loggedin<br />";
+        }
         return $res["ses_value"];
             
     }
@@ -64,32 +82,32 @@ class STDbSessionHandler implements SessionHandlerInterface
         if(STCheck::isDebug("session"))
             $this->sUsingFunctions.= "write('$sessionId', [\$data])<br />";
         $oSessionTable= $this->database->getTable("Sessions");
-        $this->sUsingFunctions.= "  exist session: '".$this->existID."'<br />";
-        $this->sUsingFunctions.= "    new session: '$sessionId'<br />";
+        $this->sUsingFunctions.= " &#160;exist session: '".$this->existID."'<br />";
+        $this->sUsingFunctions.= " &#160;current session: '$sessionId'<br />";
         if($this->existID != $sessionId)
         {
-            $this->sUsingFunctions.= "  so insert new session into database<br />";
+            $this->sUsingFunctions.= " &#160;so insert new session into database<br />";
             $oInsert= new STDbInserter($oSessionTable);
             $oInsert->fillColumn("ses_id", $this->database->real_escape_string($sessionId));
             $oInsert->fillColumn("ses_time", time());
             $oInsert->fillColumn("ses_value", $this->database->real_escape_string($data));
             $res= $oInsert->execute();
-            $this->sUsingFunctions.= "result: ".print_r($res, true)."<br>";
+            $this->sUsingFunctions.=  " &#160;result: ".print_r($res, true)."<br>";
             if($res > 0)
             {
-                $err_msg= "cannot write session into database: ".$oInsert->getErrorString()."<br />";
-                $err_msg.= " &#160;statement:'".$oInsert->getStatement()."'";
+                $err_msg= " &#160;cannot write session into database: ".$oInsert->getErrorString()."<br />";
+                $err_msg.= " &#160;&#160;statement:'".$oInsert->getStatement()."'";
             }
             //$this->sUsingFunctions.= "  ".$oInsert->getStatement()."<br />";            
         }else
         {
-            $this->sUsingFunctions.= "  so update session inside database<br />";
+            $this->sUsingFunctions.= " &#160;so update session inside database<br />";
             $oUpdater= new STDbUpdater($oSessionTable);
             $oUpdater->update("ses_value", $this->database->real_escape_string($data));
             $oUpdater->update("ses_time", time());
             $oUpdater->where("ses_id='".$this->database->real_escape_string($sessionId)."'");
             $res= $oUpdater->execute();
-            $this->sUsingFunctions.= "result: ".print_r($res, true)."<br>";
+            $this->sUsingFunctions.= " &#160;result: ".print_r($res, true)."<br>";
             if($res > 0)
             {
                 $err_msg= "cannot update session inside database: ".$oUpdater->getErrorString()."<br />";
@@ -98,10 +116,12 @@ class STDbSessionHandler implements SessionHandlerInterface
         }
         if($err_msg != "")
         {
-            $this->sUsingFunctions.= "  $err_msg<br />";
+            $this->sUsingFunctions.= " &#160;$err_msg<br />";
+            $this->sUsingFunctions.= " &#160;return <b>false</b><br />";
             STCheck::warning(true, "STDbSessionHandler::write()", $err_msg);
             return false;
         }
+        $this->sUsingFunctions.= " &#160;return <b>true</b><br />";
         return true;
     }
     public function destroy(string $sessionId) : bool
@@ -114,10 +134,16 @@ class STDbSessionHandler implements SessionHandlerInterface
         if($del->getErrorId() != 0)
         {
             STCheck::warning(true, "cannot destroy session from database: ".$del->getErrorString());
+            $this->sUsingFunctions.= " &#160;return <b>false</b><br />";
             return false;
         }
         if($res == 0)
+        {
+            $this->sUsingFunctions.= " &#160;no session to destroy<br />";
+            $this->sUsingFunctions.= " &#160;return <b>true</b><br />";
             return true;
+        }
+        $this->sUsingFunctions.= " &#160;return <b>false</b><br />";
         return false;
     }
     public function gc(int $lifetime) : int

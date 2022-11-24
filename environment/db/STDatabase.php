@@ -329,8 +329,11 @@ abstract class STDatabase extends STObjectContainer
 	}
 	function makeUserDateFormat($date)
 	{
-		if(!preg_match("/^([0-9]{4})-([0-9]{2})-([0-9]{2})/", $date, $preg))
+		if( !$date ||
+		    !preg_match("/^([0-9]{4})-([0-9]{2})-([0-9]{2})/", $date, $preg)  )
+		{
 			return false;
+		}
 		$sRv= "";
 		for($i= 0; $i<3; $i++)
 		{
@@ -1165,8 +1168,8 @@ abstract class STDatabase extends STObjectContainer
     													" inside table ".$oTable->getName().
     													" from container ".$oTable->container->getName());
     	
-    	$stget= new STQueryString();
-		$stget= $stget->getArrayVars();
+    	$get= new STQueryString();
+		$stget= $get->getArrayVars();
 		if(	isset($stget["stget"])	)
 		{
 			$stget= $stget["stget"];
@@ -1179,12 +1182,12 @@ abstract class STDatabase extends STObjectContainer
 		{
 		    STCheck::echoDebug("db.statements.where", "modify foreign Keys in table ".$oTable->getName());
 		    $nIntented= STCheck::echoDebug("db.statements.where", "need foreign Keys from query: ");
-			st_print_r($fks, 2, $nIntented + 55);
+			st_print_r($fks, 2, $nIntented);
 			echo "<br />";
 		}
     	foreach($fks as $table=>$aColumnType)
     	{
-      		$limitation= $stget[$table];
+      		$limitation= $get->getLimitation($table);
       		foreach($limitation as $column=>$value)
       		{
     			if($aColumnType["other"]==$column)
@@ -1211,10 +1214,11 @@ abstract class STDatabase extends STObjectContainer
 		if($oTable->bLimitOwn)
 		{
     		$tableName= $oTable->getName();
-    		if(	isset($stget[$tableName]) &&
-    			is_array($stget[$tableName])	)
+    		$limitation= $get->getLimitation($tableName);
+    		if(	isset($limitation) &&
+    		    is_array($limitation)	)
     		{
-    			foreach($stget[$tableName] as $column=>$value)
+    		    foreach($limitation as $column=>$value)
     			{
 					if($oTable->haveColumn($column))
 					{
@@ -1465,9 +1469,9 @@ abstract class STDatabase extends STObjectContainer
 			$dbgstr.= " from container:<b>".$oTable->container->getName()."</b>";
 			$dbgstr.= " for columns:";
 			$space= STCheck::echoDebug("db.statements.select", $dbgstr);
-			st_print_r($aNeededColumns, 2,$space+55);
+			st_print_r($aNeededColumns, 2,$space);
 			STCheck::echoDebug("db.statements.select", "defined with alias tables:");
-			st_print_r($aTableAlias, 2, $space+55);
+			st_print_r($aTableAlias, 2, $space);
 		}
 		$aShowTypes= $oTable->showTypes;
 		/*if(typeof($oTable, "STDbSelector"))
@@ -1513,7 +1517,7 @@ abstract class STDatabase extends STObjectContainer
 			if($aliasCount>1)
 			{		// wenn die Tabelle null ist, gibts sie nicht im FK
 				$table= $oTable->getFkTableName($column["column"]);
-				if($table)
+				if(STCheck::isDebug() && $table)
 					STCheck::echoDebug("db.statements.select", "from ".get_class($oTable)." ".$oTable->getName()." for column ".$column["column"]." is Fk-Table \"".$table."\"");
 				if(	$table
 					and
@@ -1549,9 +1553,7 @@ abstract class STDatabase extends STObjectContainer
 						$statement.= "`".$aliasTable."`.$columnName";
    					if(	isset($column["alias"])
 						and
-						$column["column"]!=$column["alias"]
-						and
-						$withAlias							)
+						$column["column"]!=$column["alias"])
    					{
 						$statement.= " as $columnAlias";
 						$singleStatement.= " as $columnAlias";
@@ -1609,9 +1611,7 @@ abstract class STDatabase extends STObjectContainer
 				$singleStatement.= $columnName;
 				if(	isset($column["alias"])
 					and
-					$column["column"]!=$column["alias"]
-					and
-					$withAlias							)
+					$column["column"]!=$column["alias"])
 				{
 					$statement.= " as $columnAlias";
 					$singleStatement.= " as $columnAlias";
@@ -1661,7 +1661,6 @@ abstract class STDatabase extends STObjectContainer
 		}
 		if($withAlias == false)
 		    $statement= $singleStatement;
-		Tag::echoDebug("db.statements.select", "createt String is \"".$statement."\"");
 		$statement= substr($statement, 0, strlen($statement)-1);
 		Tag::echoDebug("db.statements.select", "createt String is \"".$statement."\"");
 		return $statement;
@@ -2679,7 +2678,7 @@ abstract class STDatabase extends STObjectContainer
 		STCheck::echoDebug("db.statements", "create sql statement from table <b>".
 											$oTable->getName()."</b> inside container <b>".
 											$oTable->container->getName()."</b>");
-		    
+		
 		$this->foreignKeyModification($oTable);
 		$aliasTables= array();
 		//STCheck::write("search for aliases");
@@ -2733,7 +2732,14 @@ abstract class STDatabase extends STObjectContainer
 				// but it comes back the changed values
 				$bufferWhere= $oTable->oWhere;
 				$whereStatement= $this->getWhereStatement($oTable, "t1", $aliasTables);
-				STCheck::echoDebug("db.statements", "need follow <b>where</b> statement: $whereStatement");
+				if(STCheck::isDebug("db.statements"))
+				{	
+				    if(trim($whereStatement) == "")
+				        $msg= "do not need a <b>where</b> statement";
+				    else
+				        $msg= "need follow <b>where</b> statement: $whereStatement";
+				    STCheck::echoDebug("db.statements", $msg);
+				}
 				$oTable->oWhere= $bufferWhere;
 				if($whereStatement)
 				{
@@ -2754,20 +2760,23 @@ abstract class STDatabase extends STObjectContainer
 			$oTable->bOrder == true		)
 		{
 			$orderStat= $oTable->getOrderStatement($aliasTables);
-			if(	trim($orderStat) !== "" &&
-				trim($orderStat) != "ASC" &&
-				trim($orderStat) != "DESC"		)
+			$orderStat= trim($orderStat);
+			if(	$orderStat !== "" &&
+				$orderStat != "ASC" &&
+				$orderStat != "DESC"		)
 			{
 				$statement.= " order by $orderStat";
 				STCheck::echoDebug("db.statements", "need follow <b>order</b> statement: order by $orderStat");
-			}
+			}else
+			    STCheck::echoDebug("db.statements", "do not need an <b>order</b> statement");
 		}
 		$limitStat= $this->getLimitStatement($oTable, false);
 		if($limitStat)
 		{
 			$statement.= $limitStat;
 			STCheck::echoDebug("db.statements", "<b>limit</b> result with: $limitStat");
-		}
+		}else
+		    STCheck::echoDebug("db.statements", "do not need a <b>limit</b> statement");
 		if(count($this->aOtherTableWhere))
 		{
 			Tag::warning(1, "STDatabase::getStatement()", "does not reach all where-statements:");

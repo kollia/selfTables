@@ -830,11 +830,12 @@ class STDbSiteCreator extends HtmlTag
 						and
 						$this->hasTableAccess($table, STDELETE)	)		)
 				{
+				    showErrorTrace();
     				$get= new GetHtml();
     				$script= new JavaScriptTag();
     					$function= new jsFunction("selftable_updateDelete", "action", "VALUE");
     						$get->update("stget[action]='+action+'");
-    						$get->update("stget[".$tableName."][".$PK."]='+VALUE+'");
+    						$get->update("stget[limit][".$tableName."][".$PK."]='+VALUE+'");
 							//$get->update("stget[link][from][0][".$tableName."]=".$PK);
 							$function->add("bOk= true;");
 							$function->add("if(action=='delete')");

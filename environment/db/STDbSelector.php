@@ -12,7 +12,8 @@ class STDbSelector extends STDbTable
 		var $columns= array();
 		var $SqlResult= null;
 		var $onError;
-		var $errorID= 0;
+		private $errorID= 0;
+		private $errorMessage= "No Error occured";
 		var $search= array();
 		var $fetchArrayCount= 0;
 		var $count= 0;
@@ -598,7 +599,7 @@ class STDbSelector extends STDbTable
 		}
 		/*protected*/function setSqlError($sqlResult)
 		{
-  			if(!$sqlResult)
+  			if(!is_array($sqlResult))
   			{
   				$sqlErrorMessage= $this->db->getError();
   				$this->errorID= $this->db->errno();

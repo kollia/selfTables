@@ -39,6 +39,13 @@ class STObjectContainer extends STBaseContainer
 		var	$sUpdateAction;
 		var	$sDeleteAction;
 		var $sNewEntry;
+		
+	/**
+	 * array with STSearchBox objects
+	 * to search inside database
+	 * @var array
+	 */
+	private $asSearchBox= array();
 
 	function __construct($name, &$container)
 	{
@@ -105,6 +112,7 @@ class STObjectContainer extends STBaseContainer
 		STCheck::paramCheck($bEmpty, 2, "null", "boolean");
 
 		$this->initContainer();
+		
 		$orgTableName= $this->getTableName($sTableName);
     	if(isset($orgTableName))
     	    $sTableName= $orgTableName;
@@ -117,8 +125,8 @@ class STObjectContainer extends STBaseContainer
 		if(isset($this->tables[$sTableName]))
 		  $table= &$this->tables[$sTableName];
 		else
-		{ 
-		    $gettable= $this->getTable($sTableName);
+		{
+		    $gettable= $this->getTable($orgTableName);
             if(isset($gettable))
             {
                 $this->tables[$sTableName]= clone($gettable);
@@ -134,8 +142,9 @@ class STObjectContainer extends STBaseContainer
 	}
 	function &getTable($tableName= null)//, $bAllByNone= true)
 	{
-		STCheck::paramCheck($tableName, 1, "string", "null");
+		STCheck::paramCheck($tableName, 1, "string", "empty(string)", "null");
 		//Tag::paramCheck($bAllByNone, 2, "bool");
+		
 		$nParams= func_num_args();
 		Tag::lastParam(1, $nParams);
 
@@ -656,8 +665,7 @@ class STObjectContainer extends STBaseContainer
 		{
 			if(!$result["address"])
 			{
-        		$oGetParam->insert("stget[".$table->getName()."][".$result["column"]."]=".$result["columnEntry"]);
-        		$oGetParam->insert("stget[link][from][0][".$table->getName()."]= ".$result["column"]);
+			    $oGetParam->setLimitagion("container", $table->getName(), $result['column'], $result["columnEntry"]);
         		$oGetParam= $result["container"]->getAddressToContainer($oGetParam);
         	}else
         		$oGetParam= new STQueryString($result["address"]);
@@ -755,8 +763,7 @@ class STObjectContainer extends STBaseContainer
 	function execute(&$externSideCreator, $onError)
 	{
 		Tag::paramCheck($externSideCreator, 1, "STSiteCreator");
-		
-		echo __FILE__.__LINE__."<br>";
+
 		$this->createMessages();
 		$this->initContainer();
 		$this->oExternSideCreator= &$externSideCreator;
@@ -777,6 +784,7 @@ class STObjectContainer extends STBaseContainer
 		{
 			$get_vars["table"]= $this->getTableName();
 		}
+		
 		
 		if(	$this->bFirstContainer
 			and
@@ -824,8 +832,6 @@ class STObjectContainer extends STBaseContainer
 		        $table= $this->getFirstTableName();
 		    $action= $this->getFirstAction();
 		}
-		echo __FILE__.__LINE__."<br>";
-		st_print_r($action);
 		if(	isset($get_vars["action"]) &&
 			(	$get_vars["action"]==STUPDATE ||
 				$get_vars["action"]==STINSERT	)	)
@@ -890,10 +896,8 @@ class STObjectContainer extends STBaseContainer
 				$tableName= $get_vars["table"];
 			}
 			$table= &$this->getTable($tableName);
-			if(	$table->oSearchBox
-				and
-				!isset($this->asSearchBox[$table->oSearchBox->categoryName])
-				and
+			if(	isset($table->oSearchBox) &&
+				!isset($this->asSearchBox[$table->oSearchBox->categoryName]) &&
 				(	!$table->oSearchBox->bDisplayByButton
 					or
 					$get_vars["displaySearch"]=="true"			)									)
@@ -922,6 +926,8 @@ class STObjectContainer extends STBaseContainer
 //			}
 			
 			$div= new DivTag();
+    			$headline= &$this->getHeadline($get_vars);
+    			$div->addObj($headline);
 			if($this->bChooseInTable)
 				$div->add($this->getChooseTableTag($get_vars));
 			
@@ -950,29 +956,48 @@ class STObjectContainer extends STBaseContainer
 
 			$PK= $table->getPkColumnName();
 			if(!STCheck::warning(	typeof($table, "STDbTable") &&
-									$PK === false, "makeListTags", "in table $tableName is no preimery key set"))
+									$PK === false, "makeListTags", "in table $tableName is no preimery key defined"))
 			{
 				$updateAccess= $table->hasAccess(STUPDATE);
 				$deleteAccess= $table->hasAccess(STDELETE);
-				if(	(	$table->canUpdate()
-						and
-						$updateAccess		)
-					or
-					(	$table->canDelete()
-						and
-						$deleteAccess		)	)
+				$bUpdate= false;
+				$bDelete= false;
+				if(	$table->canUpdate() &&
+					$updateAccess		    )
+				{
+				    $bUpdate= true;
+				}
+				if(	$table->canDelete() &&
+					$deleteAccess		    )
+				{
+				    $bDelete= true;
+				}
+				if( $bUpdate ||
+				    $bDelete    )
 				{
     				$get= new STQueryString();
 					$get->noStgetNr("stget[action]");
 					$get->noStgetNr("stget[".$tableName."][".$PK."]");
     				$script= new JavaScriptTag();
     					$function= new jsFunction("selftable_updateDelete", "action", "VALUE");
-    						$get->update("stget[action]='+action+'");
-    						$get->update("stget[".$tableName."][".$PK."]='+VALUE+'");
+        					$get->setLimitation("'+action+'", $this->getContainerName(), $tableName, $PK, "'+VALUE+'");
     						
-							$function->add("bOk= true;");
-							$function->add("if(action=='delete')");
-							$function->add("    bOk= confirm('".$this->sDeleteQuestion."');");
+    						$function->add("bOk= true;");
+    						$function->add("if(action=='delete')");
+						if($bDelete)
+						{
+							$function->add("    bOk= confirm('".$this->sDeleteQuestion."');");							
+						}
+						if(!$bUpdate)
+						    $function->add("else if(action=='update')");
+						if( !$bDelete ||
+						    !$bUpdate     )
+						{
+						    $function->add("{");
+						    $function->add("bOk= false;");
+						    $function->add("alert('you have no permission to '+action+' this entry!');");
+						    $function->add("}");
+						}
 							$function->add("if(bOk)");
 							$location= "    location.href='".$get->getStringVars()."';";
     						$function->add($location);
@@ -1013,7 +1038,7 @@ class STObjectContainer extends STBaseContainer
 				count($table->columns) > 0		)
 			{
 				$get= new STQueryString();
-				$get->update("stget[action]=".STINSERT);
+				$get->setLimitation(STINSERT, $this->getContainerName(), $table->getName());
 				$params= $get->getStringVars();
 
 				$center= new CenterTag();
@@ -1071,9 +1096,9 @@ class STObjectContainer extends STBaseContainer
 		function makeInsertUpdateTags($get_vars)
 		{	
 			$table= &$this->getTable($get_vars["table"]);
-			$box= new STDisplayBox($this);
+			$box= new STItemBox($this);
 			$box->align("center");
-			$get= new STQueryString();
+			$query= new STQueryString();
 			if($this->sFirstAction==$get_vars["action"])
 			{// if first action is set to STUPDATE or STINSERT
 			 // user can not choose any other actions in this table
@@ -1094,11 +1119,11 @@ class STObjectContainer extends STBaseContainer
 			 	$this->deleteContainer($get);
 			}else
 			{
-				$get->update("stget[action]=".STLIST);
-				if($table->sDeleteLimitation=="true")
-					$get->delete("stget[".$get_vars["table"]."][".$table->getPkColumnName()."]");
+				$query->update("stget[action]=".STLIST);
+				if($table->getDeleteLimitationOrder()=="true")
+					$query->removeLimitation($get_vars["table"], $table->getPkColumnName());
 			}
-			$getParameter= $get->getStringVars();
+			$getParameter= $query->getStringVars();
 			$box->onOKGotoUrl($this->oExternSideCreator->getStartPage().$getParameter);
 			if($get_vars["action"]==STINSERT)
 			{
@@ -1126,7 +1151,7 @@ class STObjectContainer extends STBaseContainer
 			$this->oMainTable= &$box;
 			//$this->addObj($head);
 			//$body= new BodyTag();
-				$headline= &$this->getHeadline($get_vars);
+    			$headline= &$this->getHeadline($get_vars);
 				$this->addObj($headline);
 				$center= new CenterTag();
 					$h2= new H2Tag();
@@ -1165,7 +1190,7 @@ class STObjectContainer extends STBaseContainer
 		{
 			$table= &$this->getTable($get_vars["table"]);
 			//$PK= $table->getPkColumnName();
-			$box= new STDisplayBox($this);
+			$box= new STItemBox($this);
 			$box->table($table);
 			//$box->where($PK."=".$get_vars["link"]["VALUE"]);
 			//$box->onOkGotoUrl($get->getParamString(STDELETE, "stget[link][".$this->sDeleteAction."]"));

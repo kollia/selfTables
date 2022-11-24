@@ -192,6 +192,7 @@ class STUserProjectManagement extends STBaseContainer
         STBaseContainer::execute($externSideCreator, $onError);  
         $available= $this->showAvailableSite();
         
+        //st_print_r($available);
         if($available['show'] == "frame")
         {
             $get= new STQueryString();

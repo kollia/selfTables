@@ -234,21 +234,21 @@ class STCheck
 				$nParams= count($nParams);
 			Tag::warning($nParams>$nLast, "Tag::paramCheck()", "function has no more than ".$count." params", 1);
 		}
-		public static function paramCheck($param, $paramNr, $type1, $type2= null, $type3= null)
+		public static function paramCheck($param, int $paramNr, $type1, $type2= null, $type3= null)
 		{//echo "function paramCheck($param, $paramNr, $type1, $type2)<br />";
 			--$paramNr;
 			$params= func_get_args();
 
 			return STCheck::param($param, $paramNr, $params);
 		}
-		public static function parameter($param, $paramNr, $type1, $type2= null, $type3= null)
+		public static function parameter($param, int $paramNr, $type1, $type2= null, $type3= null)
 		{//echo "function paramCheck($param, $paramNr, $type1, $type2)<br />";
 			--$paramNr;
 			$params= func_get_args();
 
 			return STCheck::param($param, $paramNr, $params);
 		}
-		public static function param($param, $paramNr, $type1, $type2= null, $type3= null)
+		public static function param($param, int $paramNr, $type1, $type2= null, $type3= null)
 		{	//echo "function param(";st_print_r($param, 0);
 			//			echo ", ";st_print_r($paramNr, 0);
 			//			echo ", ";st_print_r($type1, 0); 
@@ -276,6 +276,8 @@ class STCheck
 				if(count($args)<4)
 					$bError= true;
 				$begin= 4;
+				if(!($args[3]))
+				    $bError= true;
 			}else
 			{
 				$types= array();
