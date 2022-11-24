@@ -1107,12 +1107,11 @@ class STBaseTable
 		$statement= substr($statement, 0, strlen($statement)-1);
 		$tableName= $this->getName();
 		$query= new STQueryString();
-		$aGet= $query->getArrayVars();
-		if(isset($aGet["stget"]["sort"][$tableName]))
+		$queryArr= $query->getArrayVars();
+		if(isset($queryArr["stget"]["sort"][$tableName]))
 		{
-			$aGet= $aGet["stget"]["sort"][$tableName];
 			$query_statement= "";
-			foreach($aGet as $column)
+			foreach($queryArr["stget"]["sort"][$tableName] as $column)
 			{
 				//preg_match("/^([^_]+)_(ASC|DESC)$/i", $column, $inherit);
 			    preg_match("/^(.+)_(ASC|DESC)$/i", $column, $inherit);
@@ -1122,10 +1121,16 @@ class STBaseTable
 				    $query_statement.= $field["column"]." ".$inherit[2].",";
 				}elseif(STCheck::isDebug())
 				{
-				    $message= "column alias('".$inherit[1]."') from query string not found inside table '$tableName'";
-				    STCheck::write($message, 1);
-				    $message= "maybe not reach table definition for current action or container";
-				    STCheck::write($message, 1);
+				    if( isset($queryArr["stget"]["action"]) &&
+				        $queryArr["stget"]["action"] != STINSERT &&
+				        $queryArr["stget"]["action"] != STUPDATE &&
+				        $queryArr["stget"]["action"] != STDELETE    )
+				    {
+    				    $message= "column alias('".$inherit[1]."') from query string not found inside table '$tableName'";
+    				    STCheck::write($message, 1);
+    				    $message= "maybe not reach table definition for current container or action";
+    				    STCheck::write($message, 1);
+				    }
 				}
 			}
 			if(strlen($query_statement) > 0)
