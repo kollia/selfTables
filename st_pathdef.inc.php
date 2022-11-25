@@ -16,6 +16,7 @@
 	//     db.statments.where    -  show part of creation by where statement
 	//     db.statements.aliases -  alias definition for table's
 	//     db.table.fk           -  show FOREIGN KEY definitions
+	//	   db.test				 -	allow only 'select' and 'show' commands on database, for each other write only statement on debug output
 	//     show.db.fields        -  by display db fields inside INSERT or UPDATE box, show flags of field
 	//     container             -  show container creation and initialling
     //     containerChoice       -  show also choise of container for backbutton

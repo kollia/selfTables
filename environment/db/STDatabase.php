@@ -516,6 +516,7 @@ abstract class STDatabase extends STObjectContainer
 			$statement= $this->getStatement($statement);
 		if(is_String($statement))
 		{
+		    $bExecuteDb= true;
 			if(STCheck::isDebug())
 			{
 				global	$_st_page_starttime_;
@@ -524,10 +525,33 @@ abstract class STDatabase extends STObjectContainer
 					Tag::setPageStartTime();
 				Tag::echoDebug("db.statement.time", date("H:i:s")." ".(time()-$_st_page_starttime_));
 				//Tag::echoDebug("db.statement", "in DB:".$this->dbName." conn:".$this->conn."\"");
-				Tag::echoDebug("db.statement", " \"".$statement."\"");			
-				STCheck::flog("fetch statement on db with command mysql_query");
+				
+				if(STCheck::isDebug("db.test"))
+				{
+				    $inClassFunction= "db.statement";
+				    $preg= null;
+				    $res= preg_match("/^[ \t]*([^ \t]+)/", $statement, $preg);
+				    if( $res )
+				    {
+				        $stat= strtolower($preg[1]);
+				        if( $stat != "show" &&
+				            $stat != "select"   )
+    				    {
+    				        $bExecuteDb= false;
+    				        $inClassFunction= "db.test";
+				        }
+				    }
+				    STCheck::echoDebug($inClassFunction, "statement: \"".$statement."\" ");
+				    if(!$bExecuteDb)
+				        STCheck::echoDebug("db.test", "do not execute ".$preg[1]."-statement on database for testing");
+				}else
+				    STCheck::echoDebug("db.statement", "statement: \"".$statement."\" ");			
+				STCheck::flog("fetch statement on db with command querydb");
 			}
-			$res= $this->querydb($statement);
+			if($bExecuteDb)
+			    $res= $this->querydb($statement);
+			else
+			    $res= array();
 		}else// wenn statement schon ein Array, wird dieses sogleich
 			return $statement; // als Ergebnis zur�ckgegeben
 		
