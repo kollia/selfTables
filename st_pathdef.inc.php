@@ -27,7 +27,7 @@
 	//
 	//--------------------------------------------------------------------------
 	
-	$__globally_debug_defined= true;
+	$__globally_debug_defined= false;
 	if($__globally_debug_defined)
 	{
 		ini_set('display_errors', 1);

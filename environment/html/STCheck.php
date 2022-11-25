@@ -273,11 +273,21 @@ class STCheck
 				STCheck::warning((!isset($args[3])||!is_bool($args[3])), "STCheck::param()", 
 					"fourth parameter not be set, or no correct boolean");
 				$bError= false;
-				if(count($args)<4)
-					$bError= true;
-				$begin= 4;
-				if(!($args[3]))
+				if(count($args)>=4)
+				{
+				    $begin= 4;
 				    $bError= true;
+				    for($a= 3; $a<count($args); $a++)
+				    {
+				        if($args[$a] === true)
+				        {
+				            $bError= false;
+				            break;
+				        }
+				    }
+				}else
+					$bError= true;
+				
 			}else
 			{
 				$types= array();

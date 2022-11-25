@@ -2086,28 +2086,12 @@ class STBaseTable
 		{
 		 	Tag::paramCheck($stwhere, 1, "STDbWhere", "string", "empty(string)", "null");
 		 	
-			if(!$stwhere)
-				return;
 			return $this->where($stwhere, "and");
-		 	if(is_string($stwhere))
-				$stwhere= new STDbWhere($stwhere);
-			if(!$stwhere->isModified())
-				return;
-			if(	$this->oWhere
-				and
-				$this->oWhere->isModified()	)
-			{
-				$this->oWhere->andWhere($stwhere);
-			}else
-				$this->oWhere= $stwhere;
-			$this->oWhere->forTable($this->Name);
 		}
 		function orWhere($stwhere)
 		{
 		 	Tag::paramCheck($stwhere, 1, "STDbWhere", "string", "empty(string)", "null");
 		 	
-			if(!$stwhere)
-				return null;
 			return $this->where($stwhere, "or");
 		}
 		function where($stwhere, $operator= "")
