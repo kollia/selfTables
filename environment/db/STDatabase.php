@@ -539,6 +539,7 @@ abstract class STDatabase extends STObjectContainer
     				    {
     				        $bExecuteDb= false;
     				        $inClassFunction= "db.test";
+    				        //showErrorTrace();
 				        }
 				    }
 				    STCheck::echoDebug($inClassFunction, "statement: \"".$statement."\" ");

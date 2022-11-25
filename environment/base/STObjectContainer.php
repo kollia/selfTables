@@ -1190,60 +1190,20 @@ class STObjectContainer extends STBaseContainer
 		function deleteTableEntry($get_vars)
 		{
 			$table= &$this->getTable($get_vars["table"]);
-			//$PK= $table->getPkColumnName();
+			
 			$box= new STItemBox($this);
 			$box->table($table);
-			//$box->where($PK."=".$get_vars["link"]["VALUE"]);
-			//$box->onOkGotoUrl($get->getParamString(STDELETE, "stget[link][".$this->sDeleteAction."]"));
-			$tableName= $table->getName();
-			$get= new STQueryString();
-			$stget= $get->getArrayVars();
-			$stget= null;
-			if(isset($stget["stget"]))
-				$stget= $stget["stget"];
-			else
-				$stget= null;
-			if(isset($stget[$tableName]))
-			{// is the own limitation from an other container
-			 // do not delete this limitation
-				$bFromContainer= false;
-				$column= key($stget[$tableName]);
-				$from= null;
-				if(isset($stget["link"]["from"]))
-					$from= $stget["link"]["from"]; 
-				while($from)
-				{
-					foreach($from as $content)
-					{
-						if($content[$tableName]==$column)
-						{
-							$bFromContainer= true;
-							break;
-						}
-					}
-					if($bFromContainer)
-						break;
-					if(isset($stget["older"]["stget"]))
-						$stget= $stget["older"]["stget"];
-					else
-						$stget= null;
-					if(isset($stget["link"]["from"]))
-						$from= $stget["link"]["from"];
-					else
-						$from= null;
-				}
-				if(!$bFromContainer)
-					$get->delete("stget[".$tableName."]");
-			}
-			$get->update("stget[action]=".STLIST);
-			$get->delete("stget[$tableName]");
+			
+			$query= new STQueryString();
+			$query->removeLimitation();
+			$query->update("stget[action]=".STLIST);
 			if($table->listArrangement == STVERTICAL)
 			{// alex02/05/2019:	when container listed only one column vertical,
 			 // 				this one do not exist after deletion
 			 // 				so jump out from container
-				$get->delete("stget[container]");
+				$query->removeContainer();
 			}
-			$box->msg->onEndGotoUrl($get->getStringVars());
+			$box->msg->onEndGotoUrl($query->getStringVars());
 			$this->setAllMessagesContent(STDELETE, $box);
 			$result= $box->delete();
 			$this->addObj($box);
