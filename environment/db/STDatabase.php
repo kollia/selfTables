@@ -194,6 +194,11 @@ abstract class STDatabase extends STObjectContainer
     	// alex 17/05/2005:	class is now extend from STObjectcontainer
     	//					and must give at second parameter an container
     	STObjectContainer::__construct($identifName, $this);
+    	if( STCheck::isDebug("db.statement.insert") ||
+    	    STCheck::isDebug("db.statement.update")    )
+    	{
+    	    STCheck::debug("db.statement.modify");
+    	}
   	}
 	static function existDatabaseClassName($className)
 	{
@@ -905,10 +910,10 @@ abstract class STDatabase extends STObjectContainer
 		$this->aFieldArrays[$filedArrayKey]= $aRv;
 		if(STCheck::isDebug("show.db.fields"))
 		{
-			STCheck::echoDebug("show.db.fields", "produced column-result:");
+			$space= STCheck::echoDebug("show.db.fields", "produced column-result:");
 			if(!empty($aRv))
 				echo "<strong>ERROR:</strong> no field content!<br />";
-			st_print_r($aRv, 5, 20);
+			st_print_r($aRv, 5, $space);
 		}
 		return $aRv;
  	}
@@ -963,44 +968,66 @@ abstract class STDatabase extends STObjectContainer
 		$key_string= "";
 		$value_string= "";
 		$result= $this->make_sql_values($table, $values);
-		$fields= $this->read_inFields($table, "type");
+		$types= $this->read_inFields($table, "type");
 		$flags= $this->read_inFields($table, "flags");
 		if(typeof($table, "STDbTable"))
 			$table= $table->getName();
 
+		if(STCheck::isDebug("db.statement.modify"))
+		{
+		    $space= STCheck::echoDebug("db.statement.modify", "insert follow values into database table <b>$table</b>");
+	        st_print_r($result,3, $space);
+		}
         foreach($result as $key => $value)
 		{
-			$auto_increment= preg_match("/auto_increment/i", $flags[$key]);
-			if(	$key_string!=""
-				and
-				!$auto_increment	)
+		    if(STCheck::isDebug("db.statement.modify"))
+		    {
+		        STCheck::echoDebug("db.statement.modify", "field <b>$key</b>:");
+		        STCheck::echoDebug("db.statement.modify", "   from type '".$types[$key]."'");
+		        STCheck::echoDebug("db.statement.modify", "   with flag '".$flags[$key]."'");
+		        STCheck::echoDebug("db.statement.modify", "   and value '$value'");
+		        echo "<br />";
+		    }
+			if(!preg_match("/auto_increment/i", $flags[$key]))
 			{
-				$key_string.= ",";
-				$value_string.= ",";
+    	   		$key_string.= "$key,";
+			    $value_string.= $this->add_quotes($types[$key], $value).",";
 			}
-			if(!$auto_increment)
-    	   		$key_string.= $key;
-			if(	$fields[$key]!="int"
-				and
-				!preg_match("/now()/i", $value) &&
-				!preg_match("/sysdate()/i", $value) &&
-				!preg_match("/password(.*)/i", $value)	)
-			{
-				$value= "'".$value."'";
-			}
-			if(	$fields[$key]=="int"
-				and
-				(	$value===null
-					or
-					$value===""	)	)
-			{
-				$value= "null";
-			}
-			if(!$auto_increment)
-    	   		$value_string.= $value;
 		}
+		$key_string= substr($key_string, 0, strlen($key_string)-1);
+		$value_string= substr($value_string, 0, strlen($value_string)-1);
         $sql="INSERT INTO $table($key_string) VALUES($value_string)";
 		return $sql;
+	}
+	/**
+	 * method add quotes to value if need,
+	 * or declare as null
+	 * 
+	 * @param string $type type of database column
+	 * @param mixed $value value insert update to database;
+	 * @return mixed value with qutes
+	 */
+	private function add_quotes(string $type, $value)
+	{
+	    if(	$type=="int" ||
+	        $type=="real"   )
+	    {
+	        if( !isset($value) ||
+	            $value === null ||
+	            $value === ""      )
+	        {
+	            $value= "null";
+	        }
+	    }else
+	    {
+	        if( !preg_match("/^now\(\)$/i", $value) &&
+    	        !preg_match("/^sysdate\(\)$/i", $value) &&
+    	        !preg_match("/^password\(.*\)$/i", $value)	)
+    	    {
+    	        $value= "'".$value."'";
+    	    }
+	    }
+	    return $value;
 	}
 	function make_updateString($table, $where= "", $post_vars= null)
 	{
@@ -1020,33 +1047,26 @@ abstract class STDatabase extends STObjectContainer
 			$tableName= $table;
 		$result= $this->make_sql_values($tableName, $values);
 		if(!count($result))
-			return null;
-		$fields= $this->read_inFields($table, "type");
+		    return null;
+	    if(STCheck::isDebug("db.statement.modify"))
+	    {
+	        $space= STCheck::echoDebug("db.statement.modify", "update follow values inside database table <b>$table</b>");
+	        st_print_r($result,3, $space);
+	    }
+		$types= $this->read_inFields($table, "type");
         foreach($result as $key => $value)
-		{
-			if($update_string!="")
-				$update_string.= ", ";
-			if(	$fields[$key]!="int"
-				and
-				!preg_match("/now\(\)/i", $value) &&
-				!preg_match("/sysdate\(\)/i", $value) &&
-				!preg_match("/password\(.*\)/i", $value))
-			{
-				if($value===null)
-					$value= "null";
-				else
-					$value= "'".$value."'";
-			}
-			if(	$fields[$key]=="int"
-				and
-				(	$value===null
-					or
-					$value===""	)	)
-			{
-				$value= "null";
-			}
-        	$update_string.= $key."=".$value;
+        {
+            if(STCheck::isDebug("db.statement.modify"))
+            {
+                STCheck::echoDebug("db.statement.modify", "field <b>$key</b>:");
+                STCheck::echoDebug("db.statement.modify", "   from type '".$types[$key]."'");
+                STCheck::echoDebug("db.statement.modify", "   with flag '".$flags[$key]."'");
+                STCheck::echoDebug("db.statement.modify", "   and value '$value'");
+                echo "<br />";
+            }
+			$update_string.= $key."=".$this->add_quotes($types[$key], $value).",";
 		}
+		$update_string= substr($update_string, 0, strlen($update_string)-1);
         $sql="UPDATE $tableName set $update_string";
 
 		if(is_string($table))

@@ -11,6 +11,9 @@
 	//     performance           -  show needed performance of time from hole site
 	//     db.statement          -  show created statements of self-Tables
 	//     db.statement.time     -  show how long statement need to fetch from database
+	//     db.statement.modify   -  show creation of insert/update statement
+    //     db.statement.insert   -  same as db.statement.modify
+    //     db.statement.update   -  same as db.statement.modify
 	//     db.statements.select  -  show select statement by creation
 	//     db.statements.table   -  show part of table creation statement
 	//     db.statments.where    -  show part of creation by where statement

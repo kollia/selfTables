@@ -1436,10 +1436,12 @@ class STItemBox extends STBaseBox
 	}
 	function countingAllEnumns()
 	{
-		Tag::echoDebug("show.db.fields", "get file:".__file__." line:".__line__);
+		$space= STCheck::echoDebug("show.db.fields", "counting enums:");
 		$fields= $this->getFieldArray();//hole Felder aus Datenbank
 		foreach($fields as $field)
 			$this->countingEnums($field["name"], $field["flags"]);
+		if(STCheck::isDebug("show.db.fields"))
+		    st_print_r($this->aEnums, 2, $space);
 		return $this->aEnums;
 	}
 	function getEnums($columnName)
@@ -1866,7 +1868,6 @@ class STItemBox extends STBaseBox
 				$statement= null;
             	if($this->action==STINSERT)
 				{
-					$bDone= false;
 					if(isset($this->asDBTable))
 					{
 						if(	!$bError
@@ -2111,20 +2112,18 @@ class STItemBox extends STBaseBox
 		}
     function checkFields(&$post)
     {
+        STCheck::echoDebug("show.db.fields", "check for correct input:");
+        
 		$table= $this->asDBTable;
 		if(!$table)
 		{
 			$table= reset($this->asTable);
 		}else
 			$table= $table->getName();
-		// alex	07/04/2005:	var $aFounded gel�scht
-		//					(wird nirgends gebraucht)
-		//$aFounded= array();//f�r multiple_key
-        $columns= $this->createColumns($this->columns);// erstelle Array aus Spalten-Name und Alias-Name#
-		Tag::echoDebug("show.db.fields", "get file:".__file__." line:".__line__);
+        $columns= $this->createColumns($this->columns);// create array from column-Name und alias-Name
         $fields= $this->getFieldArray();//hole Felder aus Datenbank
         if($this->action==STUPDATE)
-        {// nur die ge�nderten Felder pr�fen
+        {// check only the changed fields
 			if($this->asDBTable)
 				$oTable= &$this->asDBTable;
 			else
@@ -2190,6 +2189,11 @@ class STItemBox extends STBaseBox
         foreach($fields as $field)
         {
             $name= $field["name"];
+            if(STCheck::isDebug("show.db.fields"))
+            {
+                $space= STCheck::echoDebug("show.db.fields", "  check field <b>$name</b>");
+                st_print_r($field, 2, $space+8);
+            }
             if(isset($columns[$name]))
 				$columnName= $columns[$name];
 			else
