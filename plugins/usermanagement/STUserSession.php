@@ -757,7 +757,7 @@ class STUserSession extends STDbSession
 		$userTable= $this->database->getTable("User");
 		$userTable->clearSelects();
 		$userTable->clearGetColumns();
-		$userTable->select("ID", "ID2");
+		$userTable->select("ID");
 		$userTable->select("UserName");
 		$userTable->getColumn("GroupType");
 		if(is_string($user))
