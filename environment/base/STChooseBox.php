@@ -3,7 +3,7 @@
 require_once($php_html_description);
 require_once($php_javascript);
 
-class STChoosBox extends TableTag
+class STChooseBox extends TableTag
 {
 		var	$tableContainer;
 		var $aEntries;
@@ -53,7 +53,7 @@ class STChoosBox extends TableTag
 				/*if(	!typeof($this->tableContainer, "stdbtablecontainer")
 					and $table===null	)
 				{
-					echo "<b>Error:</b> if \$Db in constructor from STChoosBox is no object from STDbTableContainer,<br />";
+					echo "<b>Error:</b> if \$Db in constructor from STChooseBox is no object from STDbTableContainer,<br />";
 					echo "\$table in function execute can not be null";
 					exit;					
 				}*/
@@ -61,9 +61,9 @@ class STChoosBox extends TableTag
 				{
 					showErrorTrace();
 					if(STCheck::isDebug())
-						STCheck::echoDebug("", "for object STChoosBox is no start site defined");
+						STCheck::echoDebug("", "for object STChooseBox is no start site defined");
 					else
-						echo "for object STChoosBox is no start site defined";
+						echo "for object STChooseBox is no start site defined";
 					exit;
 				}
 			}		
@@ -145,7 +145,7 @@ class STChoosBox extends TableTag
 				and
 				$this->tableContainer->getAction()==STCHOOSE	)
 			{
-				Tag::alert(!$address, "STChoosBox::execute()", "address for showed button $sButton to forward is null");
+				Tag::alert(!$address, "STChooseBox::execute()", "address for showed button $sButton to forward is null");
 				if(Tag::isDebug())
 				{
 					$tr= new RowTag();
