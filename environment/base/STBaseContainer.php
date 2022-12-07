@@ -70,7 +70,7 @@ class STBaseContainer extends BodyTag
 	{
 	    $this->nLevel= $nLevel;
 	}
-	function getContainerLevel() : int
+	function getContainerLevel()
 	{
 	    return $this->nLevel;
 	}
@@ -1196,7 +1196,7 @@ class STBaseContainer extends BodyTag
 						or
 						isset($by[STALLDEF][$get_vars["action"]])
 						or
-						isset($by[tableName][STALLDEF])
+						isset($by[$tableName][STALLDEF])
 						or
 						isset($by[$tableName][$get_vars["action"]])	)
 					{
@@ -1204,12 +1204,14 @@ class STBaseContainer extends BodyTag
     						$get= new STQueryString();
 							$this->addParamsByButton($get, $containerName);
 							// is button for an back-container
-							$older= $HTTP_GET_VARS["stget"]["older"];
+							$older= null;
+							if(isset($HTTP_GET_VARS["stget"]["older"]))
+							    $older= $HTTP_GET_VARS["stget"]["older"];
 							$olderButtons= 1;
 							$isBackButton= false;
 							while($older)
 							{
-								if($older["stget"]["container"])
+								if(isset($older["stget"]["container"]))
 								{
 									++$olderButtons;
 									if($older["stget"]["container"]==$containerName)
@@ -1219,7 +1221,10 @@ class STBaseContainer extends BodyTag
 									}
 								}else
 									break;
-								$older= $older["stget"]["older"];
+								if(isset($older["stget"]["older"]))
+									$older= $older["stget"]["older"];
+								else
+									$older= null;
 							}
 
 							if($containerName==$this->oExternSideCreator->sFirstTableContainerName)
