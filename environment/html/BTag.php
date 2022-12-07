@@ -12,7 +12,7 @@ class BoldTag extends Tag
 {
 		function __construct()
 		{
-			Tag::Tag("b", true, null);
+		    Tag::__construct("b", true, null);
 		}
 }
 
