@@ -157,35 +157,28 @@ class STDbSelector extends STDbTable
 						return false;
 				return $oTable->isIdentifColumn($columnName, $aliasName);
 		}
-	function &getFkTable($fromColumn, $bIsColumn= false)
-	{
-		STCheck::param($fromColumn, 0, "string");
-		STCheck::param($bIsColumn, 1, "boolean");
-
-		if(!$bIsColumn)
+		/**
+		 * fetch table from database of given or current container<br />
+		 * and if table new, store a clone in own object
+		 *
+		 * @param string $sTableName name of the table
+		 * @param string $sContainer container name from which table should fetched
+		 * @return object of table or null
+		 */
+		public function &getTable(string $sTableName, string $sContainer= null)
 		{
-			$field= $this->findAliasOrColumn($fromColumn);
-			$fromColumn= $field["column"];
-		}
-		foreach($this->aFks as $table=>$content)
-		{
-			foreach($content as $columns)
+			STCheck::param($sTableName, 0, "string");
+			STCheck::param($sContainer, 1, "string", "null");
+			
+			if( $sContainer != null &&
+			    $sContainer != $this->container->getName() )
 			{
-				if($fromColumn==$columns["own"])
-					return $this->getTable($table);
-			}
-		}
-		$nullob= new STBaseTable("NoForeignKeyTable");
-		return $nullob;
-	}
-		function &getTable($sTableName)
-		{
-			Tag::paramCheck($sTableName, 1, "string");
-
+			    $container= &STBaseContainer::getContainer($sContainer);
+			}else
+			    $container= &$this->container;
 			$sTableName= $this->container->getTableName($sTableName);
 			if($this->Name==$sTableName)
 				return $this;
-			
 			if(!isset($this->aoToTables[$sTableName]))
 			{
 			    $oTable= null;
@@ -197,12 +190,11 @@ class STDbSelector extends STDbTable
 					$this->addFKTables($this->db->dbName, $done, $this->Name);
 					$this->bAddedFkTables= true;
 
-					$oTable= &$this->aoToTables[$sTableName];
+					if(isset($this->aoToTables[$sTableName]))
+					   $oTable= &$this->aoToTables[$sTableName];
 				}
 				if(!$oTable)
-					$oTable= &$this->container->getTable($sTableName);
-				if($oTable && !typeof($oTable, "STDbSelector"))
-					$oTable= new STDbSelector($oTable);
+					$oTable= clone $container->getTable($sTableName);
 				if($oTable)
 					$this->aoToTables[$sTableName]= &$oTable;
 				else
@@ -211,12 +203,6 @@ class STDbSelector extends STDbTable
 			    $oTable= &$this->aoToTables[$sTableName];
 			// alex 24/05/2005:	f�r aoToTables als Key den Namen eingef�hrt
 			return $oTable;
-			/*foreach($this->aoToTables as $aTables)
-			{
-				if($aTables->getName()==$sTableName)
-					return $aTables;
-			}
-			return null;*/
 		}
 		// param $table hat vorrang vor tableName in where-Objekt
 
@@ -301,13 +287,13 @@ class STDbSelector extends STDbTable
 		{
 			if(STCheck::isDebug())
 			{
-				Tag::paramCheck($tableName, 1, "string");
+			    Tag::paramCheck($tableName, 1, "string"); // cannot be an null string
 				Tag::paramCheck($column, 2, "string", "empty(string)");
 				Tag::paramCheck($alias, 3, "string", "bool", "null");
 				Tag::paramCheck($nextLine, 4, "bool");
 				Tag::echoDebug("selector", $this->Name.": select column $column($alias) for table $tableName");
 			}
-			$desc= STDbTableDescriptions::instance($this->db->getName());
+			$desc= STDbTableDescriptions::instance($this->db->getDatabaseName());
 			$orgColumn= $desc->getColumnName($tableName, $column);// if tableName is original function must not search
 			$tableName= $desc->getTableName($tableName);
 			if(STCheck::isDebug())
@@ -383,7 +369,7 @@ class STDbSelector extends STDbTable
 		}
 		/*private*/function createNnTable()
 		{
-			$fk= &$this->getForeignKeys();
+		    $fk= &$this->getForeignKeys();
 			$sort= array();
 			$selected= array();
 			// search the first selected column with foreign key
@@ -393,7 +379,7 @@ class STDbSelector extends STDbTable
 			{
 				foreach($content as $key=>$column)
 				{
-					$nr= $this->getSelectedColumnKey($column["own"]);
+				    $nr= $this->getSelectedColumnKey($column["own"]);
 					if($nr!==null)
 					{
 						$sort[]= $nr;
@@ -405,6 +391,8 @@ class STDbSelector extends STDbTable
 			}
 			sort($sort);
 			$nr= reset($sort);
+			if(count($selected)<1)
+			    showErrorTrace();
 			Tag::alert(count($selected)<1, "STBaseTable::nnTable()", "before use function nnTable, select leastwise an column with foreign keys", 2);
 			$fk[$selected[$nr]["table"]][$selected[$nr]["key"]]["join"]= "right";
 			$newFk= array();
@@ -523,7 +511,7 @@ class STDbSelector extends STDbTable
 		{
 			STCheck::param($sqlType, 0, "int", "null");
 			STCheck::param($limit, 1, "int", "null");
-
+			
 			$bNormal= true;
 			if($sqlType===null)
 				$sqlType= $this->defaultTyp;
@@ -541,7 +529,7 @@ class STDbSelector extends STDbTable
 				$sqlType2= MYSQL_BOTH;
 				$bNormal= false;
 			}
-			
+
 			$statement= $this->getStatement();
 			$this->db->orderDates(false);
 			$this->SqlResult= $this->db->fetch_array($statement, $sqlType2, $this->onError);
@@ -569,7 +557,7 @@ class STDbSelector extends STDbTable
 				$nRv= count($this->SqlResult);
 
 			if($sqlType2==MYSQL_BOTH)
-				$nRv/= 2;
+			    $nRv/= 2;
 			return $nRv;
 		}
 		function getColumn($tableName, $columnName= "")
@@ -579,15 +567,14 @@ class STDbSelector extends STDbTable
 			$nParams= func_num_args();
 			STCheck::lastParam(2, $nParams);
 
-			$desc= STDbTableDescriptions::instance($this->db->getName());
+			$desc= STDbTableDescriptions::instance($this->db->getDatabaseName());
 			$tableName= $desc->getTableName($tableName);
 			if($tableName==$this->Name)
 			{
 				STDbTable::getColumn($columnName);
 				return;
 			}
-			if(STCheck::isDebug())
-				STCheck::warning(1, "OSTDbSelector::getColumn()", "toDo: function getColumn not avalibl for other tables in OSTDbSelector");
+			STCheck::warning(1, "STDbSelector::getColumn()", "toDo: function getColumn not available for other tables in STDbSelector");
 		}
 		function getErrorId()
 		{
@@ -615,19 +602,18 @@ class STDbSelector extends STDbTable
 		{ $this->sqlStatement= $statement; }
 		function getStatement($limit= null, $withAlias= null)
 		{
-
 			if($this->sqlStatement != "")
 				return $this->sqlStatement;
-
+				
 			if($this->bIsNnTable)
-				$this->createNnTable();
+			    $this->createNnTable();
 			$aDeep= array();
 			$sFirstTable= $this->Name;
 
 			$this->sqlStatement= $this->db->getStatement($this, false, $withAlias);
 			//echo $this->sqlStatement."<br />";
 			if($limit)
-				$this->sqlStatement.= " limit ".$limit;
+			    $this->sqlStatement.= " limit ".$limit;
 			return $this->sqlStatement;
 		}
 		function searchValue($searchValue)

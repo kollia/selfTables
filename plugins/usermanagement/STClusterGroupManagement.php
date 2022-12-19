@@ -1,5 +1,7 @@
 <?php
 
+require_once( $_stobjectcontainer );
+
 class STClusterGroupManagement extends STObjectContainer
 {
 	function __construct($name, &$container)
@@ -7,16 +9,16 @@ class STClusterGroupManagement extends STObjectContainer
 		Tag::paramCheck($name, 1, "string");
 		Tag::paramCheck($container, 2, "STObjectContainer");
 		
-		STObjectContainer::STObjectContainer($name, $container);
+		STObjectContainer::__construct($name, $container);
 		
 	}
 	function create()
 	{
 		$clustergroup= &$this->needTable("ClusterGroup");
-		$clustergroup->setDisplayName("Gruppen-Zuweisung zum gew�hlten Cluster");
+		$clustergroup->setDisplayName("Gruppen-Zuweisung zum gewählten Cluster");
 		$clustergroup->nnTable("Zugriff");
 		$clustergroup->select("GroupID");
-		$clustergroup->select("DateCreation", "zugeh�rigkeit seit");
+		$clustergroup->select("DateCreation", "zugehörigkeit seit");
 		$clustergroup->preSelect("DateCreation", "sysdate()");
 		$clustergroup->distinct();
 		$clustergroup->changeFormOptions("Speichern");
@@ -55,17 +57,17 @@ class STClusterGroupManagement extends STObjectContainer
 		$cluster= $this->getTable("Cluster");
 		$cluster->select("ID");
 		$cluster->select("Description");
-		$selector= new OSTDbSelector($cluster);
+		$selector= new STDbSelector($cluster);
 		$selector->execute();
 		$res= $selector->getRowResult();
 		$div= new DivTag();
 			$h2= new H3Tag("Description");
-				$h2->add("Zugeh�rigkeit der Gruppen zum Cluster ");
+				$h2->add("Zugehörigkeit der Gruppen zum Cluster ");
 				$span= new SpanTag("hightlighted");
-					$span->add($res[0]);
+					$span->add($res['ID']);
 				$h2->addObj($span);
 			$div->addObj($h2);
-			$div->add($res[1]);
+			$div->add($res['Description']);
 			$div->align("center");
 		$this->addObjBehindProjectIdentif($div);
 	}

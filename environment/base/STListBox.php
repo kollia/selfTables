@@ -210,31 +210,27 @@ class STListBox extends STBaseBox
 			if($this->bSetLinkByNull===null)
 				$this->bSetLinkByNull= $table->bSetLinkByNull;
 
-			// aufbau von showTypes in STDBTables ist nicht gleich
-			// wie in STListBoxs, da dort mehrere Typen auf eine Column
-			// kommen k�nnen. zb. 'update' und 'image'
+			
+			// showTypes from STDBTables not the same as in STListBox
 			foreach($table->showTypes as $column=>$types)
 			{
 				foreach($types as $type=>$value)
 				{
-					// alex 19/04/2005:	entferne extra-Abfrage
-					//					und ersetze sie mit
-					//					if(type!="update") (wenn nicht update dann)
-					//					dadurch sind weniger Abfragen
-					//					und in den Funktionen ist sowiso nur 1 Befehl
-					/*if($type=="image")
-						$this->image($column);
-					elseif($type=="imagelink")
-						$this->imageLink($column);
-					elseif($type=="link")
-						$this->link($column);
-					elseif($type=="namedlink")
-						$this->namedLink($column);*/
-					if(	$column!="valueColumns"	// values for showType namedcolumnlink
-						and
-						$type!=STUPDATE			)
+					if(	$column!="valueColumns"	&&// values for showType namedcolumnlink
+						$type!=STUPDATE           )
 					{
-						$this->showTypes[$column]= $type;
+					    if($type == "disabled")
+					    {
+					        foreach($value as $behavior)
+					        {
+					            if($behavior == STLIST)
+					            {
+					                $this->showTypes[$column]= $type;
+					                break;
+					            }
+					        }
+					    }else
+						    $this->showTypes[$column]= $type;
 					}
 				}
 			}
@@ -262,7 +258,7 @@ class STListBox extends STBaseBox
 		$inTableFirstRow= 0;
 		$query= new STQueryString();
 		$HTTP_GET_VARS= $query->getArrayVars();
-
+		
   		if(!$this->statement)
   		{
   		    $oTable= &$this->getTable();
@@ -309,6 +305,7 @@ class STListBox extends STBaseBox
 			$nMaxSelect= $oTable->getMaxRowSelect();
 			if(0)//$nMaxSelect)
 			{
+			    echo __FILE__.__LINE__."<br>";
 				$tableName= $oTable->getName();
 				if(	!isset($firstRow) &&
 					isset($HTTP_GET_VARS["stget"]["firstrow"][$oTable->getName()])	)
@@ -395,16 +392,16 @@ class STListBox extends STBaseBox
 					$firstRow= 0;
 				$this->oSelector->limit($firstRow, $nMaxSelect);
 			}
-
+			
 			// toDo: DbSelector find not the right Statement / Alias-Table
 			$statement= $tableDb->getStatement($oTable);
 			$this->oSelector->setStatement($statement);
-  			$this->statement= $this->oSelector->getStatement();
+			$this->statement= $this->oSelector->getStatement();
 			$aliases= array();
 			$this->db->createAliases($aliases, $oTable, false);
 			// $this->oSelector->createAliases($aliases);
 			STCheck::echoDebug("db.main.statement", $this->statement);
-
+			
 			if(count($aliases)>1)
 			{// if the selection has sub-tables
 				$tableName= $this->oSelector->getName();
@@ -416,8 +413,11 @@ class STListBox extends STBaseBox
 						$otherTableName= $table->getName();
 						foreach($table->showTypes as $column=>$content)
 						{
-							if($content["get"]==="get")
+						    if( isset($content["get"]) &&
+						        $content["get"]==="get"   )
+						    {
 								$this->showTypes[$otherTableName."@".$column]= "get";
+						    }
 						}
 						unset($table);
 					}
@@ -719,7 +719,7 @@ class STListBox extends STBaseBox
 			 	//					wird die Auflistung auch nie mit einem
 				//					Index versehen
 			 	$this->nMaxRowSelect= $oTable->getMaxRowSelect();
-
+			 	
 				$needAlwaysIndex= $oTable->needAlwaysIndex();
 				$tableName= $oTable->getName();
 				$cTab= new STDbSelector($oTable);
@@ -737,6 +737,8 @@ class STListBox extends STBaseBox
     				$cTab->count("*");//$oTable, "count");
 				}else
 				    $cTab->count("*");
+				if($cTab->isNnTable())// when table is an n to n table
+				    $cTab->noNnTable();// it's nessesary to set the table to no n to n table
     			$cTab->execute();
     			$nMaxTableRows= $cTab->getSingleResult();
 				if(!isset($nMaxTableRows))
@@ -968,7 +970,7 @@ class STListBox extends STBaseBox
 		{
 			// wenn ein buttonText deffiniert ist
 			// wird der Tabellen-Inhalt in einen Div-Tag geschrieben
-			$showTypes= array_flip($this->showTypes);
+		    $showTypes= array_flip($this->showTypes);
 			if(	isset($showTypes["check"]) ||
 				$this->asDBTable->bIsNnTable	)
 			{
@@ -1071,32 +1073,33 @@ class STListBox extends STBaseBox
 			/*****************************************************************/
 
 		// for debuggin show display properties HORIZONTAL or VERTICAL
-		$_showColumnProperties= false;
-		if($_showColumnProperties)
+		if(STCheck::isDebug("listbox.properties"))
 		{
-			if(STCheck::isDebug())
-			{
-				echo "<br /><br />";
-				STCheck::write("output defined to write all column properties from list");
-				$msg= "current arrangement is ";
-				if($this->arrangement == STHORIZONTAL)
-				    $msg.= "HORICONTAL";
-				else if($this->arrangement == STVERTICAL)
-				    $msg.= "VERTICAL";
-				else
-				    $msg.= "unknown!";
-				STCheck::write($msg);
-				st_print_r($Rows,2);
-			}else
-				$_showColumnProperties= false;
-		}
+		    $_showColumnProperties= true;
+			echo "<br /><br />";
+			STCheck::write("output defined to write all column properties from list");
+			$msg= "current arrangement is ";
+			if($this->arrangement == STHORIZONTAL)
+			    $msg.= "HORICONTAL";
+			else if($this->arrangement == STVERTICAL)
+			    $msg.= "VERTICAL";
+			else
+			    $msg.= "unknown!";
+			STCheck::echoDebug("listbox.properties");
+			st_print_r($Rows,2);
+		}else
+			$_showColumnProperties= false;
 		$class= "Tr1";
         foreach($Rows as $rowKey=>$rowArray)
         {
-        	$extraField= null;
-			//*****************************************************************************************
-			if(isset($this->showTypes[$rowKey]))
-				$extraField= $this->showTypes[$rowKey];// diese Variablen werden je nach HORIZONTAL/VERTIKA
+            $extraField= null;
+            
+            //*****************************************************************************************
+            if( $this->arrangement == STVERTICAL &&
+                isset($this->showTypes[$rowKey])        )
+            {// the variable rowKey is different per HORIZONTAL/VERTIKA
+				$extraField= $this->showTypes[$rowKey];
+            }
 			if($class == "Tr1")
 			    $class= "Tr0";
 			else
@@ -1147,10 +1150,13 @@ class STListBox extends STBaseBox
 				if($this->arrangement==STHORIZONTAL)
 					$createdRow= $rowKey;
 				else
-					$createdRow= $columnKey;
-				if(isset($this->showTypes[$createdColumn]))
+				    $createdRow= $columnKey;
+			    if( $this->arrangement == STHORIZONTAL &&
+				    isset($this->showTypes[$createdColumn]) )
+			    {// the variable createdColumn is different per HORIZONTAL/VERTIKA
 					$extraField= $this->showTypes[$createdColumn];
-
+			    }
+			    
 				// hier wird gesetzt ob ein Zugriff vorhanden ist
 				$bHasAccess= true;
 				if(isset($this->bLinkAccess[$createdColumn]))
@@ -1180,7 +1186,7 @@ class STListBox extends STBaseBox
 					echo "  columnKey:$columnKey<br />";
 					echo "  createdColumn:$createdColumn<br />";
 					echo "  columnValue:";st_print_r($columnValue);echo "<br />";
-					echo "  field parameters: <b>";
+					echo "  extraField: <b>";
 					if(isset($extraField))
 						echo $extraField;
 					else
@@ -1202,7 +1208,7 @@ class STListBox extends STBaseBox
 							!preg_match("/link/", $extraField)	)
 						or
 						$this->bSetLinkByNull						)	)
-          		{
+				{
           			// create links for the current column
           			if(	(	!isset($extraField) ||
           					(	$extraField!=="get" &&
@@ -1323,7 +1329,6 @@ class STListBox extends STBaseBox
 									//st_print_r($rowArray);
 									$isValue= $rowArray[$createdRepresent];
 								}
-								
 								$newContainer= $table->showTypes[$createdColumn][$extraField];
 								$container_data= array(  "container" =>  $newContainer->getName() );
 								$table_limitation= $table->getDeleteLimitationOrder();
@@ -1420,22 +1425,23 @@ class STListBox extends STBaseBox
 						}
 						if($extraField=="check")
 						{
+						    echo __FILE__.__LINE__."<br>";
+						    echo "column:$columnKey<br>";
+						    st_print_r($this->address);
+						    st_print_r($this->asDBTable->aCheckDef);
 							$input= new InputTag();
 								$input->type("checkbox");
-								$input->name($createdColumn."[".$row."]");
-							if(	(	$this->asDBTable->aCheckDef[$isCheck]
-									and
-									$this->asDBTable->aCheckDef[$isCheck]===$columnValue	)
-								or
-								(	!$this->asDBTable->aCheckDef[$isCheck]
-									and
-									$columnValue!=null										)	)
+								$input->name($createdColumn."[".$row."]");  
+		                    if(	(	isset($this->asDBTable->aCheckDef[$columnKey]) &&
+									$this->asDBTable->aCheckDef[$columnKey]===$columnValue	)
+		                        or
+		                        (	!isset($this->asDBTable->aCheckDef[$columnValue]) &&
+									$columnValue !== null										)	)
 							{
 								$input->checked();
 							}
-							if(	$this->address["All"]
-								or
-								$this->address[$columnKey]	)
+							if(	isset($this->address["All"]) ||
+								isset($this->address[$columnKey])	)
 							{
 								$input->onClick($file);
 							}
@@ -1607,17 +1613,25 @@ class STListBox extends STBaseBox
 								$input->type("hidden");
 								$input->value($columnValue);
 							$td->add($input);
+							
+						}elseif($extraField == "disabled")
+						{
+						    // if disabled not set for current column
+						    // make same behavior than extraField not be set
+						    if($showTypes['disabled'] != $createdColumn)
+						        $td->add($columnValue);
 						}
           		}else
-					{
-						$td->add($columnValue);
-					}
-					if(!$getColumn)
-						$tr->add($td);
-				}// ende der Column Schleife
-				if(!$CallbackClass->bSkip)	// wenn der User in einem Callback skipRow gew�hlt hat
-					$hTable->add($tr);		// wird die RowColumn $tr nicht eingebunden
-      	}// ende der Row Schleife
+          		{
+					$td->add($columnValue);
+				}
+				if(!$getColumn)
+					$tr->add($td);
+			}// end of Column loop
+			
+			if(!$CallbackClass->bSkip)	// wenn der User in einem Callback skipRow gew�hlt hat
+				$hTable->add($tr);		// wird die RowColumn $tr nicht eingebunden
+      	}// end of Row loop
 
 
 
@@ -1652,7 +1666,9 @@ class STListBox extends STBaseBox
 				$tr->add($td);
 			$form->add($tr);
 
-				if(count($this->aHidden))
+				if( isset($this->aHidden) &&
+				    is_array($this->aHidden) &&
+				    count($this->aHidden)       )
 				{
 					foreach($this->aHidden as $key=>$value)
 					{
@@ -2176,8 +2192,7 @@ class STListBox extends STBaseBox
 				$Rows= &$obj;
 			}
 			/***********************************************/
-
-
+			
 			$this->SqlResult= &$Rows;
 			$this->createTags();
 

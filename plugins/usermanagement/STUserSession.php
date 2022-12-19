@@ -1,11 +1,9 @@
 <?php
 
 require_once($_stdbsession);
-require_once($_stusermanagement_install);
 
 class STUserSession extends STDbSession
 {
-	var $database= null;
 	var $user;
 	var $userID;
 	var $bLog;
@@ -14,7 +12,7 @@ class STUserSession extends STDbSession
 	var $loggedinGroup= "LOGGED_IN"; // user hat auf die Cluster zugriff,
 									// wenn sie mit dieser Gruppe spezifiziert wurden,
 									// sobald er sich registriert hat
-	var $onlineGroup= "ONLINE#";	// user hat immer auf diese Cluster Zugriff
+	var $onlineGroup= "ONLINE";	// user hat immer auf diese Cluster Zugriff
 								// wenn sie mit dieser Gruppe spezifiziert wurden.
 								// auch wenn er sich gar nicht registriert hat
 	var	$allAdminCluster= "allAdmin";	// user has in every project
@@ -27,34 +25,177 @@ class STUserSession extends STDbSession
 	var $sClusterIDColumn= "ClusterID";
 	var $sAuthorisationColumn= "Authorisation";
 	var $aProjectAccessCluster= array();
+	/**
+	 * whether defiend database table description	 * 
+	 * @var boolean
+	 */
+	private $bDescriptionDefined= false;
 
-	protected function __construct(&$Db)
+	protected function __construct($Db)
 	{
-		STDbSession::__construct();
-   		$this->database= &$Db;
-		$this->bLog= true;
+		STDbSession::__construct($Db);
+		STDbSession::storeSessionOnFile(true);
+		$this->bLog= true;		
 
 		$this->aSessionVars[]= "ST_USER";
 		$this->aSessionVars[]= "ST_USERID";
 		$this->aSessionVars[]= "ST_PROJECTID";
 		$this->aSessionVars[]= "ST_LOGGED_MESSAGES";
 	}
-	public static function init(&$Db, $prefix= null)
+	public static function init(&$instance, $prefix= null)
 	{
-	    global $global_selftable_session_class_instance;
+	    if(!typeof($instance, "STDbSession"))
+	        $instance= new STUserSession($instance, $prefix);
+	       
+	    STDbSession::init($instance, $prefix);
+	}
+	public function getOnlineGroup() : string
+	{ return $this->onlineGroup; }
+	public function getLoggedinGroup() : string
+	{ return $this->loggedinGroup; }
+	public function getAllAdminCluster() : string
+	{ return $this->allAdminCluster; }
+	public function defineDatabaseTableDescriptions($dbTableDescription)
+	{
+	    STCheck::paramCheck($dbTableDescription, 1, "STDbTableDescriptions");
 	    
-	    $define_table= false;
-	    if(!isset($global_selftable_session_class_instance[0]))
-	    {
-	        $global_selftable_session_class_instance[0]= new STUserSession($Db, $prefix);
-	        $define_table= true;
-	    }
-	    STDbSession::init($Db, $prefix);
-	    if($define_table && isset($prefix))
-	    {
-	        $desc= &STDbTableDescriptions::instance($Db->getName());
-	        $desc->setPrefixToTables($prefix);
-	    }
+	    if($this->bDescriptionDefined)
+	        return;
+	    $this->bDescriptionDefined= true;
+	    STDbSession::defineDatabaseTableDescriptions($dbTableDescription);
+	        
+        $dbTableDescription->table("Query");
+        $dbTableDescription->column("Query", "ID", "BIGINT", false);
+        $dbTableDescription->primaryKey("Query", "ID");
+        $dbTableDescription->autoIncrement("Query", "ID");
+        $dbTableDescription->column("Query", "path", "TEXT", false);
+        $dbTableDescription->indexKey("Query", "path", 1, 255);
+        
+        $dbTableDescription->table("Translate");
+        $dbTableDescription->column("Translate", "ID", "varchar(50)", false);
+        $dbTableDescription->primaryKey("Translate", "ID");
+        $dbTableDescription->uniqueKey("Translate", "ID", 1);
+        $dbTableDescription->indexKey("Translate", "ID", 1);
+        $dbTableDescription->column("Translate", "lang", "char(3)", false);
+        $dbTableDescription->uniqueKey("Translate", "lang", 1);
+        $dbTableDescription->indexKey("Translate", "lang", 1);
+        $dbTableDescription->column("Translate", "translation", "text", false);
+        
+        //showErrorTrace();
+        $dbTableDescription->table("Project");
+        $dbTableDescription->column("Project", "ID", "TINYINT", false);
+        $dbTableDescription->primaryKey("Project", "ID");
+        $dbTableDescription->autoIncrement("Project", "ID");
+        $dbTableDescription->column("Project", "Name", "varchar(70)", false);
+        $dbTableDescription->uniqueKey("Project", "Name", 1);
+        $dbTableDescription->column("Project", "Path", "varchar(255)", false);
+        $dbTableDescription->column("Project", "Description", "text");
+        $dbTableDescription->column("Project", "DateCreation", "datetime", false);
+        //$dbTableDescription->column("Project", "has_access", "varchar(255)", false);
+        //$dbTableDescription->column("Project", "can_insert", "varchar(255)", false);
+        //$dbTableDescription->column("Project", "can_update", "varchar(255)", false);
+        //$dbTableDescription->column("Project", "can_delete", "varchar(255)", false);
+        
+        $dbTableDescription->table("Partition");
+        $dbTableDescription->column("Partition", "ID", "SMALLINT", false);
+        $dbTableDescription->primaryKey("Partition", "ID");
+        $dbTableDescription->autoIncrement("Partition", "ID");
+        $dbTableDescription->column("Partition", "Name", "varchar(100)", false);
+        $dbTableDescription->uniqueKey("Partition", "Name", 1);
+        $dbTableDescription->column("Partition", "ProjectID", "TINYINT", false);
+        $dbTableDescription->foreignKey("Partition", "ProjectID", "Project");
+        $dbTableDescription->column("Partition", "has_access", "varchar(255)", false);
+        //$dbTableDescription->column("Partition", "can_insert", "varchar(255)", false);
+        //$dbTableDescription->column("Partition", "can_update", "varchar(255)", false);
+        $dbTableDescription->column("Partition", "can_delete", "varchar(255)", false);
+        $dbTableDescription->column("Partition", "DateCreation", "DATETIME", false);
+        
+        $dbTableDescription->table("Cluster");
+        $dbTableDescription->column("Cluster", "ID", "varchar(100)", false);
+        $dbTableDescription->primaryKey("Cluster", "ID");
+        $dbTableDescription->column("Cluster", "ProjectID", "TINYINT", false);
+        $dbTableDescription->foreignKey("Cluster", "ProjectID", "Project", 1);
+        $dbTableDescription->column("Cluster", "Description", "TEXT", false);
+        $dbTableDescription->column("Cluster", "identification", "SMALLINT", false);
+        //$dbTableDescription->foreignKey("Cluster", "identification", "Partition", 2);
+        //$dbTableDescription->column("Cluster", "lastDynamicAccess", "set('false', 'true')", true);
+        $dbTableDescription->column("Cluster", "DateCreation", "DATETIME", false);
+        
+        $dbTableDescription->table("Group");
+        $dbTableDescription->column("Group", "ID", "INT", false);
+        $dbTableDescription->primaryKey("Group", "ID");
+        $dbTableDescription->autoIncrement("Group", "ID");
+        $dbTableDescription->column("Group", "Name", "varchar(100)", false);
+        $dbTableDescription->uniqueKey("Group", "Name", 1);
+        $dbTableDescription->column("Group", "Description", "TEXT");
+        $dbTableDescription->column("Group", "DateCreation", "DATETIME", false);
+        
+        $dbTableDescription->table("ClusterGroup");
+        $dbTableDescription->column("ClusterGroup", "ID", "INT", false);
+        $dbTableDescription->primaryKey("ClusterGroup", "ID");
+        $dbTableDescription->autoIncrement("ClusterGroup", "ID");
+        $dbTableDescription->column("ClusterGroup", "ClusterID", "varchar(100)", false);
+        $dbTableDescription->foreignKey("ClusterGroup", "ClusterID", "Cluster", 1);
+        $dbTableDescription->column("ClusterGroup", "GroupID", "INT", false);
+        $dbTableDescription->foreignKey("ClusterGroup", "GroupID", "Group", 2);
+        $dbTableDescription->column("ClusterGroup", "DateCreation", "DATETIME", false);
+        
+        $dbTableDescription->table("UserGroup");
+        $dbTableDescription->column("UserGroup", "ID", "INT", false);
+        $dbTableDescription->primaryKey("UserGroup", "ID");
+        $dbTableDescription->autoIncrement("UserGroup", "ID");
+        $dbTableDescription->column("UserGroup", "UserID", "INT", false);
+        $dbTableDescription->foreignKey("UserGroup", "UserID", "User", 1);
+        $dbTableDescription->column("UserGroup", "GroupID", "INT", false);
+        $dbTableDescription->foreignKey("UserGroup", "GroupID", "Group", 2);
+        $dbTableDescription->column("UserGroup", "DateCreation", "DATETIME", false);
+        
+        $dbTableDescription->table("GroupGroup");
+        $dbTableDescription->column("GroupGroup", "ID", "INT", false);
+        $dbTableDescription->primaryKey("GroupGroup", "ID");
+        $dbTableDescription->autoIncrement("GroupGroup", "ID");
+        $dbTableDescription->column("GroupGroup", "Group1ID", "INT", false);
+        $dbTableDescription->column("GroupGroup", "Group2ID", "INT", false);
+        $dbTableDescription->foreignKey("GroupGroup", "Group1ID", "Group", 1);
+        $dbTableDescription->foreignKey("GroupGroup", "Group2ID", "Group", 2);
+        $dbTableDescription->column("GroupGroup", "DateCreation", "DATETIME", false);
+        
+        $dbTableDescription->table("User");
+        $dbTableDescription->column("User", "ID", "INT", false);
+        $dbTableDescription->primaryKey("User", "ID");
+        $dbTableDescription->autoIncrement("User", "ID");
+        $dbTableDescription->column("User", "UserName", "varchar(50)", false);
+        $dbTableDescription->uniqueKey("User", "UserName", 1);
+        $dbTableDescription->column("User", "GroupType", "TINYINT", false);
+        $dbTableDescription->uniqueKey("User", "GroupType", 1);
+        $dbTableDescription->foreignKey("User", "GroupType", "GroupType");
+        $dbTableDescription->column("User", "Pwd", "char(16) binary", false);
+        $dbTableDescription->column("User", "NrLogin", "INT UNSIGNED");
+        $dbTableDescription->column("User", "LastLogin", "DATETIME");
+        $dbTableDescription->column("User", "currentLogin", "DATETIME");
+        $dbTableDescription->column("User", "DateCreation", "DATETIME", false);
+        
+        $dbTableDescription->table("GroupType");
+        $dbTableDescription->column("GroupType", "ID", "TINYINT", false);
+        $dbTableDescription->primaryKey("GroupType", "ID");
+        $dbTableDescription->autoIncrement("GroupType", "ID");
+        $dbTableDescription->column("GroupType", "Label", "varchar(30)", false);
+        $dbTableDescription->column("GroupType", "description", "varchar(50)");
+        $dbTableDescription->column("GroupType", "DateCreation", "DATETIME", false);
+        
+        $dbTableDescription->table("Log");
+        $dbTableDescription->column("Log", "ID", "BIGINT UNSIGNED", false);
+        $dbTableDescription->primaryKey("Log", "ID");
+        $dbTableDescription->autoIncrement("Log", "ID");
+        $dbTableDescription->column("Log", "UserID", "INT", false);
+        $dbTableDescription->foreignKey("Log", "UserID", "User", 1);
+        $dbTableDescription->column("Log", "ProjectID", "TINYINT", false);
+        $dbTableDescription->foreignKey("Log", "ProjectID", "Project", 2);
+        $dbTableDescription->column("Log", "Type", "set('ERROR','LOGIN','LOGOUT','ACCESS')", false);
+        $dbTableDescription->column("Log", "CustomID", "varchar(255)");
+        $dbTableDescription->column("Log", "description", "TEXT", false);
+        $dbTableDescription->column("Log", "DateCreation", "DATETIME", false);
+        
 	}
 	/* fault whether I do not know
 	 static public function sessionGenerated()
@@ -77,7 +218,7 @@ class STUserSession extends STDbSession
 	{
 		STCheck::param($prefix, 0, "string");
 
-		$desc= &STDbTableDescriptions::instance($this->database->getName());
+		$desc= &STDbTableDescriptions::instance($this->database->getDatabaseName());
 		$desc->setPrefixToTables($prefix);
 	}
 	function verifyLogin($Project= 1)
@@ -495,27 +636,28 @@ class STUserSession extends STDbSession
 		}else
 		{
   			// deffiniere Projekt
-  			$project= $this->database->getTable("Project");
-			$project->select("ID");
-			$project->select("Name");
-			$project->select("Path");
+  			$proj= $this->database->getTable("Project");
+  			$project= new STDbSelector($proj);
+  			$project->select("Project", "ID");
+  			$project->select("Project", "Name");
+  			$project->select("Project", "Path");
+  			$project->limitByOwn(false);
 			$where= new STDbWhere();
 			if(is_numeric($ProjectName))
 				$where->andWhere("ID=".$ProjectName);
 			else
 				$where->andWhere("Name='$ProjectName'");
 			$project->where($where);
-  			$statement= $this->database->getStatement($project);
-			$this->database->query($statement);
-			$row= $this->database->fetch_row(STSQL_NUM);
+			$project->execute();
+			$row= $project->getRowResult();
 			STCheck::alert(	(!is_array($row) || count($row)==0 ), "STUserSession::setUserProject()",
   										"Project &quote;<b>$ProjectName</b>&quote; is not defined in the database" );
-  			$this->projectID= $row[0];
-  			$this->project= $row[1];
+  			$this->projectID= $row['ID'];
+  			$this->project= $row['Name'];
 			if(!$this->startPage)
 			{
-				/**/Tag::echoDebug("user", "set startPage from database to ".$row[2]);
-				$this->startPage= $row[2];
+				/**/Tag::echoDebug("user", "set startPage from database to ".$row['Path']);
+			    $this->startPage= $row['Path'];
 			}
 			$this->setSessionVar("ST_PROJECTID", $this->projectID);
 		}
@@ -564,13 +706,15 @@ class STUserSession extends STDbSession
 		// set Properties also in STSession
 		STSession::setProperties();
 	}
+	var $countReadCluster= 0;
 	function readCluster()
 	{// hole alle Cluster,
 	 // zugeh�rig zum Projekt und User
 	 // aus der Datenbank
-	 	/**/if(Tag::isDebug())
+	 	/**/if(0)//Tag::isDebug())
 		{
-			/**/Tag::echoDebug("user", "<b>entering readCluster..</b>");
+		    /**/Tag::echoDebug("user", "<b>entering readCluster..</b>");
+		    echo __FILE__.__LINE__."<br>";
 	 		$GroupID= $this->selectGroupID($this->loggedinGroup);
 			Tag::alert(!$GroupID, "STUserSession::readCluster()", "no ".$this->loggedinGroup." Group in Db-Table ".
 																		$this->sGroupTable." exists");
@@ -578,7 +722,7 @@ class STUserSession extends STDbSession
 			Tag::alert(!$GroupID, "STUserSession::readCluster()", "no ".$this->onlineGroup." Group in Db-Table ".
 																		$this->sGroupTable." exists");
 		}
-
+		
 		//$statement= "select ID,ProjectID from MUCluster";
 		$oCluster= &$this->database->getTable("Cluster");
 		$clusterSelector= new STDbSelector($oCluster, STSQL_ASSOC);
@@ -886,7 +1030,7 @@ class STUserSession extends STDbSession
 
 		$clusters= $this->getProjectCluster();
 		$oPartition= $this->database->getTable("Partition");
-		$desc= STDbTableDescriptions::instance();
+		$desc= STDbTableDescriptions::instance($this->database->getDatabaseName());
   		$oPartition->accessBy($clusters[$desc->getColumnName("Project", "has_access")], STLIST);
 		$oPartition->clearIdentifColumns();
 		$oPartition->identifColumn("Name");

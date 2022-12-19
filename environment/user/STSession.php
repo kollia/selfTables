@@ -70,14 +70,24 @@ class STSession
 		$this->aSessionVars[]= "ST_EXIST_CLUSTER";
 		$this->aSessionVars[]= "ST_USER_DEFINED_VARS";
   	}
-  	// toDo: init method should be the same than inside STUserSession
-  	//       but isn't ($Db and $prefix shouldn't exist)
-  	public static function init(&$Db, $prefix= null)
+  	/**
+  	 * initial object of session
+  	 * 
+  	 * @param object $instance should be the database where the session will be stored, null,
+  	 *                           or by overloading from an other class it can be the instance from there
+  	 * @param string $prefix do not need, only defined because the init method need the same like the overloaded
+  	 */
+  	public static function init(&$instance, string $prefix= "")
 	{
 		global	$global_selftable_session_class_instance;
-
-		if(!isset($global_selftable_session_class_instance[0]))
-		  $global_selftable_session_class_instance[0]= new STSession();
+        
+		STCheck::alert(isset($global_selftable_session_class_instance[0]), 
+		    "STSession::init()", "an session was defined before, cannot define two sessions");
+		if(!typeof($instance, "STSession"))
+		{
+    		$global_selftable_session_class_instance[0]= new STSession();
+		}else
+		    $global_selftable_session_class_instance[0]= &$instance;
 	}
 	public static function &instance()
 	{
@@ -158,12 +168,8 @@ class STSession
 		    //          session_start() do not work
 		    //          and otherwise also when correct (set only 2 parameters) time changing not works ???
 		    session_set_cookie_params( 60*5, '/');
-    		if(STCheck::isDebug())
-    		{// if defined Debug-Session,
-    		    
-    		    $bSetSession= @session_start();// warning for cookie set is normaly
-    		}else
-    		    $bSetSession= session_start();
+    		$bSetSession= session_start();
+    		STCheck::end_outputBuffer();
 		}
 		
 	    if( STCheck::isDebug("user") ||
@@ -313,6 +319,7 @@ class STSession
 			return true;
 		}
 		$cluster_membership= $this->getSessionVar("ST_CLUSTER_MEMBERSHIP");
+		$staction= "unknown action";
 		/**/if( Tag::isDebug("user") )
 		{
 			$sAccess= $toAccessInfoString;
@@ -347,21 +354,31 @@ class STSession
 			$this->gotoLoginMask(0);
 			exit;
 		}*/
+		$logincluster= false;
 		$clusters= preg_split("/[\s,]/", $clusterString, -1, PREG_SPLIT_NO_EMPTY);
+		if(typeof($this, "STUserSession"))
+		{
+		    // if searching for ONLINE-Cluster, ONLINE exist only as group,
+		    // but user always online, so return true
+		    if(in_array($this->getOnlineGroup(), $clusters))
+		        return true;
+		    // if searching for LOGGED_IN-Cluster, LOGGED_IN exist only as group,
+		    // but if user is logged-in return true
+		    if(in_array($this->getLoggedinGroup(), $clusters))
+		    {
+		        $logincluster= true;
+		        if($this->isLoggedIn == true)
+		            return true;
+		    }
+		}
 		if(STCheck::isDebug())
 		{
 		    $cluster_exist= $this->getSessionVar("ST_EXIST_CLUSTER");
 			foreach($clusters as $cluster)
 			{
 				$cluster= trim($cluster);
-				STCheck::warning(!isset($cluster_exist[$cluster]), "STSession::access()",
+				STCheck::warning(!isset($cluster_exist[$cluster]) && !$logincluster, "STSession::access()",
 										"cluster <b>\"</b>".$cluster."<b>\"</b> not exist in database", 1);
-/*				STCheck::warning(	isset($this->session_vars["ST_EXIST_CLUSTER"][$cluster])
-									and
-									$this->session_vars["ST_EXIST_CLUSTER"][$cluster]!==$this->projectID
-									and
-									$this->project!=0														, "STSession::access()",
-											"cluster <b>\"</b>".$cluster."<b>\"</b> is not for the current project"						);*/
 			}
 		}
 		if(	isset( $cluster_membership[$this->allAdminCluster])
@@ -395,7 +412,8 @@ class STSession
 			foreach($clusters as $cluster)
 			{
 				Tag::echoDebug("access", "look for dynamic access to cluster <b>$cluster</b>");
-				if(is_array($cluster_membership["ST_CLUSTER_MEMBERSHIP"]))
+				if( isset($cluster_membership["ST_CLUSTER_MEMBERSHIP"]) &&
+				    is_array($cluster_membership["ST_CLUSTER_MEMBERSHIP"]))
 				{
 				    foreach($cluster_membership as $dynamic_cluster=>$project)
 					{

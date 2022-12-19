@@ -16,6 +16,13 @@ $global_bOpenErrWritten= false;
  *
  */
 $g__STCheck_exit_entry= array();
+/**
+ * STCheck set output buffer by first debug setting STCheck::debug(true) with ob_start()
+ * if will be release buffer after set Session or when execute STSideCreator
+ * @param bool
+ */
+$global_activeOutputBuffer= false;
+$global_outputBufferWasErased= false;
 
 class STCheck
 {
@@ -255,7 +262,7 @@ class STCheck
 			//			echo ", ";st_print_r($type2, 0);
 			//			echo "<br />";
 		    global $member_tag_def;
-			if(!Tag::isDebug())
+			if(!STCheck::isDebug())
 				return;
 			//showErrorTrace();echo "<br><br>";
 			if(!is_numeric($paramNr))
@@ -337,17 +344,33 @@ class STCheck
 					else
 						$param= "false";
 					$param= "boolean(".$param.")";
-				}
-				elseif(is_object($param))
+				}elseif(is_string($param))
+				{
+				    $param= "\"$param\"";
+				}elseif(is_object($param))
 					$param= "object(".get_class($param).")";
 				elseif(is_array($param))
 				{					
 					$param= "Array()";
+				}elseif(!isset($param) ||
+				        $param == null      )
+				{
+				    $param= "-NULL-";
 				}
 				STCheck::error_message("Error in parameters", true, "Tag::paramCheck()",
 									$count." parameter(=".$param.") can be ".$types, 0);
 				exit();
 			}
+		}
+		public static function end_outputBuffer()
+		{
+		    global $global_activeOutputBuffer,
+		           $global_outputBufferWasErased;
+		    
+		    if($global_activeOutputBuffer)
+		        ob_end_flush();
+	        $global_activeOutputBuffer= false;
+	        $global_outputBufferWasErased= true;
 		}
 		//function debug($a,$b,$boolean= true)
 		public static function debug($boolean= true)
@@ -357,10 +380,20 @@ class STCheck
 					$HTTP_COOKIE_VARS,
 					$HTML_CLASS_DEBUG_CONTENT,
 					$HTML_CLASS_DEBUG_CONTENT_CLASS_FUNCTION,
-					$global_logfile_dataname;
+					$global_logfile_dataname,
+					$global_activeOutputBuffer,
+					$global_outputBufferWasErased;
 			
 			if($boolean !== false)
-				error_reporting(E_ALL);
+			{
+			    error_reporting(E_ALL);
+			    if( $global_activeOutputBuffer == false &&
+			        $global_outputBufferWasErased == false   )
+    			{
+    			    $global_activeOutputBuffer= true;
+    				ob_start();
+    			}
+			}
 			if(	!$HTML_CLASS_DEBUG_CONTENT
 				and
 				$boolean	)
@@ -371,7 +404,7 @@ class STCheck
 				if(file_exists($global_logfile_dataname))
 					@unlink($global_logfile_dataname);
 			}
-			Tag::print_query_post();
+			STCheck::print_query_post();
 			if(	$HTML_CLASS_DEBUG_CONTENT
 				and
 				!$boolean	)

@@ -697,7 +697,8 @@ class STSiteCreator extends HtmlTag
 	function getTableName()
 	{
 		$container= &$this->getContainer();
-		return $container->getTableName();
+		$sRv= $container->getTableName();
+		return $sRv;
 	}
 	function getContainerIdentification()
 	{

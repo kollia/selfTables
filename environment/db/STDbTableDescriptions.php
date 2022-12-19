@@ -2,14 +2,44 @@
 
 class STDbTableDescriptions
 {
-	var	$aExistTables= array();
-	var	$asTableColumns= array();
+    protected $db;
+    protected $dbName;
+    protected $aExistTables= array();
+    protected $asTableColumns= array();
 
+	protected function __construct(object &$db)
+	{
+	    $this->db= &$db;
+	    $this->dbName= $db->getDatabaseName();
+	}
 	/**
 	 * create or fetch an table-description instance
 	 * of STDbTableDescription
 	 *
-	 * @param string dbName name of database in which the tables should be
+	 * @param STDatabase db database object where are the original tables
+	 * @return STDbTableDescriptions instance of STDbTableDescription
+	 */
+	public static function &init($db)
+	{
+		global	$global_sttabledescriptions_class_instance;
+	    
+	    STCheck::param($db, 0, "STDatabase");
+	    
+	    $dbName= $db->getDatabaseName();
+	    if(!isset($global_sttabledescriptions_class_instance[$dbName]))
+	    {
+	        //echo __FILE__.__LINE__."<br>";
+	        //echo "create new STDbTableDescription()<br>";
+	        STCheck::echoDebug("db.descriptions", "create table descriptions for database $dbName");
+	        $global_sttabledescriptions_class_instance[$dbName]= new STDbTableDescriptions($db);
+	    }
+	    return $global_sttabledescriptions_class_instance[$dbName];
+	}
+	/**
+	 * fetch an table-description instance
+	 * of STDbTableDescription
+	 *
+	 * @param string dbName name of database in which the original tables are stored
 	 * @return STDbTableDescriptions instance of STDbTableDescription
 	 */
 	public static function &instance($dbName)
@@ -18,27 +48,15 @@ class STDbTableDescriptions
 
 		STCheck::param($dbName, 0, "string");
 		
-		if(!isset($global_sttabledescriptions_class_instance[$dbName]))
-		{
-		    //echo __FILE__.__LINE__."<br>";
-		    //echo "create new STDbTableDescription()<br>";
-			$global_sttabledescriptions_class_instance[$dbName]= new STDbTableDescriptions();
-		}
-		return $global_sttabledescriptions_class_instance[$dbName];
+		if(isset($global_sttabledescriptions_class_instance[$dbName]))
+		    return $global_sttabledescriptions_class_instance[$dbName];
+		showErrorTrace();
+		STCheck::alert(true, "STDbTableDescription::instance()", "no instance of STDbTableDescription be created");
+		return null;
 	}
-	public static function getDatabaseName()
+	public function getDatabaseName()
 	{
-		global	$global_sttabledescriptions_class_instance;
-		
-		if(	!is_array($global_sttabledescriptions_class_instance) ||
-			count($global_sttabledescriptions_class_instance) == 0	)
-		{
-			STCheck::alert("(global selfTable database = NULL) no database be defined");
-			exit;
-		}
-		STCheck::warning(count($global_sttabledescriptions_class_instance) > 0, "getDatabaseName", "more than one database be defined -> take first");
-		$dbName= rewind($global_sttabledescriptions_class_instance);
-		return $dbName;
+		return $this->dbName;
 	}
 	/*public*/function getOrgTableName($name)
 	{
@@ -112,17 +130,32 @@ class STDbTableDescriptions
 		STCheck::param($column, 1, "string");
 
 		//echo "STDbTableDescription::getColumnName($table, $column)------------------<br>";
-		//st_print_r($this->asTableColumns);
-		$table= $this->getOrgTableName($table);
-		if(!isset($this->asTableColumns[$table]))
-			STCheck::echoDebug("description.tables.warning", "found no original table for table '$table' " .
+		//st_print_r($this->asTableColumns, 3);
+		$dbKeyword= $this->db->keyword($column);
+		if($dbKeyword)
+		{
+		    if( count($dbKeyword['columns']) == 1 &&
+		        trim($dbKeyword['columns'][0]) == "*"    )
+		    {// if column is a keyword with joker for all columns return incomming column
+		        return $column;
+		    }
+		    $sRv= $dbKeyword['keyword']."(";
+		    foreach($dbKeyword['columns'] as $column)
+		        $sRv.= $this->getColumnName($table, $column).",";
+		    $sRv= substr($sRv, 0, strlen($sRv)-1).")";
+		    return $sRv;
+		}
+		$orgTable= $this->getOrgTableName($table);
+		if(!isset($this->asTableColumns[$orgTable]))
+			STCheck::echoDebug("description.tables.warning", "found no original table for name '$orgTable' " .
 					"inside defined table descriptions, so take asked column name '$column'");
-		elseif(!isset($this->asTableColumns[$table][$column]))			
+		elseif(!isset($this->asTableColumns[$orgTable][$column]))			
 		{
 			if(STCheck::isDebug())
 			{
 				$bfound= false;
-				foreach($this->asTableColumns[$table] as $array)
+				
+				foreach($this->asTableColumns[$orgTable] as $array)
 				{
 				    //echo "found ".$array["column"]."<br>";
 					if($array["column"] == $column)
@@ -131,18 +164,31 @@ class STDbTableDescriptions
 						break;
 					}
 				}
+				if( !$bfound &&
+				    isset($this->db->oGetTables[ strtolower($table) ])  )
+				{
+				    $columns= $this->db->oGetTables[ strtolower($table) ]->columns;
+				    foreach($columns as $orgColumn)
+				    {
+				        if($column == $orgColumn['name'])
+				        {
+				            $bfound= true;
+				            break;
+				        }
+				    }
+				}
 				if($bfound)
 					STCheck::echoDebug("description.tables.ok", "asked column <b>$column</b> be the same as in database");
 				else
-					STCheck::warning(true, "STDbTableDescriptor::getColumnName()", "cannot find column '$column' as alias or original name in database table $table");
+					STCheck::warning(true, "STDbTableDescriptor::getColumnName()", "cannot find column '$column' inside any pre-defined TableDescriptions or inside database as table $orgTable");
 			}
 		}else
 		{
 			if(STCheck::isDebug())
-				STCheck::echoDebug("description.tables.ok", "found selected table-name <b>$column</b> as <b>".$this->asTableColumns[$table][$column]["column"]."</b>");
-			$column= $this->asTableColumns[$table][$column]["column"];
+				STCheck::echoDebug("description.tables.ok", "found selected table-name <b>$column</b> as <b>".$this->asTableColumns[$orgTable][$column]["column"]."</b>");
+			$column= $this->asTableColumns[$orgTable][$column]["column"];
 		}
-		//echo "for original table $table and column $column<br>";
+		//echo "for original table $orgTable and column $column<br>";
 		return $column;
 	}
 	/*public*/function getColumnContent($table, $column)
@@ -170,15 +216,15 @@ class STDbTableDescriptions
 		}
 		return $pk;
 	}
-	/*protected*/function table($tableName)
+	/*protected*/function table(string $tableName)
 	{
-	    //if($displayName===null)
-		//	    $displayName= $tableName;
+	    STCheck::echoDebug("db.descriptions", "  define description for table '$tableName' inside '".$this->dbName."' database");
 	    $this->aExistTables[$tableName]= array(	"table"=>$tableName,
 												"installed"=>false	);
 	}
 	/*public*/function setPrefixToTable($prefix, $tableName)
 	{
+	    STCheck::echoDebug("db.descriptions", "  set prefix '$prefix' for table '$tableName' inside '".$this->dbName."' database");
 		$this->aExistTables[$tableName]["table"]= $prefix.$tableName;
 	}
 	/*public*/function setPrefixToTables($prefix)

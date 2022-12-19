@@ -2,7 +2,7 @@
 
 require_once($_stsession);
 
-$__static_global_STAlias_ID= 0;
+$__static_global_STBaseTable_ID= 0;
 
 class STBaseTable
 {
@@ -25,6 +25,11 @@ class STBaseTable
 	var	$bDisplayIdentifs= true;
 	var	$abNewChoice= array(); // hier wird in der Tabelle abgespeichert ob in der neuen schon etwas neu ausgefuehrt wurde
 	var	$show= array();
+	/**
+	 * pre-defined value-property like an flag in database
+	 * @var array
+	 */
+	protected $aPreDefinde= array();
 	var	$bDisplaySelects= true;
 	var	$bColumnSelects= true; // have the Table columns in select-statement
     var $FK= array();// bug: if in one table be two foreign keys to the same table
@@ -107,6 +112,11 @@ class STBaseTable
 	 */
 	var $aInnerTables= array();
 	var $dateIndex;
+	/**
+	 * null pointer for returned
+	 * null refference
+	 * @var null
+	 */
 	var $null= null;
 
 	 /**
@@ -116,39 +126,14 @@ class STBaseTable
 	  */
 	function __construct($oTable= null)
 	{
-	    global $__static_globl_STAlias_ID;
+	    global $__static_global_STBaseTable_ID;
 	    
 		Tag::paramCheck($oTable, 1, "string", "STBaseTable", "null");
 
-        $__static_globl_STAlias_ID++;
-        $this->ID= $__static_globl_STAlias_ID;
+
+        $__static_global_STBaseTable_ID++;
+        $this->ID= $__static_global_STBaseTable_ID;
     	$this->bOrder= NULL;
-		if(typeof($oTable, "STBaseTable"))
-		{
-		    if(STCheck::isDebug("table"))
-		    {
-    		    STCheck::echoDebug("db.table.fk", "create new ".get_class($this)."::<b>".$oTable->Name."</b> with ID:".$this->ID." from ".get_class($oTable)."::<b>".$oTable->Name."</b> with ID:".$oTable->ID);
-    		    echo "old <b>FKs</b>:<br>";
-    		    st_print_r($oTable->aBackJoin, 3);
-    		    $this->copy($oTable);
-    		    echo "new <b>FKs</b>:<br>";
-    		    st_print_r($this->aBackJoin, 3);
-    		    showErrorTrace();
-		    }
-		    //return;
-		}
-		if(Tag::isDebug())
-		{
-		    STCheck::echoDebug("table", "create new ID:".$this->ID." for ".get_class($this));
-		    if($oTable === null)
-	        {
-	            STCheck::echoDebug("table", "create non correct null table.");
-	        }elseif(is_string($oTable))
-	        {
-	            Tag::echoDebug("table", "create new table <b>".$oTable."</b>");
-	        }else
-	            Tag::echoDebug("table", "copy table <b>".$oTable->Name."</b>");
-		}
 		$this->asForm= array(	"button"=>	"save",
 								"form"=>	"st_checkForm",
 								"action"=>	null			);
@@ -156,25 +141,60 @@ class STBaseTable
 		if($oTable !== null)
 		{
 		    if(typeof($oTable, "STBaseTable"))
-	     	    $this->Name= $oTable->Name;
-		    else
+		    {
+		        if(Tag::isDebug())
+		        {
+	                if( STCheck::isDebug("table") ||
+	                    STCheck::isDebug("db.table.fk") )
+	                {
+	                    $check= "table";
+	                    if(STCheck::isDebug("db.table.fk"))
+	                        $ckeck= "db.table.fk";
+                        $space= STCheck::echoDebug($check, "create new ".get_class($this)."::<b>".$oTable->Name."</b> with ID:".$this->ID." from ".get_class($oTable)."::<b>".$oTable->Name."</b> with ID:".$oTable->ID);
+                        for($c= 0; $c < $space; $c++)
+                            echo " ";
+                        echo "old <b>FKs</b>:<br>";
+                        st_print_r($oTable->aBackJoin, 3, $space);
+                        $this->copy($oTable);
+                        for($c= 0; $c < $space; $c++)
+                            echo " ";
+                        echo "new <b>FKs</b>:<br>";
+                        st_print_r($this->aBackJoin, 3, $space);
+                        
+	                }else // no debugging for "table" or "db.table.fk" but debugging defined
+	                    $this->copy($oTable);
+		        }else
+		            $this->copy($oTable);
+	     	    //$this->Name= $oTable->Name;
+		    }else
 		        $this->Name= $oTable;
-	     	$this->bCorrect= true;
+	        $this->bCorrect= true;
+	        if(Tag::isDebug("table"))
+	        {
+	            STCheck::echoDebug("table", "create new ID:".$this->ID." for ".get_class($this)."(".$this->Name.")");
+	            if($oTable === null)
+	            {
+	                STCheck::echoDebug("table", "create non correct null table.");
+	            }elseif(is_string($oTable))
+	            {
+	                Tag::echoDebug("table", "create new table <b>".$oTable."</b>");
+	            }else
+	                Tag::echoDebug("table", "copy table <b>".$oTable->Name."</b>");
+	        }
 		}else 
 		{
 			$this->Name= "NULL";
 			$this->bCorrect= false;
 		}
-		//st_print_r($this->Name);
-		STCheck::echoDebug("table", "crate table ".$this->Name." with ID:".$this->ID);
+		//STCheck::echoDebug("table", "crate table ".$this->Name." with ID:".$this->ID);
 	}
 	function __clone()
 	{
-	    global $__static_globl_STAlias_ID;
+	    global $__static_global_STBaseTable_ID;
 	    
-	    $__static_globl_STAlias_ID++;
+	    $__static_global_STBaseTable_ID++;
 	    $oldID= $this->ID;
-	    $this->ID= $__static_globl_STAlias_ID;
+	    $this->ID= $__static_global_STBaseTable_ID;
 	    STCheck::echoDebug("table", "clone table ".$this->Name." from ID:$oldID to new ID:".$this->ID);
 	    $this->bInsert= true;
 	    $this->bUpdate= true;
@@ -250,13 +270,11 @@ class STBaseTable
 		STCheck::paramCheck($column, 1, "string", "int");
 
 		if( isset($this->columns[$column]) &&
-			is_numeric($column)	)
+			is_int($column)	)
 		{
 			return $this->columns[$column]["name"];
 		}
 
-		$desc= STDbTableDescriptions::instance();
-		$column= $desc->getColumnName($this->Name, $column);
 		if($this->haveColumn($column))
 			return $column;
 		return null;
@@ -316,9 +334,97 @@ class STBaseTable
 	 * @param enum $tableType for which display table - STLIST, STINSERT or STDELETE - alignment should be.
 	 * 							no parameter set (default) is definition for all
 	 */
-	function align($column, $value, $tableType= null)
+	public function align($column, $value, $tableType= null)
 	{
 		$this->tdAttribute($column, "align", $value);
+	}
+	/**
+	 * define column as must have field, maybe by different actions
+	 * 
+	 * @param string $column name of column or defined alias column
+	 * @param enum $action column hase to be exist for all actions STADMIN (default), or only by STINSERT or STUPDATE
+	 */
+	public function needValue(string $column, $action= STADMIN)
+	{
+	    STCheck::param($action, 1, "check", $action==STADMIN||$action==STINSERT||$action==STUPDATE, "can be STADMIN for all, or STINSERT / STUPDATE");
+	    
+	    $field= $this->findAliasOrColumn($column);
+	    STCheck::alert(!isset($field), "STBaseTable::needValue", "$column is no pre-defined alias column or column inside database");
+	    
+	    $flag= "not null";
+	    $notDef= "null";
+	    if($action == STADMIN)
+	    {
+	        $this->preDefinedFlag($field['alias'], STINSERT, $flag, $notDef);
+	        $this->preDefinedFlag($field['alias'], STUPDATE, $flag, $notDef);
+	    }else
+	        $this->preDefinedFlag($field['alias'], $action, $flag, $notDef);
+	}
+	/**
+	 * define a column as optional, maybe different by any action
+	 * 
+	 * @param string $column name of column or defined alias column
+	 * @param enum $action column should be optional for all actions STADMIN (default), or only by STINSERT or STUPDATE
+	 */
+	public function optional(string $column, $action= STADMIN)
+	{
+	    STCheck::param($action, 1, "check", $action==STADMIN||$action==STINSERT||$action==STUPDATE, "can be STADMIN for all, or STINSERT / STUPDATE");
+	    
+	    $field= $this->findAliasOrColumn($column);
+	    STCheck::alert(!isset($field), "STBaseTable::optional", "$column is no pre-defined alias column or column inside database");
+	    
+	    $flag= "null";
+	    $notDef= "not null";
+	    if($action == STADMIN)
+	    {
+	        $this->preDefinedFlag($field['alias'], STINSERT, $flag, $notDef);
+	        $this->preDefinedFlag($field['alias'], STUPDATE, $flag, $notDef);
+	    }else
+	        $this->preDefinedFlag($field['alias'], $action, $flag, $notDef);
+	}
+	public function hasDefinedFlag(string $alias, $action, string $flag) : bool
+	{
+	    STCheck::param($action, 1, "check", $action==STLIST||$action==STINSERT||$action==STUPDATE, "can only be STLIST, STINSERT or STUPDATE");
+	    
+	    $field= $this->findAliasOrColumn($alias);
+	    STCheck::alert(!isset($field), "STBaseTable::haseDefinedFlag", "'$alias' is no pre-defined alias column or column inside database");
+	    
+	    if(!isset($this->aPreDefinde[$action][$field['alias']]))
+	        return false;
+	    return in_array($flag, $this->aPreDefinde[$action][$field['alias']]);
+	}
+	/**
+	 * define a column with specidic given flag, different by any action
+	 * 
+	 * @param string $alias name of alias column (have to be checked for correctness before)
+	 * @param enum $action column be set for action STLIST, STINSERT or STUPDATE
+	 * @param string $flag name of the flag defined for column
+	 * @param string $notDefined flag should not defined after the given flag before (3. param) is set
+	 */
+	private function preDefinedFlag(string $alias, $action, string $flag, string $notDefined= "")
+	{
+	    STCheck::param($action, 1, "check", $action==STLIST||$action==STINSERT||$action==STUPDATE, "can only be STLIST, STINSERT or STUPDATE");
+	    
+	    $bSet= false;
+	    if(isset($this->aPreDefinde[$action][$alias]))
+	    {
+	        foreach($this->aPreDefinde[$action][$alias] as $key=>$thisFlag)
+	        {
+	            if($thisFlag == $notDefined)
+	            {
+	                $bSet= true;
+	                $this->aPreDefinde[$action][$alias][$key]= $flag;
+	                break;
+	                
+	            }elseif($thisFlag == $flag)
+	            {
+	                $bSet= true;
+	                break;
+	            }
+	        }
+	    }
+	    if(!$bSet)
+	        $this->aPreDefinde[$action][$alias][]= $flag;
 	}
 	function accessBy($clusters, $action= STLIST, $toAccessInfoString= "", $customID= null)
 	{
@@ -438,7 +544,8 @@ class STBaseTable
 		 // set the STLIST clusters
 			$toAccessInfoString= $this->asAccessIds[STLIST]["accessString"];
 		}
-		if(!isset($toAccessInfoString))
+		if( !isset($toAccessInfoString) ||
+		    trim($toAccessInfoString) == ""   )
 		{
 			$actionString= "";
 			if($action==STINSERT)
@@ -695,57 +802,11 @@ class STBaseTable
 		{
 			Tag::paramCheck($checkBoxColumnName, 1, "string");
 			Tag::paramCheck($position, 2, "int");
-
+			
 			Tag::alert(!$this->sPKColumn, "STBaseTable::nnTable()", "primary key for function ::nnTable() must be set in table".$this->Name);
 			$this->select($this->sPKColumn, $checkBoxColumnName);
-			$this->checkBox($checkBoxColumnName, $submitButton, $formName, $action);
+			$this->checkBox($checkBoxColumnName);
 			$this->bIsNnTable= true;
-			/*foreach($this->show as $columns)
-			{
-				if($columns["alias"]===$checkBoxColumnName)
-				{
-					$pos= $columns;
-					break;
-				}
-			}
-			$count= count($this->show);
-			$insert= false;
-			$show= array();
-			reset($this->show);
-			st_print_r($this->show,2);
-			for($n= 0; $n<$count; $n++)
-			{
-				if($n===$position)
-				{
-					$insert= true;
-					$show[]= $pos;
-				}else
-				{
-					$current= current($this->show);
-					if($current["alias"]===$checkBoxColumnName)
-						$current= next($this->show);
-					$show[]= $current;
-					next($this->show);
-				}
-			}
-			if(!$insert)
-				$show[]= $pos;
-			$this->show= $show;
-			st_print_r($this->show,2);
-			if(Tag::isDebug())
-			{
-    			$fk= &$this->getForeignKeys();
-    			$selected= array();
-    			foreach($fk as $table=>$content)
-    			{
-    				foreach($content as $key=>$column)
-    				{
-    					if($this->isSelected($column["own"]))
-    						$selected[$column["own"]]= "selected";
-    				}
-    			}
-    			Tag::alert(count($selected)<1, "STBaseTable::nnTable()", "before use function nnTable, select leastwise an column with foreign key");
-			}*/
 		}
 		function isNnTable()
 		{
@@ -902,117 +963,12 @@ class STBaseTable
 	}
 	function createAliases(&$aliasTables)
 	{
-		return $this->createAliasesA($aliasTables, $this);
+		return $this->db->createAliases($aliasTables);
 	}
 	function clearSqlAliases()
 	{
-		STCheck::echoDebug("db.statements.aliases", "clear sql aliases for table ".$this->Name);
+		STCheck::echoDebug("db.statements.aliases", "clear sql aliases for table ".$this->Name);		
 		$this->aAliases= array();
-	}
-	function createAliasesA(&$aliasTables, &$oMainTable)
-	{
-		if($oMainTable->Name===$this->Name)
-		{
-			$bFromIdentifications= false;
-			if(count($this->aAliases))
-			{
-				STCheck::echoDebug("db.statements.aliases", "take sql aliases from older createAliases search");
-				$aliasTables= $this->aAliases;
-				return false;
-			}
-			if(STCheck::isDebug())
-			{
-				$containerObj= $this->container;
-				if(!isset($containerObj))
-					$containerObj= STBaseContainer::getContainer();
-				STCheck::echoDebug("db.statements.aliases", " ");
-				STCheck::echoDebug("db.statements.aliases", "create new alias content for needed tables in table <b>".
-												$this->getName()."</b> from container <b>".
-												$containerObj->getName()."</b>");
-			}
-			$aliasTables= array();
-			$aliasTables[$this->Name]= "t1";
-		}else
-		{
-			$bFromIdentifications= true;
-			if(!isset($aliasTables[$this->Name]))
-			{
-				$aliasTables[$this->Name]= "t".(count($aliasTables)+1);
-			}
-			STCheck::write($aliasTables);
-		}
-
-
-		//$container= &$this->getContainer();
-		//$sMainTableName= $oTable->getName();
-		$count= 2;
-		if($bFromIdentifications)
-			$showList= $this->getIdentifColumns();
-		else
-		    $showList= $this->getSelectedColumns();
-		if(Tag::isDebug("db.statements.aliases"))
-		{
-			Tag::echoDebug("db.statements.aliases", "need columns from table ".$this->Name." (->getIdentifColumns) where container is ".$this->container->getName());
-			st_print_r($showList, 2, 1);
-			echo "<br />";
-		}
-		foreach($showList as $column)
-		{//z�hle wieviel Tabellen ben�tigt werden
-		    if(STCheck::isDebug("db.statements.aliases"))
-		    {
-    		    $dbgstr= "need column ".$column["column"];
-    		    if($oMainTable->Name == $column['table'])
-    		        $dbgstr.= " inside own table";
-    		    else
-    		        $dbgstr.= " which has an foreign key to '".$column['table']."'";
-    			STCheck::echoDebug("db.statements.aliases", $dbgstr);
-		    }
-			//$table= $oTable->getFkTableName($column["column"]);
-			//echo "foreignKey Table is $table<br />";
-			//if(!$table)
-			$table= $column["table"];
-			if(!isset($aliasTables[$table]))
-			{
-				$alias= "t".(count($aliasTables)+1);
-				Tag::echoDebug("db.statements.aliases", "this column is from table ".$table.": set new alias '".$alias."'");
-				$aliasTables[$table]= $alias;
-				$oTable= &$this->getTable($table);
-				$this->db->searchAliasesInWhere($oTable, $aliasTables);
-				unset($oTable);
-			}
-			$otherTableName= $this->getFkTableName($column["column"]);
-			if($otherTableName)
-			{
-				$otherTable= &$oMainTable->getTable($otherTableName);
-				$fktableName= $otherTable->getName();
-				Tag::echoDebug("db.statements.aliases", "column ".$column["column"]." in container ".$otherTable->container->getName().", have an foreign key to table $fktableName");
-				if(!isset($aliasTables[$fktableName]))
-				{
-  					if( !isset($aliasTables["db.".$otherTable->getName()])
-  						and
-  						$otherTable->db->getDatabaseName()!=$this->db->getDatabaseName()	)
-  					{
-  						$aliasTables["db.".$otherTable->getName()]= $otherTable->db->getDatabaseName();
-  					}
-  					STCheck::echoDebug("db.statements.aliases", "create new alias for table '$fktableName'");
-					$otherTable->createAliasesA($aliasTables, $oMainTable);
-					Tag::echoDebug("db.statements.aliases", "be back in table ".$this->Name);
-				}
-				unset($otherTable);
-			}
-		}
-		foreach($this->aBackJoin as $sBackTableName)
-		{
-			$BackTable= &$oMainTable->getTable($sBackTableName);
-			Tag::echoDebug("db.statements.aliases", "need backward-tablealias from table $tableName, table $sBackTableName from container ".$BackTable->container->getName());
-			$BackTable->createAliasesA($aliasTables, $oMainTable);
-			unset($BackTable);
-		}
-		if(isset($this->db))
-			$this->db->searchAliasesInWhere($this, $aliasTables);
-		if($oMainTable->Name===$this->Name)
-			$this->aAliases= $aliasTables;
-		return true;
 	}
 	function isOrdered()
 	{
@@ -1427,7 +1383,7 @@ class STBaseTable
 			}
 			if(!preg_match("/^count\(.*\)$/i", $column))
 				$this->bOrder= true;
-			$desc= STDbTableDescriptions::instance($this->db->getName());
+			$desc= STDbTableDescriptions::instance($this->db->getDatabaseName());
 			$column= $desc->getColumnName($table, $column);// if table is original function must not search
 			$table= $desc->getTableName($table);
 			if(STCheck::isDebug())
@@ -1692,6 +1648,22 @@ class STBaseTable
 			}
 			return null;
 		}
+		/**
+		 * inform whether content of parameter is an keyword.<br />
+		 * which only useful by overloaded methods like STDbTable for database keywords.
+		 *
+		 * @param string $column content of column
+		 * @return array array of keyword, column, type and len, otherwise false.<br />
+		 *                 the keyword is in lower case and have to be const/max/min<br />
+		 *                 the column is the column inside the keyword (not shure whether it's a correct name/alias)<br />
+		 *                 the type of returned value by execute
+		 *                 the len of returned value by execute
+		 */
+		public function sqlKeyword(string $column)
+		{
+		    // normal STBaseTable joind to no database
+		    return false;
+		}
 		function getSelectedFieldArray($bMain= true)
 		{
 			$fields= array();
@@ -1705,7 +1677,8 @@ class STBaseTable
 				$otherTable= $this->getFkTable($content["column"]);
 				//echo "table:<br />";
 				//st_print_r($otherTable);echo "\n<br />";
-				if($otherTable->correctTable())
+				if( isset($otherTable) &&
+				    $otherTable->correctTable() )
 				{
 					$otherFields= $otherTable->getSelectedFieldArray(false);
 					//$fields= array_merge($otherFields, $fields);
@@ -1713,13 +1686,14 @@ class STBaseTable
 						$fields[]= $newField;
 				}else
 				{
-					if(preg_match("/count/i", $content["column"]))
+				    $keyword= $this->sqlKeyword($content["column"]);
+					if($keyword != false)
 					{
 						$field= array();
 						$field["name"]= $content["column"];
 						$field["flags"]= "";
-						$field["type"]= "int";
-						$field["len"]= 11;
+						$field["type"]= $keyword['type'];
+						$field["len"]= $keyword['len'];
 					}else
 						$field= $this->getColumnContent($content["column"]);
 					$field["name"]= $content["alias"];
@@ -2007,7 +1981,8 @@ class STBaseTable
 			foreach($this->identification as $key=>$content)
 			{
 				$table= &$this->getFkTable($content["column"], true);
-				if($table->correctTable())
+				if( isset($table) &&
+				    $table->correctTable()  )
 				{
 					$table->clearRekursiveNoFkIdentifColumns();
 					unset($table);
@@ -2099,7 +2074,17 @@ class STBaseTable
 		 	STCheck::parameter($stwhere, 1, "STDbWhere", "string", "empty(string)", "null");
 		 	STCheck::parameter($operator, 2, "check", $operator === "", $operator == "and", $operator == "or");
 
-		 	
+		 	if(STCheck::isDebug("db.statements.where"))
+		 	{
+		 	    $msg= "set where clause ";
+		 	    if(is_string($stwhere))
+		 	        $msg.= "'$stwhere' ";
+	 	        $msg.= "inside table '".$this->Name."(".$this->ID.")'";
+	 	        $space= STCheck::echoDebug("db.statements.where", $msg);
+	 	        if(!is_string($stwhere))
+	 	            st_print_r($stwhere,10, $space);
+	 	        //showErrorTrace();
+		 	}
 		 	if(	!isset($stwhere) ||
 				$stwhere == null ||
 				$stwhere == ""	||
@@ -2382,7 +2367,7 @@ class STBaseTable
 								"form"=>	$formName,
 								"action"=>	$action			);
 	}
-	function checkBox($columnName, $trueValue)
+	function checkBox($columnName, $trueValue= false)
 	{
 		Tag::paramCheck($columnName, 1, "string");
 
@@ -2394,12 +2379,30 @@ class STBaseTable
 	// alex 08/06/2005:	alle links in eine Funktion zusammengezogen
 	//					und $address darf auch ein STObjectContainer,
 	// 					für die Verlinkung auf eine neuen Container, sein
-	/*protected*/function linkA($which, $aliasColumn, $address, $valueColumn)
+	/**
+	 * specify a column to select from database and whether how to display
+	 * 
+	 * @param string $which what to do with the selection
+	 *                 check           -
+	 *                 get             - only selection from database, but no display on STListBox
+	 *                 disabled        -
+	 *                 dropdown        -
+	 *                 namedlink       -
+	 *                 namedcolumnlink -
+	 *                 download        -                 
+	 * @param string $aliasColumn column or alias column name
+	 * @param object $address can be an address which should link to, or an STBaseContainer to which link should set
+	 * @param string $valueColumn pre defined link when selection should be disabled
+	 */ 
+	protected function linkA(string $which, string $aliasColumn, $address= null, string $valueColumn= null)
 	{
-		STCheck::param($which, 0, "string");
-		STCheck::param($aliasColumn, 1, "string");
-		STCheck::param($address, 2, "STObjectContainer", "STBaseTable", "null");
-		STCheck::param($valueColumn, 3, "string", "null");
+	    if(STCheck::isDebug())
+	    {
+    		STCheck::param($which, 0, "string");
+    		STCheck::param($aliasColumn, 1, "string");
+    		STCheck::param($address, 2, "STBaseContainer", "STBaseTable", "null");
+    		STCheck::param($valueColumn, 3, "string", "null");
+	    }
 		
 		$field= $this->findAliasOrColumn($aliasColumn);
 		$aliasColumn= $field["alias"];
@@ -2442,12 +2445,12 @@ class STBaseTable
 		if($which=="disabled")
 		{
 			$this->showTypes[$aliasColumn][$which][]= $valueColumn;
-			$valueColumn= null;
+			$valueColumn= null;	
 		}else
 			$this->showTypes[$aliasColumn][$which]= $to;
 		if($valueColumn)
 		{
-			if(!is_array($this->showTypes["columns"]))
+		    if( !isset($this->showTypes["valueColumns"]) || !is_array($this->showTypes["valueColumns"]))
 				$this->showTypes["valueColumns"]= array();
 			$this->showTypes["valueColumns"][$aliasColumn]= $valueColumn;
 			$field= $this->findAliasOrColumn($valueColumn);
@@ -2545,7 +2548,8 @@ class STBaseTable
     	foreach($from as $key=>$content)
     	{
     		$table= &$this->getFkTable($content["column"], true);
-    		if(	$this->Name != $table->getName() &&
+    		if(	isset($table) &&
+    		    $this->Name != $table->getName() &&
 				$table->correctTable()				)
     		{
     			$table->clearRekursiveGetColumns();
@@ -2633,7 +2637,7 @@ class STBaseTable
 							//echo __file__.__line__."<br>";
 							//echo "own database:     ".$this->container->getDatabaseName()."<br>";
 							//echo "foreign database: ".$columns["table"]->container->getDatabaseName()."<br>";
-							if($columns["table"]->container->getDatabaseName()!==$this->container->getDatabaseName())
+							if($columns["table"]->container->db->getDatabaseName()!==$this->container->db->getDatabaseName())
 								$container= &STBaseContainer::getContainer($columns["table"]->container->getName());
 							else
 								$container= &$this->container;

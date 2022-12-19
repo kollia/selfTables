@@ -10,6 +10,7 @@
     //     query.limitation      -  show manipulation of query for new container or action set
 	//     performance           -  show needed performance of time from hole site
 	//     db.statement          -  show created statements of self-Tables
+	//     db.descriptions       -  show which tables are described on database
 	//     db.statement.time     -  show how long statement need to fetch from database
 	//     db.statement.modify   -  show creation of insert/update statement
     //     db.statement.insert   -  same as db.statement.modify
@@ -20,12 +21,14 @@
 	//     db.statements.aliases -  alias definition for table's
 	//     db.table.fk           -  show FOREIGN KEY definitions
 	//	   db.test				 -	allow only 'select' and 'show' commands on database, for each other write only statement on debug output
+	//     db.test.session       -  by testing with db.test it output normaly sql statements but update and insert anyway sessions on db. with db.test.session it makes also the same behavior for sessions
 	//     show.db.fields        -  by display db fields inside INSERT or UPDATE box, show flags of field
 	//     container             -  show container creation and initialling
     //     containerChoice       -  show also choise of container for backbutton
 	//     table                 -  show table creation and initialling
 	//     access                -  show whether user has access to different objects
 	//     session               -  show all about a session
+	//     listbox.properties    -  show column properties for every row insede STListBox creation 
 	//     log                   -  tracing recursive function names passed to calling one or more before defined position 
 	//
 	//--------------------------------------------------------------------------
@@ -259,6 +262,7 @@
 		$_stusersession=                    $_stcmstools_path."/usermanagement/STUserSession.php";
 		$_stum_installcontainer=			$_stcmstools_path."/usermanagement/STUM_InstallContainer.php";
 		$_stusermanagement_install=			$_stcmstools_path."/usermanagement/stusermanagement_install.php";
+		$_stuserprofilecontainer=           $_stcmstools_path."/usermanagement/STUserProfileContainer.php";
 		$_stusermanagement=					$_stcmstools_path."/usermanagement/STUserManagement.php";
 		$_stusermanagementsession=			$_stcmstools_path."/usermanagement/STUserManagementSession.php";
 		$_stuserprojectmanagement=	        $_stcmstools_path."/usermanagement/STUserProjectManagement.php";

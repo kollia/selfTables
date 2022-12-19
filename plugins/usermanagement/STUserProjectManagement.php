@@ -22,7 +22,7 @@ class STUserProjectManagement extends STBaseContainer
      */
     private $addedContent= array();
     
-    public function __construct($userDb, string $name= "ProjectAccess", string $bodyClass= "ProjectAccessBody")
+    public function __construct(string $name, $userDb, string $bodyClass= "ProjectAccessBody")
     {
         STCheck::paramCheck($userDb, 1, "STDatabase");
         

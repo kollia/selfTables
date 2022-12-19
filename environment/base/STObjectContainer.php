@@ -145,7 +145,7 @@ class STObjectContainer extends STBaseContainer
 	{
 		STCheck::paramCheck($tableName, 1, "string", "empty(string)", "null");
 		//Tag::paramCheck($bAllByNone, 2, "bool");
-		
+
 		$nParams= func_num_args();
 		Tag::lastParam(1, $nParams);
 
@@ -172,6 +172,8 @@ class STObjectContainer extends STBaseContainer
 			Tag::echoDebug("table", "no table to show difined for this container ".get_class($this)."(".$this->getName().")");
 			Tag::echoDebug("table", "or it not be showen on the first status");
 			$Rv= null;
+			// cannot return null
+			// return need an variable
 			return $Rv;
 		}
 
@@ -192,12 +194,20 @@ class STObjectContainer extends STBaseContainer
 		//					bei $this->db->getTable in $this->tables eingetragen
 		if(isset($this->tables[$tableName]))
 		{
-		    Tag::echoDebug("table", "get used table <b>$tableName</b> from container <b>".$this->getName()."</b>");
+		    if(STCheck::isDebug("table"))
+		    {
+    		    $space= STCheck::echoDebug("table", "get <b>used</b> table <b>$tableName</b> from container <b>".$this->getName()."</b>");
+    		    st_print_r($this->tables, 1, $space);
+		    }
 		    $table= &$this->tables[$tableName];
 		    
 		}else if(isset($this->oGetTables[$tableName]))
 		{
-		    Tag::echoDebug("table", "get table <b>$tableName</b> from container <b>".$this->getName()."</b>");
+		    if(STCheck::isDebug("table"))
+		    {
+    		    $space= STCheck::echoDebug("table", "get in <b>evidence</b> holded table <b>$tableName</b> from container <b>".$this->getName()."</b>");
+    		    st_print_r($this->oGetTables, 1, $space);
+		    }
 		    $table= &$this->oGetTables[$tableName];
 		    
 		}else if( $this->parentContainer != null &&
@@ -364,8 +374,7 @@ class STObjectContainer extends STBaseContainer
 			}
 		}else
 		{
-
-			$description= &STDbTableDescriptions::instance($this->db->getName());
+			$description= &STDbTableDescriptions::instance($this->db->getDatabaseName());
 			// getTableName from STDbTableDescriptions
 			// return only an different name when before
 			// was defined an other tablename
@@ -764,7 +773,7 @@ class STObjectContainer extends STBaseContainer
 	function execute(&$externSideCreator, $onError)
 	{
 		Tag::paramCheck($externSideCreator, 1, "STSiteCreator");
-
+		
 		$this->createMessages();
 		$this->initContainer();
 		$this->oExternSideCreator= &$externSideCreator;
@@ -786,7 +795,7 @@ class STObjectContainer extends STBaseContainer
 			$get_vars["table"]= $this->getTableName();
 		}
 		
-		
+
 		if(	$this->bFirstContainer
 			and
 			$this->getAddressToNextContainer($params)	)
@@ -794,7 +803,7 @@ class STObjectContainer extends STBaseContainer
 			// and it is set the table by one entry to forward
 			// by only one entry find in the function getAddressToNextContainer
 			// forward the user to the calculated address
-			
+		    
     		$address= $params->getStringVars();
     		if(Tag::isDebug())
     		{
@@ -856,82 +865,82 @@ class STObjectContainer extends STBaseContainer
 		}
 		return $result;
 	}
-		function makeChooseTags($get_vars)
-		{
-			$chooseTable= $this->getChooseTableTag($get_vars);
-			// alex 18/05/2005:	die Weiterleitung ist jetzt in den STChoosBox verschoben
-			//					und muss von aussen angegeben werden
-			/*{
-				$Address= $chooseTable->getFirstButtonAddress();
-				$Address.= "&stget[onlyone]=true";
-				if(Tag::isDebug() )
-				{
-  					echo "<br /><br /><h1>User would be forwarded to:<br /><a href=\"$Address\">$Address</a>";
-					exit;
-  				}else
-				{
-					@header("Location: $Address");
-					echo "<br /><br /><h1>Please login at: <a href=\"$Address\">Startpage</a>";
-					echo "<script>top.location.href='".addslashes($Address)."';</script>";
-					exit;
-				}
-			}*/
-
-			$this->sHeadTitle= "Auswahlmenue";
-    		$this->addAllInSide($chooseTable);
-		}
-		function makeListTags($get_vars)
-		{
-			// alex 11/05/2005:	wenn action von $get_vars (param stget[action])
-			//					nur choose ist, wurde vom User ein MainTable bestimmt
-			/*if($get_vars["action"]==STCHOOSE)
+	function makeChooseTags($get_vars)
+	{
+		$chooseTable= $this->getChooseTableTag($get_vars);
+		// alex 18/05/2005:	die Weiterleitung ist jetzt in den STChooseBox verschoben
+		//					und muss von aussen angegeben werden
+		/*{
+			$Address= $chooseTable->getFirstButtonAddress();
+			$Address.= "&stget[onlyone]=true";
+			if(Tag::isDebug() )
 			{
-				$table= &$this->aMainTable["table"];
-				$tableName= $table->getName();
+				echo "<br /><br /><h1>User would be forwarded to:<br /><a href=\"$Address\">$Address</a>";
+				exit;
 			}else
-			{*/
-			$tableName= "";
-			if(	isset($get_vars["table"]) &&
-				is_string($get_vars["table"])	)
 			{
-				$tableName= $get_vars["table"];
+				@header("Location: $Address");
+				echo "<br /><br /><h1>Please login at: <a href=\"$Address\">Startpage</a>";
+				echo "<script>top.location.href='".addslashes($Address)."';</script>";
+				exit;
 			}
-			$table= &$this->getTable($tableName);
-			if(	isset($table->oSearchBox) &&
-				!isset($this->asSearchBox[$table->oSearchBox->categoryName]) &&
-				(	!$table->oSearchBox->bDisplayByButton
-					or
-					$get_vars["displaySearch"]=="true"			)									)
-			{
-				$table->oSearchBox->setSqlEffect(MYSQL_ASSOC);
-				$table->oSearchBox->execute($table);
-				$this->addObjBehindProjectIdentif($table->oSearchBox);
-			}
-				
+		}*/
+
+		$this->sHeadTitle= "Auswahlmenue";
+		$this->addAllInSide($chooseTable);
+	}
+	function makeListTags($get_vars)
+	{
+		// alex 11/05/2005:	wenn action von $get_vars (param stget[action])
+		//					nur choose ist, wurde vom User ein MainTable bestimmt
+		/*if($get_vars["action"]==STCHOOSE)
+		{
+			$table= &$this->aMainTable["table"];
+			$tableName= $table->getName();
+		}else
+		{*/
+		$tableName= "";
+		if(	isset($get_vars["table"]) &&
+			is_string($get_vars["table"])	)
+		{
+			$tableName= $get_vars["table"];
+		}
+		$table= &$this->getTable($tableName);
+		if(	isset($table->oSearchBox) &&
+			!isset($this->asSearchBox[$table->oSearchBox->categoryName]) &&
+			(	!$table->oSearchBox->bDisplayByButton
+				or
+				$get_vars["displaySearch"]=="true"			)									)
+		{
+			$table->oSearchBox->setSqlEffect(MYSQL_ASSOC);
+			$table->oSearchBox->execute($table);
+			$this->addObjBehindProjectIdentif($table->oSearchBox);
+		}
+
+		$div= new DivTag();
+		$headline= &$this->getHeadline($get_vars);
+		$div->addObj($headline);
+		if($this->bChooseInTable)
+		    $div->add($this->getChooseTableTag($get_vars));
+		 
+		$result= "NOERROR";
+		if($tableName)
+		{
 			$list= &$this->getListTable($tableName);
 			// add all params from Container for ListTable
-//			if(is_array($this->getParmListLinks[$navi["class"]]))
-//			{
-				foreach($this->getParmListLinks as $action=>$do)
+			foreach($this->getParmListLinks as $action=>$do)
+			{
+				foreach($do as $param)
 				{
-					foreach($do as $param)
-					{
-						if($action==STINSERT)
-							$list->insertParam($param);
-						elseif($action==STUPDATE)
-							$list->updateParam($param);
-						elseif($action==STDELETE)
-							$list->deleteParam($param);
-					}
+					if($action==STINSERT)
+						$list->insertParam($param);
+					elseif($action==STUPDATE)
+						$list->updateParam($param);
+					elseif($action==STDELETE)
+						$list->deleteParam($param);
 				}
-//			}
-			
-			$div= new DivTag();
-    			$headline= &$this->getHeadline($get_vars);
-    			$div->addObj($headline);
-			if($this->bChooseInTable)
-				$div->add($this->getChooseTableTag($get_vars));
-			
+			}
+		
 			if($table->bShowName)
 			{
 				$tableIdentifier= $table->getDisplayName();
@@ -1028,11 +1037,9 @@ class STObjectContainer extends STBaseContainer
 			$this->setAllMessagesContent(STLIST, $list);
 			
 			if(typeof($table, "STDbTable"))
-			{
 			    $result= $list->execute();
-			}else
-			    $result= "NOERROR";
-				
+			    
+
 			if(	$table->canInsert() &&
 				$table->hasAccess(STINSERT)	&&
 				isset($table->columns) &&
@@ -1053,9 +1060,10 @@ class STObjectContainer extends STBaseContainer
     		$div->addObj($center);
     		if(typeof($table, "STDbTable"))
 				$div->addObj($list);
-			$this->addAllInSide($div);
-			return $result;
-		}
+	    }
+		$this->addAllInSide($div);
+		return $result;
+	}
 	function &getHead($defaultTitle= "unknown")
 	{
 		Tag::paramCheck($defaultTitle, 1, "string");
@@ -1234,7 +1242,7 @@ class STObjectContainer extends STBaseContainer
     			}
 			}
 			
-			$chooseTable= new STChoosBox($this);
+			$chooseTable= new STChooseBox($this);
 			$chooseTable->align("center");
 			$chooseTable->setStartPage($this->oExternSideCreator->getStartPage());
 			$chooseTable->noChoise($this->aNoChoice);
@@ -1418,7 +1426,7 @@ class STObjectContainer extends STBaseContainer
 
 	    if(!STUserSession::sessionGenerated())
 			return "";
-    	if(!$this->isAktContainer())
+    	if(!$this->currentContainer())
     	    return "";
 
 		if($table===null)
@@ -1431,7 +1439,7 @@ class STObjectContainer extends STBaseContainer
 			//echo "older table:".$tableName."<br />";
 		}elseif(!typeof($table, "STDbTable"))
     	{
-			$desc= STDbTableDescriptions::instance();
+    	    $desc= STDbTableDescriptions::instance($this->db->getDatabaseName());
     	    $tableName= $desc->getTableName($table);
     		$table= $this->getTable($tableName);
     	}else

@@ -71,7 +71,7 @@ class STDbUpdater
 		foreach($this->columns as $nr=>$columns)
 		{
 		    $statement= $this->getStatement($nr);
-			$db->fetch($statement, $onError);
+		    $db->query($statement, $onError);
 			if($db->errno())
 			{
 				$this->nErrorRowNr= $nr;

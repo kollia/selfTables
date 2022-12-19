@@ -66,9 +66,9 @@ class STDbWhere
 	    STCheck::param($db, 0, "STDatabase", "STDbTable", "string");
 	    
 	    if(typeof($db, "STDatabase"))
-	        $this->sDbName= $db->getName();
+	        $this->sDbName= $db->getDatabaseName();
 	    else if(typeof($db, "STDbTable"))
-	        $this->sDbName= $db->getDatabase()->getName();
+	        $this->sDbName= $db->getDatabase()->getDatabaseName();
 	    else
 	        $this->sDbName= $db;
 	}
@@ -116,7 +116,7 @@ class STDbWhere
 		{
 			$tableName= $table->getName();
 			$db= $table->getDatabase();
-			$dbName= $db->getName();
+			$dbName= $db->getDatabaseName();
 		}else if(typeof($table, "STBaseTable"))
 		{
 		    $dbName= "";
@@ -589,7 +589,6 @@ class STDbWhere
 	//		if(!preg_match("/^(or|and)/i", $statement))
 	//			$statement= $tableOperator.$statement;
 			Tag::echoDebug("db.statements.where", "result is '$statement'");
-			//echo "where result:$statement<br>";
 			return $this->addBraces($statement);
 		}
 		/**

@@ -93,11 +93,6 @@ class STDbMySql extends STDatabase
 		}else
 			$this->conn->close();
 	}
-	// deprecated
-   	function toDatabase($database, $onError= onErrorStop)
-	{
-		$this->useDatabase($database, $onError);
-	}
 		/**
 		*  wechselt zu der angegebenen Datenbank
 		*
@@ -107,26 +102,26 @@ class STDbMySql extends STDatabase
 		*					<br>onErrorShow - Fehler wird angezeigt aber Programm nicht beendet
 		*  		  			<br>onErrorStop - Fehler wird angezeigt und Programm beendet
 		*/
-   	function useDatabase($database, $onError= onErrorStop)
+   	function database($dbName, $onError= onErrorStop)
    	{
-   		STCheck::paramCheck($database, 1, "string");
+   		STCheck::paramCheck($dbName, 1, "string");
    		STCheck::paramCheck($onError, 2, "int");
    		
-		STCheck::echoDebug("db.statement". "use Mysql Database $database");
-		if($database != $this->dbName)
-		{
-			$this->dbName= $database;
-			// alex 17/05/2005: obwohl referenze auf innere DB besteht
-			//					wird der DB-Name dort nicht eingetragen.
-			//					keine Ahnung warum !!!
-			//$this->db->dbName= $this->dbName;
-			Tag::echoDebug("db.statement", "use new Database ".$database);
-			if(!$this->conn->select_db("$database"))
+   		if(STCheck::isDebug("db"))
+   		{
+   		    $space= STCheck::echoDebug("db", "  use Mysql Database $dbName");
+   		    st_print_r(                      "inside DB Container ".$this->db->getName(), 1, $space);
+   		    echo "<br>";
+   		}
+        STDatabase::database($dbName, $onError);
+//		if($dbName != $this->dbName)
+//		{
+			if(!$this->conn->select_db("$dbName"))
 			{
 					$this->error= true;
 					if($onError>noErrorShow)
 					{
-						echo "<br>can not reache database <b>$database</b>,<br>";
+						echo "<br>can not reache database <b>$dbName</b>,<br>";
 						if( $this->conn==null )
 							echo "with no connection be set<br>";
 						else
@@ -138,7 +133,7 @@ class STDbMySql extends STDatabase
 							exit();
 					}
 			}
-		}
+//		}
 		// read all tables in database
 		$this->asExistTableNames= $this->fetch_single_array("show tables");
 		
@@ -185,6 +180,8 @@ class STDbMySql extends STDatabase
 		    $tm= hrtime(false);
 		    STCheck::echoDebug("db.statement", $statement);
 		    STCheck::echoDebug("db.statement.time", date("H:i:s")." ".(time()-$_st_page_starttime_));
+		    if($statement == "SHOW COLUMNS FROM ID")
+		        showErrorTrace();
 		}
 		$this->lastDbResult = $this->conn->query($statement);
 		if(STCheck::isDebug("db.statement.time"))
@@ -406,6 +403,52 @@ class STDbMySql extends STDatabase
 		if(!array_key_exists($type, $this->columnTypes ))
 			throw new Exception("type '$type' does not exist inside known list");
 		return $this->columnTypes[$type];
+	}
+	/**
+	 * inform whether content of parameter is an keyword
+	 *
+	 * @param string $column content of column
+	 * @return array array of keyword, column, type and len, otherwise false.<br />
+	 *                 the keyword is in lower case and have to be const/max/min<br />
+	 *                 the column is the column inside the keyword (not shure whether it's a correct name/alias)<br />
+	 *                 the type of returned value by execute
+	 *                 the len of returned value by execute
+	 */
+	public function keyword(string $column)
+	{
+	    if(!preg_match("/^([^\(\)]+)\((.*)\)$/", trim($column), $preg))
+	        return false;
+	    $allowed= array(
+	        "now" => array( "type" => "date", "len" => 10 ),
+	        "date" => array( "type" => "date", "len" => 10 ),
+	        "sysdate" => array( "type" => "date", "len" => 10 ),
+	        "password" => array( "type" => "char", "len" => 512 ),
+	        "count" => array( "type" => "int", "len" => 11 ),
+	        "min" => array( "type" => "int", "len" => 11 ),
+	        "max" => array( "type" => "int", "len" => 11 )              );	    
+	    $keyword= strtolower($preg[1]);
+	    if(!array_key_exists($keyword, $allowed))
+	        return false;
+	    $type= "int";
+	    $len= 11;
+	    switch($keyword)
+	    {
+	        case "now":
+	        case "date":
+	        case "sysdate":
+	           $type= "date";
+	           $len= 10;
+	           break;
+	        case "password":
+	            $type= "char";
+	            $len= "512";
+	            break;
+	    }
+	    $inherit= preg_split("/[ ,]/", $preg[2], PREG_SPLIT_NO_EMPTY);
+	    return array(  "keyword" => $keyword,
+	                   "columns" => $inherit,
+	                   "type" => $allowed[$keyword]['type'],
+	                   "len" => $allowed[$keyword]['type']     );
 	}
 	protected function insert_id()
 	{

@@ -368,7 +368,7 @@ class STBaseContainer extends BodyTag
     	 // and startig the initialisation in the execute
     	 // when this object is needed
     }
-	function isAktContainer()
+	function currentContainer()
 	{
 		$get= new STQueryString();
 		$get= $get->getArrayVars();
@@ -526,12 +526,7 @@ class STBaseContainer extends BodyTag
 		}else
 		{
 			$bSetContainer= false;
-			if(	$fromContainer == ""
-				||
-				$fromContainer == NULL	)
-			{
-				$fromContainer= &$this;
-			}else if($fromContainer==="userDb")
+			if($fromContainer==="userDb")
 			{
 				if(STUserSession::sessionGenerated())
 				{
@@ -539,10 +534,15 @@ class STBaseContainer extends BodyTag
 					$fromContainer= &$instance->getUserDb();
 				}else
 					$fromContainer= &STBaseContainer::getContainer($_selftable_first_main_database_name);
-			}else
-				$fromContainer= &STBaseContainer::getContainer($fromContainer);
-			STCheck::alert($fromContainer === null, "STBaseContainer::getContainer()",
-						"no database selected, pleas select one first with ->connection() and ->useDatabase()");
+			}elseif(isset($fromContainer))
+			    $fromContainer= &STBaseContainer::getContainer($fromContainer);
+			STCheck::alert(!isset($fromContainer) || $fromContainer === null, "STBaseContainer::getContainer()",
+						"no exist container '$containerName' found, or any script to install be set");
+			if( !STCheck::isDebug() &&
+			    !isset($fromContainer)   )
+			{
+			    exit();
+			}
 		}
 
 		STCheck::alert(!$fromContainer, "STBaseContainer::getContainer()", "container '$containerName' is not set in container-List");

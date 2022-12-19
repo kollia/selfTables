@@ -36,39 +36,65 @@ require_once( $_stdbsessionhandler );
 class STDbSession extends STSession
 {
     private $bStoreFile= false;
+    protected $database= null;
     
-    protected function __construct()
+    protected function __construct($Db)
     {
-        // nothing to do
+        $this->database= &$Db;
         STSession::__construct();
     }
-    public static function init(&$Db, $prefix= null)
+    /**
+     * initial object of session
+     *
+     * @param object $instance should be the database where the session will be stored,
+     *                           or by overloading from an other class it can be the instance from there
+     * @param string $prefix can be the prefix string for tables inside database
+     */
+    public static function init(&$instance, string $prefix= "")
     {
-        global $global_selftable_session_class_instance, $DBin_UserDatabase;
+        STCheck::paramCheck($instance, 1, "STDatabase", "STDbSession");
         
-        $define_table= false;
-        if(!isset($global_selftable_session_class_instance[0]))
+        global $global_selftable_session_class_instance;
+        
+        STCheck::alert(isset($global_selftable_session_class_instance[0]),
+            "STDbSession::init()", "an session was defined before, cannot define two sessions");
+        if(!typeof($instance, "STDbSession"))
         {
-            $global_selftable_session_class_instance[0]= new STDbSession($Db, $prefix);
-            $define_table= true;
+            $global_selftable_session_class_instance[0]= new STDbSession($instance);
+            $desc= STDbTableDescriptions::init($instance);
+        }else
+        {
+            $global_selftable_session_class_instance[0]= $instance;
+            $desc= STDbTableDescriptions::init($instance->getDatabase());
         }
-        STSession::init($Db);
-        $desc= &STDbTableDescriptions::instance($Db->getName());        
-        $desc->table("Sessions");
-        $desc->column("Sessions", "ses_id", "varchar(32)", false);
-        $desc->primaryKey("Sessions", "ses_id");
-        $desc->column("Sessions", "ses_time", "INT", false);
-        $desc->column("Sessions", "ses_value", "MEDIUMTEXT", false);
+                
+        $global_selftable_session_class_instance[0]->defineDatabaseTableDescriptions($desc);
         
-        if($define_table && isset($prefix))
-        {
-            $desc= &STDbTableDescriptions::instance($this->database->getName());
+        if($prefix != "")
             $desc->setPrefixToTables($prefix);
-        }
     }
-    public function storeSessionOnFile()
+    public function defineDatabaseTableDescriptions($dbTableDescription)
     {
-        $this->bStoreFile= true;
+        STCheck::paramCheck($dbTableDescription, 1, "STDbTableDescriptions");
+        
+        $dbTableDescription->table("Sessions");
+        $dbTableDescription->column("Sessions", "ses_id", "varchar(32)", false);
+        $dbTableDescription->primaryKey("Sessions", "ses_id");
+        $dbTableDescription->column("Sessions", "ses_time", "INT", false);
+        $dbTableDescription->column("Sessions", "ses_value", "MEDIUMTEXT", false);
+    }
+    /**
+     * can store session on file as well session defined with this class
+     * 
+     * @param bool $do by true store on File, elsewhere store inside database 
+     */
+    public function storeSessionOnFile(bool $do)
+    {
+        $this->bStoreFile= $do;
+    }
+    public function getDatabase()
+    {
+        return $this->database;
     }
     protected function session_storage_place()
     {

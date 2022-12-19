@@ -11,46 +11,61 @@ class STUserManagement extends STObjectContainer
 		Tag::paramCheck($name, 1, "string");
 		Tag::paramCheck($container, 2, "STObjectContainer");	
 		
-		STObjectContainer::STObjectContainer($name, $container);
+		STObjectContainer::__construct($name, $container);
 	}
 	function create()
 	{
-		$this->setDisplayName("UserManagement");
-		$this->needContainer("projects");
-
-		$user= &$this->needTable("User");
-		STDbTable::copy("string");
-		$user->setDisplayName("Benutzer-Daten");
-		$user->identifColumn("UserName", "Benuter");
-		$user->select("UserName", "Benutzer");
-		$user->doInsert(false);
-		$user->doDelete(false);
-		$user->listLayout(STVERTICAL);
-		$user->accessBy("STUM-UserAccess");
+	    $this->setDisplayName("UserManagement");
+	    $this->accessBy("STUM-UserAccess");
+		//$this->needContainer("projects");
+	    
+	    $domain= $this->getTable("GroupType");
+	    $domain->identifColumn("ID", "Domain");
+	    //$domain->select("ID", "Domain");
+	    
+	    $user= &$this->needTable("User");
+	    $user->setDisplayName("User");
+	    $user->select("GroupType", "Domain");
+	    $user->preSelect("GroupType", "custom");
+	    $user->disabled("GroupType");
+	    $user->select("UserName", "User");
+	    $user->select("FullName", "full qualified name");
+	    $user->select("EmailAddress", "Email");
+	    $user->select("Description");
+	    $user->orderBy("GroupType");
+	    $user->orderBy("UserName");
+	    $user->setMaxRowSelect(50);
+	       
+	    $groups= &$this->needTable("Group");
+	    $groups->setDisplayName("Groups");
+	    $groups->select("Name", "Group");
+	    $groups->setMaxRowSelect(100);
+	    
+		$project= &$this->needTable("Project");
+		$project->setDisplayName("existing Projects");
+		$project->select("Name", "Project");
+		$project->select("Description");
+		$project->select("Path", "Position");
+		$project->orderBy("Name");
+		$this->setFirstTable("Project");
 	}
 	function init()
 	{
+	    $action= $this->getAction();
 		$user= &$this->needTable("User");
-		$action= $this->getAction();
+		$groups= &$this->needTable("Group");
+		$project= &$this->needTable("Project");
 		if($action==STLIST)
 		{
-			$user->select("LastLogin", "letzter Zugriff");
-			$user->select("NrLogin", "besucht");
+		    $user->select("NrLogin", "logged in");
+		    $user->select("LastLogin", "last login");
+		    
+		    $groups->select("ID", "Description");
 		}else
 		{
 			$user->select("Pwd");
 			$user->password("Pwd", true);
-			if($this->isAktContainer())
-				$user->passwordNames("altes Passwort", "neues Passwort", "Passwort wiederholung");
-			else
-				$user->passwordNames("neues Passwort", "Passwort wiederholung");
-		}
-		if($this->isAktContainer())
-		{
-			$session= &STUserSession::instance();
-			$userID= $session->getUserID();
-			if($userID)
-				$user->where($user->getPkColumnName()."=".$userID);
+		    $user->passwordNames("new Passwort", "Password repetition");
 		}
 	}
 	function installContainer()
@@ -58,7 +73,7 @@ class STUserManagement extends STObjectContainer
 		global $HTTP_SERVER_VARS;
 
 		$instance= &STSession::instance();
-
+    
 		$partition= $this->getTable("Partition");
 		$partition->clearSelects();
 		$partition->clearGetColumns();
@@ -86,7 +101,7 @@ class STUserManagement extends STObjectContainer
 		{
 			if(!$userManagementID)
 			{
-				$desc= STDbTableDescriptions::instance();
+			    $desc= STDbTableDescriptions::instance($this->database->getDatabaseName());
 				// fill project-cluster per hand
 				// because no project is inserted
 				// and the system do not found what we want
@@ -165,7 +180,7 @@ class STUserManagement extends STObjectContainer
 			$result= $creator->execute();
 			if($result=="NOERROR")
 			{
-				$desc= &STDbTableDescriptions::instance();
+				$desc= &STDbTableDescriptions::instance($this->database->getDatabaseName());
 				$userName= $desc->getColumnName("User", "UserName");
 				$pwd= $desc->getColumnName("User", "Pwd");
 				$sqlResult= $container->getResult();

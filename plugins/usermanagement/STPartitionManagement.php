@@ -7,7 +7,7 @@ class STPartitionManagement extends STObjectContainer
 		Tag::paramCheck($name, 1, "string");
 		Tag::paramCheck($container, 2, "STObjectContainer");
 		
-		STObjectContainer::STObjectContainer($name, $container);
+		STObjectContainer::__construct($name, $container);
 		
 		//     setInTableColumn($tableName, $column, $type, $null= true, $pk= false, $fkToTable= null, $unikIndex= 0)
 		
@@ -42,7 +42,7 @@ class STPartitionManagement extends STObjectContainer
 		$partition->setDisplayName("Zugriffs-Einteilung nach Partitionen");
 		$partition->identifColumn("Name", "Partition");
 		$partition->select("Name", "Zugriff f�r");
-		$partition->namedPkLink("Name", "usergroup");
+		$partition->namedPkLink("Name", "UserGroup");
 		$partition->doInsert(false);
 		$partition->doUpdate(false);
 		//$partition->doDelete(false);

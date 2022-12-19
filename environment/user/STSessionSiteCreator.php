@@ -280,12 +280,12 @@ class STSessionSiteCreator extends STSiteCreator
 			{
     			$action= $this->getAction();
     			if(trim($additionalText) == "")
-    			    $additionalText= "user has access to table $tableName on container ".$this->getName();
+    			    $additionalText= "user has access to table $tableName on container ".$this->getContainer()->getName();
     
     			if(isset($table))
     				$this->accessTable($table, $action, $additionalText);
 			}
-
+			
 			return STSiteCreator::execute();
 		}
 		/*function hasTableAccess($forTable, $toAccessInfoString= "", $customID= null, $logout= false)

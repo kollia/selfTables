@@ -168,16 +168,18 @@ class STItemBox extends STBaseBox
     					//					da wenn die Column schon im select war (bInside==true)
     					//					wurde Sie bei der Angabe im rowResult nicht als Alias-Namen
     					//					gesucht. Jetzt steht dieser in $sPkInside
-    					$sPkInside= "";
+    					$sPkColumn= "unknown";
+    					$sPkInside= "unknown";
 
     					foreach($joinTable->identification as $columns)
     					{
     						if($columns["column"]==$joinColumns["other"])
     						{
-    							if(isset($columns["alias"]))
-    								$sPkInside= $columns["alias"];
+    						    $sPkColumn= $columns['column'];
+    							if(isset($columns['alias']))
+    								$sPkInside= $columns['alias'];
     							else
-    								$sPkInside= $columns["column"];
+    								$sPkInside= $sPkColumn;
     							break;
     						}
     					}
@@ -199,13 +201,12 @@ class STItemBox extends STBaseBox
     					if(!isset($aRv[$joinColumns["own"]]))
     						$aRv[$joinColumns["own"]]= array();
     					$tableResult= array();
-    					//st_print_r($this->columns,5);
 						if(is_array($result))
 						{
     						foreach($result as $row)
     						{
         						$rowResult= array();
-        						// alex 09/05/2005: PK angabe jetzt aus sPkInside
+        						// alex 09/05/2005: PK definition now from sPkInside
         						$rowResult["PK"]= $row[$sPkInside];
         						$string= "";
         						foreach($row as $columnKey=>$columnValue)
@@ -363,27 +364,27 @@ class STItemBox extends STBaseBox
 		}
     function createColumns()
     {
-			if(is_array($this->columns))
-				return $this->columns;
-			if($this->asDBTable)
+		if(is_array($this->columns))
+			return $this->columns;
+		if($this->asDBTable)
+		{
+			$TableColumns= $this->asDBTable->getSelectedColumns();
+			$this->asSelect= array_merge($TableColumns, $this->asSelect);
+		}
+		if(count($this->asSelect))
+		{
+			$columns= array();
+			foreach($this->asSelect as $aColumn)
 			{
-				$TableColumns= $this->asDBTable->getSelectedColumns();
-				$this->asSelect= array_merge($TableColumns, $this->asSelect);
+				$column= $aColumn["column"];
+				$alias= $aColumn["alias"];
+				if(!$alias)
+					$alias= $column;
+				$columns[$column]= $alias;
 			}
-			if(count($this->asSelect))
-			{
-				$columns= array();
-				foreach($this->asSelect as $aColumn)
-				{
-					$column= $aColumn["column"];
-					$alias= $aColumn["alias"];
-					if(!$alias)
-						$alias= $column;
-					$columns[$column]= $alias;
-				}
-				$this->columns= $columns;
-				return $this->columns;
-			}
+			$this->columns= $columns;
+			return $this->columns;
+		}
   		if(	trim($this->columns=="*")
 				and
 				!count($this->asSelect))
@@ -421,8 +422,19 @@ class STItemBox extends STBaseBox
   							$this->intersecBez= $Len / 2;
   				}
   		}
-			$this->columns= $columns;
+		$this->columns= $columns;
         return $columns;
+    }
+    private function findCoumnFieldKey(array $columns)
+    {
+        $aRv= array();
+        $fields= $this->getFieldArray();
+        foreach($fields as $key=>$field)
+        {
+            if(isset($columns[$field['name']]))
+                $aRv[$field['name']]= $key;
+        }
+        return $aRv;
     }
     function orderByColumns($fields, $columns)
     {
@@ -449,9 +461,8 @@ class STItemBox extends STBaseBox
 		{
 			foreach($this->asDBTable->showTypes as $showColumn=>$is)
 			{
-				if(	key($is)==="get"
-					and
-					!$set[$showColumn]	)
+				if(	key($is)==="get" &&				    
+					!isset($set[$showColumn])	)
 				{
 					$content= $this->asDBTable->getColumnContent($showColumn);
 					$content["name"]= $showColumn;// if column is not set in Table;
@@ -524,7 +535,7 @@ class STItemBox extends STBaseBox
 	function makeBox($tableName, $join, $where, $changedPost= NULL)
   	{
         global $HTTP_POST_VARS;
-
+                
         /**
          * whether need javascript function DB_changeBox
          * @var boolean $needChangeBox
@@ -565,10 +576,11 @@ class STItemBox extends STBaseBox
 		}*/
 		
 		Tag::echoDebug("show.db.fields", "get file:".__file__." line:".__line__);
-  		$fields= $this->getFieldArray();//hole Felder aus Datenbank
-        $columns= $this->createColumns();// erstelle Array aus Spalten-Name und Alias-Name im $statement
-        $fields= $this->orderByColumns($fields, $columns);//ordne die Feld-Namen aus der Datenbank, nach dem eingegebenen $statement
-		//Erzeuge Klassen f�r HTML-Tags
+  		$fields= $this->getFieldArray();// took fields from database
+        $columns= $this->createColumns();// make array from column-name und alias-name inside $statement
+        $fields= $this->orderByColumns($fields, $columns);//order the field-namen from database, after the $statement
+        
+		//create objects of HTML-Tags
 		$form= new FormTag();
 			$form->name("STForm");
 			$form->method("post");
@@ -693,29 +705,47 @@ class STItemBox extends STBaseBox
 		}
 		
    		$aJoins= $this->getJoinArray($join, $post);//erstelle alle Inhalte der PopUp-Menues
-  		reset($fields);
-		$rePwd= 0;	// wenn ein Passwort abgefragt wird
-				 	// wird die Schleife ohne $x zu erh�hen durchlaufen
-				 	// und die Variable $rePwd um Eines erh�ht
-					// so oft, wie viele Namen im Array passwordNames sind
-		$x= 0;
+   		
+  		/**
+  		 * increasing loop for field count
+  		 * @var integer $x
+  		 */
+  		$x= 0;
+  		/**
+  		 * if defined a password column
+         * the $rePwd loop variable will be increased (either $x)
+		 * until the end of passwordNames member array be reached
+  		 * @var integer $rePwd
+  		 */
+		$rePwd= 0;
 		$previousSelectionDone= false;
 		/**
 		 * define true whether currently an inner table be set
+		 * $var boolean $bInner
 		 */
 		$bInner= false;
 		/**
 		 * inner table for better design.<br />
 		 * if inner table is NULL, currently no inner table be set
+		 * @var object $innerTable
 		 */
 		$innerTable= NULL;
+		/**
+		 * if pop-up menu disabled
+		 * value do not come in at the post variable
+		 * so define a hidden input with the value
+		 * and store inside an diff tag
+		 * @var object $hidden
+		 */
+		$hidden= new DivTag();
+		
+		reset($fields);
 		while($x<count($fields))
 		{// gehe alle Felder von der Datenbank durch
 			
 			$field= $fields[$x];		
         	$name= $field["name"];
-		 	if(	$columns[$name]
-				or
+		 	if(	isset($columns[$name]) ||
 				$field["type"]=="getColumn")
 			{//nur anzeigen wenn das Feld auch im angegebenen $statement enthalten ist
 
@@ -732,9 +762,10 @@ class STItemBox extends STBaseBox
 				$td->add("&#160;&#160;&#160;");
 				$tr->add($td);
 
-                if( isset($aJoins[$name]) )
-                {// wenn das Feld auch im angegebenen $join enthalten ist
-					 // ein PopUp-Men� anzeigen
+                if( isset($aJoins[$name]) &&
+                    $field['type'] != "getColumn"   )
+                {   // if the field also exist in the join array
+					// show a PopUp-Menu
 						$joinAnz= count($aJoins[$name]);
 						for($n= $joinAnz-1; $n>=0; $n--)
 						{// f�r das Entsprechende Feld im $aJoins[$name]
@@ -744,14 +775,14 @@ class STItemBox extends STBaseBox
 
 							$td->add(br());
                         	$aRows= $aJoins[$name][$n];
-							$Bez= $columns[$name];
+                        	$Bez= $columns[$name];
 							if($n>0)
 								$Bez= $columns[$aRows["Bez"]];
 							$selName= $name;
 							if($n>0)
 								$selName= $aRows["Bez"];
 
-							// Bezeichnungs-Angabe f�r PopUp-Men�
+							// description output for PopUp-Menu
 							$td->add($Bez);
 							$td->add(":");
 							$td->add(br());
@@ -826,17 +857,34 @@ class STItemBox extends STBaseBox
   								$this->intersecFld= $Len / 2;
 								$select->add($option);
                         }
-                        if(	$bNotNullField && // if field is not null and no pre-select set
-                        	!isset($this->aSetAlso[$field["name"]])	)
+
+                        $bDisabled= false;
+                        if(isset($this->aDisabled[$field["name"]]))
                         {
-	                        	$td->add("*");
+                            foreach ($this->aDisabled[$field["name"]] as $action)
+                            {
+                                if( $action === null || // null means action is STINSERT and STUPDATE but no STLIST
+                                    $action == STINSERT ||
+                                    $action == STUPDATE     )
+                                {
+                                    $bDisabled= true;
+                                    break;
+                                }
+                            }
+                        }
+                        if(	$bNotNullField &&
+                            $bDisabled == false &&
+                        	!isset($this->aSetAlso[$field["name"]]) &&
+                            !$this->asDBTable->hasDefinedFlag($field['name'], $this->action, "null")    )
+                        {// if field is not null, no pre-select and not disabled
+	                        $td->add("*");
 	                    }else 
-	                        	$td->add("&#160;&#160;");
-							$td->add($select);
+	                        $td->add("&#160;&#160;");
+						$td->add($select);
 						if($this->intersecFld)
-								$td->colspan(round($maxlen/$this->intersecFld));
-							$tr->add($td);
-						}
+							$td->colspan(round($maxlen/$this->intersecFld));
+						$tr->add($td);
+					}
                 }else // no PopUp-Menue end of if( $aJoins[$name] )
 				{
 						$bSingleEnum= false;
@@ -862,7 +910,8 @@ class STItemBox extends STBaseBox
 								$td->valign("top");
 						}
 						
-						if(isset($this->uploadFields[$columns[$field["name"]]]))
+						if( isset($columns[$field["name"]]) &&
+						    isset($this->uploadFields[$columns[$field["name"]]]))
 						{
 							$upload= $this->uploadFields[$columns[$field["name"]]];
 							$zusatz= "";
@@ -1184,11 +1233,13 @@ class STItemBox extends STBaseBox
 								$needChangeBox= true;
 							}
 							if(!$bSingleEnum)
-							{
+							{							        
 								if(	preg_match("/not_null/", $field["flags"]) &&
-	                        	!isset($this->aSetAlso[$field["name"]])				)
+	                        	    !isset($this->aSetAlso[$field["name"]])	&&
+								    !$this->asDBTable->hasDefinedFlag($field['name'], $this->action, "null")    )
+								{
 									$td->add("*"); // if field is not null and no pre-select set
-								else
+								}else
 									$td->add("&#160;&#160;");
 							}
 							if(STCheck::isDebug("show.db.fields"))
@@ -1736,7 +1787,7 @@ class STItemBox extends STBaseBox
   			// ladet die Funktion loadFiles() die Dateien hoch
             if(!$this->loadFiles($post))
 				$bError= true;
-			
+				
 			// alle callbacks welche vom Anwender gesetzt wurden durchlaufen
 			$oCallbackClass= new STCallbackClass($this->tableContainer, $post);
 			$oCallbackClass->before= true;
@@ -1792,7 +1843,7 @@ class STItemBox extends STBaseBox
 				// if it is generate an STUserSession
 				// and in the STBaseTable are be set columns
 				// to create cluster for spezific actions
-				// prodjuce this
+				// produce this
 				$_instance= null;
 				if(	STUserSession::sessionGenerated()
 					and
@@ -1849,15 +1900,17 @@ class STItemBox extends STBaseBox
 					}
 				}
 			}
-			// �berpr�fe alle FeldInhalte
-			if(!$bError)
-            	if(!$this->checkFields($post))
-					$bError= true;
+			// check all content of fields
+			if( !$bError &&
+            	!$this->checkFields($post) )
+			{
+				$bError= true;
+			}
 			if(!$bError)
             {
-    			if(	$this->pwdEncoded
-					and
-					$post[$this->password]!==null)
+                if(	isset($post[$this->password]) &&
+    			    $this->pwdEncoded &&
+					$post[$this->password]!==null      )
             	{
             		$columns= $this->createColumns($this->columns);
             		$name= array_search($this->password, $columns);
@@ -2119,9 +2172,10 @@ class STItemBox extends STBaseBox
 		{
 			$table= reset($this->asTable);
 		}else
-			$table= $table->getName();
+		    $table= $table->getName();
         $columns= $this->createColumns($this->columns);// create array from column-Name und alias-Name
         $fields= $this->getFieldArray();//hole Felder aus Datenbank
+        $aJoins= $this->getJoinArray(array(), $post);//erstelle alle Inhalte der PopUp-Menues
         if($this->action==STUPDATE)
         {// check only the changed fields
 			if($this->asDBTable)
@@ -2137,9 +2191,8 @@ class STItemBox extends STBaseBox
         	$result= $this->db->fetch_row(MYSQL_ASSOC, $this->getOnError("SQL"));
         	if(STCheck::isDebug("db.statement"))
         	{
-        		STCheck::echoDebug("db.statement", "actual result from database for function checkFields");
-        		echo "<b>[</b>db.statement<b>]</b> ";
-        		st_print_r($result, 1, 15);
+        		$space= STCheck::echoDebug("db.statement", "actual result from database for function checkFields");
+        		st_print_r($result, 1, $space);
         		//$post= array_merge($result, $post);
         		//st_print_r($post);
         		//st_print_r($fields, 5);
@@ -2149,40 +2202,90 @@ class STItemBox extends STBaseBox
 				$this->msg->setMessageId("NOUPDATEROW@", $table);
 				return false;
 			}
+			$bFieldDefineSelection= false;
+			if($bFieldDefineSelection)
+			{
+			    echo "<b>begin definition</b> on line ".__LINE__."<br />";
+			    echo "   by file ".__FILE__."<br />";
+			    echo "database select: <b>(\$result)</b><br />";
+			    st_print_r($result, 1, 10);
+			    echo "definde columns inside table: <b>(->table->show)</b><br />";
+			    st_print_r($this->asDBTable->show, 3, 10);
+			    echo "exist fields: <b>(\$fields)</b><br />";
+			    st_print_r($fields,3, 10);
+			    echo "existing joins: <b>(\$aJoins)</b><br />";
+			    st_print_r($aJoins, 5, 10);
+			    echo "created columns: <b>(\$columns)</b><br />";
+			    st_print_r($columns  ,3, 10);
+			    echo "inncomming post variable: <b>(\$post)</b><br />" ;
+			    st_print_r($post, 5, 10);
+			}
 			$this->sqlResult= $result;
 			$this->setSqlError($result);
 			$newFields= array();
-			//echo "check fields:";
+			// add fields which are defined inside database
+			// but have no values inside incomming post variable
+			// fields are all columns from table inside database
         	foreach($fields as $key => $field)
             {
-            	//echo " field: ".$field["name"]."<br>";
-				if(	isset($post[$field["name"]]))
+                $f= $this->asDBTable->findColumnAlias($field['name']);
+                if($bFieldDefineSelection)
+                {
+                    $space= STCheck::write("field: ".$field["name"]);
+            	    st_print_r($f, 1, $space);
+                }
+				if(	isset($post[$f['column']]))
 				{
-					//echo "    exist by incomming variables<br>";
-					if(	isset($result[$field["name"]]))
+				    if($bFieldDefineSelection)
+				        STCheck::write("exist by incomming POST variable");
+					if(	isset($result[$f['alias']]) )
 					{
-						//echo "    and also inside database<br>";
-						if(	(	$post[$field["name"]]!=$result[$field["name"]]
-								and
-								$field["name"]!=$this->password					)
+					    if($bFieldDefineSelection)
+					        STCheck::write("and also inside database select");
+						if(	(	$post[$f['column']]!=$result[$f['alias']] &&
+								$f['column']!=$this->password					    )
 							or
-							(	$field["name"]==$this->password
-								and
-								$post[$field["name"]]							)	)
+							(	$f['alias']==$this->password &&
+								$post[$f['column']]							)	)
 						{
 							$newFields[]= $field;
 						}
 					}else
 					{
 						$newFields[]= $field;
-						//echo "    but not inside database<br>";
+						if($bFieldDefineSelection)
+						    STCheck::write("but not inside database select");
 					}
-				}elseif(isset($result[$field["name"]]))
+				}elseif(isset($result[$f['alias']]))
 				{
-					//echo "    exist only inside database<br>";
-					$post[$field["name"]]= "";
-					$newFields[]= $field;
-				}
+				    if($bFieldDefineSelection)
+				        STCheck::write("exist only inside database");
+					if( $f['alias'] != $this->password ||
+					    !$this->asDBTable->hasDefinedFlag($this->password, $this->action, "null") /* <- optional */ )
+					{
+					    if(isset($aJoins[$f['column']]))
+					    {
+					        if($bFieldDefineSelection)
+					        {
+					            STCheck::write("field is disabled and a foreign key join to an other table");
+					            STCheck::write("a disabled selection box do not send content over POST");
+					            STCheck::write("so datbase should'nt removed");
+					        }
+					        $post[$f['column']]= $result[$f['alias']];
+					        
+					    }else
+					    {   
+					        if($bFieldDefineSelection)
+					            STCheck::write("field is disabled, so field should be deleted inside database");
+    					    $post[$f['column']]= "";
+					    }
+    					$newFields[]= $field;
+					}else if($bFieldDefineSelection)
+					    STCheck::write("field is a password, so input from user is optional");
+				}else if($bFieldDefineSelection)
+				    STCheck::write("do not exist inside database select and not incomming post");
+				if($bFieldDefineSelection)
+				    echo "<br /><br />";
             }
 			$fields= $newFields;
         }
@@ -2233,15 +2336,17 @@ class STItemBox extends STBaseBox
 				&&
 				$enum!=2	)
             {
-				// alex 08/06/2005:	die Vergleiche auf null od. ""
-				//					m�ssen mit 3 ist gleich Zeichen
-				//					spezifiziert werden, damit 0 durchgeht
-                if( !isset($post[$name])
-					||
-					$post[$name]===null
-                    ||
-                    $post[$name]===""	)
-                {               	                      
+				// alex 08/06/2005:	the compairson to null or "" (null string)
+				//					have to be checkd with 3 equal to signs
+				//					because the zero number should be allowed
+                if( (   !isset($post[$name]) ||
+    					$post[$name]===null ||
+                        $post[$name]===""	      ) &&
+                    (   $this->action == STINSERT ||  // if action is STUPDATE and it be a password field
+                        $this->action == STDELETE ||  // field can be an null string for no update
+                        $this->password != $name  ||  // elsewhere password repetition be defined
+                        isset($post['re_$name'])        )   )
+                {       
 					$this->msg->setMessageId("COLUMNNOTFILLED@", $columnName);
                     return false;
                 }
@@ -2359,11 +2464,11 @@ class STItemBox extends STBaseBox
 					}
 				}
 				if($name==$this->password)
-				{// wenn auf ein Passwort gestossen wird
-				 // soll �berpr�ft werden zwischen Passwort und wiederholtem Passwort,
-				 // sowie das alte Passwort getcheckt werden soll
-				 // wenn die Aktion Update ist und im Array passwordNames mindestens
-				 // drei Eintr�ge vorhanden sind
+				{// if the field is an password
+				 // should be made an check whether new password and repitition be the same
+				 // and also whether the old password was inserted
+				 // only when action is STUPDATE and the array of passwordNames are three 
+				 // are three
 				 	if(	$this->action==STUPDATE
 						and
 						count($this->passwordNames)>=3	)
@@ -2396,17 +2501,22 @@ class STItemBox extends STBaseBox
 							return false;
 						}
 					}
-				 	if(count($this->passwordNames)==3)
-						if($post[$name]!=$post["re_".$name])
+				 	if(count($this->passwordNames) >= 2)
+				 	{
+				 	    echo __FILE__.__LINE__."<br>";
+				 	    st_print_r($post);
+				 	    if( isset($post["re_".$name]) && // if password repetition not be set, password also a null string
+						    $post[$name] != $post["re_".$name]    ) // and for STUPDATE no entry needed
 						{
 							$this->msg->setMessageId("PASSWORDNOTSAME");
 							return false;
 						}
+					}
 				}
 				if(isset($post[$name]))
 					$newPost[$name]= $post[$name];
         }
-		$post= $newPost;
+        //$post= $newPost;
 		//echo __file__.__line__."<br>";
 		//echo "end result of checking files to update inside database:"
 		//st_print_r($post);
@@ -2428,7 +2538,8 @@ class STItemBox extends STBaseBox
 			{
 				if(!is_array($aEnums))
 					$aEnums= array($aEnums);
-				if(count($this->aDisabled[$field["column"]]))
+					if( isset($this->aDisabled[$field["column"]]) &&
+					    count($this->aDisabled[$field["column"]])      )
 				{
 					$this->aDisabled[$field["column"]]= array_merge($this->aDisabled[$field["column"]], $aEnums);
 					return;

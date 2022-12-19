@@ -59,7 +59,7 @@ class STUserSiteCreator extends STSessionSiteCreator
 		$identifier.= $project."</font></h1>";
 		$this->setProjectDisplayName($identifier);
 
-		$descriptions= &STDbTableDescriptions::instance($this->userDb->getName());
+		$descriptions= &STDbTableDescriptions::instance($this->userDb->getDatabaseName());
 		$nrColumn= $descriptions->getColumnName("Query", "ID");
 		$pathColumn= $descriptions->getColumnName("Query", "path");
 		$queryTable= &$this->userDb->getTable("Query");
