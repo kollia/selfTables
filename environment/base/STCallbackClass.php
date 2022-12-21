@@ -21,6 +21,16 @@ class STCallbackClass
 		var $arrangement; // ob die Tabelle bei STLIST horizontal oder vertikal dargestellt wird
 		var $aAcessClusterColumns= array();//die Dynamic-Cluster der Tabelle
 		var	$aTables;
+		/**
+		 * for debugging, whether sql result was showen the first time
+		 * @var boolean
+		 */
+		private $resultShowen= false;
+		/**
+		 * if variable is -1, here will be stored the count of exiting sql rows
+		 * @var integer
+		 */
+		private $count= -1;
 
 		function __construct(&$container, $sqlResult)
 		{
@@ -101,7 +111,7 @@ class STCallbackClass
 		}
 		function countSqlResult()
 		{
-			if(!$this->count)
+			if($this->count == -1)
 				$this->count= count($this->sqlResult);
 			return $this->count;
 		}
@@ -312,9 +322,15 @@ class STCallbackClass
 		{
 			$this->aUnlink[$column]= false;
 		}
-		function &getDatabase()
+		public function &getDatabase()
 		{
 			return $this->db;
+		}
+		public function getTable($tableName)
+		{
+		    STCheck::param($tableName, 0, "string");
+		    
+		    return $this->db->getTable($tableName);
 		}
 }
 ?>

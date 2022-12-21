@@ -1376,7 +1376,7 @@ class STBaseTable
 			$this->selectA($this->Name, $column, $alias, $nextLine, $add);
 			if($fillCallback)
 			{
-				$this->callback($alias, $fillCallback);
+				$this->listCallback($fillCallback, $alias);
 				$this->insertCallback($fillCallback, $alias);
 				$this->updateCallback($fillCallback, $alias);
 				$this->deleteCallback($fillCallback, $alias);

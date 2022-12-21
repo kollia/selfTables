@@ -4,6 +4,43 @@ global $_stdbinserter;
 require_once($_stdbinserter);
 require_once($_stsitecreator);
 
+function descriptionCallback(&$callbackObject, $columnName, $rownum)
+{//print_r($callbackObject->sqlResult[$rownum]);
+    //$callbackObject->echoResult();
+    //echo "file:".__file__." line:".__line__."<br />";
+    if($callbackObject->sqlResult[$rownum]["Description"]==1)
+    {
+        $aResult=	array(	"Name"=>"",
+            "Description"=>"Zugriff auf alle Projekte und Untergruppen "	);
+        $aResult= array($aResult);// es wird eine Zeile vorget�uscht
+    }else
+    {
+        $clusterTable= $callbackObject->getTable("Cluster");
+        $cluster= new STDbSelector($clusterTable);
+        $cluster->select("Project", "Name");
+        $cluster->select("Cluster", "Description");
+        $cluster->where("GroupID=".$callbackObject->sqlResult[$rownum]['Description'], "ClusterGroup");
+        $cluster->execute();
+        $aResult= $cluster->getResult();
+    }
+    $source=   "<table>";
+    foreach($aResult as $row)
+    {
+        $source.=  "	<tr>";
+        $source.=  "		<td>";
+        $source.=  "			<b>";
+        $source.=  "				[".$row["Name"]."]";
+        $source.=  "			</b>";
+        $source.=  "		</td>";
+        $source.=  "		<td>";
+        $source.=  "				".$row["Description"];
+        $source.=  "		</td>";
+        $source.=  "	</tr>";
+    }
+    $source.=  "</table>";
+    $callbackObject->sqlResult[$rownum][$columnName]= $source;
+}
+
 class STUserManagement extends STObjectContainer
 {
 	function __construct($name, &$container, $bInstall= false)
@@ -60,7 +97,7 @@ class STUserManagement extends STObjectContainer
 		    $user->select("NrLogin", "logged in");
 		    $user->select("LastLogin", "last login");
 		    
-		    $groups->select("ID", "Description");
+		    $groups->select("ID", "Description", "descriptionCallback");
 		}else
 		{
 			$user->select("Pwd");
