@@ -78,6 +78,13 @@ class STDbSessionHandler implements SessionHandlerInterface
     }
     public function write(string $sessionId, string $data) : bool
     {
+        if(STCheck::isDebug())
+        {
+            echo "<pre>";
+            echo "------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------<br />";
+            echo "          write database SESSION<br />";
+            echo "</pre>";
+        }
         $err_msg= "";
         if(STCheck::isDebug("session"))
             $this->sUsingFunctions.= "write('$sessionId', [\$data])<br />";
