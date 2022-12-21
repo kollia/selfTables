@@ -32,10 +32,10 @@ class STDbSelector extends STDbTable
 
 		function __construct(&$oTable, $defaultTyp= STSQL_ASSOC, $onError= onErrorStop)
 		{
-			STCheck::paramCheck($oTable, 1, "STBaseTable");
-			STCheck::paramCheck($defaultTyp, 2, "check", $defaultTyp==STSQL_NUM || $defaultTyp==STSQL_ASSOC || $defaultTyp==STSQL_BOTH,
+			STCheck::param($oTable, 0, "STBaseTable");
+			STCheck::param($defaultTyp, 1, "check", $defaultTyp==STSQL_NUM || $defaultTyp==STSQL_ASSOC || $defaultTyp==STSQL_BOTH,
 														"STSQL_NUM, STSQL_ASSOC or STSQL_BOTH");
-			STCheck::paramCheck($onError, 3, "check", $onError==noErrorShow || $onError==onErrorShow || $onError==onErrorStop,
+			STCheck::param($onError, 2, "check", $onError==noErrorShow || $onError==onErrorShow || $onError==onErrorStop,
 														"noErrorShow", "onErrorShow", "onErrorStop");
 
 			$this->defaultTyp= $defaultTyp;
@@ -213,20 +213,20 @@ class STDbSelector extends STDbTable
 		{//echo "function where(";st_print_r($where,0);echo ", ";st_print_r($table);echo ")<br />";
 			Tag::paramCheck($where, 1, "string", "STDbWhere");
 			Tag::paramCheck($table, 2, "string", "STBaseTable", "null");
-
+			
 			if(is_string($where))
 				$where= new STDbWhere($where, $this->Name);
 			if(is_string($table))
 			{
-				$table= $this->container->getTableName($table);
-				$where->forTable($table);
+			    $table= $this->container->getTableName($table);
+			    $where->forTable($table, true);
 				
 			}elseif($table!==null)
 			{// wenn $table ein Objekt von STDbTable ist
-			 // wird zuerst �berpr�ft ob dieser mit add()
-			 // schon hinzugef�gt wurde. Wenn ja, wird der
+			 // wird zuerst gberprüft ob dieser mit add()
+			 // schon hinzugefügt wurde. Wenn ja, wird der
 			 // aus der member-Variable aoToTables genommen
-			 // sonst dieser hinzugef�gt
+			 // sonst dieser hinzugefügt
 			 	$tableName= $table->getName();
 				$where->forTable($tableName);
 			}

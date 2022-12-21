@@ -68,8 +68,10 @@ class STDbWhere
 	    if(typeof($db, "STDatabase"))
 	        $this->sDbName= $db->getDatabaseName();
 	    else if(typeof($db, "STDbTable"))
+	    {
+	        $this->table($db);
 	        $this->sDbName= $db->getDatabase()->getDatabaseName();
-	    else
+	    }else
 	        $this->sDbName= $db;
 	}
 	function isModified()
@@ -96,7 +98,7 @@ class STDbWhere
 	{
 		STCheck::param($table, 0, "string", "STBaseTable", "null");
 		STCheck::param($overwrite, 1, "boolean");		
-		
+
 		if(!$table)
 			return $this->sForTable;
 
