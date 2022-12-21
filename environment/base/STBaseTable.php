@@ -142,30 +142,25 @@ class STBaseTable
 		{
 		    if(typeof($oTable, "STBaseTable"))
 		    {
-		        if(Tag::isDebug())
-		        {
-	                if( STCheck::isDebug("table") ||
-	                    STCheck::isDebug("db.table.fk") )
-	                {
-	                    $check= "table";
-	                    if(STCheck::isDebug("db.table.fk"))
-	                        $ckeck= "db.table.fk";
-                        $space= STCheck::echoDebug($check, "create new ".get_class($this)."::<b>".$oTable->Name."</b> with ID:".$this->ID." from ".get_class($oTable)."::<b>".$oTable->Name."</b> with ID:".$oTable->ID);
-                        for($c= 0; $c < $space; $c++)
-                            echo " ";
-                        echo "old <b>FKs</b>:<br>";
-                        st_print_r($oTable->aBackJoin, 3, $space);
-                        $this->copy($oTable);
-                        for($c= 0; $c < $space; $c++)
-                            echo " ";
-                        echo "new <b>FKs</b>:<br>";
-                        st_print_r($this->aBackJoin, 3, $space);
-                        
-	                }else // no debugging for "table" or "db.table.fk" but debugging defined
-	                    $this->copy($oTable);
-		        }else
-		            $this->copy($oTable);
-	     	    //$this->Name= $oTable->Name;
+                if( STCheck::isDebug("table") ||
+                    STCheck::isDebug("db.table.fk") )
+                {
+                    $check= "table";
+                    if(STCheck::isDebug("db.table.fk"))
+                        $check= "db.table.fk";
+                    $space= STCheck::echoDebug($check, "create new ".get_class($this)."::<b>".$oTable->Name."</b> with ID:".$this->ID." from ".get_class($oTable)."::<b>".$oTable->Name."</b> with ID:".$oTable->ID);
+                    for($c= 0; $c < $space; $c++)
+                        echo " ";
+                    echo "old <b>FKs</b>:<br>";
+                    st_print_r($oTable->aBackJoin, 3, $space);
+                    $this->copy($oTable);
+                    for($c= 0; $c < $space; $c++)
+                        echo " ";
+                    echo "new <b>FKs</b>:<br>";
+                    st_print_r($this->aBackJoin, 3, $space);
+                    
+                }else // no debugging for "table" or "db.table.fk" but debugging defined
+                    $this->copy($oTable);
 		    }else
 		        $this->Name= $oTable;
 	        $this->bCorrect= true;
@@ -196,6 +191,7 @@ class STBaseTable
 	    $oldID= $this->ID;
 	    $this->ID= $__static_global_STBaseTable_ID;
 	    STCheck::echoDebug("table", "clone table ".$this->Name." from ID:$oldID to new ID:".$this->ID);
+	    
 	    $this->bInsert= true;
 	    $this->bUpdate= true;
 	    $this->bDelete= true;
@@ -217,6 +213,16 @@ class STBaseTable
 	    $this->bModifyFk= true;//ob die Tabelle anhand der ForeignKeys Modifiziert werden soll
 	    $this->listArrangement= STHORIZONTAL;//bestimmt das Layout der STListBox
 	    $this->oSearchBox= null; // Suchen-Box bei Auflistung der Tabelle anzeigen
+	    
+	    //---------------------------------------------------------------------------------
+	    // foreign keys and backjoins should always same like in first database table
+	    // so make an direct link from copied table
+	    $main= $this->db->getTable($this->Name);
+	    $this->FK= &$main->FK;
+	    $this->aFks= &$main->aFks;
+	    $this->aBackJoin= &$main->aBackJoin;
+	    //---------------------------------------------------------------------------------
+	    
 	}
 	function title($title)
 	{
@@ -243,9 +249,13 @@ class STBaseTable
      	$this->error= $Table->error;
     	$this->errorText= $Table->errorText;
      	$this->Name= $Table->Name;
-    	$this->FK= $Table->FK;
-		$this->aFks= $Table->aFks;
-		$this->aBackJoin= $Table->aBackJoin;
+     	//---------------------------------------------------------------------------------
+     	// foreign keys and backjoins should always same like in first database table
+     	// so make an direct link from copied table
+    	$this->FK= &$Table->FK;
+		$this->aFks= &$Table->aFks;
+		$this->aBackJoin= &$Table->aBackJoin;
+		//---------------------------------------------------------------------------------
 		$this->bModifyFk= $Table->bModifyFk;
     	$this->identification= $Table->identification;
     	$this->showTypes= $Table->showTypes;
@@ -856,19 +866,19 @@ class STBaseTable
 		}
     protected function fk($ownColumn, &$toTable, $otherColumn= null, $join= null, $where= null)
     {// echo "function fk($ownColumn, &$toTable, $otherColumn, $join, $where)<br />";
-		Tag::paramCheck($ownColumn, 1, "string");
-		Tag::paramCheck($toTable, 2, "STBaseTable", "string");
-		Tag::paramCheck($otherColumn, 3, "string", "empty(string)", "null");
-		Tag::paramCheck($join, 4, "check", $join===null || $join==="inner" || $join==="left" || $join==="right",
+		STCheck::param($ownColumn, 0, "string");
+		STCheck::param($toTable, 1, "STBaseTable", "string");
+		STCheck::param($otherColumn, 2, "string", "empty(string)", "null");
+		STCheck::param($join, 3, "check", $join===null || $join==="inner" || $join==="left" || $join==="right",
 											"null", "inner", "left", "right");
-		Tag::paramCheck($where, 5, "string", "empty(String)", "STDbWhere", "null");
+		STCheck::param($where, 4, "string", "empty(String)", "STDbWhere", "null");
 		
 		if(typeof($toTable, "STBaseTable"))
 			$toTableName= $toTable->getName();
 		else
 		{
 			$toTableName= $toTable;
-			$toTable= null;//$this->container->getTable($toTableName);
+			$toTable= $this->container->getTable($toTableName);
 		}
 		// alex 26/04/2005:	where und otherColumn tauschen wenn n�tig
 		if(	typeof($otherColumn, "stdbwhere") ||
@@ -916,8 +926,7 @@ class STBaseTable
 						break;
 					}
 				}
-				if(!$bInTable)
-					echo "<b>WARNING</b> column $ownColumn is not in Table ".$this->Name."<br />";
+				STCheck::warning(!$bInTable, "STBaseTable::fk()", "column $ownColumn is not in Table ".$this->Name);
 			}
 
 		$bSet= false;
@@ -928,8 +937,10 @@ class STBaseTable
 			{
 				if($content["own"]===$ownColumn)
 				{
-					$this->aFks[$toTableName][$key]["other"]= $otherColumn;
-					$this->aFks[$toTableName][$key]["join"]= $join;
+					$this->aFks[$toTableName][$key]['other']= $otherColumn;
+					$this->aFks[$toTableName][$key]['join']= $join;
+					$this->aFks[$toTableName][$key]['table']= &$toTable;
+					$toTable->setBackJoin($this->Name);
 					$bSet= true;
 				}
 			}
@@ -957,8 +968,8 @@ class STBaseTable
 		$this->aBackJoin[]= $tableName;
 		if(STCheck::isDebug("db.table.fk"))
 		{
-		    $space= STCheck::echoDebug("db.table.fk", "backjoin in table <b>".$this->getName()."</b> was new defined to:");
-		    st_print_r($this->aBackJoin, 2, 55);
+		    $space= STCheck::echoDebug("db.table.fk", "backjoin in table <b>".$this->getName()."</b> with ID:".$this->ID." was new defined to:");
+		    st_print_r($this->aBackJoin, 2, $space);
 		}
 	}
 	function createAliases(&$aliasTables)

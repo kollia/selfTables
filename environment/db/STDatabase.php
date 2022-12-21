@@ -1432,7 +1432,14 @@ abstract class STDatabase extends STObjectContainer
 	//var $counter= 1;
 	function getTableStatement($oMainTable, $tableName, &$aTableAlias, &$maked, $bMainTable)
 	{
-	    
+	    if(STCheck::isDebug())
+	    {
+	        $sMessage= "make table statement from table $tableName which is";
+            if(!$bMainTable)
+                $sMessage.= " <b>not</b>";
+            $sMessage.= " the main table";
+	        STCheck::echoDebug("db.statements.table", $sMessage);
+	    }
 		$statement= "";
 		$tableStructure= $this->getTableStructure($this);
 		if($oMainTable->getName()!==$tableName)
@@ -1443,12 +1450,14 @@ abstract class STDatabase extends STObjectContainer
 			$aNeededColumns= $oTable->getSelectedColumns();
 		else
 			$aNeededColumns= $oTable->getIdentifColumns();
-		if(Tag::isDebug("db.statements.table"))
+		if( STCheck::isDebug("db.statements.table") &&
+		    $bMainTable /*columns only interrest by Maintable*/   )
 		{
 		    $space= STCheck::echoDebug("db.statements.table", "needed columns for table ".$oTable->getName());
 			echo "<pre>";
-			st_print_r($aTableAlias, 1, $space);
 			st_print_r($aNeededColumns, 2, $space);
+			STCheck::echoDebug("db.statements.table", "from table aliass:");
+			st_print_r($aTableAlias, 1, $space);
 			echo "</pre><br />";
 		}
 		$ownTableAlias= $aTableAlias[$oTable->getName()];
@@ -1463,9 +1472,8 @@ abstract class STDatabase extends STObjectContainer
     	    $msg= "make ";
     	else
     	    $msg= "do not need ";
-    	$msg.= "foreign Keys for table ".get_class($oTable).":'".$oTable->getName()."' width ID:".$oTable->ID;
-    	$space= STCheck::echoDebug("db.statements.table", $msg);
-    	
+    	$msg.= "foreign Keys for table ".get_class($oTable).":'".$oTable->getName()."' with ID:".$oTable->ID;
+    	$space= STCheck::echoDebug("db.statements.table", $msg);    	
     	if($exist > 0)
     	   st_print_r($fk,3,$space);
     }
@@ -1610,7 +1618,7 @@ abstract class STDatabase extends STObjectContainer
         $msg.= "foreign Keys (BackJoin's) ";
         if($exist == 0)
             $msg.= "found ";
-        $msg.= "to own table '".$oTable->getName()."' ";
+        $msg.= "to own table '".$oTable->getName()."' with ID:".$oTable->ID." ";
         if($exist > 0)
             $msg.= "from follow tables:";
         $space= STCheck::echoDebug("db.statements.table", $msg);
@@ -1653,6 +1661,7 @@ abstract class STDatabase extends STObjectContainer
 			}// end of if($join)
 		}// end of foreach($oTable->aBackJoin)
 		if( STCheck::isDebug("db.statements.table") &&
+		    $bMainTable &&
 		    count($maked) < count($aTableAlias)           )
 		{
 		    $space= STCheck::echoDebug("db.statements.table", "need select for tables:");
@@ -1662,7 +1671,7 @@ abstract class STDatabase extends STObjectContainer
 		    $space= STCheck::echoDebug("db.statements.table", "structure of tables are");
 		    st_print_r($tableStructure, 20, $space);
 		}
-		STCheck::alert(count($maked) < count($aTableAlias), "STDatabase::getTableStatement()", "do not join to all alias tables see STCheck::debug('db.statements.table')");
+		STCheck::alert($bMainTable && count($maked) < count($aTableAlias), "STDatabase::getTableStatement()", "do not join to all alias tables see STCheck::debug('db.statements.table')");
 		STCheck::echoDebug("db.statements.table", "TableStatement - Result from table '".$oTable->getName()."'= '$statement'");
 		return $statement;
 	}
@@ -1671,13 +1680,13 @@ abstract class STDatabase extends STObjectContainer
 	    if(STCheck::isDebug("db.table.fk"))
 	    {
 	        $space= STCheck::echoDebug("db.table.fk", "search join tables where need also for existing tables:");
-	        st_print_r($aAliases, 2, $space+55);
+	        st_print_r($aAliases, 2, $space);
 	    }
 	    $this->searchJoinTablesR($this->aTableStructure['struct'], $aAliases, false);
 	    if(STCheck::isDebug("db.table.fk"))
 	    {
 	        $space= STCheck::echoDebug("db.table.fk", "result of joining tables need inside selection-statement:");
-	        st_print_r($aAliases, 2, $space+55);
+	        st_print_r($aAliases, 2, $space);
 	    }
 	}
 	private function searchJoinTablesR($aTableStructure, &$aAliases, $bNeedBefore)
@@ -1932,7 +1941,7 @@ abstract class STDatabase extends STObjectContainer
 				if(STCheck::isDebug("db.table.fk"))
 				{
     			    $space= STCheck::echoDebug("db.table.fk", "Foreign Key structure from tables grow to:");
-    			    st_print_r($this->aTableStructure,20,$space+55);
+    			    st_print_r($this->aTableStructure,20,$space);
 				}
     		}
 		}
