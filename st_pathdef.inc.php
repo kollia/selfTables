@@ -6,7 +6,7 @@
 	//        ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 	//
 	//     true		             -  only set to debug and check parameters in some method's (true is an boolean no string)
-	//     query                 -  show incomming query of GET or POST URL's
+	//     query                 -  show incomming query of GET /POST URL's or uploaded FILES
     //     query.limitation      -  show manipulation of query for new container or action set
 	//     performance           -  show needed performance of time from hole site
 	//     db.statement          -  show created statements of self-Tables
@@ -256,21 +256,24 @@
 		/**********************************************************************\
 		|**         selfTables - CMS System                                  **|
 		\**********************************************************************/
-		$DBin_UserDatabase=       "UserManagement";
+		//$DBin_UserDatabase=       "UserManagement";
 		// UserManagement Login
-		$USERCLASS=               "STUser";
+		//$USERCLASS=               "STUser";
 		$_stusersession=                    $_stcmstools_path."/usermanagement/STUserSession.php";
+		$_stusermanagement=					$_stcmstools_path."/usermanagement/STUserManagement.php";
+		$_stuserclustergroupmanagement=     $_stcmstools_path."/usermanagement/STUserClusterGroupManagement.php";
+		
+		$_stclustergroupmanagement=			$_stcmstools_path."/usermanagement/STClusterGroupManagement.php";
+		
 		$_stum_installcontainer=			$_stcmstools_path."/usermanagement/STUM_InstallContainer.php";
 		$_stusermanagement_install=			$_stcmstools_path."/usermanagement/stusermanagement_install.php";
 		$_stuserprofilecontainer=           $_stcmstools_path."/usermanagement/STUserProfileContainer.php";
-		$_stusermanagement=					$_stcmstools_path."/usermanagement/STUserManagement.php";
 		$_stusermanagementsession=			$_stcmstools_path."/usermanagement/STUserManagementSession.php";
 		$_stuserprojectmanagement=	        $_stcmstools_path."/usermanagement/STUserProjectManagement.php";
 		$_stprojectmanagement=				$_stcmstools_path."/usermanagement/STProjectManagement.php";
 		$_stpartitionmanagement=			$_stcmstools_path."/usermanagement/STPartitionManagement.php";
 		$_stusergroupmanagement=			$_stcmstools_path."/usermanagement/STUserGroupManagement.php";
 		$_stgroupgroupmanagement=			$_stcmstools_path."/usermanagement/STGroupGroupManagement.php";
-		$_stclustergroupmanagement=			$_stcmstools_path."/usermanagement/STClusterGroupManagement.php";
 		$_stgallerycontainer_install=		$_stcmstools_path."/gallery/STGalleryContainer_install.php";
 		$_stgallerycontainer=				$_stcmstools_path."/gallery/STGalleryContainer.php";
 		$_stsubgallerycontainer=			$_stcmstools_path."/gallery/STSubGalleryContainer.php";

@@ -14,6 +14,7 @@ class STClusterGroupManagement extends STObjectContainer
 	}
 	function create()
 	{
+	    $this->needTable("Cluster");
 		$clustergroup= &$this->needTable("ClusterGroup");
 		$clustergroup->setDisplayName("Gruppen-Zuweisung zum gewählten Cluster");
 		$clustergroup->nnTable("Zugriff");

@@ -111,7 +111,7 @@ class STObjectContainer extends STBaseContainer
 	{
 		STCheck::paramCheck($sTableName, 1, "string");
 		STCheck::paramCheck($bEmpty, 2, "null", "boolean");
-
+		
 		$this->initContainer();
 		
 		$orgTableName= $this->getTableName($sTableName);
@@ -252,22 +252,19 @@ class STObjectContainer extends STBaseContainer
 			$this->createContainer();
 		}
 		if(!count($this->tables))
-  		{
-			$tableNames= $this->db->list_tables($onError);
-			// alex 17/05/2005:	damit die Funktionen nicht im Kreis rennen
-			//					habe ich den parameter bAllByNone eingef�hrt,
-			//					welcher bei (true) besagt, dass wenn noch keine Tabelle
-			//					in der gebrauchten tables Liste ist,
-			//					dass sie mit allen aus der Datenbank
-			//					vervollst�ndigt wird.
-			$bAllByNone= false;
-			// alex 17/05/2005:	die Tabellen werden nun von der �berschriebenen Funktion
-			//					getTable() aus dem Datenbank-Objekt erzeugt.
-			foreach($tableNames as $name)
-			{
-			    $keyTableName= strtolower($name); 
-			    $this->tables[$keyTableName]= $this->db->getTable($name);//, $bAllByNone);
-			}
+		{
+  		    if(!count($this->oGetTables))
+  		    {
+    			$tableNames= $this->db->list_tables($onError);
+    			// alex 17/05/2005:	die Tabellen werden nun von der �berschriebenen Funktion
+    			//					getTable() aus dem Datenbank-Objekt erzeugt.
+    			foreach($tableNames as $name)
+    			{
+    			    $keyTableName= strtolower($name); 
+    			    $this->oGetTables[$keyTableName]= clone $this->db->getTable($name);//, $bAllByNone);
+    			}
+  		    }else
+  		        return $this->oGetTables; 
 		}
 		//st_print_r($this->tables, 1);
 		return $this->tables;
@@ -833,7 +830,9 @@ class STObjectContainer extends STBaseContainer
     			exit;
     		}
 		}
-		STBaseContainer::execute($externSideCreator, $onError);
+		$result= STBaseContainer::execute($externSideCreator, $onError);
+		if($result != "NOERROR")
+		    return $result;
 		$action= $this->getAction();
 		if($action == "")
 		{
@@ -859,10 +858,7 @@ class STObjectContainer extends STBaseContainer
 			$result= $this->deleteTableEntry($get_vars);
 			
 		}else
-		{
 			$this->makeChooseTags($get_vars);
-			$result= "NOERROR";
-		}
 		return $result;
 	}
 	function makeChooseTags($get_vars)

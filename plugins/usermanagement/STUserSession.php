@@ -9,14 +9,35 @@ class STUserSession extends STDbSession
 	var $bLog;
 	var	$userManagementProjectName= "UserManagement";
 	// ATTENTION - group name has to be exist inside SQL Group Table
-	var $loggedinGroup= "LOGGED_IN"; // user hat auf die Cluster zugriff,
-									// wenn sie mit dieser Gruppe spezifiziert wurden,
-									// sobald er sich registriert hat
-	var $onlineGroup= "ONLINE";	// user hat immer auf diese Cluster Zugriff
-								// wenn sie mit dieser Gruppe spezifiziert wurden.
-								// auch wenn er sich gar nicht registriert hat
-	var	$allAdminCluster= "allAdmin";	// user has in every project
-										// access to all clusters
+	/**
+	 * user has always access to projects
+	 * linked with this group.<br />
+	 * (do not need to be logged-in)
+	 * @var string
+	 */
+	var $onlineGroup= "ONLINE";	
+	/**
+	 * user has access to projects
+	 * linked with this group
+	 * only if logged-in 
+	 * @var string
+	 */
+	var $loggedinGroup= "LOGGED_IN";
+	/**
+	 * user linked with this cluster
+	 * is administrator and has
+	 * access to all other clusters
+	 * and so also to all projects
+	 * @var string
+	 */
+	var	$allAdminCluster= "allAdmin";
+	/**
+	 * main domain name for all user
+	 * registerd with this usermanagement
+	 * @var string
+	 */
+	var $mainDOMAIN= "custom";
+    
 	var	$sGroupTable= "Group";
 
 	// all for own Projects

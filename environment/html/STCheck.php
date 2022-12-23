@@ -144,8 +144,7 @@ class STCheck
 	private static function writeIntentedLineB($backtraceCount, $prefStr, $value, $deep, $break= true)
 	{	
 		$backtraceCount*= 2;
-		for($n= 0; $n < $backtraceCount; ++$n)
-			echo "&#160;";
+		STCheck::echoSpace($backtraceCount);
 		echo $prefStr;
 		if(	is_array($value) ||
 			is_object($value)	)
@@ -501,6 +500,11 @@ class STCheck
 				return false;
 			}
 			return true;
+		}
+		public static function echoSpace(int $count)
+		{
+		    for($n= 0; $n < $count; ++$n)
+		        echo "&#160;";
 		}
 		/**
 		 * Debug message whitch should be showen on screen.<br />

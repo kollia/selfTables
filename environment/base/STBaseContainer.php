@@ -46,7 +46,7 @@ class STBaseContainer extends BodyTag
 	           $global_array_all_exist_stobjectcontainers;
 		
 		Tag::paramCheck($name, 1, "string");
-		Tag::echoDebug("container", "create new container-object <b>$name</b>(".get_class($this).")");
+		Tag::echoDebug("container", "create new container-object ".get_class($this)."(<b>$name</b>)");
 
 		$this->name= $name;
 		Tag::alert(isset($global_array_all_exist_stobjectcontainers[$name]),
@@ -323,7 +323,7 @@ class STBaseContainer extends BodyTag
 			$this->sBackContainer= $this->getName();
 
 		if(!isset($this->sBackButton))
-			$this->sBackButton= $this->oExternSideCreator->sBackButton;
+		    $this->sBackButton= $this->oExternSideCreator->sBackButton;
 		return "NOERROR";
 	}
 	protected function createContainer()
@@ -331,8 +331,8 @@ class STBaseContainer extends BodyTag
 	    if(!isset($this->bCreated))// if bCreated is false, container is inside the creation phase
 	    {
 			$this->bCreated= false;
-			STCheck::echoDebug("container", "starting create routine for container <b>".$this->name."</b>(".get_class($this).")");
-	    	$this->create();
+			STCheck::echoDebug("container", "starting create routine for container ".get_class($this)."(<b>$this->name</b>)");
+			$this->create();			
 			$this->bCreated= true;
 		}
 	}
@@ -350,17 +350,29 @@ class STBaseContainer extends BodyTag
 		    }else if($this->bCreated !== true)
 		        return; // container is currently inside the creation phase
 			$this->bInitialize= false;
-			STCheck::echoDebug("container", "starting initial routine for container <b>".$this->name."</b>(".get_class($this).")");
+			STCheck::echoDebug("container", "starting initial routine for container ".get_class($this)."(<b>$this->name</b>)");
 			$this->init();
 			$this->bInitialize= true;
 		}
 	}
-    protected function create()
-    {//echo "create container ".get_class($this)."(".$this->name.")<br />";
-       // this function is only a hook for this template-pattern
-    	 // and startig the creation in the initContainer/execute
-    	 // when this object is needed
-		 // and also in some methodes where tables needed
+    function create()
+    {   
+        if(STCheck::isDebug())
+        {
+            STCheck::echoDebug("container", "create routine for container ".get_class($this)."(<b>$this->name</b>)");
+            $currentObject= get_class($this);
+            if($currentObject != "STBaseContainer")
+            {
+                echo __FILE__.__LINE__."<br>";
+                echo "method STBaseContainer::create() shouldn't called from $currentObject<br />";
+                echo "  <b>WARNING</b> --------------------------------------------------------------------------------------- <b>WARNING</b><br />";
+                showErrorTrace();
+            }
+        }
+        // this function is only a hook for this template-pattern
+        // and startig the creation in the initContainer/execute
+        // when this object is needed
+        // and also in some methodes where tables needed
     }
     protected function init()
     {//echo "initial container ".get_class($this)."(".$this->name.")<br />";
@@ -557,7 +569,23 @@ class STBaseContainer extends BodyTag
 //				"on first call of getContainer() for '$containerName' second parameter must be an defined class-name");
 		if($className == null)
 			$className= "STObjectContainer";
-		STCheck::echoDebug("container", "create new container $containerName as <b>class:</b>$className");
+		if(STCheck::isDebug("container"))
+		{
+    		$space= STCheck::echoDebug("container", "create new container $containerName as <b>class:</b>$className");
+    		STCheck::echoSpace($space);
+    		echo "<b>WARNING</b> --------------------------------------------------------------------------------------- <b>WARNING</b><br />";
+    		STCheck::echoSpace($space);
+    		echo "        maybe <b>$containerName</b> will be created to late<br>";
+    		STCheck::echoSpace($space);
+    		echo "        try to create earlyer<br>";
+    		STCheck::echoSpace($space);
+    		echo "             (inside constructer when objects used<br>";
+    		STCheck::echoSpace($space);
+    		echo "              or immediately in index file<br>";
+    		STCheck::echoSpace($space);
+    		echo "<b>WARNING</b> --------------------------------------------------------------------------------------- <b>WARNING</b><br />";
+    		showErrorTrace();
+		}
 		$containerObj= new $className($containerName, $fromContainer);
 		return $containerObj;
 	}

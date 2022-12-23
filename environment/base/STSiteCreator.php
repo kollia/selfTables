@@ -368,7 +368,37 @@ class STSiteCreator extends HtmlTag
 				$siteCreator= &$this;// zugriff auf gegenwärtiges Objekt in der neuen Seite
 				require($this->uRequireSites[$get_vars["table"]]["site"]);
 			}
-
+			
+			if(STCheck::isDebug("container"))
+			{
+			    echo "<br />";
+			    $msg= "execute container ".get_class($this)."(<b>".$this->tableContainer->getName()."</b>)";			    
+			    if( isset($this->db) &&
+			        $this->db != NULL          )
+			    {
+			        $msg.= " with database ".get_class($this->db)."(<b>".$this->db->getName()."</b>)";
+			    }else
+			        $msg.= " with no database";
+		        STCheck::echoDebug("container", $msg);
+		        //st_print_r()
+		        if(	isset($get_vars["table"]) &&
+		            $get_vars["table"] != ""		)
+		        {
+		            $msg= "     on table     <b>".$get_vars["table"]."</b>";
+		        }elseif(typeof($this->tableContainer, "STObjectContainer"))
+		            $msg= "with no explicit <b>table</b>";
+		        else
+		            $msg= "with no table";
+		        STCheck::echoDebug("container", $msg);		        
+		        if(	isset($get_vars["action"]) &&
+		            $get_vars["action"] != ""		)
+		        {
+		            $msg= "    and by action <b>".$get_vars["action"]."</b>";
+		        }else
+		            $msg= "with unknown action";
+	            STCheck::echoDebug("container", $msg);
+	            echo "<br />";
+			}
 			// create first the container where will be set the maintable / other tables
 			$this->tableContainer->setLanguage($this->sLanguage);
 			//$this->tableContainer->createContainer();

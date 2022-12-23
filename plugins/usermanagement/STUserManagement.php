@@ -1,14 +1,19 @@
 <?php
 
-global $_stdbinserter;
+//global $_stdbinserter;
 require_once($_stdbinserter);
 require_once($_stsitecreator);
+require_once($_stuserclustergroupmanagement);
+
+function groupListCallback(&$callbackObject, $columnName, $rownum)
+{
+}
 
 function descriptionCallback(&$callbackObject, $columnName, $rownum)
 {//print_r($callbackObject->sqlResult[$rownum]);
     //$callbackObject->echoResult();
     //echo "file:".__file__." line:".__line__."<br />";
-    if($callbackObject->sqlResult[$rownum]["Description"]==1)
+    if($callbackObject->getValue() == 1)
     {
         $aResult=	array(	"Name"=>"",
             "Description"=>"Zugriff auf alle Projekte und Untergruppen "	);
@@ -38,21 +43,31 @@ function descriptionCallback(&$callbackObject, $columnName, $rownum)
         $source.=  "	</tr>";
     }
     $source.=  "</table>";
-    $callbackObject->sqlResult[$rownum][$columnName]= $source;
+    $callbackObject->setValue($source);
+    
+    if( $callbackObject->sqlResult[$rownum]["Group"] == "ONLINE" ||
+        $callbackObject->sqlResult[$rownum]["Group"] == "LOGGED_IN" )
+    {
+        $callbackObject->noUnlinkData("delete");
+    }
 }
 
 class STUserManagement extends STObjectContainer
 {
+    var $userClusterGroup= null;
+    
 	function __construct($name, &$container, $bInstall= false)
 	{
 		Tag::paramCheck($name, 1, "string");
 		Tag::paramCheck($container, 2, "STObjectContainer");	
 		
+		STCheck::echoDebug("container", "create new container-object ".get_class($this)."(<b>$name</b>)");
 		STObjectContainer::__construct($name, $container);
+		$this->userClusterGroup= new STUserClusterGroupManagement("UserClusterGroupManagement", $this->getDatabase());
 	}
 	function create()
 	{
-	    $this->setDisplayName("UserManagement");
+	    $this->setDisplayName("ProjectManagement");
 	    $this->accessBy("STUM-UserAccess");
 		//$this->needContainer("projects");
 	    
@@ -75,15 +90,9 @@ class STUserManagement extends STObjectContainer
 	       
 	    $groups= &$this->needTable("Group");
 	    $groups->setDisplayName("Groups");
-	    $groups->select("Name", "Group");
-	    $groups->setMaxRowSelect(100);
 	    
 		$project= &$this->needTable("Project");
 		$project->setDisplayName("existing Projects");
-		$project->select("Name", "Project");
-		$project->select("Description");
-		$project->select("Path", "Position");
-		$project->orderBy("Name");
 		$this->setFirstTable("Project");
 	}
 	function init()
@@ -91,13 +100,31 @@ class STUserManagement extends STObjectContainer
 	    $action= $this->getAction();
 		$user= &$this->needTable("User");
 		$groups= &$this->needTable("Group");
+		
 		$project= &$this->needTable("Project");
+		$project->select("Name", "Project");
+		$project->select("Description");
+		$project->select("Path", "Position");
+		$project->orderBy("Name");
+		
 		if($action==STLIST)
 		{
+		    $session= &STUserSession::instance();
+		    
+		    STCheck::echoDebug("container", "new linked object defined to ".get_class($this)."(<b>$this->name</b>)");
 		    $user->select("NrLogin", "logged in");
 		    $user->select("LastLogin", "last login");
 		    
+		    $groups->select("GroupType", "Domain");
+		    $groups->preSelect("GroupType", $session->mainDOMAIN);
+		    $groups->disabled("GroupType");
+		    $groups->select("Name", "Group");
 		    $groups->select("ID", "Description", "descriptionCallback");
+		    $groups->orderBy("GroupType");
+		    $groups->orderBy("Name");
+		    $groups->setMaxRowSelect(50);
+		    
+		    $project->namedLink("Project", $this->userClusterGroup);
 		}else
 		{
 			$user->select("Pwd");

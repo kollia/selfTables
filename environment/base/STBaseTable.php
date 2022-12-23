@@ -2411,7 +2411,7 @@ class STBaseTable
 	    {
     		STCheck::param($which, 0, "string");
     		STCheck::param($aliasColumn, 1, "string");
-    		STCheck::param($address, 2, "STBaseContainer", "STBaseTable", "null");
+    		STCheck::param($address, 2, "string", "STBaseContainer", "STBaseTable", "null");
     		STCheck::param($valueColumn, 3, "string", "null");
 	    }
 		
@@ -2490,25 +2490,66 @@ class STBaseTable
 		$this->aActiveLink["column"]= $alias;
 		$this->aActiveLink["represent"]= $representColumnValue;
 	}
-	// alex 19/04/2005:	$address darf auch ein STBaseTable
-	// alex 08/06/2005: oder STObjectContainer sein
-	function link($column, $address= null)
+	/**
+	 * define column with link to address
+	 * where the name always the alias name of the column.<br />
+	 * The parameter url limitation stget[limit] will be set to table with column and content
+	 * 
+	 * @param string $alias alias or column name of column
+	 * @param object $address can be an url string, STBasetable or STBaseContainer object.<br />
+	 *                        also the name of the container or table can be given.<br />
+	 *                        if address is null it will be set the limitation but to the same current container
+	 */
+	public function link(string $alias, $address= null)
 	{
-		$this->linkA("link", $column, $address, null);
+	    $this->linkA("link", $alias, $address, null);
 	}
-	// alex 19/04/2005:	$address darf auch ein STBaseTable
-	// alex 08/06/2005: oder STObjectContainer sein
-	function namedLink($column, $address= null)
+	/**
+	 * define column with link to address
+	 * where the name is the content of the column.<br />
+	 * The parameter url limitation stget[limit] will be set to table with column and content
+	 * 
+	 * @param string $alias alias or column name of column
+	 * @param object $address can be an url string, STBasetable or STBaseContainer object.<br />
+	 *                        also the name of the container or table can be given.<br />
+	 *                        if address is null it will be set the limitation but to the same current container
+	 */
+	public function namedLink(string $alias, $address= null)
 	{
-		$this->linkA("namedlink", $column, $address);
+	    $this->linkA("namedlink", $alias, $address);
 	}
-	function namedColumnLink($aliasColumn, $valueColumn= "", $address= null)
+	/**
+	 * 
+	 * define column with link to address
+	 * where the name is the content of the column.<br />
+	 * The parameter url limitation stget[limit] will be set to table
+	 * with column and content from second parameter $valueColumn
+	 * 
+	 * @param string $aliasColumn alias or column name of column
+	 * @param string $valueColumn the alias or column name for limitation.<br />
+	 *                            (but limitation name is always the column name)
+	 * @param object $address can be an url string, STBasetable or STBaseContainer object.<br />
+	 *                        also the name of the container or table can be given.<br />
+	 *                        if address is null it will be set the limitation but to the same current container
+	 */
+	public function namedColumnLink(string $aliasColumn, string $valueColumn, $address= null)
 	{
 		if(!$valueColumn)
 		    $valueColumn= $aliasColumn;
 		$this->linkA("namedcolumnlink", $aliasColumn, $address, $valueColumn);
 	}
-	function namedPkLink($aliasColumn, $address= null)
+	/**
+	 * define column with link to address
+	 * where the name is the content of the column.<br />
+	 * The parameter url limitation stget[limit] will be set to table 
+	 * with column and content from primary key
+	 * 
+	 * @param string $aliasColumn alias or column name of column
+	 * @param object $address can be an url string, STBasetable or STBaseContainer object.<br />
+	 *                        also the name of the container or table can be given.<br />
+	 *                        if address is null it will be set the limitation but to the same current container
+	 */
+	public function namedPkLink(string $aliasColumn, $address= null)
 	{
 		$this->namedColumnLink($aliasColumn, $this->sPKColumn, $address);
 	}

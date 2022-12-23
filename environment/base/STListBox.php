@@ -1137,6 +1137,7 @@ class STListBox extends STBaseBox
   					}
   				}else
 				{
+				    $extraField= null;
 					$key= $columnKey;
 				}
 
@@ -1425,10 +1426,10 @@ class STListBox extends STBaseBox
 						}
 						if($extraField=="check")
 						{
-						    echo __FILE__.__LINE__."<br>";
+						/*    echo __FILE__.__LINE__."<br>";
 						    echo "column:$columnKey<br>";
 						    st_print_r($this->address);
-						    st_print_r($this->asDBTable->aCheckDef);
+						    st_print_r($this->asDBTable->aCheckDef);*/
 							$input= new InputTag();
 								$input->type("checkbox");
 								$input->name($createdColumn."[".$row."]");  

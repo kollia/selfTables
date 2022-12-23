@@ -53,7 +53,7 @@ class STDbWhere
 			if($this->check($statement))
 				$this->array[]= $statement;
 			else
-				STCheck::error(1, "STDbWhere::check()", "where statement isn't correct (where ".$statement.")");
+				STCheck::is_error(1, "STDbWhere::check()", "where statement isn't correct (where ".$statement.")");
 		}
 		if(	isset($tableName) &&
 			$tableName !== ""		)
