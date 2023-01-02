@@ -81,6 +81,41 @@ class STDbMySql extends STDatabase
 		}
 	}
 	/**
+	 * return version of mysql
+	 * {@inheritDoc}
+	 * @see STDatabase::getServerVersion()
+	 */
+	public function getServerVersion() : array
+	{
+	    if(isset($this->mysqlVersion))
+	        return $this->mysqlVersion;
+        $version= $this->conn->get_server_info();
+        $this->mysqlVersion= array();
+	    $preg= null;
+	    if(preg_match("/([0-9^.,]+).([0-9]+).([0-9]+)/", $version, $preg))
+	    {
+	        $this->mysqlVersion['mayor']= $preg[1];
+	        $this->mysqlVersion['minor']= $preg[2];
+	        $this->mysqlVersion['revision']= $preg[3];
+	    }
+	    $this->mysqlVersion['exact']= $version; 
+	    return $this->mysqlVersion;
+	}
+	/**
+	 * return database engine as addendum string
+	 * which engine should used for creation
+	 * {@inheritDoc}
+	 * @see STDatabase::getAddingEngineString()
+	 */
+	public function getAddingEngineString() : string
+	{
+	    if($this->requiredVersion("8.0.0"))
+	        $engine= "ENGINE=InnoDb";
+        else
+            $engine= "TYPE=InnoDb";
+        return $engine;
+	}
+	/**
 	*  close connection to database
 	*/
 	function closeConnection()
@@ -183,7 +218,20 @@ class STDbMySql extends STDatabase
 		    if($statement == "SHOW COLUMNS FROM ID")
 		        showErrorTrace();
 		}
-		$this->lastDbResult = $this->conn->query($statement);
+		try{
+		    $this->lastDbResult = $this->conn->query($statement);
+		}catch(mysqli_sql_exception $ex)
+		{
+		    $this->errno();
+		    if(STCheck::isDebug())
+		    {
+    		    if(!STCheck::isDebug("db.statement"))
+    		        echo "<b>statement:</b>$statement<br />";
+                echo $ex->getTraceAsString();
+                echo "<br /><br />";
+		    }
+		    $this->lastDbResult= null;
+		}
 		if(STCheck::isDebug("db.statement.time"))
 		{
 		    // toDo: time calculation maybe wrong
@@ -219,17 +267,17 @@ class STDbMySql extends STDatabase
 		}
 		return $this->lastDbResult;
 	}
-	protected function list_dbtable_fields($TableName)
+	protected function list_dbtable_fields($TableName, $onError= onErrorStop)
 	{
 		if(isset($this->databaseTables[$TableName]))
 			return $this->databaseTables[$TableName];
 		$fields= array();
 		$statement= "SHOW COLUMNS FROM $TableName";
-		$res= $this->query($statement);
-		$errno= $this->errnodb();
+		$res= $this->query($statement, $onError);
+		$errno= $this->errno();
 		if($errno > 0)
 			return NULL;
-		while($row= $this->fetch_row(STSQL_ASSOC))
+		while($row= $this->fetch_row(STSQL_ASSOC, $onError))
 		{
 			$fields[]= $row;
 		}
@@ -657,12 +705,12 @@ class STDbMySql extends STDatabase
 		if(is_bool($bMake))
 		{
 			if($bMake===true)
-				$this->bFKsave= mysqlVersionNeed("4.0.7");
+				$this->bFKsave= $this->requiredVersion("4.0.7");
 			else
 				$this->bFKsave= false;
 
 		}elseif(!is_bool($this->bFKsave))
-			$this->bFKsave= mysqlVersionNeed("4.0.7");
+		$this->bFKsave= $this->requiredVersion("4.0.7");
 		return $this->bFKsave;
 	}
 
