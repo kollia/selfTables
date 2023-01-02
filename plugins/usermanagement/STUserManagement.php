@@ -58,8 +58,8 @@ class STUserManagement extends STObjectContainer
     
 	function __construct($name, &$container, $bInstall= false)
 	{
-		Tag::paramCheck($name, 1, "string");
-		Tag::paramCheck($container, 2, "STObjectContainer");	
+		STCheck::param($name, 0, "string");
+		STCheck::param($container, 1, "STObjectContainer");	
 		
 		STCheck::echoDebug("container", "create new container-object ".get_class($this)."(<b>$name</b>)");
 		STObjectContainer::__construct($name, $container);
@@ -71,21 +71,22 @@ class STUserManagement extends STObjectContainer
 	    $this->accessBy("STUM-UserAccess");
 		//$this->needContainer("projects");
 	    
-	    $domain= $this->getTable("GroupType");
-	    $domain->identifColumn("ID", "Domain");
+	    $domain= $this->getTable("AccessDomain");
+	    $domain->identifColumn("Name", "Domain");
 	    //$domain->select("ID", "Domain");
 	    
 	    $user= &$this->needTable("User");
 	    $user->setDisplayName("User");
-	    $user->select("GroupType", "Domain");
-	    $user->preSelect("GroupType", "custom");
-	    $user->disabled("GroupType");
-	    $user->select("UserName", "User");
+	    // *WARNING* column domain was GroupType
+	    $user->select("domain", "Domain");
+	    $user->preSelect("domain", "custom");
+	    $user->disabled("domain");
+	    $user->select("user", "User");
 	    $user->select("FullName", "full qualified name");
-	    $user->select("EmailAddress", "Email");
-	    $user->select("Description");
-	    $user->orderBy("GroupType");
-	    $user->orderBy("UserName");
+	    $user->select("email", "Email");
+	    //$user->select("Description");
+	    $user->orderBy("domain");
+	    $user->orderBy("user");
 	    $user->setMaxRowSelect(50);
 	       
 	    $groups= &$this->needTable("Group");
@@ -115,12 +116,12 @@ class STUserManagement extends STObjectContainer
 		    $user->select("NrLogin", "logged in");
 		    $user->select("LastLogin", "last login");
 		    
-		    $groups->select("GroupType", "Domain");
-		    $groups->preSelect("GroupType", $session->mainDOMAIN);
-		    $groups->disabled("GroupType");
+		    $groups->select("domain", "Domain");
+		    $groups->preSelect("domain", $session->mainDOMAIN);
+		    $groups->disabled("domain");
 		    $groups->select("Name", "Group");
 		    $groups->select("ID", "Description", "descriptionCallback");
-		    $groups->orderBy("GroupType");
+		    $groups->orderBy("domain");
 		    $groups->orderBy("Name");
 		    $groups->setMaxRowSelect(50);
 		    
@@ -135,14 +136,14 @@ class STUserManagement extends STObjectContainer
 	function installContainer()
 	{
 		global $HTTP_SERVER_VARS;
-
+		
 		$instance= &STSession::instance();
     
 		$partition= $this->getTable("Partition");
 		$partition->clearSelects();
 		$partition->clearGetColumns();
 		$partition->count();
-		$selector= new OSTDbSelector($partition);
+		$selector= new STDbSelector($partition);
 		$selector->execute();
 		$res= $selector->getSingleResult();
 
@@ -153,19 +154,23 @@ class STUserManagement extends STObjectContainer
     	$project->clearGetColumns();
     	$project->select("ID");
 		$project->where("Name='".$projectName."'");
-    	$selector= new OSTDbSelector($project);
+    	$selector= new STDbSelector($project);
     	$selector->execute();
     	$userManagementID= $selector->getSingleResult();
     	if($userManagementID)
     		$instance->projectID= $userManagementID;
 		else
 			$instance->projectID= 1;
-
+			
+			echo __FILE__.__LINE__."<br>";
+			echo "exist partitions:$res<br>";
+			st_print_r($userManagementID);
 		if($res<1)
 		{
-			if(!$userManagementID)
+			if(!isset($userManagementID))
 			{
-			    $desc= STDbTableDescriptions::instance($this->database->getDatabaseName());
+			    echo __FILE__.__LINE__."<br>";
+			    $desc= STDbTableDescriptions::instance($this->getDatabase()->getDatabaseName());
 				// fill project-cluster per hand
 				// because no project is inserted
 				// and the system do not found what we want
@@ -178,14 +183,15 @@ class STUserManagement extends STObjectContainer
         		$project->accessBy("STUM-Insert", STINSERT);
         		$project->accessBy("STUM-Update", STUPDATE);
         		$project->accessBy("STUM-Delete", STDELETE);
-    			$project->accessCluster("has_access", "Name", "Berechtigung zum ansehen des Projektes @");
-    			$project->insertCluster("can_insert", "Name", "Berechtigung zum anlegen eines neuen Projektes");
-    			$project->updateCluster("can_update", "Name", "�nderungs-Berechtigung im Projekt @");
-    			$project->deleteCluster("can_delete", "Name", "L�sch-Berechtigung im Projekt @");
+    			$project->accessCluster("has_access", "Name", "Permission to see the project @");
+    			$project->insertCluster("can_insert", "Name", "Permission to create a new project");
+    			$project->updateCluster("can_update", "Name", "Changing-Permission at project @");
+    			$project->deleteCluster("can_delete", "Name", "Deleting-Permission at project @");
+    			echo __FILE__.__LINE__."<br>";
     			$inserter= new STDbInserter($project);
     			$inserter->fillColumn("Name", $projectName);
     			$inserter->fillColumn("Path", $HTTP_SERVER_VARS["SCRIPT_NAME"]);
-    			$inserter->fillColumn("description", "Auflistung und �nderung aller Zugriffe im UserManagement");
+    			$inserter->fillColumn("description", "Listing and changing of all access permissions at project UserManagement");
     			$inserter->fillColumn("DateCreation", "sysdate()");
     			$inserter->execute();
 
@@ -211,10 +217,10 @@ class STUserManagement extends STObjectContainer
 				}
 			}
 		}
-    		$this->createCluster("STUM-Access", "Berechtigung zum Ansehen aller Projekte im UserManagement");
-    		$this->createCluster("STUM-Insert", "Berechtigung zum erstellen neuer Projekte im UserManagement");
-    		$this->createCluster("STUM-Update", "Berechtigung zum editieren aller Projekte im UserManagement");
-    		$this->createCluster("STUM-Delete", "Berechtigung zum l�schen aller Projekte im UserManagement");
+		$this->createCluster("STUM-Access", "Permission to see all projects inside UserManagement");
+		$this->createCluster("STUM-Insert", "Permission to create projects inside  UserManagement");
+		$this->createCluster("STUM-Update", "Permission to edit projects inside  UserManagement");
+		$this->createCluster("STUM-Delete", "Permission to delete projects inside  UserManagement");			
 
 
 		// select all needed tabels for an join
@@ -234,7 +240,7 @@ class STUserManagement extends STObjectContainer
 		$selector->execute();
 		if(!$selector->getSingleResult())
 		{
-			$this->createCluster($instance->allAdminCluster, "Zugriff auf alle CLUSTER in jedem Projekt");
+			$this->createCluster($instance->allAdminCluster, "access to all exist CLUSTERs in every project");
 
 			$db= &$instance->getUserDb();
 			$creator= new STSiteCreator($db);
@@ -261,8 +267,8 @@ class STUserManagement extends STObjectContainer
 			exit;
 		}
 
-		$this->createGroup($instance->onlineGroup, "user haben Zugriff auch wenn sie nicht eingeloggt sind");
-		$this->createGroup($instance->loggedinGroup, "user hat Zugriff auf diese Gruppe wenn er sich eingeloggt hat");
+		$this->createGroup($instance->onlineGroup, "user has access also if they not logged-in");
+		$this->createGroup($instance->loggedinGroup, "user has access to this group if they be logged-in");
 
 		$created= $this->createCluster("STUM-UserAccess", "Berechtigung zum editieren des eigenen User-Accounts");
 		if($created==="NOERROR")// if Cluster is created, make an join to the LOGGED_IN group.

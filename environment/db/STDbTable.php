@@ -841,8 +841,12 @@ class STDbTable extends STBaseTable
         {
             foreach($whereClause->aValues as $tableName=>$content)
             {
-                $tabName= $this->db->getTableName($tableName);// search for original table name
-                $aUseAliases[$aTableAlias[$tabName]]= $tabName;
+                if( $tableName != "and" &&
+                    $tableName != "or"      )
+                {
+                    $tabName= $this->db->getTableName($tableName);// search for original table name
+                    $aUseAliases[$aTableAlias[$tabName]]= $tabName;
+                }
             }
         }
         foreach($aTableAlias as $tableName=>$alias)

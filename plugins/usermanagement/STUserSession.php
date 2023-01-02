@@ -63,12 +63,28 @@ class STUserSession extends STDbSession
 		$this->aSessionVars[]= "ST_PROJECTID";
 		$this->aSessionVars[]= "ST_LOGGED_MESSAGES";
 	}
-	public static function init(&$instance, $prefix= null)
+	/**
+	 * initial object of session
+	 *
+	 * @param object $instance should be the database where the session will be stored,
+	 *                           or by overloading from an other class it can be the instance from there
+	 *                           (default parameter null only defined because parameters hase to be compatible with parent object definition)
+	 * @param string $prefix can be the prefix string for tables inside database
+	 */
+	public static function init(&$instance= null, $prefix= null)
 	{
-	    if(!typeof($instance, "STDbSession"))
-	        $instance= new STUserSession($instance, $prefix);
+	    STCheck::param($instance, 0, "STDatabase", "STDbSession");
+	    STCheck::param($prefix, 1, "string", "empty(string)");
+	    
+	    $object= null;
+	    if(typeof($instance, "STDatabase"))
+	        $object= new STUserSession($instance, $prefix);
+	    elseif(typeof($instance, "STDbSession"))
+	        $object= new STUserSession($instance->getDatabase(), $prefix);
+	    else
+	        $object= &$instance;	        
 	       
-	    STDbSession::init($instance, $prefix);
+	    return STDbSession::init($object, $prefix);
 	}
 	public function getOnlineGroup() : string
 	{ return $this->onlineGroup; }
@@ -86,92 +102,120 @@ class STUserSession extends STDbSession
 	    STDbSession::defineDatabaseTableDescriptions($dbTableDescription);
 	        
         $dbTableDescription->table("Query");
-        $dbTableDescription->column("Query", "ID", "BIGINT", false);
+        $dbTableDescription->column("Query", "ID", "BIGINT", /*null*/false);
         $dbTableDescription->primaryKey("Query", "ID");
         $dbTableDescription->autoIncrement("Query", "ID");
-        $dbTableDescription->column("Query", "path", "TEXT", false);
+        $dbTableDescription->column("Query", "path", "TEXT", /*null*/false);
         $dbTableDescription->indexKey("Query", "path", 1, 255);
         
         $dbTableDescription->table("Translate");
-        $dbTableDescription->column("Translate", "ID", "varchar(50)", false);
+        $dbTableDescription->column("Translate", "ID", "varchar(50)", /*null*/false);
         $dbTableDescription->primaryKey("Translate", "ID");
         $dbTableDescription->uniqueKey("Translate", "ID", 1);
         $dbTableDescription->indexKey("Translate", "ID", 1);
-        $dbTableDescription->column("Translate", "lang", "char(3)", false);
+        $dbTableDescription->column("Translate", "lang", "char(3)", /*null*/false);
         $dbTableDescription->uniqueKey("Translate", "lang", 1);
         $dbTableDescription->indexKey("Translate", "lang", 1);
-        $dbTableDescription->column("Translate", "translation", "text", false);
+        $dbTableDescription->column("Translate", "translation", "text", /*null*/false);
         
-        //showErrorTrace();
+        $dbTableDescription->table("AccessDomain");
+        $dbTableDescription->column("AccessDomain", "ID", "TINYINT", /*null*/false);
+        $dbTableDescription->primaryKey("AccessDomain", "ID");
+        $dbTableDescription->autoIncrement("AccessDomain", "ID");
+        $dbTableDescription->column("AccessDomain", "Name", "varchar(10)", /*null*/false);
+        $dbTableDescription->column("AccessDomain", "Label", "varchar(30)", /*null*/false);
+        $dbTableDescription->column("AccessDomain", "description", "varchar(50)");
+        $dbTableDescription->column("AccessDomain", "DateCreation", "DATETIME", /*null*/false);
+        
         $dbTableDescription->table("Project");
-        $dbTableDescription->column("Project", "ID", "TINYINT", false);
+        $dbTableDescription->column("Project", "ID", "TINYINT", /*null*/false);
         $dbTableDescription->primaryKey("Project", "ID");
         $dbTableDescription->autoIncrement("Project", "ID");
-        $dbTableDescription->column("Project", "Name", "varchar(70)", false);
+        $dbTableDescription->column("Project", "Name", "varchar(70)", /*null*/false);
         $dbTableDescription->uniqueKey("Project", "Name", 1);
-        $dbTableDescription->column("Project", "Path", "varchar(255)", false);
+        $dbTableDescription->column("Project", "Path", "varchar(255)", /*null*/false);
         $dbTableDescription->column("Project", "Description", "text");
-        $dbTableDescription->column("Project", "DateCreation", "datetime", false);
-        //$dbTableDescription->column("Project", "has_access", "varchar(255)", false);
-        //$dbTableDescription->column("Project", "can_insert", "varchar(255)", false);
-        //$dbTableDescription->column("Project", "can_update", "varchar(255)", false);
-        //$dbTableDescription->column("Project", "can_delete", "varchar(255)", false);
+        $dbTableDescription->column("Project", "DateCreation", "datetime", /*null*/false);
+        $dbTableDescription->column("Project", "has_access", "varchar(255)", /*null*/false);
+        $dbTableDescription->column("Project", "can_insert", "varchar(255)", /*null*/false);
+        $dbTableDescription->column("Project", "can_update", "varchar(255)", /*null*/false);
+        $dbTableDescription->column("Project", "can_delete", "varchar(255)", /*null*/false);
         
         $dbTableDescription->table("Partition");
-        $dbTableDescription->column("Partition", "ID", "SMALLINT", false);
+        $dbTableDescription->column("Partition", "ID", "SMALLINT", /*null*/false);
         $dbTableDescription->primaryKey("Partition", "ID");
         $dbTableDescription->autoIncrement("Partition", "ID");
-        $dbTableDescription->column("Partition", "Name", "varchar(100)", false);
+        $dbTableDescription->column("Partition", "Name", "varchar(100)", /*null*/false);
         $dbTableDescription->uniqueKey("Partition", "Name", 1);
-        $dbTableDescription->column("Partition", "ProjectID", "TINYINT", false);
+        $dbTableDescription->column("Partition", "ProjectID", "TINYINT", /*null*/false);
         $dbTableDescription->foreignKey("Partition", "ProjectID", "Project");
-        $dbTableDescription->column("Partition", "has_access", "varchar(255)", false);
-        //$dbTableDescription->column("Partition", "can_insert", "varchar(255)", false);
-        //$dbTableDescription->column("Partition", "can_update", "varchar(255)", false);
-        $dbTableDescription->column("Partition", "can_delete", "varchar(255)", false);
-        $dbTableDescription->column("Partition", "DateCreation", "DATETIME", false);
+        $dbTableDescription->column("Partition", "has_access", "varchar(255)", /*null*/false);
+        //$dbTableDescription->column("Partition", "can_insert", "varchar(255)", /*null*/false);
+        //$dbTableDescription->column("Partition", "can_update", "varchar(255)", /*null*/false);
+        $dbTableDescription->column("Partition", "can_delete", "varchar(255)", /*null*/false);
+        $dbTableDescription->column("Partition", "DateCreation", "DATETIME", /*null*/false);
+        
+        $dbTableDescription->table("User");
+        $dbTableDescription->column("User", "ID", "INT", /*null*/false);
+        $dbTableDescription->primaryKey("User", "ID");
+        $dbTableDescription->autoIncrement("User", "ID");
+        $dbTableDescription->column("User", "domain", "TINYINT", /*null*/false);
+        //$dbTableDescription->uniqueKey("User", "domain", 1);
+        $dbTableDescription->foreignKey("User", "domain", "AccessDomain");
+        $dbTableDescription->column("User", "user", "varchar(50)", /*null*/false);
+        $dbTableDescription->uniqueKey("User", "user", 1);
+        $dbTableDescription->column("User", "FullName", "varchar(100)", /*null*/false);
+        $dbTableDescription->column("User", "image", "varchar(255)", /*null*/false);
+        $dbTableDescription->column("User", "email", "varchar(100)", /*null*/false);
+        $dbTableDescription->column("User", "Pwd", "char(16) binary", /*null*/false);
+        $dbTableDescription->column("User", "NrLogin", "INT UNSIGNED");
+        $dbTableDescription->column("User", "LastLogin", "DATETIME");
+        $dbTableDescription->column("User", "currentLogin", "DATETIME");
+        $dbTableDescription->column("User", "DateCreation", "DATETIME", /*null*/false);
         
         $dbTableDescription->table("Cluster");
-        $dbTableDescription->column("Cluster", "ID", "varchar(100)", false);
+        $dbTableDescription->column("Cluster", "ID", "varchar(100)", /*null*/false);
         $dbTableDescription->primaryKey("Cluster", "ID");
-        $dbTableDescription->column("Cluster", "ProjectID", "TINYINT", false);
+        $dbTableDescription->column("Cluster", "ProjectID", "TINYINT", /*null*/false);
         $dbTableDescription->foreignKey("Cluster", "ProjectID", "Project", 1);
-        $dbTableDescription->column("Cluster", "Description", "TEXT", false);
-        $dbTableDescription->column("Cluster", "identification", "SMALLINT", false);
+        $dbTableDescription->column("Cluster", "Description", "TEXT", /*null*/false);
+        $dbTableDescription->column("Cluster", "identification", "SMALLINT", /*null*/false);
         //$dbTableDescription->foreignKey("Cluster", "identification", "Partition", 2);
         //$dbTableDescription->column("Cluster", "lastDynamicAccess", "set('false', 'true')", true);
-        $dbTableDescription->column("Cluster", "DateCreation", "DATETIME", false);
+        $dbTableDescription->column("Cluster", "DateCreation", "DATETIME", /*null*/false);
         
         $dbTableDescription->table("Group");
-        $dbTableDescription->column("Group", "ID", "INT", false);
+        $dbTableDescription->column("Group", "ID", "INT", /*null*/false);
         $dbTableDescription->primaryKey("Group", "ID");
         $dbTableDescription->autoIncrement("Group", "ID");
-        $dbTableDescription->column("Group", "Name", "varchar(100)", false);
+        $dbTableDescription->column("Group", "domain", "TINYINT", /*null*/false);
+        $dbTableDescription->foreignKey("Group", "domain", "AccessDomain");
+        $dbTableDescription->column("Group", "Name", "varchar(100)", /*null*/false);
         $dbTableDescription->uniqueKey("Group", "Name", 1);
-        $dbTableDescription->column("Group", "Description", "TEXT");
-        $dbTableDescription->column("Group", "DateCreation", "DATETIME", false);
+        //$dbTableDescription->column("Group", "Description", "TEXT");
+        $dbTableDescription->column("Group", "DateCreation", "DATETIME", /*null*/false);
         
         $dbTableDescription->table("ClusterGroup");
-        $dbTableDescription->column("ClusterGroup", "ID", "INT", false);
+        $dbTableDescription->column("ClusterGroup", "ID", "INT", /*null*/false);
         $dbTableDescription->primaryKey("ClusterGroup", "ID");
         $dbTableDescription->autoIncrement("ClusterGroup", "ID");
-        $dbTableDescription->column("ClusterGroup", "ClusterID", "varchar(100)", false);
+        $dbTableDescription->column("ClusterGroup", "ClusterID", "varchar(100)", /*null*/false);
         $dbTableDescription->foreignKey("ClusterGroup", "ClusterID", "Cluster", 1);
-        $dbTableDescription->column("ClusterGroup", "GroupID", "INT", false);
+        $dbTableDescription->column("ClusterGroup", "GroupID", "INT", /*null*/false);
         $dbTableDescription->foreignKey("ClusterGroup", "GroupID", "Group", 2);
-        $dbTableDescription->column("ClusterGroup", "DateCreation", "DATETIME", false);
+        $dbTableDescription->column("ClusterGroup", "DateCreation", "DATETIME", /*null*/false);
         
         $dbTableDescription->table("UserGroup");
-        $dbTableDescription->column("UserGroup", "ID", "INT", false);
+        $dbTableDescription->column("UserGroup", "ID", "INT", /*null*/false);
         $dbTableDescription->primaryKey("UserGroup", "ID");
         $dbTableDescription->autoIncrement("UserGroup", "ID");
-        $dbTableDescription->column("UserGroup", "UserID", "INT", false);
+        $dbTableDescription->column("UserGroup", "UserID", "INT", /*null*/false);
         $dbTableDescription->foreignKey("UserGroup", "UserID", "User", 1);
-        $dbTableDescription->column("UserGroup", "GroupID", "INT", false);
+        $dbTableDescription->column("UserGroup", "GroupID", "INT", /*null*/false);
         $dbTableDescription->foreignKey("UserGroup", "GroupID", "Group", 2);
-        $dbTableDescription->column("UserGroup", "DateCreation", "DATETIME", false);
+        $dbTableDescription->column("UserGroup", "DateCreation", "DATETIME", /*null*/false);
         
-        $dbTableDescription->table("GroupGroup");
+/*        $dbTableDescription->table("GroupGroup");
         $dbTableDescription->column("GroupGroup", "ID", "INT", false);
         $dbTableDescription->primaryKey("GroupGroup", "ID");
         $dbTableDescription->autoIncrement("GroupGroup", "ID");
@@ -179,43 +223,20 @@ class STUserSession extends STDbSession
         $dbTableDescription->column("GroupGroup", "Group2ID", "INT", false);
         $dbTableDescription->foreignKey("GroupGroup", "Group1ID", "Group", 1);
         $dbTableDescription->foreignKey("GroupGroup", "Group2ID", "Group", 2);
-        $dbTableDescription->column("GroupGroup", "DateCreation", "DATETIME", false);
-        
-        $dbTableDescription->table("User");
-        $dbTableDescription->column("User", "ID", "INT", false);
-        $dbTableDescription->primaryKey("User", "ID");
-        $dbTableDescription->autoIncrement("User", "ID");
-        $dbTableDescription->column("User", "UserName", "varchar(50)", false);
-        $dbTableDescription->uniqueKey("User", "UserName", 1);
-        $dbTableDescription->column("User", "GroupType", "TINYINT", false);
-        $dbTableDescription->uniqueKey("User", "GroupType", 1);
-        $dbTableDescription->foreignKey("User", "GroupType", "GroupType");
-        $dbTableDescription->column("User", "Pwd", "char(16) binary", false);
-        $dbTableDescription->column("User", "NrLogin", "INT UNSIGNED");
-        $dbTableDescription->column("User", "LastLogin", "DATETIME");
-        $dbTableDescription->column("User", "currentLogin", "DATETIME");
-        $dbTableDescription->column("User", "DateCreation", "DATETIME", false);
-        
-        $dbTableDescription->table("GroupType");
-        $dbTableDescription->column("GroupType", "ID", "TINYINT", false);
-        $dbTableDescription->primaryKey("GroupType", "ID");
-        $dbTableDescription->autoIncrement("GroupType", "ID");
-        $dbTableDescription->column("GroupType", "Label", "varchar(30)", false);
-        $dbTableDescription->column("GroupType", "description", "varchar(50)");
-        $dbTableDescription->column("GroupType", "DateCreation", "DATETIME", false);
+        $dbTableDescription->column("GroupGroup", "DateCreation", "DATETIME", false); */
         
         $dbTableDescription->table("Log");
-        $dbTableDescription->column("Log", "ID", "BIGINT UNSIGNED", false);
+        $dbTableDescription->column("Log", "ID", "BIGINT UNSIGNED", /*null*/false);
         $dbTableDescription->primaryKey("Log", "ID");
         $dbTableDescription->autoIncrement("Log", "ID");
-        $dbTableDescription->column("Log", "UserID", "INT", false);
+        $dbTableDescription->column("Log", "UserID", "INT", /*null*/false);
         $dbTableDescription->foreignKey("Log", "UserID", "User", 1);
-        $dbTableDescription->column("Log", "ProjectID", "TINYINT", false);
+        $dbTableDescription->column("Log", "ProjectID", "TINYINT", /*null*/false);
         $dbTableDescription->foreignKey("Log", "ProjectID", "Project", 2);
-        $dbTableDescription->column("Log", "Type", "set('ERROR','LOGIN','LOGOUT','ACCESS')", false);
+        $dbTableDescription->column("Log", "Type", "set('ERROR','LOGIN','LOGOUT','ACCESS')", /*null*/false);
         $dbTableDescription->column("Log", "CustomID", "varchar(255)");
-        $dbTableDescription->column("Log", "description", "TEXT", false);
-        $dbTableDescription->column("Log", "DateCreation", "DATETIME", false);
+        $dbTableDescription->column("Log", "description", "TEXT", /*null*/false);
+        $dbTableDescription->column("Log", "DateCreation", "DATETIME", /*null*/false);
         
 	}
 	/* fault whether I do not know

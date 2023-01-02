@@ -95,7 +95,7 @@ class STDbTableCreator
 				$oTable= &$this->db->getTable($this->sTable);
 				$fields= $oTable->columns;
 			}else
-  		    	$fields= $this->db->fieldArray($this->sTable, noErrorShow);
+  		    	$fields= $this->db->list_fields($this->sTable, noErrorShow);
     		if($fields)
     		{
     		    $nFields= array();
@@ -156,32 +156,37 @@ class STDbTableCreator
 			if(STCheck::isDebug("tableCreator"))
 				$statement.= "\n                               ";
 			$keys= array();
-			//st_print_r($this->asTableColumns,10);
+			echo __FILE__.__LINE__."<br>";
+			st_print_r($this->asTableColumns,10);
     		foreach($this->asTableColumns as $column=>$content)
     		{
     		    $statement.= $column." ".$content["type"];
   				if(!$content["null"])
   		        	$statement.= " NOT NULL";
-				if($content[auto_increment])
+				if(isset($content['auto_increment']))
 					$statement.= " auto_increment";
-  				if($content["pk"])
+				if(isset($content["pk"]) && $content["pk"] == true)
 					$keys["pk"][]= $column;
-  				if($content["fk"])
+				if(isset($content["fk"]))
 				{
 					$keys["fk"][$content["fk"]["identif"]][]= array(	"ownColumn"=>	$column,
 																		"otherColumn"=>	$content["fk"]["column"]	);
 					$keys["fk"][$content["fk"]["identif"]]["toTable"]= $content["fk"]["table"];
 					$keys["fk"][$content["fk"]["identif"]]["type"]= $content["fk"]["type"];
 				}
-				if($content["idx"])
+				if(isset($content["idx"]))
 				{
-					$keys["idx"][$content["idx"]["name"]][]= array(	"column"=>$column,
-																	"length"=>$content["idx"]["length"]	);
+				    $aIdx= array( "column"=>$column );
+				    if(isset($content["idx"]["length"]))
+				        $aIdx['legth']= $content["idx"]["length"];
+					$keys["idx"][$content["idx"]["name"]][]= $aIdx;
 				}
-				if($content["udx"])
+				if(isset($content["udx"]))
 				{
-					$keys["udx"][$content["udx"]["name"]][]= array(	"column"=>$column,
-																	"length"=>$content["udx"]["length"]	);
+				    $aUdx= array( "column"=>$column );
+				    if(isset($content["udx"]["length"]))
+				        $aIdx['legth']= $content["udx"]["length"];
+					$keys["udx"][$content["udx"]["name"]][]= $aUdx;
 				}
   				$statement.= ",";
 				if(STCheck::isDebug("tableCreator"))
@@ -203,6 +208,9 @@ class STDbTableCreator
 				{
 					if($this->db->saveForeignKeys())
 					{
+					    echo __FILE__.__LINE__."<br>";
+					    st_print_r($key,3);
+					    st_print_r($this->asTableColumns, 3);
 						foreach($key as $content)
 						{
 							$statement.= "FOREIGN KEY (";
@@ -238,7 +246,7 @@ class STDbTableCreator
 						{
 							$statement.= $column["column"]."_";
 							$columnString.= $column["column"];
-							if($column["length"])
+							if(isset($column["length"]))
 								$columnString.= "(".$column["length"].")";
 							$columnString.= ",";
 						}
@@ -257,7 +265,7 @@ class STDbTableCreator
     		$statement= substr($statement, 0, strlen($statement)-$nMinus);
     		$statement.= ")";//echo $statement."<br />";
 			if($this->db->saveForeignKeys())
-				$statement.= " TYPE=InnoDb";
+				$statement.= " ENGINE=InnoDb";
 			if(!STCheck::isDebug("db.statement"))
 				STCheck::echoDebug("tableCreator", $statement);
     		if($this->db->fetch($statement))

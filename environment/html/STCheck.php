@@ -503,8 +503,7 @@ class STCheck
 		}
 		public static function echoSpace(int $count)
 		{
-		    for($n= 0; $n < $count; ++$n)
-		        echo "&#160;";
+		    echo STCheck::getSpaces($count);
 		}
 		/**
 		 * Debug message whitch should be showen on screen.<br />
@@ -549,11 +548,11 @@ class STCheck
 			}
 			return 0;
 		}
-		function getSpaces($num)
+		public static function getSpaces($num)
 		{
 			$sp= "";
 			for($i= 0; $i<$num; $i++)
-				$sp.= " ";
+			    $sp.= "&#160;";
 			return $sp;
 		}
 		static function flog($message= "", $pos= 0)

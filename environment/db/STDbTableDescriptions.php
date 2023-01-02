@@ -362,36 +362,60 @@ class STDbTableDescriptions
 	{
 		Tag::paramCheck($database, 1, "STDatabase");
 
-		echo __FILE__.__LINE__."<br>";
-		echo "STDbTableDescription::installTables();<br>";
 		if(!$this->aExistTables)
 			return;
-		if(mysqlVersionNeed("4.0.7"))
-			$bCreateFks= true;
+		if($database->requiredVersion("4.0.7"))
+		    $bCreateFks= true;
 		else
-			$bCreateFks= false;
+		    $bCreateFks= false;
+	    echo __FILE__.__LINE__."<br>";
+	    st_print_r($this->aExistTables,5);
 	    foreach($this->aExistTables as $table=>$defined)
 		{
 			if(!$defined["installed"])
 			{
+			    foreach($this->asTableColumns[$table] as $column)
+			    {
+			        if(isset($column['fk']['table']))
+			        {
+			            $fkTable= $column['fk']['table'];
+			            $ownTableName= $this->aExistTables[$table]['table'];
+			            $trigger= !isset($this->aExistTables[$fkTable]);
+			            $firstMessage= "table $ownTableName should point to table ";
+			            $lastMessage= ", inside method ::defineDatabaseTableDescriptions() of container";
+			            $message= "$firstMessage $fkTable, but no table with this name defined for creation";
+			            $message.= $lastMessage;
+		                STCheck::alert($trigger, "STDbTableDescription::installTable()", $message);
+		                $trigger= ( !isset($this->aExistTables[$fkTable]['installed']) || 
+		                              $this->aExistTables[$fkTable]['installed'] == false );
+		                $foreignTableName= $this->aExistTables[$fkTable]['table'];
+		                $message= "$firstMessage $foreignTableName, define this foreign table before $ownTableName for creation";
+		                $message.= $lastMessage;
+		                STCheck::alert($trigger, "STDbTableDescription::installTable()", $message);
+			        }
+			    }
 	        	$oTable= new STDbTableCreator($database, $defined["table"]);
-				$oTable->check();
+	        	$oTable->check();
+	        	//echo __FILE__.__LINE__."<br>";
 				//st_print_r($this->asTableColumns[$table],10);
 				//echo "for table $table:";
 				foreach($this->asTableColumns[$table] as $content)
-				{//st_print_r($content,10);
+				{
 				    $oTable->column($content["column"], $content["type"], $content["null"]);
-					if($content["auto_increment"])
+				    if(isset($content["auto_increment"]))
 						$oTable->autoIncrement($content["column"]);
-					if($content["idx"])
+					if(isset($content["idx"]))
 						$oTable->indexKey($content["column"], $content["idx"]["name"], $content["idx"]["length"]);
-					if($content["udx"])
+					if(isset($content["udx"]))
 						$oTable->uniqueKey($content["column"], $content["udx"]["name"], $content["udx"]["length"]);
-					if($content["pk"])
+					if(isset($content["pk"]))
 						$oTable->primaryKey($content["column"]);
-					if($content["fk"])
+					if(isset($content["fk"]))
 						$oTable->foreignKey($content["column"], $content["fk"]["table"], $content["fk"]["identif"], $content["fk"]["column"], $content["fk"]["type"]);
 				}
+				//echo __FILE__.__LINE__."<br>";
+				//st_print_r($this->aExistTables,5);
+				//st_print_r($this->asTableColumns[$table],3);
 				$oTable->execute();
 				$this->aExistTables[$table]["installed"]= true;
 				Tag::echoDebug("install", "table ".$table." was installed");

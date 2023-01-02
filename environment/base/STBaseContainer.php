@@ -363,6 +363,7 @@ class STBaseContainer extends BodyTag
             $currentObject= get_class($this);
             if($currentObject != "STBaseContainer")
             {
+                echo "current object:$currentObject<br>";
                 echo __FILE__.__LINE__."<br>";
                 echo "method STBaseContainer::create() shouldn't called from $currentObject<br />";
                 echo "  <b>WARNING</b> --------------------------------------------------------------------------------------- <b>WARNING</b><br />";

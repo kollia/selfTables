@@ -77,11 +77,11 @@ class STUserSiteCreator extends STSessionSiteCreator
 		$this->bAskForProject= true;
 		return $this->nProjectID;
 	}
-	function install()
+/*	function install()
 	{
 		STCheck::warning(STUserSession::sessionGenerated(), "STUserSiteCreator::install()", "invoke this function before initSession()");
 		$this->bDoInstall= true;
-	}
+	}*/
 	function setPrefixForUserTables($prefix)
 	{
 		Tag::alert($this->userManagement, "STUserSiteCreator::setPrefixToTables()",

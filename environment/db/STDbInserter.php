@@ -96,52 +96,60 @@ class STDbInserter
 			and
 			count($this->table->sAcessClusterColumn)	)
 		{
-			//$session= STUserSession::instance();
-            $identification= "";
-        	foreach($this->table->identification as $identifColumn)
-            {
-        	   	$identif= $row[$identifColumn["column"]];
-                $identification.= $identif." - ";
-            }
-            if($identification)
-               	$identification= substr($identification, 0, strlen($identification)-3);
-			else
-				STCheck::warning(1, "STDbInserter::createCluster()", "no identif columns in table ".$this->table->getName()." are defined");
-			$this->sAccessClusterColumn= array();
-			$pkName= $this->table->getPkColumnName();
-			$tableName= $this->table->getDisplayName();
-			$error= "";
-			foreach($this->table->sAcessClusterColumn as $column)
+			$session= STSession::instance();
+			if(typeof($session, "STUserSession"))
 			{
-				if(!$row[$column["column"]])
-				{
-					if($column["cluster"]!==$pkName)
-					{
-						$infoString= preg_replace("/@/", $identification, $column["info"]);
-						STCheck::alert(!$row[$column["cluster"]], "STDbInserter::createCluster()", "column ".$column["cluster"].
-																						" not defined in result for dinamic cluster");
-						$row[$column["column"]]= $column["parent"]."_".$row[$column["cluster"]];
-						$cluster= $row[$column["cluster"]];
-     					$result= $session->createAccessCluster(	$column["parent"],
-     															$cluster,
-     															$infoString,
-  																$tableName,
-  																$column["group"]	);
-						if($error==="")
-							$error= $result;
-						elseif(	$result!=="NOERROR"
-								and
-								$error==="NOERROR"	)
-						{
-							$error= "NOTALLCLUSTERCREATE";
-						}
-					}else
-					{
-						$row[$column["column"]]= session_id();
-					}
-					$key= count($this->sAccessClusterColumn);
-					$this->sAccessClusterColumn[$key]= $column;
-				}
+                $identification= "";
+            	foreach($this->table->identification as $identifColumn)
+                {
+            	   	$identif= $row[$identifColumn["column"]];
+                    $identification.= $identif." - ";
+                }
+                if($identification)
+                   	$identification= substr($identification, 0, strlen($identification)-3);
+    			else
+    				STCheck::warning(1, "STDbInserter::createCluster()", "no identif columns in table ".$this->table->getName()." are defined");
+    			$this->sAccessClusterColumn= array();
+    			$pkName= $this->table->getPkColumnName();
+    			$tableName= $this->table->getDisplayName();
+    			$error= "";
+    			foreach($this->table->sAcessClusterColumn as $column)
+    			{
+    			    echo __file__.__LINE__."<br>";
+    			    st_print_r($column,3);
+    			    st_print_r($row);
+    				if(!isset($row[$column["column"]]))
+    				{
+    					if($column["cluster"]!==$pkName)
+    					{
+    						$infoString= preg_replace("/@/", $identification, $column["info"]);
+    						STCheck::alert(!isset($row[$column["cluster"]]), "STDbInserter::createCluster()", "column ".$column["cluster"].
+    																						" not defined in result for dinamic cluster");
+    						$row[$column["column"]]= $column["parent"]."_".$row[$column["cluster"]];
+    						$cluster= $row[$column["cluster"]];
+    						echo __file__.__LINE__."<br>";
+         					$result= $session->createAccessCluster(	$column["parent"],
+         															$cluster,
+         															$infoString,
+      																$tableName,
+         					    $column["group"]	);
+         					echo __file__.__LINE__."<br>";
+    						if($error==="")
+    							$error= $result;
+    						elseif(	$result!=="NOERROR"
+    								and
+    								$error==="NOERROR"	)
+    						{
+    							$error= "NOTALLCLUSTERCREATE";
+    						}
+    					}else
+    					{
+    						$row[$column["column"]]= session_id();
+    					}
+    					$key= count($this->sAccessClusterColumn);
+    					$this->sAccessClusterColumn[$key]= $column;
+    				}
+    			}
 			}
 		}
 	}

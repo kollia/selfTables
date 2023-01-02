@@ -48,30 +48,34 @@ class STDbSession extends STSession
      *
      * @param object $instance should be the database where the session will be stored,
      *                           or by overloading from an other class it can be the instance from there
+     *                           (default parameter null only defined because parameters hase to be compatible with parent object definition) 
      * @param string $prefix can be the prefix string for tables inside database
      */
-    public static function init(&$instance, string $prefix= "")
+    public static function init(&$instance= null, string $prefix= "")
     {
-        STCheck::paramCheck($instance, 1, "STDatabase", "STDbSession");
+        STCheck::param($instance, 0, "STDatabase", "STDbSession");
+        STCheck::param($prefix, 1, "string", "empty(string)");
         
         global $global_selftable_session_class_instance;
         
         STCheck::alert(isset($global_selftable_session_class_instance[0]),
             "STDbSession::init()", "an session was defined before, cannot define two sessions");
-        if(!typeof($instance, "STDbSession"))
-        {
-            $global_selftable_session_class_instance[0]= new STDbSession($instance);
-            $desc= STDbTableDescriptions::init($instance);
-        }else
+        if(typeof($instance, "STDbSession"))
         {
             $global_selftable_session_class_instance[0]= $instance;
             $desc= STDbTableDescriptions::init($instance->getDatabase());
+            
+        }else
+        {// $instance should be and STDatabase
+            $global_selftable_session_class_instance[0]= new STDbSession($instance);
+            $desc= STDbTableDescriptions::init($instance);
         }
                 
         $global_selftable_session_class_instance[0]->defineDatabaseTableDescriptions($desc);
         
         if($prefix != "")
             $desc->setPrefixToTables($prefix);
+        return $global_selftable_session_class_instance[0];
     }
     public function defineDatabaseTableDescriptions($dbTableDescription)
     {

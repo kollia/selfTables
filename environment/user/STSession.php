@@ -77,10 +77,11 @@ class STSession
   	 *                           or by overloading from an other class it can be the instance from there
   	 * @param string $prefix do not need, only defined because the init method need the same like the overloaded
   	 */
-  	public static function init(&$instance, string $prefix= "")
+  	public static function init(&$instance= null, string $prefix= "")
 	{
 		global	$global_selftable_session_class_instance;
         
+		STCheck::param($instance, 0, "STSession", "null");
 		STCheck::alert(isset($global_selftable_session_class_instance[0]), 
 		    "STSession::init()", "an session was defined before, cannot define two sessions");
 		if(!typeof($instance, "STSession"))
@@ -88,6 +89,7 @@ class STSession
     		$global_selftable_session_class_instance[0]= new STSession();
 		}else
 		    $global_selftable_session_class_instance[0]= &$instance;
+        return $global_selftable_session_class_instance[0];
 	}
 	public static function &instance()
 	{
