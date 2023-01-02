@@ -160,7 +160,8 @@ abstract class STDatabase extends STObjectContainer
 	var $lastStatement;
 	var $foreignKey= false;
 	var	$aFieldArrays= array();
-	var $error;
+	protected $error= null;
+	protected $errno= null;
 	var $datePos;
 	var $pregDateFormat;
 	var $dateDelimiter= ".";
@@ -517,7 +518,7 @@ abstract class STDatabase extends STObjectContainer
 		// alex 12/05/2005:	statement kann nun auch
 		//					ein objekt von STDbTable sein
 		if(typeof($statement, "STDbTable"))
-			$statement= $this->getStatement($statement);
+			$statement= $statement->getStatement();
 		if(is_String($statement))
 		{
 		    $bExecuteDb= true;
@@ -559,10 +560,12 @@ abstract class STDatabase extends STObjectContainer
 				    STCheck::echoDebug("db.statement", "statement: \"".$statement."\" ");			
 				STCheck::flog("fetch statement on db with command querydb");
 			}
-			//exit;
 			if($bExecuteDb)
+			{
+			    $this->errno= null;
+			    $this->error= null;
 			    $res= $this->querydb($statement);
-			else
+			}else
 			    $res= array();
 		}else// wenn statement schon ein Array, wird dieses sogleich
 			return $statement; // als Ergebnis zur�ckgegeben
@@ -576,19 +579,21 @@ abstract class STDatabase extends STObjectContainer
 				or
 				STCheck::isDebug("db.statement")	)	)
     	{
-    	    echo $this->getError(true);
-			if( !$bExecuteDb &&
-			    phpVersionNeed("4.3.0", "debug_backtrace()"))
+    	    $space= 55;
+    	    if(STCheck::isDebug("db.statement"))
+    	        $space= STCheck::echoDebug("db.statement", "database error:");
+    	    echo $this->getError(/*with tags*/true, $space);
+			if(phpVersionNeed("4.3.0", "debug_backtrace()"))
 			{
 			    echo "<br>";
 				showErrorTrace(1);
 			}
 			if( $onError==onErrorStop )
 			    exit();
-  		}
+    	}
   		return $res;
   	}
-	function getError($withTags= false)
+	function getError(bool $withTags= false, int $space= 0)
 	{
 		//if($this->isError())	// ??? was soll das?
 		//	return "";			// damit der Fehler nur einmal ausgegeben wird?
@@ -597,17 +602,21 @@ abstract class STDatabase extends STObjectContainer
 			return "kein Ergebnis vorhanden";
 		$string= "";
 		if($withTags)
-     		$string=  "\n<b>";
+     		$string=  "<b>";
+		if($space > 0)
+		    $string.= STCheck::getSpaces($space);		   
 		$string.= "MYSQL_ERROR ".$this->errno()." in Statement: \"";
 		if($withTags)
 			$string.= "</b>";
 		$string.= $this->lastStatement;
 		if($withTags)
 			$string.= "<b>";
-		$string.= "\"\n";
+		$string.= "\"";
 		if($withTags)
-			$string.= "</b><br><b>";
-		$string.= "MySql:";
+		    $string.= "</b><br><b>";
+	    if($space > 0)
+	        $string.= STCheck::getSpaces($space);		
+		$string.= "MySql error message:";
 		if($withTags)
 			$string.= "</b>";
      	$string.=  " ".$this->error();
@@ -626,6 +635,53 @@ abstract class STDatabase extends STObjectContainer
 		}
 		return false;
 	}
+	/**
+	 * return version of mysql
+	 * 
+	 * @return array return array with mayor, minor, revision and exact key
+	 */
+	abstract public function getServerVersion() : array;
+	/**
+	 * return database engine as addendum string
+	 * which engine should used for creation
+	 * 
+	 * @return string addendum string with engine
+	 */
+	abstract public function getAddingEngineString() : string;
+	/**
+	 * check for the required sql version
+	 *
+	 * @param string $needVersion string of mayor, minor and revision version, seperatet with a point or hyphen
+	 */
+	function requiredVersion(string $needVersion)
+	{
+	    $version= $this->getServerVersion();
+	    $needVers= preg_split("/[.,-]/", $needVersion);
+	    $bOk= true;
+	    $anzA= count($needVers);
+	    $set[]= "mayor";
+	    $set[]= "minor";
+	    $set[]= "revision";
+	    $anz= count($set);
+	    if($anz>$anzA)
+	        $anz= $anzA;
+        for($o= 0; $o<$anz; $o++)
+        {
+            $akt= $version[$set[$o]];
+            settype($akt, "integer");
+            $need= $needVers[$o];
+            settype($need, "integer");
+            if($akt<$need)
+            {
+                $bOk= false;
+                break;
+            }
+            if($akt>$need)
+                break;
+        }
+        return $bOk;
+	}
+	
 	abstract protected function fetchdb_row($typ);
 	/*
 	 * 2021/07/29 alex: change function from error() to is_error() for php8 compatibility
@@ -638,10 +694,13 @@ abstract class STDatabase extends STObjectContainer
 														"STSQL_ASSOC", "STSQL_NUM", "STSQL_BOTH", "STBLINDDB");
 		STCheck::paramCheck($onError, 2, "check", $onError==noErrorShow || $onError==onErrorShow || $onError==onErrorStop,
 														"noErrorShow", "onErrorShow", "onErrorStop");
-		if($this->dbType=="BLINDDB")
-			return;
+		
+		if( $this->dbType=="BLINDDB" ||
+		    $this->errnodb() > 0  ) // query before had an error
+		{
+			return array();
+		}
 		$row= array();
-		$type= $this->getTyp($typ);
 		$row= $this->fetchdb_row($typ);
 		if($row)
 			$row= $this->orderDate("row", $row, "", $onError);
@@ -763,17 +822,18 @@ abstract class STDatabase extends STObjectContainer
 	abstract protected function errnodb();
  	function errno()
  	{
-		$ern= $this->errnodb();
-		if($ern > 0)
-			$this->error= true;
- 	 	return $ern;
+ 	    if(isset($this->errno))
+ 	        return $this->errno;
+		$this->errno= $this->errnodb();
+		$this->error= $this->errordb();
+	    return $this->errno;
   	}
   	function error()
 	{
-		$ern= $this->errnodb();
-		if($ern > 0)
-			$this->error= true;
-		return $this->errordb();
+  	    if(isset($this->error))
+  	        return $this->error;
+		$this->errno();
+		return $this->error;
   	}
 	function fetch_single_array($statement, $onError= onErrorStop)
 	{
@@ -1151,7 +1211,7 @@ abstract class STDatabase extends STObjectContainer
 			$TableName= $preg[2];
 		}else
 			$dbName= $this->dbName;
-		$result= $this->list_dbtable_fields($TableName);
+		$result= $this->list_dbtable_fields($TableName, $onError);
 		if( !$result
 			&&
 			$onError > noErrorShow )

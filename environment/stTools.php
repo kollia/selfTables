@@ -343,47 +343,6 @@ function phpVersionNeed($needVersion, $functionName= null)
 		return $bOk;
 }
 
-function mysqlVersionNeed($database, $needVersion, $functionName= null)
-{
-		global $HTML_CLASS_DEBUG_CONTENT;
-
-		$version= $database->server_info();
-		$version= preg_split("/[-]/", $version);
-		$version= $version[0];
-		$aktVers= preg_split("/[.]/", $version);
-		$needVers= preg_split("/[.]/", $needVersion);
-		$bOk= true;
-		$anz= count($aktVers);
-		$anzA= count($needVers);
-		if($anz<$anzA)
-			$anz= $anzA;
-		for($o= 0; $o<$anz; $o++)
-		{
-			$akt= $aktVers[$o];
-			settype($akt, "integer");
-			$need= $needVers[$o];
-			settype($need, "integer");
-			if($akt<$need)
-			{
-				$bOk= false;
-				break;
-			}
-			if($akt>$need)
-				break;
-		}
-		if(	!$bOk
-			and
-			$functionName
-			and
-			$HTML_CLASS_DEBUG_CONTENT	)
-		{
-			echo "<br />\naktual <b>PHP Version ".$version.":</b> ";
-			echo "need Version <b>".$needVersion."</b> for ";
-			echo $functionName."<br />\n";
-		}
-		return $bOk;
-}
-
 class myTools
 {
 	public static function showErrorTrace($from= 0, $much= -3)
