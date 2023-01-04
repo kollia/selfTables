@@ -712,35 +712,60 @@ class STDbSelector extends STDbTable
 				$table->displayIdentifs(false);
 			return $columnString;
 		}
-		function count($column= "*", $alias= null, $add= false)
+		public function count($table= "*", string $column= "*", $alias= null, $add= false)
 		{
-			Tag::paramCheck($column, 1, "string", "STBaseTable");
-			Tag::paramCheck($alias, 2, "string", "null");
+			STCheck::param($table, 0, "string", "STBaseTable");
+			// param 1 $column should always a string
+			STCheck::param($alias, 2, "string", "null", "bool");
+			STCheck::param($add, 3, "bool");
 
-			if(typeof($column, "STBaseTable"))
+			if($table == "*")
 			{
-				$selected= $column->getSelectedColumns();
+			    if($column == "*")
+			        STDbTable::countA();
+			    else
+			        STDbTable::countA($table, $column);
+			    return;
+			}
+			if(typeof($table, "STBaseTable"))
+			{
+			    if(typeof($alias, "boolean"))
+			        $add= $alias;
+			    if($column != "*")
+			        $alias= $column;
+				$selected= $table->getSelectedColumns();
 				$columnString= "";
-				if($column->isDistinct())
-					$columnString= "distinct ";
+				if($table->isDistinct())
+				    $columnString= "distinct ";
+				$table= $table->getName();
 				foreach($selected as $content)
 				{
 					if(	!$this->isSelect($content["column"])
 						or
 						!$this->abNewChoice["select"]			)
 					{
-    					$table= &$this->getFkTable($content["column"], true);
-    					if($table)
+    					$oTable= &$this->getFkTable($content["column"], true);
+    					if($oTable)
     					{
     						STDbTable::select($content["column"]);
-							$columnString.= $this->clearForCount($table);
+							$columnString.= $this->clearForCount($oTable);
     					}
 					}
 					$columnString.= $column->Name.".".$content["column"].",";
 				}
 				$column= substr($columnString, 0, strlen($columnString)-1);
+				STDbTable::count($column, $alias, $add);
+				return;
 			}
-			STDbTable::count($column, $alias, $add);
+			$oTable= &$this->getTable($table);
+			if(!isset($oTable))
+			{// if table is no table name, calling is for current table
+			    $oTable= &$this;
+			    $column= $table;
+			    $alias= $column;
+			    $add= $alias;
+			}
+			$oTable->countA($column, $alias, $add);
 		}
 }
 

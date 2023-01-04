@@ -1113,11 +1113,40 @@ class STBaseTable
 		{
 			$this->count($column, $alias, true);
 		}
-		function count($column= "*", $alias= null, $add= false)
+		public function count($table= "*", string $column= "*", $alias= null, $add= false)
+		{
+		    // only for compatibility with STDbSelector
+		    // call private method countA where $table is $column
+		    if( $table == "*" &&
+		        $column == "*" &&
+		        $alias === null &&
+		        $add == false         )
+		    {// only default calling
+		        STBaseTable::countA($column, $alias, $add);
+		        return;
+		    }
+		    if( $column == "*" &&
+		        $alias === null &&
+		        $add == false         )
+		    {// $table should be column, all other default
+		        STBaseTable::countA($table);
+		        return;
+		    }
+		    if( $alias === null &&
+		        $add == false         )
+		    {// $table should be column, column is alias and all other default
+		        STBaseTable::countA($table, $column);
+		        return;
+		    }
+		    STBaseTable::countA($table, $column, $alias);
+		}
+		protected function countA($column= "*", string $alias= null, $add= null, $add2= false)
 		{
 			Tag::paramCheck($column, 1, "string", "STBaseTable");
 			Tag::paramCheck($alias, 2, "string", "null");
 
+			if($add === null)
+			    $add= false;
 			if(!isset($this->bOrder))
 				$this->bOrder= false;
 			$this->bHasGroupColumns= true;
