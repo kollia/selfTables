@@ -169,7 +169,7 @@ class STDbTable extends STBaseTable
     	{
 			if(STCheck::isDebug())
 			{
-				STCheck::alert(!$this->columnExist($column), "STBaseTable::selectA()",
+				STCheck::alert(!$this->validColumnContent($column), "STBaseTable::selectA()",
 											"column '$column not exist in table ".$this->Name.
 											"(".$this->getDisplayName().")");
 			}else

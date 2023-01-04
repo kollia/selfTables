@@ -1448,7 +1448,7 @@ abstract class STDatabase extends STObjectContainer
 					{
 						if(!$needetTables[$content["table"]])
 							$needetTables[$content["table"]]= &$this->getTable($content["table"]);
-						if($needetTables[$content["table"]]->columnExist($col))
+						if($needetTables[$content["table"]]->validColumnContent($col))
 						{// if exists name in table
 							if($bNeedAlias)
 								$columnString.= $aAliases[$content["table"]].".";
@@ -1460,7 +1460,7 @@ abstract class STDatabase extends STObjectContainer
 								$table= &$this->getTable($preg[1]);
 								if(	$table
 									and
-									$table->columnExist($preg[2])	)
+									$table->validColumnContent($preg[2])	)
 								{
 									$columnString.= $aAliases[$preg[1]].".";
 									$columnString.= $preg[2].",";
@@ -1479,7 +1479,7 @@ abstract class STDatabase extends STObjectContainer
 			{				
 				if(!isset($needetTables[$content["table"]]))
 					$needetTables[$content["table"]]= &$this->getTable($content["table"]);
-				if( !$needetTables[$content["table"]]->columnExist($column)
+				if( !$needetTables[$content["table"]]->validColumnContent($column)
 					and
 					$column!="*"	)
 				{

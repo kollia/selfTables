@@ -1335,7 +1335,7 @@ class STBaseTable
 			
 			if(STCheck::isDebug())
 			{
-				STCheck::alert(!$this->columnExist($column), "STBaseTable::selectA()",
+				STCheck::alert(!$this->validColumnContent($column), "STBaseTable::selectA()",
 											"column $column not exist in table ".$this->Name.
 											"(".$this->getDisplayName().")");
 			}
@@ -1403,7 +1403,7 @@ class STBaseTable
 					$oTable= &$this;
 				else
 					$oTable= &$this->db->getTable($table);
-				STCheck::alert(!$oTable->columnExist($column), "STBaseTable::selectA()",
+				STCheck::alert(!$oTable->validColumnContent($column), "STBaseTable::selectA()",
 											"column $column not exist in table ".$table.
 											"(".$oTable->getDisplayName().")");
 			}
@@ -1527,50 +1527,70 @@ class STBaseTable
 			}
 			st_print_r($this->aGroups,3);
 		}
-		function columnExist($column)
+		/**
+		 * check whether given name is a valid column.<br />
+		 * The column can also be a quoted string,
+		 * or contain a keyword from database
+		 *  
+		 * @param string $column string to check
+		 * $param boolean $alias whether column can also be an alias name (default:false) 
+		 * @return boolean true if the column parameter is valid
+		 */
+		public function validColumnContent(string $content, bool $bAlias= false) : bool
 		{
-			if(preg_match("/^['\"].*['\"]$/", $column))
-			// column is maybe only an string content
-				return true;
-			if(preg_match("/(count|min|max)\((.*)\)/i", $column, $preg))
+		    if(typeof($this, "STDbTable"))
+		    {
+		        $field= $this->getDatabase()->keyword($content);
+		        if($field != false)
+		        {
+		            foreach($field['columns'] as $column)
+		            {
+		                if( $column != "*" &&
+		                    !$this->validColumnContentA($column, $bAlias) )
+		                {
+		                    return false;
+		                }
+		            }
+		            return true;
+		        }		        
+		    }
+		    return $this->validColumnContentA($content, $bAlias);
+		}
+		private function validColumnContentA(string $content, bool $bAlias= false) : bool
+		{
+		    if(preg_match("/^['\"].*['\"]$/", $column))
+		        // column is maybe only an string content
+		        return true;
+		    return $this->columnExist($content, $bAlias);
+		}
+		public function columnExist(string $column, bool $bAlias= false) : bool
+		{
+			$split= preg_split("/[ ]/", $column);
+			if( count($split) == 2 &&
+			    strtolower($split[0]) == "distinct"  )
 			{
-				if($preg[1]=="count" && trim($preg[2])=="*")
-					return true;
-				if($preg[1]!="count")
-				{
-					$split= array();
-					$split[]= $preg[2];
-				}else
-					$split= preg_split("/[ ,]/", $preg[2]);
-				foreach($split as $col)
-				{
-					if($col!="distinct")
-					{
-						if(preg_match("/^([^.]+)\.([^.]+)$/", $col, $preg))
-						{
-							$table= &$this->getTable($preg[1]);
-							if(!$table)
-								return false;
-							if(!$table->columnExist($preg[2]))
-								return false;
-							unset($table);
-						}else
-						{
-							if(!$this->columnExist($col))
-								return false;
-						}
-					}
-				}
-				return true;
+			    $column= $split[1];
 			}
 			foreach($this->columns as $tcolumn)
 			{
 				if($column==$tcolumn["name"])
 					return true;
 			}
+			if($bAlias == false)
+			    return false;
+			$field= $this->searchByAlias($column);
+			if(isset($field))
+			    return true;
 			return false;
 		}
-		function searchByAlias($aliasName)
+		/**
+		 * search whether $aliasName exist as alias name
+		 * as seleted column or only as identif column
+		 * 
+		 * @param string $aliasName
+		 * @return array|NULL array with tablename, aliasname, type is alias and get as select or identif
+		 */
+		function searchByAlias(string $aliasName)
 		{
 			STCheck::param($aliasName, 0, "string");
 
@@ -1583,6 +1603,7 @@ class STBaseTable
 					$aRv["table"]= $this->Name;
 					$aRv["type"]= "alias";
 					$aRv["get"]= "select";
+					$aRv["alias"]= $field["alias"];
 					return $aRv;
 				}
 			}
@@ -2034,7 +2055,7 @@ class STBaseTable
 		}
 		function identifColumn($column, $alias= null)
 		{
-			Tag::alert(!$this->columnExist($column), "STBaseTable::identifColumn()", "column $column not exist in table ".$this->Name);
+			Tag::alert(!$this->validColumnContent($column), "STBaseTable::identifColumn()", "column $column not exist in table ".$this->Name);
 
 			if(	!isset($this->abNewChoice["identifColumn"]) ||
 				!$this->abNewChoice["identifColumn"]			)

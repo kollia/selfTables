@@ -302,7 +302,7 @@ class STDbSelector extends STDbTable
 					$oTable= &$this;
 				else
 					$oTable= &$this->db->getTable($tableName);
-				STCheck::alert(!$oTable->columnExist($column), "STBaseTable::selectA()",
+				STCheck::alert(!$oTable->validColumnContent($column), "STBaseTable::selectA()",
 											"column $column not exist in table ".$tableName.
 											"(".$oTable->getDisplayName().")");
 			}

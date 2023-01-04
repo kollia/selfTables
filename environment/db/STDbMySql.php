@@ -128,6 +128,24 @@ class STDbMySql extends STDatabase
 		}else
 			$this->conn->close();
 	}
+	/**
+	 * Dummy method to overwriting
+	 * {@inheritDoc}
+	 * @see STBaseContainer::create()
+	 */
+	public function create()
+	{
+	    // Dummy
+	}
+	/**
+	 * Dummy method to overwriting
+	 * {@inheritDoc}
+	 * @see STBaseContainer::init()
+	 */
+	public function init()
+	{
+	    // Dummy
+	}
 		/**
 		*  wechselt zu der angegebenen Datenbank
 		*
@@ -464,6 +482,7 @@ class STDbMySql extends STDatabase
 	 */
 	public function keyword(string $column)
 	{
+	    $preg= array();
 	    if(!preg_match("/^([^\(\)]+)\((.*)\)$/", trim($column), $preg))
 	        return false;
 	    $allowed= array(
@@ -477,21 +496,6 @@ class STDbMySql extends STDatabase
 	    $keyword= strtolower($preg[1]);
 	    if(!array_key_exists($keyword, $allowed))
 	        return false;
-	    $type= "int";
-	    $len= 11;
-	    switch($keyword)
-	    {
-	        case "now":
-	        case "date":
-	        case "sysdate":
-	           $type= "date";
-	           $len= 10;
-	           break;
-	        case "password":
-	            $type= "char";
-	            $len= "512";
-	            break;
-	    }
 	    $inherit= preg_split("/[ ,]/", $preg[2], PREG_SPLIT_NO_EMPTY);
 	    return array(  "keyword" => $keyword,
 	                   "columns" => $inherit,
