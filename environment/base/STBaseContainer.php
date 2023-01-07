@@ -590,7 +590,7 @@ class STBaseContainer extends BodyTag
 		$containerObj= new $className($containerName, $fromContainer);
 		return $containerObj;
 	}
-	function existContainer($containerName)
+	public static function existContainer($containerName)
 	{
 		global	$global_array_all_exist_stobjectcontainers;
 

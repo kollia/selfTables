@@ -1529,7 +1529,7 @@ abstract class STDatabase extends STObjectContainer
     {
     	$exist= count($fk);
     	if($exist > 0)
-    	    $msg= "make ";
+    	    $msg= "found ";
     	else
     	    $msg= "do not need ";
     	$msg.= "foreign Keys for table ".get_class($oTable).":'".$oTable->getName()."' with ID:".$oTable->ID;
@@ -1720,20 +1720,169 @@ abstract class STDatabase extends STObjectContainer
 				unset($BackTable);
 			}// end of if($join)
 		}// end of foreach($oTable->aBackJoin)
-		if( STCheck::isDebug("db.statements.table") &&
-		    $bMainTable &&
-		    count($maked) < count($aTableAlias)           )
+		    
+		if( $bMainTable &&
+		    count($maked) < count($aTableAlias)   )
 		{
-		    $space= STCheck::echoDebug("db.statements.table", "need select for tables:");
-		    st_print_r($aTableAlias, 2, $space);
-		    STCheck::echoDebug("db.statements.table", "but have now made only for");
-		    st_print_r($maked, 2, $space);
-		    $space= STCheck::echoDebug("db.statements.table", "structure of tables are");
-		    st_print_r($tableStructure, 20, $space);
+		    if(STCheck::isDebug("db.statements.table"))
+		    {
+		        $space= STCheck::echoDebug("db.statements.table", "need select for tables:");
+		        st_print_r($aTableAlias, 2, $space);
+		        STCheck::echoDebug("db.statements.table", "<b>but have now made only for</b>");
+		        st_print_r($maked, 2, $space);
+		        $space= STCheck::echoDebug("db.statements.table", "structure of tables are");
+		        st_print_r($tableStructure, 20, $space);
+		    }
+		    $accessTable= array();
+		    $accessFoundTable= array();
+		    foreach($tableStructure as $table => $reach)
+		    {
+		        $found= array();
+		        if(!is_array($reach))
+		        {// reach = 'before'
+		            if(array_key_exists($table, $aTableAlias))
+		                $found['found'][$table]= array();
+		            else
+		                $found= array();
+		        }else
+		            $found= $this->searchInTableStructure($reach, $aTableAlias);
+		        $space= STCheck::echoDebug("db.statements.table", "found follow structure from table <b>$table</b>");
+		        if(isset($found['found']))
+		            $accessFoundTable[$table]= $found;
+		        else
+		            $accessTable[$table]= $found['access'];
+	            if(STCheck::isDebug("db.statements.table"))
+	                st_print_r($found, 20, $space);
+		    }
+		    if(STCheck::isDebug("db.statements.table"))
+		    {
+		        STCheck::echoDebug("db.statements.table", "tables has access to other tables:");
+		        st_print_r($accessTable, 20, $space);
+		        STCheck::echoDebug("db.statements.table", "table found needed tables:");
+		        st_print_r($accessFoundTable, 20, $space);
+		    }
+		    $foundAccessOver= array();
+		    foreach($accessFoundTable as $firstTable => $reachFirstTable)
+		    {
+		        foreach($accessFoundTable as $secondTable => $reachSecondTable)
+		        {
+		            if( $firstTable != $secondTable &&
+		                $reachFirstTable['found'] != $reachSecondTable['found'] &&
+		                (   !array_key_exists($firstTable, $maked) ||
+		                    !array_key_exists($secondTable, $maked)   )   )
+		            {
+		                foreach($reachFirstTable['access'] as $foundTable)
+		                {
+		                    if(in_array($foundTable, $reachSecondTable['access']))
+		                    {
+		                        $foundFirst= array_key_first($reachFirstTable['found']);
+		                        $foundSecond= array_key_first($reachSecondTable['found']);
+		                        $ofStr= "$foundSecond $foundFirst";
+		                        if( !isset($foundAccessOver[$ofStr]) ||
+		                            !in_array($foundTable, $foundAccessOver[$ofStr])  )
+		                        {
+		                            if(!isset($foundAccessOver[$ofStr]))
+    		                            $toStr= $foundFirst ." ". $foundSecond;
+		                            else
+		                                $toStr= $ofStr;
+    		                        $foundAccessOver[$toStr][]= $foundTable;
+    		                        if(STCheck::isDebug("db.statements.table"))
+    		                        {
+    		                            $msg= "found connection from table <b>$firstTable</b>($foundFirst) ";
+    		                            $msg.= "to tables <b>$secondTable</b>($foundSecond) ";
+    		                            $msg.= " over table <b>$foundTable</b>";
+    		                            STCheck::echoDebug("db.statements.table", $msg);
+    		                        }
+		                        }
+		                    }
+		                }
+		            }
+		        }
+		    }
+		    if(STCheck::isDebug())
+		    {
+		        $bTableDebug= STCheck::isDebug("db.statements.table");
+		        STCheck::debug("db.statements.table");
+		        if(count($foundAccessOver) > 0)
+		        {
+		            if(!$bTableDebug)
+		            {
+		                echo "<br />";
+		                $space= STCheck::echoDebug("db.statements.table", "structure of tables are");
+		                st_print_r($tableStructure, 20, $space);
+		            }
+    		        echo "<br /><br /><br />";
+    		        $foundtables= false;
+    		        $ambiguous= false;
+    		        foreach($foundAccessOver as $conns)
+    		        {
+    		            if( is_array($conns) &&
+    		                count($conns) > 0     )
+    		            {
+    		                $foundtables= true;
+    		                if(count($conns) > 1)
+    		                {
+    		                    $ambiguous= true;
+    		                    break;
+    		                }
+    		            }
+    		        }
+    		        if($foundtables)
+    		        {
+        		        $xtable= "table as follow";
+        		        $msg= "found ";
+        		        if($ambiguous)
+        		            $msg.= "ambiguous ";
+        		        else
+        		            $msg.= "a ";
+        		        $msg.= "over follow table";
+        		        if($ambiguous)
+        		            $msg.= "s, please choose the best one";
+        		        else
+        		            $xtable= array_value_first(array_value_first($foundAccessOver));
+            		    STCheck::echoDebug("db.statements.table", "found ambiguous connection over follow tables, please choose the best one");
+            		    $space= STCheck::echoDebug("db.statements.table", "implement ".get_class($oMainTable)."(<b>$tableName</b>)->joinOver<b>(</b>&lt;$xtable&gt;<b>)</b>");
+            		    st_print_r($foundAccessOver, 2, $space);
+            		    echo "<br /><br />";
+            		    echo "$statement<br>";
+            		    echo "---------------------------------------------------------------------------------------------------------";
+            		    echo "---------------------------------------------------------------------------------------------------------<br />";
+            		    showErrorTrace();
+            		    echo "<br /><br /><br />";
+            		    exit;
+    		        }
+		        }
+		    }
+		    STCheck::alert(count($maked) < count($aTableAlias), "STDatabase::getTableStatement()", "do not join to all alias tables see STCheck::debug('db.statements.table')");
 		}
-		STCheck::alert($bMainTable && count($maked) < count($aTableAlias), "STDatabase::getTableStatement()", "do not join to all alias tables see STCheck::debug('db.statements.table')");
 		STCheck::echoDebug("db.statements.table", "TableStatement - Result from table '".$oTable->getName()."'= '$statement'");
 		return $statement;
+	}
+	private function searchInTableStructure(array $structure, array $needTables)
+	{	    
+	    $aRv= array();
+	    foreach($structure as $table => $reach)
+	    {
+	        if(array_key_exists($table, $needTables))
+	            $aRv['found'][$table]= array();	            
+	        else
+	            $aRv['access'][]= $table;
+	        if(is_array($reach))
+	        {
+    	        $found= $this->searchInTableStructure($reach, $needTables);
+    	        if(count($found) > 0)
+    	        {
+    	            if(isset($found['access']))
+    	            {
+    	                if(isset($aRv['access']))
+    	                    $aRv['access']= array_merge($aRv['access'], $found['access']);
+    	                else
+    	                    $aRv['access']= $found['access'];
+    	            }
+    	        }
+	        }
+	    }
+	    return $aRv;
 	}
 	private function searchJoinTables(&$aAliases)
 	{
@@ -2480,6 +2629,14 @@ abstract class STDatabase extends STObjectContainer
 		$aliasTables= array();
 		//STCheck::write("search for aliases");
 		$this->createAliases($aliasTables, $oTable, $bFromIdentifications);
+		// search for tables which should also joined
+		$joinTables= array();
+		$joins= $oTable->getAlsoJoinOverTables();
+		if(count($joins) > 0)
+		{
+		    foreach($joins as $table)
+		        $joinTables[$table]= $aliasTables[$table];
+		}
 		if(STCheck::isDebug("db.statements"))
 		{
 		      $space= STCheck::echoDebug("db.statements", "need follow tables inside select-statement");
@@ -2498,7 +2655,10 @@ abstract class STDatabase extends STObjectContainer
 		$this->bFirstSelectStatement= true;
 		if($oTable->isDistinct())
 		    $statement.= "distinct ";
-		$statement.= $oTable->getSelectStatement(/*first select*/$bMainTable, $mainTable, $aliasTables, $withAlias);
+		    $statement.= $oTable->getSelectStatement(/*first select*/$bMainTable, $mainTable, $aliasTables, $withAlias);
+		// implement tables which are joined from user
+	    if(count($joinTables))
+	        $aliasTables= array_merge($aliasTables, $joinTables);
 	    if(STCheck::isDebug("db.statements"))
 	    {
 	        $space= STCheck::echoDebug("db.statements", "need follow tables inside select-statement");

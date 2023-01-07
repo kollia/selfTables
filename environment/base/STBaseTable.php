@@ -37,6 +37,12 @@ class STBaseTable
 	var	$aFks= array();	// so make an new one
 	var	$aBackJoin= array();// for join in table where the other have an foreigen key to the own
 							// and it should be in the select-statement
+    /**
+     * array of table over which should also joined
+     * inside the statment to reach correct usage
+     * @var array
+     */
+	protected $aJoinOverTables= array();
     var $error;
 	var $errorText;
 	var	$showTypes= array();
@@ -822,6 +828,20 @@ class STBaseTable
 		{
 			return $this->bIsNnTable;
 		}
+		/**
+		 * make statement with join over also this given table
+		 * 
+		 * @param string $table name of table
+		 */
+		public function joinOver(string $table)
+		{
+		    if(!in_array($table, $this->aJoinOverTables))
+		        $this->aJoinOverTables[]= $table;
+		}
+		function getAlsoJoinOverTables() : array
+		{
+		    return $this->aJoinOverTables;
+		}
 		function foreignKey($ownColumn, $toTable, $otherColumn= null, $where= null)
 		{
 			STCheck::param($ownColumn, 0, "string");
@@ -1587,7 +1607,7 @@ class STBaseTable
 		}
 		private function validColumnContentA(string $content, bool $bAlias= false) : bool
 		{
-		    if(preg_match("/^['\"].*['\"]$/", $column))
+		    if(preg_match("/^['\"].*['\"]$/", $content))
 		        // column is maybe only an string content
 		        return true;
 		    return $this->columnExist($content, $bAlias);

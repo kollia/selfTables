@@ -514,6 +514,16 @@ class STDbTable extends STBaseTable
 		return array(	"type"=>$type,
 						"length"=>$len	);
 	}
+	/**
+	 * make statement with join over also this given table
+	 * {@inheritDoc}
+	 * @see STBaseTable::joinOver()
+	 */
+	public function joinOver(string $table)
+	{
+	    $table= $this->db->getTableName($table);
+	    STBaseTable::joinOver($table);
+	}
 	protected function fk($ownColumn, &$toTable, $otherColumn= null, $bInnerJoin= null, $where= null)
 	{
 		Tag::paramCheck($ownColumn, 1, "string");
