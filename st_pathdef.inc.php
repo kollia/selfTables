@@ -33,14 +33,21 @@
 	//
 	//--------------------------------------------------------------------------
 	
-	$__globally_debug_defined= false;
-	if($__globally_debug_defined)
-	{
-		ini_set('display_errors', 1);
-		ini_set('display_startup_errors', 1);
-		error_reporting(E_ALL);
-	}else
-		error_reporting(E_ERROR | E_WARNING | E_PARSE);
+    $__globally_debug_defined= false;
+    function global_debug_definition(bool $define)    
+    {
+        global $__globally_debug_defined;
+        
+        $__globally_debug_defined= $define;
+        if($define)
+        {
+    		ini_set('display_errors', 1);
+    		ini_set('display_startup_errors', 1);
+    		error_reporting(E_ALL);
+    	}else
+    		error_reporting(E_ERROR | E_WARNING | E_PARSE);
+    }
+    global_debug_definition($__globally_debug_defined);
 
 	//--------------------------------------------------------------------------
 	// set php variables

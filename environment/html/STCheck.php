@@ -385,14 +385,15 @@ class STCheck
 			
 			if($boolean !== false)
 			{
-			    error_reporting(E_ALL);
+			    global_debug_definition(true);
 			    if( $global_activeOutputBuffer == false &&
 			        $global_outputBufferWasErased == false   )
     			{
     			    $global_activeOutputBuffer= true;
     				ob_start();
     			}
-			}
+			}else
+			    global_debug_definition(false);
 			if(	!$HTML_CLASS_DEBUG_CONTENT
 				and
 				$boolean	)
