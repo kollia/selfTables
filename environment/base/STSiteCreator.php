@@ -739,8 +739,7 @@ class STSiteCreator extends HtmlTag
 	{
 		global	$global_boolean_install_objectContainer;
 
-		if(STCheck::isDebug())
-			STCheck::debug("install");
+		STCheck::debug("install");
 		$bInstalled= false;
 		$containers= STBaseContainer::getAllContainerNames();
 		foreach($containers as $containerName)
