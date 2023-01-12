@@ -138,8 +138,8 @@ class STBaseBox extends TableTag
 			$oCallbackClass->aAcessClusterColumns= &$this->asDBTable->sAcessClusterColumn;
 			if(!$oCallbackClass->aTables)
 			{
-				$aliases= array();
-				$this->asDBTable->createAliases($aliases);
+				$aliases= $this->asDBTable->getAliasOrder();
+				$aliases= array_flip($aliases);
 				$oCallbackClass->aTables= $aliases;
 			}
 			$errorString= "";

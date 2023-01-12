@@ -617,7 +617,7 @@ class STDbTable extends STBaseTable
 	 * @param array $aTableAlias array of all exist alias for tables exist, which gives back all alias which needed
 	 * @param bool $withAlias whether alias should set, by null the method decide it self
 	 */
-	/*private*/function getSelectStatement(bool $bFirstSelect, $oMainTable, array &$aTableAlias, $withAlias)
+	/*private*/function getSelectStatement(bool $bFirstSelect, $oMainTable, array &$aTableAlias, bool $withAlias= null)
 	{
 	    $aUseAliases= array();
 	    $singleStatement= "";
@@ -830,9 +830,10 @@ class STDbTable extends STBaseTable
                     $singleStatement.= " as $columnAlias";
                 }
             }
-            Tag::echoDebug("db.statements.select", "String is \"".$statement."\"");
-            Tag::echoDebug("db.statements.select", "String is \"".$singleStatement."\"");
-            Tag::echoDebug("db.statements.select", "last char is \"".substr($statement, strlen($statement), -1)."\"");
+            STCheck::echoDebug("db.statements.select", "String is \"".$singleStatement."\"");
+            STCheck::echoDebug("db.statements.select", "String is \"".$statement."\"");
+            //echo __FILE__.__LINE__."<br>";
+            //echo "last char from statement is \">>".substr($statement, strlen($statement), -1)."<<\"";
             if( $statement &&
                 substr($statement, strlen($statement), -1) != ','   )
             {
@@ -879,9 +880,9 @@ class STDbTable extends STBaseTable
         }
         if($withAlias == false)
             $statement= $singleStatement;
-            $statement= substr($statement, 0, strlen($statement)-1);
-            Tag::echoDebug("db.statements.select", "createt String is \"".$statement."\"");
-            return $statement;
+        $statement= substr($statement, 0, strlen($statement)-1);
+        Tag::echoDebug("db.statements.select", "createt String is \"".$statement."\"");
+        return $statement;
 	}
 	// alex 19/04/2005:	alle links in eine Funktion zusammengezogen
 	//					und $address darf auch ein STDbTable,

@@ -1921,8 +1921,7 @@ abstract class STDatabase extends STObjectContainer
                 $c++;
                 if(!$needTable)
                 {
-                    $allAliases= array();
-                    $this->createAliases($allAliases);
+                    $allAliases= $this->getAliasOrder();
                     $aAliases[$tableName]= $allAliases[$tableName];
                 }
             }
@@ -2589,30 +2588,21 @@ abstract class STDatabase extends STObjectContainer
 		return $where;
 	}
 	/**
-	 * create aliases for tables and search also for unreached tables
-	 * to set maybe an back-join
+	 * create aliases order for all tables inside database
 	 *
-	 * @param array:$aliases empty array which get all tables with aliases
-	 * @param STBaseTable:$oTable object of current table
-	 * @param boolean:$bFromIdentifications need aliases from identification columns
-	 * @return boolean false if not found any alias, otherwise true
+	 * @return array of all tables with aliases
 	 */
-	function createAliases(&$aliases) //, &$oTable, $bFromIdentifications)
+	function getAliasOrder() : array
 	{
 	    if(isset($this->aAliases))
 	    {
-	        $aliases= $this->aAliases;
-	        return false;
+	        return $this->aAliases;
 	    }
 	    STCheck::echoDebug("db.statements.aliases", "create sql aliases for container '".$this->getName()."'");
-	    $aliases= array_flip($this->asExistTableNames);
-	    foreach ($aliases as $tableName=>&$nr)
+	    $this->aAliases= array_flip($this->asExistTableNames);
+	    foreach ($this->aAliases as &$nr)
 	        $nr= "t".$nr;
-	    $this->aAliases= $aliases;
-	    // alex 06/04/2022:    why so complicated?
-	    //                     take only all tables from container
-	    //                     is much more easy and have better performance
-	    return true;
+	    return $this->aAliases;
 	}
 	var $wait= false;
 	function getStatement($oTable, $bFromIdentifications= false, $withAlias= null)
@@ -2628,7 +2618,7 @@ abstract class STDatabase extends STObjectContainer
 		$this->foreignKeyModification($oTable);
 		$aliasTables= array();
 		//STCheck::write("search for aliases");
-		$this->createAliases($aliasTables, $oTable, $bFromIdentifications);
+		$aliasTables= $this->getAliasOrder();
 		// search for tables which should also joined
 		$joinTables= array();
 		$joins= $oTable->getAlsoJoinOverTables();
@@ -2655,7 +2645,7 @@ abstract class STDatabase extends STObjectContainer
 		$this->bFirstSelectStatement= true;
 		if($oTable->isDistinct())
 		    $statement.= "distinct ";
-		    $statement.= $oTable->getSelectStatement(/*first select*/$bMainTable, $mainTable, $aliasTables, $withAlias);
+		$statement.= $oTable->getSelectStatement(/*first select*/$bMainTable, $mainTable, $aliasTables, $withAlias);
 		// implement tables which are joined from user
 	    if(count($joinTables))
 	        $aliasTables= array_merge($aliasTables, $joinTables);

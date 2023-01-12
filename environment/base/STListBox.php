@@ -248,13 +248,19 @@ class STListBox extends STBaseBox
 		}
 
 		$aliases= array();
-		$this->oSelector->createAliases($aliases);
+		$aliases= $this->oSelector->getAliasOrder();
 		$aliases= array_flip($aliases);
 		$oCallbackClass->aTables= $aliases;
 		return STBaseBox::makeCallback($action, $oCallbackClass, $columnName, $rownum);
 	}
 	function createStatement()
 	{
+	    if(STCheck::isDebug())
+	    {
+	       $tableName= $this->asDBTable->getName();
+	       STCheck::deprecated("STDbTable(<b>$tableName</b>::getStatement()");
+	    }
+	    
 		$inTableFirstRow= 0;
 		$query= new STQueryString();
 		$HTTP_GET_VARS= $query->getArrayVars();
@@ -398,8 +404,8 @@ class STListBox extends STBaseBox
 			$this->oSelector->setStatement($statement);
 			$this->statement= $this->oSelector->getStatement();
 			$aliases= array();
-			$this->db->createAliases($aliases, $oTable, false);
-			// $this->oSelector->createAliases($aliases);
+			$aliases= $this->db->getAliasOrder();
+			// $this->oSelector->getAliasOrder($aliases);
 			STCheck::echoDebug("db.main.statement", $this->statement);
 			
 			if(count($aliases)>1)

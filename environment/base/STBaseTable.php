@@ -992,9 +992,9 @@ class STBaseTable
 		    st_print_r($this->aBackJoin, 2, $space);
 		}
 	}
-	function createAliases(&$aliasTables)
+	public function getAliasOrder()
 	{
-		return $this->db->createAliases($aliasTables);
+		return $this->db->getAliasOrder();
 	}
 	function clearSqlAliases()
 	{
@@ -1004,7 +1004,7 @@ class STBaseTable
 	function isOrdered()
 	{
 		$aliases= array();
-		$this->createAliases($aliases, $this);
+		$aliases= $this->db->getAliasOrder();
 		$order= $this->getOrderStatement($aliases, null, true);
 		if($order)
 			return true;
@@ -2259,7 +2259,7 @@ class STBaseTable
 		{
 			return $this->bModifyFk;
 		}
-		function getWhere()
+		public function getWhere()
 		{
 			if(!isset($this->oWhere))
 				return null;
