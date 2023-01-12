@@ -368,8 +368,6 @@ class STDbTableDescriptions
 		    $bCreateFks= true;
 		else
 		    $bCreateFks= false;
-	    echo __FILE__.__LINE__."<br>";
-	    st_print_r($this->aExistTables,5);
 	    foreach($this->aExistTables as $table=>$defined)
 		{
 			if(!$defined["installed"])
