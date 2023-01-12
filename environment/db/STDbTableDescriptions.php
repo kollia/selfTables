@@ -220,14 +220,19 @@ class STDbTableDescriptions
 	    $this->aExistTables[$tableName]= array(	"table"=>$tableName,
 												"installed"=>false	);
 	}
-	/*public*/function setPrefixToTable($prefix, $tableName)
+	public function setPrefixToTable(string $prefix, string $tableName)
 	{
 	    STCheck::echoDebug("db.descriptions", "  set prefix '$prefix' for table '$tableName' inside '".$this->dbName."' database");
+	    STCheck::is_alert(!isset($this->aExistTables[$tableName]), "STDbTableDescription::setPrefixToTable()", "table name '$tableName' does not exist");
 	    	    
-	    $old= $this->aExistTables[$tableName]["table"];
-		$this->aExistTables[$tableName]["table"]= $prefix.$old;
+	    if( !isset($this->aExistTables[$tableName]['addPrefix']) ||
+	        $this->aExistTables[$tableName]['addPrefix'] == true   )
+	    {
+    	    $old= $this->aExistTables[$tableName]["table"];
+    		$this->aExistTables[$tableName]["table"]= $prefix.$old;
+	    }
 	}
-	/*public*/function setPrefixToTables($prefix)
+	public function setPrefixToTables(string $prefix)
 	{
 		foreach($this->aExistTables as $name=>$table)
 		    $this->setPrefixToTable($prefix, $name);
@@ -338,20 +343,37 @@ class STDbTableDescriptions
 		$this->asTableColumns[$tableName][$column]["idx"]["name"]= $index;
 		$this->asTableColumns[$tableName][$column]["idx"]["length"]= $indexLength;
 	}
-	/*public*/function autoIncrement($tableName, $column)
+	public function autoIncrement($tableName, $column)
 	{
 		STCheck::is_warning(!$this->aExistTables[$tableName], "STDbTableContainer::setInTableColumnNotNull()", "table $tableName does not exist");
 		Tag::alert(!$this->asTableColumns[$tableName][$column], "STDbTableContainer::setInTableColumnNotNull()", "column $column does not exist in table $tableName");
 
 		$this->asTableColumns[$tableName][$column]["auto_increment"]= true;
 	}
-	/*public*/function updateTable($defined, $tableName)
+	/**
+	 * define new table name for an existing container where tables
+	 * defined inside database
+	 * 
+	 * @param string $defined defined table name in previous container
+	 * @param string $tableName new name of table
+	 * @param boolean $addPrefix whether prefix definition should also generated on this new table (default: false)
+	 */
+	public function updateTable(string $defined, string $tableName, bool $addPrefix= false)
 	{
 	    STCheck::is_error(!$this->aExistTables[$defined], "STDbTableContainer::updateTable()", "table $defined does not exist");
 
 	    $this->aExistTables[$defined]["table"]= $tableName;
+	    $this->aExistTables[$defined]['addPrefix']= $addPrefix;
 	}
-	/*public*/function updateColumn($tableName, $definedColumn, $column)
+	/**
+	 * define new column name inside a table existing in a container
+	 * where tables defined inside database
+	 * 
+	 * @param string $tableName defined table name in previous container
+	 * @param string $definedColumn defined column name in previous container
+	 * @param string $column new column name
+	 */
+	public function updateColumn(string $tableName, string $definedColumn, string $column)
 	{
 	    STCheck::is_error(!isset($this->aExistTables[$tableName]), "STDbTableContainer::updateColumn()", "table $tableName does not exist");
 	    STCheck::is_error(!isset($this->asTableColumns[$tableName][$definedColumn]), "STDbTableContainer::updateColumn()", "column $definedColumn does not exist in table $tableName");
