@@ -859,6 +859,8 @@ class STDbTable extends STBaseTable
                     $aUseAliases[$aTableAlias[$tabName]]= $tabName;
                 }
             }
+            if(count($aUseAliases) > 1)
+                $withAlias= true;
         }
         foreach($aTableAlias as $tableName=>$alias)
         {
