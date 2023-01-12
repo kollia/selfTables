@@ -91,7 +91,7 @@ class STUserGroupManagement extends STObjectContainer
     		$clusterWhere= new STDbWhere($clusterIdentification."=".$stget[$partition][$partitionId]);
     		$clusterWhere->forTable($cluster);
 		}else
-			STCheck::warning($this->currentContainer(), "STUserGroupManagement::init()",
+			STCheck::is_warning($this->currentContainer(), "STUserGroupManagement::init()",
 								"primary key ".$partitionId." from table ".$partition." is not set in the querystring");
 			
 			

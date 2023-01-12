@@ -103,9 +103,11 @@ class STDbSession extends STSession
     protected function session_storage_place()
     {
         if(!$this->bStoreFile)
+        {
+            STCheck::echoDebug("session", "store session over database '". $this->getUserDb()->getName()."'");
             session_set_save_handler( new STDbSessionHandler($this->database), true);
-        else
-            STSession::session_store_place();
+        }else
+            STSession::session_storage_place();
     }
 }
 

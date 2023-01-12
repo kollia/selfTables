@@ -124,7 +124,7 @@ class STBaseBox extends TableTag
 														"function"=>$callbackFunction	);
 		}
 		protected function makeCallback($action, &$oCallbackClass, $columnName, $rownum)
-		{//STCheck::warning(1,"","makeCallback");
+		{//STCheck::is_warning(1,"","makeCallback");
 			Tag::echoDebug("callback", "makeCallback(ACTION:'$action', CALLBACKCLASS("
 									.get_class($oCallbackClass)."), COLUMN:'$columnName', ROWNUM:$rownum)");
 			Tag::paramCheck($action, 1, "string");
@@ -608,7 +608,7 @@ class STBaseBox extends TableTag
 				$field= $this->searchByColumn($name);
 			if(!$field && !$firstAlias)
 				$field= $this->searchByAlias($name);
-			Tag::warning(!$field, "STBaseBox::findAliasOrColumn()", "column ".$name." is not declared in table ".$this->Name);
+			STCheck::is_warning(!$field, "STBaseBox::findAliasOrColumn()", "column ".$name." is not declared in table ".$this->Name);
 			if(!$field)
 			{
 				$field= array();

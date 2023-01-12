@@ -525,10 +525,10 @@ class STDbMySql extends STDatabase
 			{
 			    if($onError == onErrorStop)
 			    {
-			        STCheck::error(1, "fetchdb_row", $this->errordb());
+			        STCheck::is_error(1, "fetchdb_row", $this->errordb());
 			        exit;
 			    }else
-			        STCheck::warning(1, "fetchdb_row", $this->errordb());
+			        STCheck::is_warning(1, "fetchdb_row", $this->errordb());
 			}
 			if($row == NULL)
 				return NULL;

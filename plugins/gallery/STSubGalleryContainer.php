@@ -447,7 +447,7 @@ class STSubGalleryContainer extends STObjectContainer
         }
 	}
 	function checkOrder($parent, $uploadPath, $ftpPath, $deep)
-	{//Tag::warning(1,"", "checkOrder($parent, $uploadPath, $ftpPath, $deep)<br />");
+	{//STCheck::is_warning(1,"", "checkOrder($parent, $uploadPath, $ftpPath, $deep)<br />");
 	
 		if($parent===null)
 			$parent= "null";

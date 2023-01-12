@@ -184,7 +184,7 @@ class STCallbackClass
 								break;
 							}
 						}
-						//Tag::warning(!array_key_exists($columnPrefix.$column, $this->sqlResult), "STCallbackClass::setValue()",
+						//STCheck::is_warning(!array_key_exists($columnPrefix.$column, $this->sqlResult), "STCallbackClass::setValue()",
 						//						"the value for column $column is not set");
 					}
 					$this->sqlResult[$columnPrefix.$column][$rownum]= $value;
@@ -212,7 +212,7 @@ class STCallbackClass
 					echo "\n<br />existing keys in sqlResult:<br />";
 					foreach($this->sqlResult as $key=>$value)
 						echo $key."<br />";
-   					Tag::warning(1, "STCallbackClass::setValue()",
+   					STCheck::is_warning(1, "STCallbackClass::setValue()",
     										"the value for column $column in row $rownum is not set in the db-statement");
 				}*/
 				$this->sqlResult[$column]= $value;
@@ -257,7 +257,7 @@ class STCallbackClass
 								break;
 							}
 						}
-						//Tag::warning(!array_key_exists($columnPrefix.$column, $this->sqlResult), "STCallbackClass::getValue()",
+						//STCheck::is_warning(!array_key_exists($columnPrefix.$column, $this->sqlResult), "STCallbackClass::getValue()",
 						//						"the value for column $column in row $rownum is not set");
 					}
 					if(isset($this->sqlResult[$columnPrefix.$column][$rownum]))
@@ -274,7 +274,7 @@ class STCallbackClass
     						break;
     					}
     				}
-//    				Tag::warning(!array_key_exists($columnPrefix.$column, $this->sqlResult[$rownum]), "STCallbackClass::getValue()",
+//    				STCheck::is_warning(!array_key_exists($columnPrefix.$column, $this->sqlResult[$rownum]), "STCallbackClass::getValue()",
 //    										"the value for column $column in row $rownum is not set");
     			}
 				return $this->sqlResult[$rownum][$columnPrefix.$column];
@@ -299,7 +299,7 @@ class STCallbackClass
 				echo "\n<br />existing keys in sqlResult:<br />";
 				foreach($this->sqlResult as $key=>$value)
 					echo $key."<br />";
-   				//Tag::warning(1, "STCallbackClass::setValue()",
+   				//STCheck::is_warning(1, "STCallbackClass::setValue()",
     			//						"the value for column $column in row $rownum is not set in the db-statement");
 			}*/
   			if(isset($this->sqlResult[$column]))

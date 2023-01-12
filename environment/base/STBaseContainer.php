@@ -119,7 +119,7 @@ class STBaseContainer extends BodyTag
 	}
 	function showLogoutButton($buttonName= "log out", $align= "right", $buttonId= "logoutMainButton")
 	{
-		if(Tag::warning(!STSession::sessionGenerated(), "STBaseContainer::showLogoutButton()", "no session for logout button generated"))
+		if(STCheck::is_warning(!STSession::sessionGenerated(), "STBaseContainer::showLogoutButton()", "no session for logout button generated"))
 			return;
 		$session= &STSession::instance();
 		$logout= &$session->getLogoutButton($buttonName, $buttonId);
@@ -176,7 +176,7 @@ class STBaseContainer extends BodyTag
 		{
 			if(!typeof($this, "STObjectContainer"))
 			{
-				Tag::warning(1, "STBaseContainer::navigationTable()", "in container ".get_class($this)." second parameter can only be STALLDEF");
+				STCheck::is_warning(1, "STBaseContainer::navigationTable()", "in container ".get_class($this)." second parameter can only be STALLDEF");
 				$forTable= STALLDEF;
 			}else
 				$forTable= $this->getTableName($forTable);
@@ -199,7 +199,7 @@ class STBaseContainer extends BodyTag
 	{
 		Tag::paramCheck($container, 1, "STBaseContainer", "string");
 		//Tag::paramCheck($className, 2, "string", "null");
-		//Tag::warning(typeof($container, "STBaseContainer") && $className && !typeof($container, $className),
+		//STCheck::is_warning(typeof($container, "STBaseContainer") && $className && !typeof($container, $className),
 		//					"STBaseContainer::needContainer()", "given container in first param not the same object of second param");
 
 		if(typeof($container, "STBaseContainer"))
@@ -481,7 +481,7 @@ class STBaseContainer extends BodyTag
 				if(!$containerName)
 					$containerName= $_selftable_first_main_database_name;
 				if(Tag::isDebug())
-					Tag::warning(!$containerName, "STBaseContainer::getContainer()",
+					STCheck::is_warning(!$containerName, "STBaseContainer::getContainer()",
 																"no globaly container set");
 				if(!$containerName)
 				{

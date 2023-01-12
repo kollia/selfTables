@@ -761,7 +761,7 @@ class STObjectContainer extends STBaseContainer
       				}
 				}
   			}else
-				Tag::warning(!$bFound, "STObjectContainer::getAddressToNextContainer()", "no correct column to forwarding be set in container "
+				STCheck::is_warning(!$bFound, "STObjectContainer::getAddressToNextContainer()", "no correct column to forwarding be set in container "
 													.$this->getName()." with table ".$countTable->getName());
     	}
 
@@ -961,7 +961,7 @@ class STObjectContainer extends STBaseContainer
 			}
 
 			$PK= $table->getPkColumnName();
-			if(!STCheck::warning(	typeof($table, "STDbTable") &&
+			if(!STCheck::is_warning(	typeof($table, "STDbTable") &&
 									$PK === false, "makeListTags", "in table $tableName is no preimery key defined"))
 			{
 				$updateAccess= $table->hasAccess(STUPDATE);
@@ -1185,7 +1185,7 @@ class STObjectContainer extends STBaseContainer
 				or
 				$action !==STUPDATE	)
 			{
-				STCheck::warning(1, "STSiteCreator::getResult()",
+				STCheck::is_warning(1, "STSiteCreator::getResult()",
 									"this function is only for action STINSERT and STUPDATE");
 				return null;
 			}
@@ -1453,10 +1453,10 @@ class STObjectContainer extends STBaseContainer
     		{
         		$linkedKey= key($vars);
         		$linkedValue= $vars[$linkedKey];
-    			Tag::error(!$linkedValue, "STObjectContainer::getLinkedCluster()", "reference '".$linkedKey."' to table ".
+    			STCheck::is_error(!$linkedValue, "STObjectContainer::getLinkedCluster()", "reference '".$linkedKey."' to table ".
     							"'".$tableName."' from older Container, not be set in Url");
     		}else
-    			Tag::error(!$linkedValue, "STObjectContainer::getLinkedCluster()", "table "."'".$tableName.
+    			STCheck::is_error(!$linkedValue, "STObjectContainer::getLinkedCluster()", "table "."'".$tableName.
     															"' from older Container, not be set in Url");
 		}else
 		{

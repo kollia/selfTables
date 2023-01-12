@@ -54,7 +54,7 @@ class STDbTableCreator
 				if($table)
 					$toColumn= $table->getPkColumnName();
 				else
-					STCheck::warning(1, "STDbTableCreator::foreignKey()", "table $table no exist in TableDescriptions and database");
+					STCheck::is_warning(1, "STDbTableCreator::foreignKey()", "table $table no exist in TableDescriptions and database");
 
 			}
 		}

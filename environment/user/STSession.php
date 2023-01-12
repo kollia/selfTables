@@ -140,6 +140,11 @@ class STSession
 	    
 	    if($php_session_save_path)
 	        session_save_path($php_session_save_path);
+	    if(STCheck::isDebug("session"))
+	    {
+	        $path= session_save_path();
+	        STCheck::echoDebug("session", "Save session content on '$path'");
+	    }
 	}
   	function registerSession()
   	{

@@ -270,8 +270,7 @@ class STSessionSiteCreator extends STSiteCreator
 			}
 		}
 		function execute($additionalText= "")
-		{
-		    echo __FILE__.__LINE__."<br>";    
+		{    
 		    $tableName= $this->getTableName();
 		    if($tableName)
 		        $table= &$this->tableContainer->getTable($tableName);

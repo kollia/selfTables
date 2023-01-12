@@ -28,8 +28,6 @@ class STDbTableDescriptions
 	    $dbName= $db->getDatabaseName();
 	    if(!isset($global_sttabledescriptions_class_instance[$dbName]))
 	    {
-	        //echo __FILE__.__LINE__."<br>";
-	        //echo "create new STDbTableDescription()<br>";
 	        STCheck::echoDebug("db.descriptions", "create table descriptions for database $dbName");
 	        $global_sttabledescriptions_class_instance[$dbName]= new STDbTableDescriptions($db);
 	    }
@@ -50,8 +48,10 @@ class STDbTableDescriptions
 		
 		if(isset($global_sttabledescriptions_class_instance[$dbName]))
 		    return $global_sttabledescriptions_class_instance[$dbName];
-		showErrorTrace();
-		STCheck::alert(true, "STDbTableDescription::instance()", "no instance of STDbTableDescription be created");
+		
+		if(STCheck::isDebug())
+		    showErrorTrace();
+		STCheck::alert(true, "STDbTableDescription::instance()", "no instance of <b>$dbName</b> STDbTableDescription be created");
 		return null;
 	}
 	public function getDatabaseName()
@@ -124,13 +124,11 @@ class STDbTableDescriptions
 		while(next($global_sttabledescriptions_class_instance));
 		return NULL;
 	}
-	/*public*/function getColumnName($table, $column)
+	public function getColumnName(string $table, string $column)
 	{
-		STCheck::param($table, 0, "string");
-		STCheck::param($column, 1, "string");
-
-		//echo "STDbTableDescription::getColumnName($table, $column)------------------<br>";
-		//st_print_r($this->asTableColumns, 3);
+	    //echo __FILE__.__LINE__."<br>";
+	    //echo "STDbTableDescription::getColumnName($table, $column)<br>";
+	    //st_print_r($this->asTableColumns[$orgTable], 3);
 		$dbKeyword= $this->db->keyword($column);
 		if($dbKeyword)
 		{
@@ -180,13 +178,13 @@ class STDbTableDescriptions
 				if($bfound)
 					STCheck::echoDebug("description.tables.ok", "asked column <b>$column</b> be the same as in database");
 				else
-					STCheck::warning(true, "STDbTableDescriptor::getColumnName()", "cannot find column '$column' inside any pre-defined TableDescriptions or inside database as table $orgTable");
+					STCheck::is_warning(true, "STDbTableDescriptor::getColumnName()", "cannot find column '$column' inside any pre-defined TableDescriptions or inside database as table $orgTable");
 			}
 		}else
 		{
 			if(STCheck::isDebug())
 				STCheck::echoDebug("description.tables.ok", "found selected table-name <b>$column</b> as <b>".$this->asTableColumns[$orgTable][$column]["column"]."</b>");
-			$column= $this->asTableColumns[$orgTable][$column]["column"];
+			$column= $this->asTableColumns[$orgTable][$column]["column"];	
 		}
 		//echo "for original table $orgTable and column $column<br>";
 		return $column;
@@ -225,7 +223,9 @@ class STDbTableDescriptions
 	/*public*/function setPrefixToTable($prefix, $tableName)
 	{
 	    STCheck::echoDebug("db.descriptions", "  set prefix '$prefix' for table '$tableName' inside '".$this->dbName."' database");
-		$this->aExistTables[$tableName]["table"]= $prefix.$tableName;
+	    	    
+	    $old= $this->aExistTables[$tableName]["table"];
+		$this->aExistTables[$tableName]["table"]= $prefix.$old;
 	}
 	/*public*/function setPrefixToTables($prefix)
 	{
@@ -238,7 +238,7 @@ class STDbTableDescriptions
 		STCheck::paramCheck($column, 2, "string");
 		STCheck::paramCheck($type, 3, "string");
 		STCheck::paramCheck($null, 4, "bool");
-	    Tag::warning(!$this->aExistTables[$tableName], "STDbTableContainer::setColumnInTable()", "table $tableName does not exist");
+	    STCheck::is_warning(!$this->aExistTables[$tableName], "STDbTableContainer::column()", "table $tableName does not exist");
 		$params= func_num_args();
 		STCheck::lastParam(4, $params);
 
@@ -249,15 +249,15 @@ class STDbTableDescriptions
 	}
 	/*public*/function notNull($tableName, $column)
 	{
-		Tag::warning(!$this->aExistTables[$tableName], "STDbTableContainer::setInTableColumnNotNull()", "table $tableName does not exist");
-		Tag::alert(!$this->asTableColumns[$tableName][$column], "STDbTableContainer::setInTableColumnNotNull()", "column $column does not exist in table $tableName");
+		STCheck::is_warning(!$this->aExistTables[$tableName], "STDbTableContainer::notNull()", "table $tableName does not exist");
+		Tag::alert(!$this->asTableColumns[$tableName][$column], "STDbTableContainer::notNull()", "column $column does not exist in table $tableName");
 
 		$this->asTableColumns[$tableName][$column]["null"]= false;
 	}
 	/*public*/function primaryKey($tableName, $column, $pk= true)
 	{
-		Tag::warning(!$this->aExistTables[$tableName], "STDbTableContainer::setInTableColumnNotNull()", "table $tableName does not exist");
-		Tag::alert(!$this->asTableColumns[$tableName][$column], "STDbTableContainer::setInTableColumnNotNull()", "column $column does not exist in table $tableName");
+		STCheck::is_warning(!$this->aExistTables[$tableName], "STDbTableContainer::primaryKey()", "table $tableName does not exist");
+		Tag::alert(!$this->asTableColumns[$tableName][$column], "STDbTableContainer::primaryKey()", "column $column does not exist in table $tableName");
 
 		$this->asTableColumns[$tableName][$column]["pk"]= $pk;
 	}
@@ -269,8 +269,8 @@ class STDbTableDescriptions
 		STCheck::paramCheck($identif, 4, "string", "int");
 		STCheck::paramCheck($toColumn, 5, "string", "null");
 		STCheck::paramCheck($type, 6, "string");
-		Tag::warning(!$this->aExistTables[$tableName], "STDbTableContainer::setInTableColumnNotNull()", "table $tableName does not exist");
-		Tag::alert(!$this->asTableColumns[$tableName][$column], "STDbTableContainer::setInTableColumnNotNull()", "column $column does not exist in table $tableName");
+		STCheck::is_warning(!$this->aExistTables[$tableName], "STDbTableContainer::foreignKey()", "table $tableName does not exist");
+		Tag::alert(!$this->asTableColumns[$tableName][$column], "STDbTableContainer::foreignKey()", "column $column does not exist in table $tableName");
 
 		$type= strtoupper($type);
 		$this->asTableColumns[$tableName][$column]["fk"]= array("column"	=>$toColumn,
@@ -314,9 +314,9 @@ class STDbTableDescriptions
 		STCheck::paramCheck($column, 2, "string");
 		STCheck::paramCheck($unique, 3, "string", "int");
 		STCheck::paramCheck($uniqueLength, 4, "null", "int");
-		Tag::warning(!$this->aExistTables[$tableName], "STDbTableContainer::setInTableColumnNotNull()", "table $tableName does not exist");
+		STCheck::is_warning(!$this->aExistTables[$tableName], "STDbTableContainer::setInTableColumnNotNull()", "table $tableName does not exist");
 		Tag::alert(!$this->asTableColumns[$tableName][$column], "STDbTableContainer::setInTableColumnNotNull()", "column $column does not exist in table $tableName");
-		STCheck::warning(	(	$this->asTableColumns[$tableName][$column]["type"]==="TEXT"
+		STCheck::is_warning(	(	$this->asTableColumns[$tableName][$column]["type"]==="TEXT"
 								or
 								$this->asTableColumns[$tableName][$column]["type"]==="BLOB"	)
 							and
@@ -332,7 +332,7 @@ class STDbTableDescriptions
 		STCheck::paramCheck($column, 2, "string");
 		STCheck::paramCheck($index, 3, "string", "int");
 		STCheck::paramCheck($indexLength, 4, "null", "int");
-		Tag::warning(!$this->aExistTables[$tableName], "STDbTableContainer::setInTableColumnNotNull()", "table $tableName does not exist");
+		STCheck::is_warning(!$this->aExistTables[$tableName], "STDbTableContainer::setInTableColumnNotNull()", "table $tableName does not exist");
 		Tag::alert(!$this->asTableColumns[$tableName][$column], "STDbTableContainer::setInTableColumnNotNull()", "column $column does not exist in table $tableName");
 
 		$this->asTableColumns[$tableName][$column]["idx"]["name"]= $index;
@@ -340,23 +340,23 @@ class STDbTableDescriptions
 	}
 	/*public*/function autoIncrement($tableName, $column)
 	{
-		Tag::warning(!$this->aExistTables[$tableName], "STDbTableContainer::setInTableColumnNotNull()", "table $tableName does not exist");
+		STCheck::is_warning(!$this->aExistTables[$tableName], "STDbTableContainer::setInTableColumnNotNull()", "table $tableName does not exist");
 		Tag::alert(!$this->asTableColumns[$tableName][$column], "STDbTableContainer::setInTableColumnNotNull()", "column $column does not exist in table $tableName");
 
 		$this->asTableColumns[$tableName][$column]["auto_increment"]= true;
 	}
 	/*public*/function updateTable($defined, $tableName)
 	{
-	    Tag::error(!$this->aExistTables[$defined], "STDbTableContainer::updateTable()", "table $defined does not exist");
+	    STCheck::is_error(!$this->aExistTables[$defined], "STDbTableContainer::updateTable()", "table $defined does not exist");
 
 	    $this->aExistTables[$defined]["table"]= $tableName;
 	}
 	/*public*/function updateColumn($tableName, $definedColumn, $column)
 	{
-	    Tag::error(!$this->aExistTables[$tableName], "STDbTableContainer::updateColumn()", "table $tableName does not exist");
-	    Tag::error(!$this->asTableColumns[$tableName][$definedColumn], "STDbTableContainer::updateColumn()", "column $definedColumn does not exist in table $tableName");
+	    STCheck::is_error(!isset($this->aExistTables[$tableName]), "STDbTableContainer::updateColumn()", "table $tableName does not exist");
+	    STCheck::is_error(!isset($this->asTableColumns[$tableName][$definedColumn]), "STDbTableContainer::updateColumn()", "column $definedColumn does not exist in table $tableName");
 
-	    $this->asTableColumns[$tableName][$definedColumn]["column"]=	$column;
+	    $this->asTableColumns[$tableName][$definedColumn]["column"]= $column;
 	}
 	function installTables(&$database)
 	{

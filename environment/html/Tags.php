@@ -52,10 +52,6 @@ class Tag extends STCheck
 			}
 			return false;
 		}
-		static function warning($trigger, $functionName, $message, $outFunc= 0)
-		{
-			return Tag::error_message("Warning", $trigger, $functionName, $message, $outFunc);
-		}
 		/*
 		 * 2021/07/29 alex: change function from error() to is_error() for php8 compatibility
 		 * 					with STDatabase class where an error function
@@ -86,7 +82,7 @@ class Tag extends STCheck
 				$count= $nLast;	
 			if(is_array($nParams))
 				$nParams= count($nParams);
-			Tag::warning($nParams>$nLast, "Tag::paramCheck()", "function has no more than ".$count." params", 1);
+			STCheck::is_warning($nParams>$nLast, "Tag::paramCheck()", "function has no more than ".$count." params", 1);
 		}
 		//function debug($a,$b,$boolean= true)
 		public static function debug($boolean= true)
@@ -338,14 +334,14 @@ class Tag extends STCheck
 						and
 						!typeof($tag, "FormTag", "null")	)	)
 				{
-					Tag::warning(1, "Tag::add()", "in TableTag should be only insert an RowTag");
+					STCheck::is_warning(1, "Tag::add()", "in TableTag should be only insert an RowTag");
 					$showWarning= true;
 				}
 				if(	typeof($this, "RowTag")
 					and
 					!typeof($tag, "ColumnTag", "null")	)
 				{
-					Tag::warning(1, "Tag::add()", "in RowTag should be only insert an ColumnTag");
+					STCheck::is_warning(1, "Tag::add()", "in RowTag should be only insert an ColumnTag");
 					$showWarning= true;
 				}
 			}
@@ -364,14 +360,14 @@ class Tag extends STCheck
 						and
 						!typeof($tag, "FormTag", "null")	)	)
 				{
-					Tag::warning(1, "Tag::add()", "in TableTag should be only insert an RowTag");
+					STCheck::is_warning(1, "Tag::add()", "in TableTag should be only insert an RowTag");
 					$showWarning= true;
 				}
 				if(	typeof($this, "RowTag")
 					and
 					!typeof($tag, "ColumnTag", "null")	)
 				{
-					Tag::warning(1, "Tag::add()", "in RowTag should be only insert an ColumnTag");
+					STCheck::is_warning(1, "Tag::add()", "in RowTag should be only insert an ColumnTag");
 					$showWarning= true;
 				}
 			}
@@ -393,14 +389,14 @@ class Tag extends STCheck
 						and
 						!typeof($tag, "FormTag", "null")	)	)
 				{
-					Tag::warning(1, "Tag::add()", "in TableTag should be only insert an RowTag");
+					STCheck::is_warning(1, "Tag::add()", "in TableTag should be only insert an RowTag");
 					$showWarning= true;
 				}
 				if(	typeof($this, "RowTag")
 					and
 					!typeof($tag, "ColumnTag", "null")	)
 				{
-					Tag::warning(1, "Tag::add()", "in RowTag should be only insert an ColumnTag");
+					STCheck::is_warning(1, "Tag::add()", "in RowTag should be only insert an ColumnTag");
 					$showWarning= true;
 				}
 			}
@@ -418,13 +414,13 @@ class Tag extends STCheck
 						and
 						!typeof($tag, "FormTag", "null")	)	)
 				{
-					Tag::warning(1, "Tag::add()", "in TableTag should be only insert an RowTag");
+					STCheck::is_warning(1, "Tag::add()", "in TableTag should be only insert an RowTag");
 				}
 				if(	typeof($this, "RowTag")
 					and
 					!typeof($tag, "ColumnTag", "null")	)
 				{
-					Tag::warning(1, "Tag::add()", "in RowTag should be only insert an ColumnTag");
+					STCheck::is_warning(1, "Tag::add()", "in RowTag should be only insert an ColumnTag");
 				}
 			}
 			if($tag==null)
@@ -451,14 +447,14 @@ class Tag extends STCheck
 						and
 						!typeof($tag, "FormTag", "null")	)	)
 				{
-					Tag::warning(1, "Tag::add()", "in TableTag should be only insert an RowTag");
+					STCheck::is_warning(1, "Tag::add()", "in TableTag should be only insert an RowTag");
 					$showWarning= true;
 				}
 				if(	typeof($this, "RowTag")
 					and
 					!typeof($tag, "ColumnTag", "null")	)
 				{
-					Tag::warning(1, "Tag::add()", "in RowTag should be only insert an ColumnTag");
+					STCheck::is_warning(1, "Tag::add()", "in RowTag should be only insert an ColumnTag");
 					$showWarning= true;
 				}
 			}
@@ -488,14 +484,14 @@ class Tag extends STCheck
 						and
 						!typeof($tag, "FormTag", "null")	)	)
 				{
-					Tag::warning(1, "Tag::add()", "in TableTag should be only insert an RowTag");
+					STCheck::is_warning(1, "Tag::add()", "in TableTag should be only insert an RowTag");
 					$showWarning= true;
 				}
 				if(	typeof($this, "RowTag")
 					and
 					!typeof($tag, "ColumnTag", "null")	)
 				{
-					Tag::warning(1, "Tag::add()", "in RowTag should be only insert an ColumnTag");
+					STCheck::is_warning(1, "Tag::add()", "in RowTag should be only insert an ColumnTag");
 					$showWarning= true;
 				}
 			}

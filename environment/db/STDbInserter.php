@@ -108,7 +108,7 @@ class STDbInserter
                 if($identification)
                    	$identification= substr($identification, 0, strlen($identification)-3);
     			else
-    				STCheck::warning(1, "STDbInserter::createCluster()", "no identif columns in table ".$this->table->getName()." are defined");
+    				STCheck::is_warning(1, "STDbInserter::createCluster()", "no identif columns in table ".$this->table->getName()." are defined");
     			$this->sAccessClusterColumn= array();
     			$pkName= $this->table->getPkColumnName();
     			$tableName= $this->table->getDisplayName();
@@ -170,7 +170,7 @@ class STDbInserter
             if($identification)
                	$identification= substr($identification, 0, strlen($identification)-3);
 			else
-				STCheck::warning(1, "STDbInserter::createCluster()", "no identif columns in table ".$this->table->getName()." are defined");
+				STCheck::is_warning(1, "STDbInserter::createCluster()", "no identif columns in table ".$this->table->getName()." are defined");
 
     		/*	$pkValue= $post[$this->table->getPkColumnName()];
     			if(!$pkValue)

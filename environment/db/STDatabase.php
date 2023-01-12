@@ -1699,7 +1699,7 @@ abstract class STDatabase extends STObjectContainer
     			$database= "";
     			$fks= $BackTable->getForeignKeys();
     			$join= $fks[$tableName][0];
-				Tag::warning(!$join, "STDatabase::getStatement()", "no foreign key be set from backward table $sBackTableName to table $tableName");
+				STCheck::is_warning(!$join, "STDatabase::getStatement()", "no foreign key be set from backward table $sBackTableName to table $tableName");
     			if($join)
     			{
     				if($dbName!==$this->dbName)
@@ -1716,7 +1716,7 @@ abstract class STDatabase extends STObjectContainer
 													" with alias-name ".$sTableAlias);
 					}
             		$statement.= $this->getTableStatement($oMainTable, $sBackTableName, $aTableAlias, $maked, false);
-    			}// end of if(!Tag::warning(!$join))
+    			}// end of if(!STCheck::is_warning(!$join))
 				unset($BackTable);
 			}// end of if($join)
 		}// end of foreach($oTable->aBackJoin)
@@ -2731,7 +2731,7 @@ abstract class STDatabase extends STObjectContainer
 		    STCheck::echoDebug("db.statements", "do not need a <b>limit</b> statement");
 		if(count($this->aOtherTableWhere))
 		{
-			Tag::warning(1, "STDatabase::getStatement()", "does not reach all where-statements:");
+			STCheck::is_warning(1, "STDatabase::getStatement()", "does not reach all where-statements:");
 			if(Tag::isDebug())
 			{
 				echo "<b>do not make the follow where-clausels:</b>";
@@ -2969,11 +2969,7 @@ abstract class STDatabase extends STObjectContainer
 	{
 		return $this->insert_id();
 	}
-	function saveForeignKeys()
-	{
-		STCheck::error(1, "STDatabase::saveForeignKeys()", "function is not overloaded!");
-		return false;
-	}
+	abstract protected function saveForeignKeys();
 }
 
  ?>

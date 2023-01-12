@@ -79,9 +79,11 @@ class STUserSession extends STDbSession
 	    $object= null;
 	    if(typeof($instance, "STDatabase"))
 	        $object= new STUserSession($instance, $prefix);
-	    elseif(typeof($instance, "STDbSession"))
+	    elseif( typeof($instance, "STDbSession") &&
+	            !typeof($instance, "STUserSession")  )
+	    {
 	        $object= new STUserSession($instance->getDatabase(), $prefix);
-	    else
+	    }else
 	        $object= &$instance;	        
 	       
 	    return STDbSession::init($object, $prefix);
@@ -341,7 +343,7 @@ class STUserSession extends STDbSession
 		Tag::paramCheck($column, 2, "string");
 		Tag::paramCheck($alias, 3, "string", "null");
 		Tag::alert(!$this->asProjectTableColumns[$defined], $defined." is no defined column in STGalleryContainer");
-		Tag::warning($alias&&!$this->asProjectTableColumns[$defined]["alias"], "defined column ".$defined." has no alias name");
+		STCheck::is_warning($alias&&!$this->asProjectTableColumns[$defined]["alias"], "defined column ".$defined." has no alias name");
 
 		$this->asProjectTableColumns[$defined]["column"]= $column;
 		if($alias)
@@ -368,7 +370,7 @@ class STUserSession extends STDbSession
 		Tag::paramCheck($column, 2, "string");
 		Tag::paramCheck($alias, 3, "string", "null");
 		Tag::alert(!$this->asClusterTableColumns[$defined], $defined." is no defined column in STGalleryContainer");
-		Tag::warning($alias&&!$this->asClusterTableColumns[$defined]["alias"], "defined column ".$defined." has no alias name");
+		STCheck::is_warning($alias&&!$this->asClusterTableColumns[$defined]["alias"], "defined column ".$defined." has no alias name");
 
 		$this->asTableClusterColumns[$defined]["column"]= $column;
 		if($alias)
@@ -391,7 +393,7 @@ class STUserSession extends STDbSession
 		Tag::paramCheck($column, 2, "string");
 		Tag::paramCheck($alias, 3, "string", "null");
 		Tag::alert(!$this->asClusterGroupTableColumns[$defined], $defined." is no defined column in STGalleryContainer");
-		Tag::warning($alias&&!$this->asClusterGroupTableColumns[$defined]["alias"], "defined column ".$defined." has no alias name");
+		STCheck::is_warning($alias&&!$this->asClusterGroupTableColumns[$defined]["alias"], "defined column ".$defined." has no alias name");
 
 		$this->asClusterGroupTableColumns[$defined]["column"]= $column;
 		if($alias)
@@ -414,7 +416,7 @@ class STUserSession extends STDbSession
 		Tag::paramCheck($column, 2, "string");
 		Tag::paramCheck($alias, 3, "string", "null");
 		Tag::alert(!$this->asGroupTableColumns[$defined], $defined." is no defined column in STGalleryContainer");
-		Tag::warning($alias&&!$this->asGroupTableColumns[$defined]["alias"], "defined column ".$defined." has no alias name");
+		STCheck::is_warning($alias&&!$this->asGroupTableColumns[$defined]["alias"], "defined column ".$defined." has no alias name");
 
 		$this->asGroupTableColumns[$defined]["column"]= $column;
 		if($alias)
@@ -437,7 +439,7 @@ class STUserSession extends STDbSession
 		Tag::paramCheck($column, 2, "string");
 		Tag::paramCheck($alias, 3, "string", "null");
 		Tag::alert(!$this->asUserGroupTableColumns[$defined], $defined." is no defined column in STGalleryContainer");
-		Tag::warning($alias&&!$this->asUserGroupTableColumns[$defined]["alias"], "defined column ".$defined." has no alias name");
+		STCheck::is_warning($alias&&!$this->asUserGroupTableColumns[$defined]["alias"], "defined column ".$defined." has no alias name");
 
 		$this->asUserGroupTableColumns[$defined]["column"]= $column;
 		if($alias)
@@ -460,7 +462,7 @@ class STUserSession extends STDbSession
 		Tag::paramCheck($column, 2, "string");
 		Tag::paramCheck($alias, 3, "string", "null");
 		Tag::alert(!$this->asUserTableColumns[$defined], $defined." is no defined column in STGalleryContainer");
-		Tag::warning($alias&&!$this->asUserTableColumns[$defined]["alias"], "defined column ".$defined." has no alias name");
+		STCheck::is_warning($alias&&!$this->asUserTableColumns[$defined]["alias"], "defined column ".$defined." has no alias name");
 
 		$this->asUserTableColumns[$defined]["column"]= $column;
 		if($alias)
@@ -483,7 +485,7 @@ class STUserSession extends STDbSession
 		Tag::paramCheck($column, 2, "string");
 		Tag::paramCheck($alias, 3, "string", "null");
 		Tag::alert(!$this->asLogTableColumns[$defined], $defined." is no defined column in STGalleryContainer");
-		Tag::warning($alias&&!$this->asLogTableColumns[$defined]["alias"], "defined column ".$defined." has no alias name");
+		STCheck::is_warning($alias&&!$this->asLogTableColumns[$defined]["alias"], "defined column ".$defined." has no alias name");
 
 		$this->asLogTableColumns[$defined]["column"]= $column;
 		if($alias)
@@ -506,7 +508,7 @@ class STUserSession extends STDbSession
 		Tag::paramCheck($column, 2, "string");
 		Tag::paramCheck($alias, 3, "string", "null");
 		Tag::alert(!$this->asGroupTypeTableColumns[$defined], $defined." is no defined column in STGalleryContainer");
-		Tag::warning($alias&&!$this->asGroupTypeTableColumns[$defined]["alias"], "defined column ".$defined." has no alias name");
+		STCheck::is_warning($alias&&!$this->asGroupTypeTableColumns[$defined]["alias"], "defined column ".$defined." has no alias name");
 
 		$this->asGroupTypeTableColumns[$defined]["column"]= $column;
 		if($alias)
@@ -524,7 +526,7 @@ class STUserSession extends STDbSession
 		return $this->database;
 	}
 	function makeTableMeans()
-	{//return;STCheck::warning(1,"","");
+	{
 		// take tables from database
 		echo "makeTableMeans()<br>";
 		showErrorTrace();
@@ -692,7 +694,7 @@ class STUserSession extends STDbSession
 			$project->where($where);
 			$project->execute();
 			$row= $project->getRowResult();
-			STCheck::alert(	(!is_array($row) || count($row)==0 ), "STUserSession::setUserProject()",
+			STCheck::is_alert(	(!is_array($row) || count($row)==0 ), "STUserSession::setUserProject()",
   										"Project &quote;<b>$ProjectName</b>&quote; is not defined in the database" );
   			$this->projectID= $row['ID'];
   			$this->project= $row['Name'];
@@ -1164,7 +1166,7 @@ class STUserSession extends STDbSession
 			$cluster->where("ID='".$clusterName."'");
 			$selector= new STDbSelector($cluster);
 			$selector->execute();
-			if(STCheck::error(!$selector->getSingleResult(), "STUserSession::joinClusterGroup()", "group ".$group." for join to <b>CLUSTER</b> does not exist"))
+			if(STCheck::is_error(!$selector->getSingleResult(), "STUserSession::joinClusterGroup()", "group ".$group." for join to <b>CLUSTER</b> does not exist"))
 				return -1;
 		}
 		if(is_string($group))
@@ -1178,7 +1180,7 @@ class STUserSession extends STDbSession
 			$groupId= $selector->getSingleResult();
 			if(!$groupId)
 			{
-				STCheck::error(1, "STUserSession::joinClusterGroup()", "group ".$group." for join to <b>CLUSTER</b> does not exist");
+				STCheck::is_error(1, "STUserSession::joinClusterGroup()", "group ".$group." for join to <b>CLUSTER</b> does not exist");
 				return -1;
 			}
 		}else
@@ -1210,7 +1212,7 @@ class STUserSession extends STDbSession
 			$userId= $selector->getSingleResult();
 			if(!userId)
 			{
-				STCheck::error(1, "STUserSession::joinUserGroup()", "user ".$user." for join to <b>GROUP</b> does not exist");
+				STCheck::is_error(1, "STUserSession::joinUserGroup()", "user ".$user." for join to <b>GROUP</b> does not exist");
 				return -1;
 			}
 		}else
@@ -1226,7 +1228,7 @@ class STUserSession extends STDbSession
 			$groupId= $selector->getSingleResult();
 			if(!$groupId)
 			{
-				STCheck::error(1, "STUserSession::joinUserGroup()", "group ".$group." for join to <b>USER</b> does not exist");
+				STCheck::is_error(1, "STUserSession::joinUserGroup()", "group ".$group." for join to <b>USER</b> does not exist");
 				return -1;
 			}
 		}else

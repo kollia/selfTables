@@ -348,7 +348,7 @@ class STDbSelector extends STDbTable
 						$bSelected= true;
 					}
 				}
-				Tag::warning(!$bSelected, "OSTDBSelector::select", "found no foreign key from table ".$this->Name." to table $tableName");
+				STCheck::is_warning(!$bSelected, "OSTDBSelector::select", "found no foreign key from table ".$this->Name." to table $tableName");
 				return;
 			}*/
 			if(!$this->bClearedByFirstSelect)
@@ -574,7 +574,7 @@ class STDbSelector extends STDbTable
 				STDbTable::getColumn($columnName);
 				return;
 			}
-			STCheck::warning(1, "STDbSelector::getColumn()", "toDo: function getColumn not available for other tables in STDbSelector");
+			STCheck::is_warning(1, "STDbSelector::getColumn()", "toDo: function getColumn not available for other tables in STDbSelector");
 		}
 		function getErrorId()
 		{

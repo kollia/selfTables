@@ -280,7 +280,7 @@ class STSiteCreator extends HtmlTag
 		{
 			if(!typeof($this->tableContainer, "STObjectContainer"))
 			{
-				STCheck::warning(1, "STSiteCreator::getResult()",
+				STCheck::is_warning(1, "STSiteCreator::getResult()",
 								"this function is only for an STObjectContainer");
 				return null;
 			}
@@ -291,7 +291,7 @@ class STSiteCreator extends HtmlTag
 		{
 			if(!typeof($this->tableContainer, "STObjectContainer"))
 			{
-				STCheck::warning(1, "STSiteCreator::getResult()",
+				STCheck::is_warning(1, "STSiteCreator::getResult()",
 								"this function is only for an STObjectContainer and action STINSERT and STUPDATE");
 				return null;
 			}
@@ -300,7 +300,7 @@ class STSiteCreator extends HtmlTag
 				or
 				$action !==STUPDATE	)
 			{
-				STCheck::warning(1, "STSiteCreator::getResult()",
+				STCheck::is_warning(1, "STSiteCreator::getResult()",
 									"this function is only for action STINSERT and STUPDATE");
 				return null;
 			}
@@ -567,7 +567,7 @@ class STSiteCreator extends HtmlTag
 		}
 		function setAccessForColumnsInTable(&$oTable, &$oList)
 		{
-			STCheck::warning(1, "", "");
+			STCheck::is_warning(1, "", "");
 			echo "wrong function access in STSiteCreator<br />";
 			echo "function now in STObjectContainer<br />";
 			exit;
@@ -593,7 +593,7 @@ class STSiteCreator extends HtmlTag
 			    $set= "no navigation-table in container set";
 					if($tableDisplayName)
 			        $set= "table-display-name ".$tableDisplayName." not set in aktual container";
-					Tag::warning(1, "STDbSiteCreator::getNavigationTable()", $set);
+					STCheck::is_warning(1, "STDbSiteCreator::getNavigationTable()", $set);
 					//st_print_r($this->tableContainer->aNavigationTables,2);
 			}
 			return null;

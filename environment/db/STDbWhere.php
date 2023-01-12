@@ -199,7 +199,7 @@ class STDbWhere
 
 			if(!$this->check($statement))
 			{
-				STCheck::error(1, "STDbWhere::check()", "where statement isn't correct (where ".$statement.")");
+				STCheck::is_error(1, "STDbWhere::check()", "where statement isn't correct (where ".$statement.")");
 				return false;
 			}
 			unset($this->array);
@@ -217,9 +217,9 @@ class STDbWhere
 					echo "<pre> statement:";
 					st_print_r($statement, 5);
 					echo "</pre>";
-					STCheck::error(1, "STDbWhere::check()", "where statement isn't correct");
+					STCheck::is_error(1, "STDbWhere::check()", "where statement isn't correct");
 				}else
-					STCheck::error(1, "STDbWhere::check()", "where statement isn't correct (where ".$statement.")");
+					STCheck::is_error(1, "STDbWhere::check()", "where statement isn't correct (where ".$statement.")");
 				return false;
 			}
 			if(count($this->array))
@@ -233,7 +233,7 @@ class STDbWhere
 		 	
 			if(!$this->check($statement))
 			{
-				STCheck::error(1, "STDbWhere::check()", "where statement isn't correct (where ".$statement.")");
+				STCheck::is_error(1, "STDbWhere::check()", "where statement isn't correct (where ".$statement.")");
 				return false;
 			}
 			if(count($this->array))

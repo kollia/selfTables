@@ -169,11 +169,17 @@ class STCheck
 		}
 		static function warning($trigger, $functionName, $message, $outFunc= 0)
 		{
+		    /**
+		     * see for compatibility STCheck::is_error()
+		     */
 			STCheck::deprecated("STCheck::is_warning()", "STCheck::warning()");
 			STCheck::is_warning($trigger, $functionName, $message, $outFunc= 0);
 		}
 		static function is_warning($trigger, $functionName, $message, $outFunc= 0)
 		{
+		    /**
+		     * see for compatibility STCheck::is_error()
+		     */
 			if(!STCheck::isDebug())
 			{
 				if($trigger)
@@ -182,13 +188,13 @@ class STCheck
 			}
 			return STCheck::error_message("Warning", $trigger, $functionName, $message, $outFunc);
 		}
-		/*
-		 * 2021/07/29 alex: change function from error() to is_error() for php8 compatibility
-		 * 					with STDatabase class where an error function
-		 * 					be with no parameters
-		 */
 		public static function is_error($trigger, $functionName, $message, $outFunc= 0)
 		{
+		    /**
+		     * 2021/07/29 alex: change function from error() to is_error() for php8 compatibility
+		     * 					with STDatabase class where an error function
+		     * 					be with no parameters
+		     */
 			if(!STCheck::isDebug())
 			{
 				if($trigger)
@@ -199,11 +205,17 @@ class STCheck
 		}
 		public static function alert($trigger, $functionName, $message, $outFunc= 0)
 		{
+		    /**
+		     * see for compatibility STCheck::is_error()
+		     */
 			STCheck::deprecated("STCheck::is_alert()", "STCheck::alert()");
 			STCheck::is_alert($trigger, $functionName, $message, $outFunc);
 		}
 		public static function is_alert($trigger, $functionName, $message, $outFunc= 0)
 		{
+		    /**
+		     * see for compatibility STCheck::is_error()
+		     */
 			if(!Tag::isDebug())
 			{
 				if($trigger)
@@ -238,7 +250,7 @@ class STCheck
 				$count= $nLast;
 			if(is_array($nParams))
 				$nParams= count($nParams);
-			Tag::warning($nParams>$nLast, "Tag::paramCheck()", "function has no more than ".$count." params", 1);
+			STCheck::is_warning($nParams>$nLast, "Tag::paramCheck()", "function has no more than ".$count." params", 1);
 		}
 		public static function paramCheck($param, int $paramNr, $type1, $type2= null, $type3= null)
 		{//echo "function paramCheck($param, $paramNr, $type1, $type2)<br />";
@@ -276,7 +288,7 @@ class STCheck
 				$args= func_get_args();
 			if($args[2]=="check")
 			{
-				STCheck::warning((!isset($args[3])||!is_bool($args[3])), "STCheck::param()", 
+				STCheck::is_warning((!isset($args[3])||!is_bool($args[3])), "STCheck::param()", 
 					"fourth parameter not be set, or no correct boolean");
 				$bError= false;
 				if(count($args)>=4)

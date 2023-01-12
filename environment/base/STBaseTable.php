@@ -892,7 +892,7 @@ class STBaseTable
 		STCheck::param($join, 3, "check", $join===null || $join==="inner" || $join==="left" || $join==="right",
 											"null", "inner", "left", "right");
 		STCheck::param($where, 4, "string", "empty(String)", "STDbWhere", "null");
-		
+	
 		if(typeof($toTable, "STBaseTable"))
 			$toTableName= $toTable->getName();
 		else
@@ -946,7 +946,7 @@ class STBaseTable
 						break;
 					}
 				}
-				STCheck::warning(!$bInTable, "STBaseTable::fk()", "column $ownColumn is not in Table ".$this->Name);
+				STCheck::is_warning(!$bInTable, "STBaseTable::fk()", "column $ownColumn is not in Table ".$this->Name);
 			}
 
 		$bSet= false;
@@ -1010,7 +1010,7 @@ class STBaseTable
 			return true;
 		return false;
 	}
-	function orderBy(string $column, $bASC= true)
+	public function orderBy(string $column, $bASC= true)
 	{
 	    STCheck::paramCheck($bASC, 2, "bool");
 	    
@@ -1388,6 +1388,7 @@ class STBaseTable
 											"column $column not exist in table ".$this->Name.
 											"(".$this->getDisplayName().")");
 			}
+			$column= $this->getDbColumnName($column);
 			if(is_bool($alias))
 			{
 				$nextLine= $alias;
@@ -1472,7 +1473,7 @@ class STBaseTable
 					and
 					$content["table"]===$table	)
 				{
-					Tag::warning(1, "STBaseTable::select()", "column $column with alias $alias in table $table, selected in two times", 1);
+					STCheck::is_warning(1, "STBaseTable::select()", "column $column with alias $alias in table $table, selected in two times", 1);
 					return;
 				}
 			}
@@ -1620,9 +1621,12 @@ class STBaseTable
 			{
 			    $column= $split[1];
 			}
+			$dbColumn= $this->getDbColumnName($column);
+			if(!isset($dbColumn))
+			    $dbColumn= $column;
 			foreach($this->columns as $tcolumn)
 			{
-				if($column==$tcolumn["name"])
+			    if($dbColumn==$tcolumn["name"])
 					return true;
 			}
 			if($bAlias == false)
@@ -1631,6 +1635,11 @@ class STBaseTable
 			if(isset($field))
 			    return true;
 			return false;
+		}
+		public function getDbColumnName(string $column)
+		{
+		    $instance= STDbTableDescriptions::instance($this->db->getDatabaseName());
+		    return $instance->getColumnName($this->getName(), $column);
 		}
 		/**
 		 * search whether $aliasName exist as alias name
@@ -1794,6 +1803,7 @@ class STBaseTable
 		}
 		function searchByColumn($columnName)
 		{
+		    $columnName= $this->getDbColumnName($columnName);
 			foreach($this->show as $field)
 			{
 				if($field["column"]==$columnName)
@@ -1869,15 +1879,37 @@ class STBaseTable
 			}
 			return null;
 		}
-		function findAliasOrColumn($alias)
+		/**
+		 * search whether alias is a defined alias name
+		 * or elsewhere a correct database column
+		 *
+		 * @param string $alias name of alias column
+		 * @return array
+		 */
+		public function findAliasOrColumn(string $alias)
 		{
-			return $this->findColumnAlias($alias, true);
+		    return $this->findColumnAlias($alias, /*firstAlias*/true);
 		}
-		function findColumnOrAlias($column)
+		/**
+		 * search whether column correct database column
+		 * or elsewhere a defined alias name
+		 *  
+		 * @param string $column name of column
+		 * @return array
+		 */
+		public function findColumnOrAlias(string $column)
 		{
-			return $this->findColumnAlias($column, false);
+			return $this->findColumnAlias($column, /*firstAlias*/false);
 		}
-		/*private*/function findColumnAlias($name, $firstAlias= false)
+		/**
+		 * search whether alias is a defined alias name
+		 * or elsewhere a correct database column
+		 * 
+		 * @param string $name name of column or alias
+		 * @param bool $firstAlias whether should search first for alias name (true) elsewhere for database column (false)
+		 * @return array
+		 */
+		private function findColumnAlias(string $name, bool $firstAlias= false)
 		{
 			$field= null;
 			if($firstAlias)
@@ -1887,7 +1919,7 @@ class STBaseTable
 			if(!$field && !$firstAlias)
 				$field= $this->searchByAlias($name);
 			// alex 19/09/2005: keine Warnung! wegen aliasTable
-			//Tag::warning(!$field, "findAliasOrColumn()", "column ".$name." is not declared in table ".$this->Name);
+			//STCheck::is_warning(!$field, "findAliasOrColumn()", "column ".$name." is not declared in table ".$this->Name);
 			if(!$field)
 			{
 				STCheck::flog("creating unknown field");
@@ -2102,10 +2134,11 @@ class STBaseTable
 			}
 			$this->show= $show;
 		}
-		function identifColumn($column, $alias= null)
+		public function identifColumn(string $column, string $alias= null)
 		{
 			Tag::alert(!$this->validColumnContent($column), "STBaseTable::identifColumn()", "column $column not exist in table ".$this->Name);
 
+			$column= $this->getDbColumnName($column);
 			if(	!isset($this->abNewChoice["identifColumn"]) ||
 				!$this->abNewChoice["identifColumn"]			)
 			{
@@ -2119,7 +2152,7 @@ class STBaseTable
 				$this->identification[$count]["alias"]= $alias;
 			$this->identification[$count]["table"]= $this->getName();
 		}
-		function getIdentifColumns()
+		public function getIdentifColumns()
 		{
 			if(!$this->bDisplayIdentifs)
 				return array();
@@ -2130,15 +2163,15 @@ class STBaseTable
 			}
 			return $this->identification;
 		}
-		function displayIdentifs($bDisplay= true)
+		public function displayIdentifs(bool $bDisplay= true)
 		{
 			$this->bDisplayIdentifs= $bDisplay;
 		}
-		function showNameOverList($show)
+		public function showNameOverList($show)
 		{
 			$this->bShowName= $show;
 		}
-		function andWhere($stwhere)
+		public function andWhere($stwhere)
 		{
 		 	Tag::paramCheck($stwhere, 1, "STDbWhere", "string", "empty(string)", "null");
 		 	

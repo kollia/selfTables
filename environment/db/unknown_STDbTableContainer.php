@@ -202,7 +202,7 @@ class unknown_STDbTableContainer
 			{
 				$containerName= $global_first_objectContainerName;
 				if(Tag::isDebug())
-					Tag::warning(!$containerName, "STDbTableContainer::getContainer()",
+					STCheck::is_warning(!$containerName, "STDbTableContainer::getContainer()",
 																"no globaly container set");
 				if(!$containerName)
 					return $this;
