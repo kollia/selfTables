@@ -28,7 +28,7 @@ class STCheck
 {
 	var $m_bOpenErr= false;
 	
-	private static function error_message($symbol, $trigger, $functionName, $message, $outFunc)
+	private static function error_message($symbol, $trigger, $functionName, $message, $outFunc, $countFunc= 1)
 	{
 		if($trigger)
 		{
@@ -41,7 +41,7 @@ class STCheck
 			echo "<br />";
 			if(phpVersionNeed("4.3.0"))
 				echo "in ";
-			showErrorTrace($outFunc+3, 10);
+			showErrorTrace($outFunc+1, $countFunc);
 			return true;
 		}
 		return false;
@@ -169,11 +169,7 @@ class STCheck
 		}
 		static function warning($trigger, $functionName, $message, $outFunc= 0)
 		{
-		    /**
-		     * see for compatibility STCheck::is_error()
-		     */
-			STCheck::deprecated("STCheck::is_warning()", "STCheck::warning()");
-			STCheck::is_warning($trigger, $functionName, $message, $outFunc= 0);
+			STCheck::is_warning($trigger, $functionName, $message, $outFunc+1);
 		}
 		static function is_warning($trigger, $functionName, $message, $outFunc= 0)
 		{
@@ -186,7 +182,7 @@ class STCheck
 					return true;
 				return false;
 			}
-			return STCheck::error_message("Warning", $trigger, $functionName, $message, $outFunc);
+			return STCheck::error_message("Warning", $trigger, $functionName, $message, $outFunc+1);
 		}
 		public static function is_error($trigger, $functionName, $message, $outFunc= 0)
 		{
@@ -201,15 +197,11 @@ class STCheck
 					return true;
 				return false;
 			}
-			return STCheck::error_message("Error", $trigger, $functionName, $message, $outFunc);
+			return STCheck::error_message("Error", $trigger, $functionName, $message, $outFunc+1);
 		}
 		public static function alert($trigger, $functionName, $message, $outFunc= 0)
 		{
-		    /**
-		     * see for compatibility STCheck::is_error()
-		     */
-			STCheck::deprecated("STCheck::is_alert()", "STCheck::alert()");
-			STCheck::is_alert($trigger, $functionName, $message, $outFunc);
+			STCheck::is_alert($trigger, $functionName, $message, $outFunc+1);
 		}
 		public static function is_alert($trigger, $functionName, $message, $outFunc= 0)
 		{
@@ -222,15 +214,15 @@ class STCheck
 					return true;
 				return false;
 			}
-			if(Tag::error_message("Fatal Error", $trigger, $functionName, $message, $outFunc))
+			if(Tag::error_message("Fatal Error", $trigger, $functionName, $message, $outFunc+1, 20))
 				exit;
 			return false;
 		}
 		static function deprecated($newFunction, $oldFunction= null)
 		{
-			if(Tag::isDebug("deprecated"))
+			if(Tag::isDebug())
 			{
-				Tag::error_message("deprecated", true, $oldFunction, " -> take newer: $newFunction", 1);
+				Tag::error_message("deprecated", true, $oldFunction, " -> take newer: $newFunction", 2);
 			}
 		}
 		static function lastParam($nLast, $nParams)

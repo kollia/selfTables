@@ -2869,7 +2869,7 @@ class STBaseTable
 	}
 	function &getFKs()
 	{
-		Tag::deprecated("STBaseTable::ForeignKeys()", "STBaseTable::FKs()");
+		Tag::deprecated("STBaseTable::getForeignKeys() = has new array structure");
 		return $this->FK;
 	}
 	// alex 08/06/2005:	nun k�nnen Werte auch Statisch in der

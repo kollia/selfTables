@@ -80,12 +80,10 @@ function st_print_r($value, $deep=1, $space= 0, $bFirst= true)
 }
 function showErrorTrace($from= 0, $much= -3)
 {
-		global $HTML_CLASS_DEBUG_CONTENT;
-
-		if(!phpVersionNeed("4.3.0"))
-			return;
-		$from++; // damit der n�chste Aufruf  nicht angezeigt wird
-		myTools::showErrorTrace($from, $much);
+	if(!phpVersionNeed("4.3.0"))
+		return;
+	$from++; // damit der n�chste Aufruf  nicht angezeigt wird
+	myTools::showErrorTrace($from, $much);
 }
 function printPassword($password, $placeholder= "*")
 {

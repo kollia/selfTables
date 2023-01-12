@@ -34,39 +34,6 @@ class Tag extends STCheck
 		{
 		    $this->insertAttribute("class", $name);
 		}
-		protected static function error_message($symbol, $trigger, $functionName, $message, $outFunc)
-		{
-			if($trigger)
-			{
-				if(phpVersionNeed("4.3.0"))
-					$symbol.= ": ";
-				echo "<br /><b>".$symbol."</b> ";
-				if(!phpVersionNeed("4.3.0"))
-					echo "in <b>".$functionName.":</b> ";
-				echo $message;
-				echo "<br />";
-				if(phpVersionNeed("4.3.0"))
-					echo "in ";
-				showErrorTrace($outFunc+3, 1);
-				return true;
-			}
-			return false;
-		}
-		/*
-		 * 2021/07/29 alex: change function from error() to is_error() for php8 compatibility
-		 * 					with STDatabase class where an error function
-		 * 					be with no parameters
-		 */
-		public static function is_error($trigger, $functionName, $message, $outFunc= 0)
-		{
-			return Tag::error_message("Error", $trigger, $functionName, $message, $outFunc);
-		}
-		public static function alert($trigger, $functionName, $message, $outFunc= 0)
-		{
-			if(Tag::error_message("Fatal Error", $trigger, $functionName, $message, $outFunc))
-				exit;
-			return false;
-		}
 		static function lastParam($nLast, $nParams)
 		{
 			Tag::paramCheck($nLast, 1, "int");
