@@ -1270,6 +1270,13 @@ class STBaseTable
 		 	}
 		 	//echo "behind:".$this->columns[$columnKey]["flags"]."<br>";
 		}
+		public function getColumnField(string $column)
+		{
+		    $key= $this->getColumnKey($column);
+		    if(!isset($key))
+		        return null;
+		    return $this->columns[$key];
+		}
 		function getColumnKey($columnName)
 		{
 			foreach($this->columns as $key=>$content)

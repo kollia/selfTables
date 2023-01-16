@@ -1549,7 +1549,7 @@ class STItemBox extends STBaseBox
 		STCheck::echoDebug("db.statements.limit", "clear all limits inside table for action '$action'");
 		$maxRow= $this->asDBTable->getMaxRowSelect();
 		$firstRow= $this->asDBTable->getFirstRowSelect();
-		$this->asDBTable->clearMaxRowSelect();
+		$this->asDBTable->clearIndexSelect();
 		$this->asDBTable->clearFirstRowSelect();
 		if($action==STUPDATE)
 		{
@@ -2231,7 +2231,7 @@ class STItemBox extends STBaseBox
 			// fields are all columns from table inside database
         	foreach($fields as $key => $field)
             {
-                $f= $this->asDBTable->findColumnAlias($field['name']);
+                $f= $this->asDBTable->findColumnOrAlias($field['name']);
                 if($bFieldDefineSelection)
                 {
                     $space= STCheck::write("field: ".$field["name"]);

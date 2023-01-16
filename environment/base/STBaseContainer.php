@@ -1059,7 +1059,6 @@ class STBaseContainer extends BodyTag
     				$center->add($project);
     			$div->add($center);
     		}
-    		showErrorTrace();
         	$this->aBehindProjectIdentif= array_merge(	$this->oExternSideCreator->aBehindProjectIdentif,
 														$this->aBehindProjectIdentif);
         	$anz= count($this->aBehindProjectIdentif);

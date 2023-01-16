@@ -1638,13 +1638,16 @@ abstract class STDatabase extends STObjectContainer
 		                $found= array();
 		        }else
 		            $found= $this->searchInTableStructure($reach, $aTableAlias);
-		        $space= STCheck::echoDebug("db.statements.table", "found follow structure from table <b>$table</b>");
-		        if(isset($found['found']))
-		            $accessFoundTable[$table]= $found;
-		        else
-		            $accessTable[$table]= $found['access'];
-	            if(STCheck::isDebug("db.statements.table"))
-	                st_print_r($found, 20, $space);
+		        if(count($found))
+		        {
+    		        $space= STCheck::echoDebug("db.statements.table", "found follow structure from table <b>$table</b>");
+    		        if(isset($found['found']))
+    		            $accessFoundTable[$table]= $found;
+    		        else
+    		            $accessTable[$table]= $found['access'];
+    	            if(STCheck::isDebug("db.statements.table"))
+    	                st_print_r($found, 20, $space);
+		        }
 		    }
 		    if(STCheck::isDebug("db.statements.table"))
 		    {
@@ -1660,12 +1663,14 @@ abstract class STDatabase extends STObjectContainer
 		        {
 		            if( $firstTable != $secondTable &&
 		                $reachFirstTable['found'] != $reachSecondTable['found'] &&
+		                isset($reachFirstTable['access']) &&
 		                (   !array_key_exists($firstTable, $maked) ||
 		                    !array_key_exists($secondTable, $maked)   )   )
 		            {
 		                foreach($reachFirstTable['access'] as $foundTable)
 		                {
-		                    if(in_array($foundTable, $reachSecondTable['access']))
+		                    if( isset($reachSecondTable['access']) &&
+		                        in_array($foundTable, $reachSecondTable['access']))
 		                    {
 		                        $foundFirst= array_key_first($reachFirstTable['found']);
 		                        $foundSecond= array_key_first($reachSecondTable['found']);
@@ -1722,20 +1727,19 @@ abstract class STDatabase extends STObjectContainer
     		        if($foundtables)
     		        {
         		        $xtable= "table as follow";
-        		        $msg= "found ";
         		        if($ambiguous)
-        		            $msg.= "ambiguous ";
+        		            $msg= "found ambiguous connection over follow tables, please choose the best one";
         		        else
-        		            $msg.= "a ";
-        		        $msg.= "over follow table";
-        		        if($ambiguous)
-        		            $msg.= "s, please choose the best one";
-        		        else
-        		            $xtable= array_value_first(array_value_first($foundAccessOver));
-            		    STCheck::echoDebug("db.statements.table", "found ambiguous connection over follow tables, please choose the best one");
+        		        {
+        		            $msg= "found connection over table <b>$tableName</b>, for better performance,";
+        		            $res= reset($foundAccessOver);
+        		            $xtable= reset($res);
+        		        }
+            		    STCheck::echoDebug("db.statements.table", $msg);
             		    $space= STCheck::echoDebug("db.statements.table", "implement ".get_class($oMainTable)."(<b>$tableName</b>)->joinOver<b>(</b>&lt;$xtable&gt;<b>)</b>");
-            		    st_print_r($foundAccessOver, 2, $space);
-            		    echo "<br /><br />";
+            		    if($ambiguous)
+            		        st_print_r($foundAccessOver, 2, $space);
+            		    echo "<br />";
             		    echo "$statement<br>";
             		    echo "---------------------------------------------------------------------------------------------------------";
             		    echo "---------------------------------------------------------------------------------------------------------<br />";
