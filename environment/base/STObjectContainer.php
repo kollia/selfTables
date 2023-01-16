@@ -982,12 +982,16 @@ class STObjectContainer extends STBaseContainer
 					$div->addObj($script);
 				}
 
+				$pkField= $table->getColumnField($PK);
+				$value= "%VALUE%";
+				if($pkField['type'] == "string")
+				    $value= "'$value'";
 				if(	$table->canUpdate()
 					and
 					$updateAccess		)
 				{
 					$list->select($PK, $this->sUpdateAction);
-					$list->link($this->sUpdateAction, "javascript:selftable_updateDelete('update',%VALUE%);");
+					$list->link($this->sUpdateAction, "javascript:selftable_updateDelete('update',$value);");
 					//$list->setAsLinkParam($this->sUpdateAction, "id");
 					//$list->setParamOnActivate(STUPDATE, "stget[action]=update", $this->sUpdateAction);
 				}
@@ -996,7 +1000,7 @@ class STObjectContainer extends STBaseContainer
 					$deleteAccess		)
 				{
 					$list->select($PK, $this->sDeleteAction);
-					$list->link($this->sDeleteAction, "javascript:selftable_updateDelete('delete',%VALUE%);");
+					$list->link($this->sDeleteAction, "javascript:selftable_updateDelete('delete',$value);");
 					//$list->setAsLinkParam($this->sDeleteAction, "id");
 					//$list->setParamOnActivate(UPDATE, "stget[action]=delete", $this->sDeleteAction);
 				}
