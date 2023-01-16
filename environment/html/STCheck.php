@@ -271,7 +271,7 @@ class STCheck
 			if(!is_numeric($paramNr))
 			{
 				STCheck::error_message("Error in parameter", true, "STCheck::param()",
-									"2. parameter(=".$paramNr.") can only be an number", 0);
+									"2. parameter(=".$paramNr.") can only be an number", 1);
 				exit();
 			}
 			if(is_array($type1))
@@ -361,7 +361,7 @@ class STCheck
 				    $param= "-NULL-";
 				}
 				STCheck::error_message("Error in parameters", true, "Tag::paramCheck()",
-									$count." parameter(=".$param.") can be ".$types, 0);
+									$count." parameter(=".$param.") can be ".$types, 2);
 				exit();
 			}
 		}
