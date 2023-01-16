@@ -14,63 +14,44 @@ class STClusterGroupManagement extends STObjectContainer
 	}
 	function create()
 	{
-	    $this->needTable("Cluster");
 		$clustergroup= &$this->needTable("ClusterGroup");
-		$clustergroup->setDisplayName("Group assignment to the selected cluster");
-		$clustergroup->nnTable("Zugriff");
-		$clustergroup->select("GroupID");
-		$clustergroup->select("DateCreation", "zugehörigkeit seit");
-		$clustergroup->preSelect("DateCreation", "sysdate()");
-		$clustergroup->distinct();
-		$clustergroup->changeFormOptions("Speichern");
-		$clustergroup->noInsert();
-		$clustergroup->noUpdate();
-		$clustergroup->noDelete();
-		$clustergroup->setMaxRowSelect(20);
-		
-		$group= &$this->getTable("Group");
-		$group->getColumn("ID");
-		$group->select("Description", "Gruppen-Bezeichnung");
-		$group->orderBy("Name");
-		
-		/*$cluster= &$this->needTable("Cluster");
-		$cluster->select("ID", "Cluster");
-		$cluster->select("Description", "Beschreibung");
-		
-		$group= &$this->needTable("Group");
-		$group->setDisplayName("Zugriffs-Gruppen");
-		$group->select("Name", "Gruppen-Name");
-		$group->select("Description", "Bezeichnung");
-		
-		$partition= &$this->needTable("Partition");
-		$partition->setDisplayName("Gruppenzuordung zu den Cluster");
-		$partition->select("Name", "Zugriff f�r");
-		$partition->doInsert(false);
-		$partition->doUpdate(false);
-		$partition->doDelete(false);
-		$partition->needPkInResult("has_access");
-		$partition->accessCluster("has_access", "ID", "Zugriff zu den \"@\" Berechtigungen");
-		
-		$this->setFirstTable("Partition");*/
 	}
 	function init()
 	{
-		$cluster= $this->getTable("Cluster");
-		$cluster->select("ID");
-		$cluster->select("Description");
-		$selector= new STDbSelector($cluster);
-		$selector->execute();
-		$res= $selector->getRowResult();
-		$div= new DivTag();
-			$h2= new H3Tag("Description");
-				$h2->add("Zugehörigkeit der Gruppen zum Cluster ");
-				$span= new SpanTag("hightlighted");
-					$span->add($res['ID']);
-				$h2->addObj($span);
-			$div->addObj($h2);
-			$div->add($res['Description']);
-			$div->align("center");
-		$this->addObjBehindProjectIdentif($div);
+	    $cluster= $this->getTable("Cluster");
+	    $cluster->select("ID");
+	    $cluster->select("Description");
+	    $selector= new STDbSelector($cluster);
+	    $selector->execute();
+	    $res= $selector->getRowResult();
+	    $h2= new H2Tag();
+	       $div= new DivTag("Description");
+    	       $div->add($res['Description']);
+    	       $div->align("center");	           
+	       $h2->add($div);
+	    $this->addObjBehindProjectIdentif($h2);
+	    
+	    $clustergroup= &$this->needTable("ClusterGroup");
+	    $clustergroup->setDisplayName("Group assignment to Cluster ".$res['ID']);
+	    $clustergroup->nnTable("Zugriff");
+	    $clustergroup->select("GroupID");
+	    $clustergroup->select("DateCreation", "zugehörigkeit seit");
+	    $clustergroup->preSelect("DateCreation", "sysdate()");
+	    $clustergroup->distinct();
+	    $clustergroup->changeFormOptions("Speichern");
+	    $clustergroup->noInsert();
+	    $clustergroup->noUpdate();
+	    $clustergroup->noDelete();
+	    $clustergroup->setMaxRowSelect(20);
+	    
+	    $group= &$this->getTable("Group");
+	    $group->getColumn("ID");
+	    $group->identifColumn("Name", "Group");
+	    $group->select("Description", "Gruppen-Bezeichnung");
+	    $group->orderBy("Name");
+	    
+	    
+		
 	}
 }
 ?>

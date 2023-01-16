@@ -3,27 +3,31 @@
 require_once( $_stobjectcontainer );
 require_once( $_stquerystring );
 require_once( $_stdbselector );
+require_once( $_stclustergroupmanagement );
 
 class STUserClusterGroupManagement extends STObjectContainer
 {
+    private $clusterGroup;
+    
 	function __construct($name, &$container)
 	{
 		Tag::paramCheck($name, 1, "string");
 		Tag::paramCheck($container, 2, "STObjectContainer");
 		
 		STObjectContainer::__construct($name, $container);
-		
+		$this->clusterGroup= new STClusterGroupManagement("ClusterGroupAssignment", $this->getDatabase());	
 	}
 	function create()
 	{
-	    STCheck::echoDebug("container", "run creation routine for container ".get_class($this)."(<b>$this->name</b>)");
+	    $this->setDisplayName("Cluster-User Management");
+	    
 	    $cluster= $this->needTable("Cluster");
 	    $cluster->setDisplayName("access CLUSTER");
 	    $userGroup= $this->needTable("UserGroup");
 	    //$userGroup->setDisplayName("");
-	    $clusterGroup= $this->needTable("ClusterGroup");
+	    //$clusterGroup= $this->needTable("ClusterGroup");
 	    //$clusterGroup->setDisplayName("");
-	    $this->setFirstTable("ClusterGroup");
+	    $this->setFirstTable("Cluster");
 	    return;
 	    
 		
@@ -54,7 +58,7 @@ class STUserClusterGroupManagement extends STObjectContainer
 	}
 	function init()
 	{
-	    
+	    $action= $this->getAction();
 	    $prj= $this->getTable("Project");
 	    
 	    $query= new STQueryString();	    
@@ -72,60 +76,23 @@ class STUserClusterGroupManagement extends STObjectContainer
 	        echo "project:$projectName ID:$projectID<br>";
 	    }
 	    
-	    /*toDo: check selection join incorrect
-	    $project= new STDbSelector($prj);
-	    $project->select("Cluster", "ID");
-	    $project->where("Name=$projectName", "Project");
-	    echo __FILE__.__LINE__."<br>";
-	    echo $project->getStatement();
-	    $project->execute();
-	    $clusterIDs= $project->getSingleRowArray();
-	    st_print_r($clusterIDs);*/
-	    
 	    
 	    $group= $this->getTable("Group");
 	    $group->identifColumn("Name", "Group");
 	    
 	    $userGroup= $this->needTable("UserGroup");
 	    $userGroup->setMaxRowSelect(100);
-	    
-	    $clustergroup= &$this->needTable("ClusterGroup");
-	    $clustergroup->setDisplayName("Group assignment to the selected cluster");
-	    $clustergroup->nnTable("access");
-	    $clustergroup->select("GroupID");
-	    $clustergroup->select("DateCreation", "zugehörigkeit seit");
-	    $clustergroup->preSelect("DateCreation", "sysdate()");
-	    $clustergroup->distinct();
-	    $clustergroup->changeFormOptions("Speichern");
-	    $clustergroup->noInsert();
-	    $clustergroup->noUpdate();
-	    $clustergroup->noDelete();
-	    $clustergroup->setMaxRowSelect(20);
 	  
 		$cluster= $this->getTable("Cluster");
 		$cluster->select("ID", "Cluster");
+		$cluster->namedLink("Cluster", $this->clusterGroup);
 		$cluster->select("Description");
-		$where= new STDbWhere();
-		$where->table("Project");
-		$where->where("Name='$projectName'");
-		$cluster->where($where);
-		$selector= new STDbSelector($cluster);
-		$selector->execute();
-		$res= $selector->getRowResult();
-		if(count($res))
+		if($action == STLIST)
 		{
-    		echo __FILE__.__LINE__."<br>";
-    		st_print_r($res);
-    		$div= new DivTag();
-    			$h2= new H3Tag("Description");
-    				$h2->add("Group assignment to Cluster ");
-    				$span= new SpanTag("hightlighted");
-    					$span->add($res['Cluster']);
-    				$h2->addObj($span);
-    			$div->addObj($h2);
-    			$div->add($res['Description']);
-    			$div->align("center");
-    		$this->addObjBehindProjectIdentif($div);
+		    $where= new STDbWhere();
+		    $where->table("Project");
+		    $where->where("Name='$projectName'");
+		    $cluster->where($where);
 		}
 	}
 }

@@ -66,7 +66,7 @@ class STUserManagement extends STObjectContainer
 	}
 	function create()
 	{
-	    $this->setDisplayName("ProjectManagement");
+	    $this->setDisplayName("Project Management");
 	    $this->accessBy("STUM-UserAccess");
 		//$this->needContainer("projects");
 	    
