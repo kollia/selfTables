@@ -166,6 +166,42 @@ class STBaseContainer extends BodyTag
 			$link= getCssLink($this->sDefaultCssLink["href"], $this->sDefaultCssLink["media"]);
 		return $link;
 	}
+	/**
+	 * get current [stget] query string
+	 * or from container in paraeter
+	 * 
+	 * @param string $containerName if set this parameter get older [stget] variable from this container
+	 * @return array|null [stget] array if exist, otherwise null
+	 */
+	public function stgetParams(string $containerName= null)
+	{
+	    Tag::paramCheck($containerName, 1, "string", "null");
+	    
+        $params= new STQueryString();
+        $stget= $params->getArrayVars();
+        if(isset($stget["stget"]))
+            $stget= $stget["stget"];
+        else
+            $stget= null;
+        if(	!isset($containerName) ||
+            trim($containerName) == "" )
+        {
+            return $stget;
+        }
+        while($stget)
+        {
+            if(	isset($stget["container"]) &&
+                $stget["container"]===$containerName    )
+            {
+                return $stget;
+            }
+            if(isset($stget["older"]["stget"]))
+                $stget= $stget["older"]["stget"];
+            else
+                $stget= null;
+        }
+        return null;
+	}
 	function navigationTable($table, $forTable= STALLDEF, $pos= null, $classId= "STNavigationTable")
 	{
 		Tag::paramCheck($table, 1, "string", "STBaseTable");
@@ -463,13 +499,21 @@ class STBaseContainer extends BodyTag
 		}
 		$global_first_objectContainerName= $container;
 	}
-	public static function &getContainer(string $containerName= null, string $className= null, string $fromContainer= null) : object
+	public static function &getContainer($containerName= null, string $className= null, string $fromContainer= null) : object
 	{
 		global	$global_first_objectContainerName,
 				$global_array_all_exist_stobjectcontainers,
 				$global_array_exist_stobjectcontainer_with_classname,
 				$_selftable_first_main_database_name;
 
+		STCheck::param($containerName, 0, "string", "null", "bool");
+		
+		$bAllowNullObj= false;
+		if(typeof($containerName, "bool"))
+		{
+		    $bAllowNullObj= $containerName;
+		    $containerName= null;
+		}
 		if(!$containerName)
 		{
 			$query= new STQueryString();
@@ -480,8 +524,7 @@ class STBaseContainer extends BodyTag
 			    $containerName= $global_first_objectContainerName;
 				if(!$containerName)
 					$containerName= $_selftable_first_main_database_name;
-				if(Tag::isDebug())
-					STCheck::is_warning(!$containerName, "STBaseContainer::getContainer()",
+				STCheck::is_warning(!$bAllowNullObj && !$containerName, "STBaseContainer::getContainer()",
 																"no globaly container set");
 				if(!$containerName)
 				{
@@ -549,7 +592,7 @@ class STBaseContainer extends BodyTag
 					$fromContainer= &STBaseContainer::getContainer($_selftable_first_main_database_name);
 			}elseif(isset($fromContainer))
 			    $fromContainer= &STBaseContainer::getContainer($fromContainer);
-			STCheck::alert(!isset($fromContainer) || $fromContainer === null, "STBaseContainer::getContainer()",
+			    STCheck::alert(!$bAllowNullObj && (!isset($fromContainer) || $fromContainer === null), "STBaseContainer::getContainer()",
 						"no exist container '$containerName' found, or any script to install be set");
 			if( !STCheck::isDebug() &&
 			    !isset($fromContainer)   )
@@ -1016,6 +1059,7 @@ class STBaseContainer extends BodyTag
     				$center->add($project);
     			$div->add($center);
     		}
+    		showErrorTrace();
         	$this->aBehindProjectIdentif= array_merge(	$this->oExternSideCreator->aBehindProjectIdentif,
 														$this->aBehindProjectIdentif);
         	$anz= count($this->aBehindProjectIdentif);

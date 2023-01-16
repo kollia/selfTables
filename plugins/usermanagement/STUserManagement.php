@@ -24,7 +24,7 @@ function descriptionCallback(&$callbackObject, $columnName, $rownum)
         $cluster= new STDbSelector($clusterTable);
         $cluster->select("Project", "Name");
         $cluster->select("Cluster", "Description");
-        $cluster->where("GroupID=".$callbackObject->sqlResult[$rownum]['Description'], "ClusterGroup");
+        $cluster->where("GroupID=".$callbackObject->sqlResult[$rownum]['access to CLUSTERs'], "ClusterGroup");
         $cluster->execute();
         $aResult= $cluster->getResult();
     }
@@ -61,7 +61,6 @@ class STUserManagement extends STObjectContainer
 		STCheck::param($name, 0, "string");
 		STCheck::param($container, 1, "STObjectContainer");	
 		
-		STCheck::echoDebug("container", "create new container-object ".get_class($this)."(<b>$name</b>)");
 		STObjectContainer::__construct($name, $container);
 		$this->userClusterGroup= new STUserClusterGroupManagement("UserClusterGroupManagement", $this->getDatabase());
 	}
@@ -98,9 +97,16 @@ class STUserManagement extends STObjectContainer
 	}
 	function init()
 	{
+	    $session= &STUserSession::instance();
+	    
 	    $action= $this->getAction();
 		$user= &$this->needTable("User");
+		
 		$groups= &$this->needTable("Group");
+		$groups->select("domain", "Domain");
+		$groups->preSelect("domain", $session->mainDOMAIN);
+		$groups->disabled("domain");
+		$groups->select("Name", "Group");
 		
 		$project= &$this->needTable("Project");
 		$project->select("Name", "Project");
@@ -110,17 +116,11 @@ class STUserManagement extends STObjectContainer
 		
 		if($action==STLIST)
 		{
-		    $session= &STUserSession::instance();
-		    
 		    STCheck::echoDebug("container", "new linked object defined to ".get_class($this)."(<b>$this->name</b>)");
 		    $user->select("NrLogin", "logged in");
 		    $user->select("LastLogin", "last login");
 		    
-		    $groups->select("domain", "Domain");
-		    $groups->preSelect("domain", $session->mainDOMAIN);
-		    $groups->disabled("domain");
-		    $groups->select("Name", "Group");
-		    $groups->select("ID", "Description", "descriptionCallback");
+		    $groups->select("ID", "access to CLUSTERs", "descriptionCallback");
 		    $groups->orderBy("domain");
 		    $groups->orderBy("Name");
 		    $groups->setMaxRowSelect(50);

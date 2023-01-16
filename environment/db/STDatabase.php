@@ -1246,114 +1246,6 @@ abstract class STDatabase extends STObjectContainer
 	{
 		return $this->error;
 	}
-    function getForeignKeyModification($oTable)
-	{
-    	$stget= new STQueryString();
-		$stget= $stget->getArrayVars();
-		if(isset($stget["stget"]))
-			$stget= $stget["stget"];
-		else
-			$stget= array();
-
-		$aRv= array();
-		$fks= $oTable->getFKs();
-		foreach($fks as $table=>$aColumnType)
-    	{
-    		if(isset($stget[$table]))//[$aColumnType["other"]]
-				$aRv[$table]= $aColumnType;
-
-		}
-		return $aRv;
-	}
-    function foreignKeyModification(&$oTable)
-    {
-		Tag::paramCheck($oTable, 1, "STDbTable");
-
-    	if(!$oTable->modify())
-    	{
-    		STCheck::echoDebug("db.statements.where", "do not need foreign Key modification".
-    														" inside table ".$oTable->getName().
-    														" from container ".$oTable->container->getName());
-    		return;
-    	}
-    	STCheck::echoDebug("db.statements.where", "need foreign Key modification".
-    													" inside table ".$oTable->getName().
-    													" from container ".$oTable->container->getName());
-    	
-    	$get= new STQueryString();
-		$stget= $get->getArrayVars();
-		if(	isset($stget["stget"])	)
-		{
-			$stget= $stget["stget"];
-		}else
-			$stget= array();
-		
-    	$where= new STDbWhere();
-    	$fks= $this->getForeignKeyModification($oTable);
-    	if(STCheck::isDebug("db.statements.where"))
-		{
-		    STCheck::echoDebug("db.statements.where", "modify foreign Keys in table ".$oTable->getName());
-		    $nIntented= STCheck::echoDebug("db.statements.where", "need foreign Keys from query: ");
-			st_print_r($fks, 2, $nIntented);
-			echo "<br />";
-		}
-    	foreach($fks as $table=>$aColumnType)
-    	{
-      		$limitation= $get->getLimitation($table);
-      		foreach($limitation as $column=>$value)
-      		{
-    			if($aColumnType["other"]==$column)
-    			{
-      				$clausel= $aColumnType["own"]."=";
-      				if(!is_numeric($value))
-      					$value= "'".$value."'";
-      				$clausel.= $value;
-
-      				$where->andWhere($clausel);
-    			}else
-				{
-					$clausel= $column."=";
-      				if(!is_numeric($value))
-      					$value.= "'".$value."'";
-      				$clausel.= $value;
-					$iWhere= new STDbWhere($clausel);
-					$iWhere->forTable($table);
-					$where->andWhere($iWhere);
-				}
-				Tag::echoDebug("db.statements.where", "set where $clausel from FK");
-      		}
-    	}
-		if($oTable->bLimitOwn)
-		{
-    		$tableName= $oTable->getName();
-    		$limitation= $get->getLimitation($tableName);
-    		if(	isset($limitation) &&
-    		    is_array($limitation)	)
-    		{
-    		    foreach($limitation as $column=>$value)
-    			{
-					if($oTable->haveColumn($column))
-					{
-    					if(!is_numeric($value))
-    						$value= "'".$value."'";
-						Tag::echoDebug("db.statements.where", "set where $column=$value for own table");
-    					$where->andWhere($column."=".$value);
-					}
-    			}
-    		}
-		}
-    	if($where->isModified())
-    	{
-    		$iWhere= $oTable->getWhere();
-    		if($iWhere)
-    			$where->andWhere($iWhere);
-    		$oTable->where($where);
-    	}
-		// da die Tabelle kein zweites mal Modifiziert werden soll
-		// setze bModifyFk in der Tabelle auf false
-		$oTable->allowQueryLimitation(false);
-		Tag::echoDebug("db.statements.where", "end of foreignKeyModification for table ".$oTable->getName());
-    }
 	function getWhereStatement($oTable, $aktAlias, $aliases= null)
 	{		
 		STCheck::paramCheck($oTable, 1, "STDbTable");
@@ -2615,7 +2507,7 @@ abstract class STDatabase extends STObjectContainer
 											$oTable->getName()."</b> inside container <b>".
 											$oTable->container->getName()."</b>");
     
-		$this->foreignKeyModification($oTable);
+		$oTable->setForeignKeyModification();
 		$aliasTables= array();
 		//STCheck::write("search for aliases");
 		$aliasTables= $this->getAliasOrder();

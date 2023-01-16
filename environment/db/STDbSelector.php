@@ -101,29 +101,32 @@ class STDbSelector extends STDbTable
 			}
 
 			$fks= $this->getForeignKeys();
-			foreach($oTable->FK as $tableName=>$column)
+			foreach($fks as $tableName=>$fields)
 			{
-				$container= null;
-				$db= null;
-				if(isset($column["table"]))
-				{
-					$db= $column["table"]->getDatabase();
-					$dbName= $db->getDatabaseName();
-					if($dbName!==$this->db->getDatabaseName())
-						$container= $column["table"]->container;
-				}
-				if(!$container)
-					$container= $this->container;
-				if(!$db)
-					$db= $this->container->getDatabase();
-				$fkTable= $container->getTable($tableName);
-				if($fkTable)
-				{
-					if(!typeof($fkTable, "STDbSelector"))
-						$fkTable= new STDbSelector($fkTable);
-					$this->aoToTables[$tableName]= $fkTable;
-					$this->addFKTables($db->dbName, $aDone, $tableName);
-				}
+			    foreach($fields as $column)
+			    {
+    				$container= null;
+    				$db= null;
+    				if(isset($column["table"]))
+    				{
+    					$db= $column["table"]->getDatabase();
+    					$dbName= $db->getDatabaseName();
+    					if($dbName!==$this->db->getDatabaseName())
+    						$container= $column["table"]->container;
+    				}
+    				if(!$container)
+    					$container= $this->container;
+    				if(!$db)
+    					$db= $this->container->getDatabase();
+    				$fkTable= $container->getTable($tableName);
+    				if($fkTable)
+    				{
+    					if(!typeof($fkTable, "STDbSelector"))
+    						$fkTable= new STDbSelector($fkTable);
+    					$this->aoToTables[$tableName]= $fkTable;
+    					$this->addFKTables($db->dbName, $aDone, $tableName);
+    				}
+			    }
 			}
 		}
 		function clearTableList()

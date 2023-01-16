@@ -255,11 +255,11 @@ class STListBox extends STBaseBox
 	}
 	function createStatement()
 	{
-	    if(STCheck::isDebug())
+/*	    if(STCheck::isDebug())
 	    {
 	       $tableName= $this->asDBTable->getName();
-	       STCheck::deprecated("STDbTable(<b>$tableName</b>::getStatement()");
-	    }
+	       STCheck::deprecated("STDbTable(<b>$tableName</b>::getStatement())");
+	    }*/
 	    
 		$inTableFirstRow= 0;
 		$query= new STQueryString();
@@ -290,7 +290,7 @@ class STListBox extends STBaseBox
 				$anTable= &$this->getTable();
 				//modify forign key to see in the callback-function
 				// and also to can set the hole where clausel after in the table
-				$this->db->foreignKeyModification($anTable);
+				$anTable->setForeignKeyModification();
 				$this->where= $anTable->oWhere;
 				//$this->asDBTable->modifyForeignKey(false);
 				//$callbackClass->where= $oTable->oWhere;
@@ -1805,7 +1805,7 @@ class STListBox extends STBaseBox
 				{
 					$field= $this->asDBTable->searchByColumn($columnContent["name"]);
    					$aliasName= $field["alias"];
-					$this->db->foreignKeyModification($this->asDBTable);
+   					$this->asDBTable->setForeignKeyModification();
 					foreach($this->asDBTable->columns as $columnContent)
 					{
 						if(!preg_match("/auto_increment/", $columnContent["flags"]))

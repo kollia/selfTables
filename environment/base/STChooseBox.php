@@ -97,7 +97,7 @@ class STChooseBox extends TableTag
 							$get->update("stget[table]=".$tableName);
     						$address=  $this->startPage;
     						$address.= $get->getStringVars();
-							$sButton= $table->getIdentifier();
+    						$sButton= $table->getDisplayName();
 							if(!$sButton)
 								$sButton= $tableName;
     						$this->makeButton("  ".$sButton."  ", $address);

@@ -30,7 +30,7 @@ class STDbDeleter
 		$this->table->where(null);
 		$table= new STDbTable($this->table);
 		$table->clearWhere();
-		$db->foreignKeyModification($table);
+		$table->setForeignKeyModification();
 		$modifiedWhere= $table->getWhere();
 		foreach($this->aWhere as $nr=>$where)
 		{		 	

@@ -329,7 +329,8 @@ class STSiteCreator extends HtmlTag
 				$get_vars= array();
 			// alex 01/07/2005:	gibt es in stget einen Container
 			//					wechsle vom Haupt-Container zu diesem
-			if(isset($get_vars["container"]))
+			if( isset($get_vars["container"]) &&
+			    trim($get_vars["container"]) != ""   )
 			{
 				$container= &STBaseContainer::getContainer($get_vars["container"]);
 				Tag::alert(!isset($container), "STDbSiteCreator::execute()",

@@ -320,36 +320,6 @@ class STObjectContainer extends STBaseContainer
 		}
 		return false;
 	}
-	function stgetParams($containerName= null)
-	{
-		Tag::paramCheck($containerName, 1, "string", "null");
-
-		if($containerName===null)
-			$containerName= $this->getName();
-		$default= STObjectContainer::getContainer();
-		$default= $default->getName();
-		$params= new STQueryString();
-		$stget= $params->getArrayVars();
-		if(isset($stget["stget"]))
-			$stget= $stget["stget"];
-		else
-			$stget= null;
-		while($stget)
-		{
-			if(	(	isset($stget["container"]) &&
-					$stget["container"]===$containerName	) ||
-				(	!isset($stget["container"]) &&
-					$containerName===$default		)			)
-			{
-				return $stget;
-			}
-			if(isset($stget["older"]["stget"]))
-				$stget= $stget["older"]["stget"];
-			else
-				$stget= null;
-		}
-		return null;
-	}
 	function getTableName($tableName= null)
 	{
 		STCheck::param($tableName, 0, "string", "null");
@@ -359,11 +329,11 @@ class STObjectContainer extends STBaseContainer
 		{
 			$bStdTab= true;
 			if($this->actTableName != "")
-				return $this->actTableName;
+			    return $this->actTableName;
 		}
 		if(!$tableName)
 		{
-			$stget= $this->stgetParams();
+		    $stget= $this->stgetParams();
 			if(	isset($stget["table"]) &&
 				is_string($stget["table"])	)
 			{
@@ -407,7 +377,7 @@ class STObjectContainer extends STBaseContainer
 			and
 			count($this->tables)==1	)
 		{// get tableName from table-object not from key,
-		 // because there only lower case
+		    // because there only lower case
     		$table= &reset($this->tables);
     		$tableName= $table->getName();
 		}
@@ -421,7 +391,7 @@ class STObjectContainer extends STBaseContainer
 		    $tableName= $container->getTableName();
 		}
 		if($bStdTab)
-			$this->actTableName= $tableName;
+		    $this->actTableName= $tableName;
 		return $tableName;
 	}
 	function setFirstActionOnTable($action, $tableName)
@@ -649,7 +619,8 @@ class STObjectContainer extends STBaseContainer
 		$params= $oGetParam->getArrayVars();
 		if(isset($params["stget"]["container"]))
 			$container= $params["stget"]["container"];
-		if(!isset($container))
+		if( !isset($container) ||
+		    trim($container) == ""    )
 		{// older container must be the first
 			global	$global_first_objectContainerName;
 
@@ -1134,13 +1105,13 @@ class STObjectContainer extends STBaseContainer
 			{
 				$box->table($table);
 				$this->setAllMessagesContent(STINSERT, $box);
-				$head= &$this->getHead($this->sNewEntry." in ".$table->getIdentifier());
+				$head= &$this->getHead($this->sNewEntry." in ".$table->getDisplayName());
 				$result= $box->insert();
 			}else
 			{
 				$box->table($table);
 				$this->setAllMessagesContent(STUPDATE, $box);
-				$this->db->foreignKeyModification($table);
+				$table->setForeignKeyModification();
 				//st_print_r($table->oWhere);
 				//$whereStatement= $this->db->getWhereStatement($table, "t1");
 				//echo "statement ".$whereStatement."<br />";
@@ -1148,7 +1119,7 @@ class STObjectContainer extends STBaseContainer
 				//$whereStatement.= "=".$get_vars["link"]["VALUE"];
 				//$where= new STDbWhere($whereStatement);
 				//$box->where($where);
-				$head= &$this->getHead("Eintrag aktualisieren in ".$table->getIdentifier());
+				$head= &$this->getHead("Eintrag aktualisieren in ".$table->getDisplayName());
 				$result= $box->update();
 			}
 
@@ -1160,7 +1131,7 @@ class STObjectContainer extends STBaseContainer
 				$this->addObj($headline);
 				$center= new CenterTag();
 					$h2= new H2Tag();
-						$h2->add($table->getIdentifier());
+						$h2->add($table->getDisplayName());
 					$center->addObj($h2);
 					$center->add(br());
 

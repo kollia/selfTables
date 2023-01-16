@@ -606,7 +606,7 @@ class STItemBox extends STBaseBox
 		$oCallbackClass->sqlResult= $post;
 		if($this->asDBTable)
 		{
-			$this->db->foreignKeyModification($this->asDBTable);
+		    $this->asDBTable->setForeignKeyModification();
 			$oCallbackClass->where= $this->asDBTable->getWhere();
 		}else
 			$oCallbackClass->where= $this->where;
@@ -1670,21 +1670,24 @@ class STItemBox extends STBaseBox
 			{
 				if(!is_array($aSetAlso))
 					$aSetAlso= array();
-				$fks= $this->db->getForeignKeyModification($this->asDBTable);
-				foreach($fks as $table=>$column)
+				$fks= $this->asDBTable->getForeignKeyModification();
+				foreach($fks as $table=>$fields)
 				{
-					if(	!isset($aSetAlso[$column["own"]][STINSERT])
-						and
-						!isset($aSetAlso[$column["own"]]["All"])
-						and
-						$column["join"]=="inner"
-						and
-						!$this->asDBTable->isSelect($column["own"])	)
-					{
-						if(!isset($aSetAlso[$column["own"]]))
-							$aSetAlso[$column["own"]]= array();
-						$aSetAlso[$column["own"]][STINSERT]= $get["stget"][$table][$column["other"]];
-					}
+				    foreach($fields as $column)
+				    {
+    					if(	!isset($aSetAlso[$column["own"]][STINSERT])
+    						and
+    						!isset($aSetAlso[$column["own"]]["All"])
+    						and
+    						$column["join"]=="inner"
+    						and
+    						!$this->asDBTable->isSelect($column["own"])	)
+    					{
+    						if(!isset($aSetAlso[$column["own"]]))
+    							$aSetAlso[$column["own"]]= array();
+    						$aSetAlso[$column["own"]][STINSERT]= $get["stget"][$table][$column["other"]];
+    					}
+				    }
 				}
 			}
 
@@ -1795,7 +1798,7 @@ class STItemBox extends STBaseBox
 			$oCallbackClass->MessageId= "PREPARE";
 			if($this->asDBTable)
 			{
-				$this->db->foreignKeyModification($this->asDBTable);
+			    $this->asDBTable->setForeignKeyModification();
 				$oCallbackClass->where= $this->asDBTable->getWhere();
 			}
 			$sErrorString= $this->makeCallback($this->action, $oCallbackClass, $this->action, 0);
@@ -2576,7 +2579,7 @@ class STItemBox extends STBaseBox
 			$table->limitByOwn(true);
 			$table->allowQueryLimitation(true);
 			//st_print_r($table->oWhere);
-			$this->db->foreignKeyModification($table);
+			$table->setForeignKeyModification();
 			$statement= $this->db->getStatement($table);
 			$this->db->query($statement, $this->getOnError("SQL"));
 			$result= $this->db->fetch_row(MYSQL_ASSOC, $this->getOnError("SQL"));
@@ -2616,7 +2619,7 @@ class STItemBox extends STBaseBox
             if($sTable!==true)
             {
             	$table= $this->db->getTable($sTable);
-            	$this->msg->setMessageId("NODELETE_FK@", $table->getIdentifier());
+            	$this->msg->setMessageId("NODELETE_FK@", $table->getDisplayName());
 				$tr= new RowTag();
 					$td= new ColumnTag(TD);
 						$td->add($this->msg->getMessageEndScript());

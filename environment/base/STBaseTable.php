@@ -32,7 +32,7 @@ class STBaseTable
 	protected $aPreDefinde= array();
 	var	$bDisplaySelects= true;
 	var	$bColumnSelects= true; // have the Table columns in select-statement
-    var $FK= array();// bug: if in one table be two foreign keys to the same table
+    private $FK= array();// bug: if in one table be two foreign keys to the same table
 					 // 	 there be seen only one
 	var	$aFks= array();	// so make an new one
 	var	$aBackJoin= array();// for join in table where the other have an foreigen key to the own
@@ -722,11 +722,6 @@ class STBaseTable
 		function setDisplayName($string)
 		{
 			$this->identifier= $string;
-		}
-		function getIdentifier()
-		{
-			Tag::deprecated("STBaseTable::getDisplayName()", "STBaseTable::getIdentifier()");
-			return $this->getDisplayName();
 		}
 		function getDisplayName()
 		{
@@ -2867,10 +2862,115 @@ class STBaseTable
 	{
 		return $this->aFks;
 	}
-	function &getFKs()
+	function getForeignKeyModification()
 	{
-		Tag::deprecated("STBaseTable::getForeignKeys() = has new array structure");
-		return $this->FK;
+	    $stget= new STQueryString();
+	    $stget= $stget->getArrayVars();
+	    if(isset($stget["stget"]))
+	        $stget= $stget["stget"];
+        else
+            $stget= array();
+            
+        $aRv= array();
+        $fks= $this->getForeignKeys();
+        foreach($fks as $table=>$aFkFields)
+        {
+            if(isset($stget[$table]))//[$aColumnType["other"]]
+                $aRv[$table]= $aFkFields;
+        }
+        return $aRv;
+	}
+	function setForeignKeyModification()
+	{
+	    Tag::paramCheck($this, 1, "STDbTable");
+	    
+	    if(!$this->modify())
+	    {
+	        STCheck::echoDebug("db.statements.where", "do not need foreign Key modification".
+	            " inside table ".$this->getName().
+	            " from container ".$this->container->getName());
+	        return;
+	    }
+	    STCheck::echoDebug("db.statements.where", "need foreign Key modification".
+	        " inside table ".$this->getName().
+	        " from container ".$this->container->getName());
+	    
+	    $get= new STQueryString();
+	    $stget= $get->getArrayVars();
+	    if(	isset($stget["stget"])	)
+	    {
+	        $stget= $stget["stget"];
+	    }else
+	        $stget= array();
+	        
+        $where= new STDbWhere();
+        $fks= $this->getForeignKeyModification();
+        if(STCheck::isDebug("db.statements.where"))
+        {
+            STCheck::echoDebug("db.statements.where", "modify foreign Keys in table ".$this->getName());
+            $nIntented= STCheck::echoDebug("db.statements.where", "need foreign Keys from query: ");
+            st_print_r($fks, 3, $nIntented);
+            echo "<br />";
+        }
+        foreach($fks as $table=>$fields)
+        {
+            foreach($fields as $aColumnType)
+            {
+                $limitation= $get->getLimitation($table);
+                foreach($limitation as $column=>$value)
+                {
+                    if($aColumnType["other"]==$column)
+                    {
+                        $clausel= $aColumnType["own"]."=";
+                        if(!is_numeric($value))
+                            $value= "'".$value."'";
+                        $clausel.= $value;
+                        
+                        $where->andWhere($clausel);
+                    }else
+                    {
+                        $clausel= $column."=";
+                        if(!is_numeric($value))
+                            $value.= "'".$value."'";
+                        $clausel.= $value;
+                        $iWhere= new STDbWhere($clausel);
+                        $iWhere->forTable($table);
+                        $where->andWhere($iWhere);
+                    }
+                    Tag::echoDebug("db.statements.where", "set where $clausel from FK");
+                }
+            }
+        }
+        if($this->bLimitOwn)
+        {
+            $tableName= $this->getName();
+            $limitation= $get->getLimitation($tableName);
+            if(	isset($limitation) &&
+                is_array($limitation)	)
+            {
+                foreach($limitation as $column=>$value)
+                {
+                    if($this->haveColumn($column))
+                    {
+                        if(!is_numeric($value))
+                            $value= "'".$value."'";
+                            Tag::echoDebug("db.statements.where", "set where $column=$value for own table");
+                            $where->andWhere($column."=".$value);
+                    }
+                }
+            }
+        }
+        if($where->isModified())
+        {
+            $iWhere= $this->getWhere();
+            if($iWhere)
+                $where->andWhere($iWhere);
+            $this->where($where);
+        }
+        // da die Tabelle kein zweites mal Modifiziert werden soll
+        // setze bModifyFk in der Tabelle auf false
+        $this->allowQueryLimitation(false);
+        Tag::echoDebug("db.statements.where", "end of setForeignKeyModification for table ".$this->getName());
 	}
 	// alex 08/06/2005:	nun k�nnen Werte auch Statisch in der
 	//					STBaseTable gesetzt werden

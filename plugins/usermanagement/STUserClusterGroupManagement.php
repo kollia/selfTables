@@ -58,10 +58,18 @@ class STUserClusterGroupManagement extends STObjectContainer
 	    $prj= $this->getTable("Project");
 	    
 	    $query= new STQueryString();	    
+	    $projectName= "xxx";
 	    $limitation= $query->getLimitation($prj->getName());
 	    if(isset($limitation))
 	    {
 	        $projectName= $limitation['Name'];
+	        $prjIDTable= new STDbSelector($prj);
+	        $prjIDTable->select("Project", "ID");
+	        $prjIDTable->where("Name='$projectName'");
+	        $prjIDTable->execute();
+	        $projectID= $prjIDTable->getSingleResult();
+	        echo __FILE__.__LINE__."<br>";
+	        echo "project:$projectName ID:$projectID<br>";
 	    }
 	    
 	    /*toDo: check selection join incorrect
@@ -82,7 +90,7 @@ class STUserClusterGroupManagement extends STObjectContainer
 	    $userGroup->setMaxRowSelect(100);
 	    
 	    $clustergroup= &$this->needTable("ClusterGroup");
-	    $clustergroup->setDisplayName("Gruppen-Zuweisung zum gewählten Cluster");
+	    $clustergroup->setDisplayName("Group assignment to the selected cluster");
 	    $clustergroup->nnTable("access");
 	    $clustergroup->select("GroupID");
 	    $clustergroup->select("DateCreation", "zugehörigkeit seit");
@@ -93,23 +101,32 @@ class STUserClusterGroupManagement extends STObjectContainer
 	    $clustergroup->noUpdate();
 	    $clustergroup->noDelete();
 	    $clustergroup->setMaxRowSelect(20);
-	    
+	  
 		$cluster= $this->getTable("Cluster");
-		$cluster->select("ID");
+		$cluster->select("ID", "Cluster");
 		$cluster->select("Description");
+		$where= new STDbWhere();
+		$where->table("Project");
+		$where->where("Name='$projectName'");
+		$cluster->where($where);
 		$selector= new STDbSelector($cluster);
 		$selector->execute();
 		$res= $selector->getRowResult();
-		$div= new DivTag();
-			$h2= new H3Tag("Description");
-				$h2->add("Zugehörigkeit der Gruppen zum Cluster ");
-				$span= new SpanTag("hightlighted");
-					$span->add($res['ID']);
-				$h2->addObj($span);
-			$div->addObj($h2);
-			$div->add($res['Description']);
-			$div->align("center");
-		$this->addObjBehindProjectIdentif($div);
+		if(count($res))
+		{
+    		echo __FILE__.__LINE__."<br>";
+    		st_print_r($res);
+    		$div= new DivTag();
+    			$h2= new H3Tag("Description");
+    				$h2->add("Group assignment to Cluster ");
+    				$span= new SpanTag("hightlighted");
+    					$span->add($res['Cluster']);
+    				$h2->addObj($span);
+    			$div->addObj($h2);
+    			$div->add($res['Description']);
+    			$div->align("center");
+    		$this->addObjBehindProjectIdentif($div);
+		}
 	}
 }
 ?>
