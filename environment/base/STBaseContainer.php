@@ -306,13 +306,14 @@ class STBaseContainer extends BodyTag
 		//search for $this container in the get-params
 		//to get back the older one
 		$vars= $this->getContainerGetParams();
-		if(!isset($vars["older"]["stget"]["container"]))
+		if( !isset($vars["older"]["container"]) ||
+		    trim($vars["older"]["container"]) == ""   )
 		{// older container must be the first
 			global	$global_first_objectContainerName;
 
 			$olderContainerName= $global_first_objectContainerName;
 		}else
-			$olderContainerName= $vars["older"]["stget"]["container"];
+			$olderContainerName= $vars["older"]["container"];
 		return $olderContainerName;
 	}
 	function &getOlderContainer()

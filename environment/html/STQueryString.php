@@ -419,7 +419,8 @@ class STQueryString
 		{
 		    if(!$this->defined("stget[older]"))
 		        return false;
-		    $this->restoreStgetOlder();
+	        STCheck::echoDebug("query.limitation", "remove container");
+	        $this->restoreStgetOlder();
 		    $this->removeLimitation();
 		    return true;
 		}
@@ -474,11 +475,14 @@ class STQueryString
 		}
 		private function restoreStgetOlder()
 		{
-	        foreach($this->param_vars['stget'] as $param => $value)
+/*	        foreach($this->param_vars['stget'] as $param => $value)
 	        {
 	            if(in_array($param, $this->aNoShiftVars))
 	                unset($this->param_vars['stget'][$param]);
-	        }
+	        }*/
+	        unset($this->param_vars['stget']['container']);
+	        unset($this->param_vars['stget']['table']);
+	        unset($this->param_vars['stget']['action']);
 		    foreach($this->param_vars['stget']['older'] as $param=>$value)
 		    {
 		        if($param != "older")
@@ -856,7 +860,7 @@ class STQueryString
 		    if( !isset($this->param_vars['stget']['link']['from']) ||
 		        !is_array($this->param_vars['stget']['link']['from']) )
 		    {
-		        STCheck::echoDebug("limitation.query", "no link be set to remove last query limitation");
+		        STCheck::echoDebug("query.limitation", "no link be set to remove last query limitation");
 		        return false;
 		    }
 		    $lastFromKey= array_key_last($this->param_vars['stget']['link']['from']);
@@ -876,6 +880,7 @@ class STQueryString
 		        $columnName= null;
 		    }
 		    unset($this->param_vars['stget']['link']['from'][$lastFromKey]);
+		    unset($this->param_vars['stget']['link']['cont'][$lastFromKey]);
 		    
 		    // check whether also be set an second backlink to the same table/column
 		    // in this case do not delete the limitation
@@ -897,8 +902,6 @@ class STQueryString
 		    {
 		        if(isset($columnName))
 		        {
-		            echo __FILE__.__LINE__."<br>";
-		            echo " unset array['stget']['limit'][$tableName][$columnName]<br>";
 		            unset($this->param_vars['stget']['limit'][$tableName][$columnName]);
 		            if(count($this->param_vars['stget']['limit'][$tableName]) == 0)
 		                unset($this->param_vars['stget']['limit'][$tableName]);

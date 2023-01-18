@@ -827,7 +827,7 @@ class STObjectContainer extends STBaseContainer
     		    $msg.= " as N to N table, but there is no STDbSelector::nnTableCheckboxColumn() defined";
     		    STCheck::alert(true, "STObjectContainer::execute()", $msg);
     		}
-		}		    
+		}
 		$result= STBaseContainer::execute($externSideCreator, $onError);
 		if($result != "NOERROR")
 		    return $result;
@@ -856,7 +856,7 @@ class STObjectContainer extends STBaseContainer
 			$result= $this->deleteTableEntry($get_vars);
 			
 		}else
-			$this->makeChooseTags($get_vars);
+		    $this->makeChooseTags($get_vars);
 		return $result;
 	}
 	function makeChooseTags($get_vars)
@@ -910,7 +910,7 @@ class STObjectContainer extends STBaseContainer
 			$table->oSearchBox->execute($table);
 			$this->addObjBehindProjectIdentif($table->oSearchBox);
 		}
-
+		
 		$div= new DivTag();
 		$headline= &$this->getHeadline($get_vars);
 		$div->addObj($headline);
