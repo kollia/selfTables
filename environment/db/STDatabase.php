@@ -1511,7 +1511,12 @@ abstract class STDatabase extends STObjectContainer
   				$statement.= " join ".$database.$table." as ".$sTableAlias;
   				$statement.= " on ".$ownTableAlias.".".$join["own"];
   				$statement.= "=".$sTableAlias.".".$join["other"];
-				//echo "Statement:".$statement."<br />";
+  				if(Tag::isDebug())
+  				{
+  				    Tag::echoDebug("db.statements.table", "make ".$joinArt." join to table ".$database.$table.
+  				        " with alias-name ".$sTableAlias);
+  				}
+  				$statement.= $join['table']->addJoinLimitationByQuery($aTableAlias);
 				$fromTable= $join["table"];// wenn die Tabelle von einer anderen DB kommt, steht sie im $join vom foreach des $oTable->FK
 				if(	$fromTable->container->db->getName() == $oMainTable->container->db->getName() &&
 					$fromTable->container->getName() != $oMainTable->container->getName()			)
@@ -1607,6 +1612,7 @@ abstract class STDatabase extends STObjectContainer
 						Tag::echoDebug("db.statements.table", "make ".$joinArt." join to table ".$database.$sBackTableName.
 													" with alias-name ".$sTableAlias);
 					}
+					$statement.= $BackTable->addJoinLimitationByQuery($aTableAlias);
             		$statement.= $this->getTableStatement($oMainTable, $sBackTableName, $aTableAlias, $maked, false);
     			}// end of if(!STCheck::is_warning(!$join))
 				unset($BackTable);

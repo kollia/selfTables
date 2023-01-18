@@ -14,44 +14,43 @@ class STClusterGroupManagement extends STObjectContainer
 	}
 	function create()
 	{
-		$clustergroup= &$this->needTable("ClusterGroup");
+	    $this->needNnTable("Cluster", "ClusterGroup", "Group");
+		//$clustergroup= &$this->needTable("ClusterGroup");
 	}
 	function init()
 	{
 	    $cluster= $this->getTable("Cluster");
-	    $cluster->select("ID");
-	    $cluster->select("Description");
 	    $selector= new STDbSelector($cluster);
+	    $selector->select("Cluster", "ID");
+	    $selector->select("Cluster", "Description");
 	    $selector->execute();
 	    $res= $selector->getRowResult();
-	    $h2= new H2Tag();
+	    $h2= new H4Tag();
 	       $div= new DivTag("Description");
     	       $div->add($res['Description']);
     	       $div->align("center");	           
 	       $h2->add($div);
 	    $this->addObjBehindProjectIdentif($h2);
 	    
-	    $clustergroup= &$this->needTable("ClusterGroup");
-	    $clustergroup->setDisplayName("Group assignment to Cluster ".$res['ID']);
-	    $clustergroup->nnTable("Zugriff");
-	    $clustergroup->select("GroupID");
-	    $clustergroup->select("DateCreation", "zugehörigkeit seit");
-	    $clustergroup->preSelect("DateCreation", "sysdate()");
-	    $clustergroup->distinct();
-	    $clustergroup->changeFormOptions("Speichern");
-	    $clustergroup->noInsert();
-	    $clustergroup->noUpdate();
-	    $clustergroup->noDelete();
-	    $clustergroup->setMaxRowSelect(20);
+	    $where= new STDbWhere();
+	    $where->table("ClusterGroup");
+	    $where->where("ClusterID='".$res['ID']."'");
+	    $where->orWhere("ClusterId is null");
 	    
-	    $group= &$this->getTable("Group");
-	    $group->getColumn("ID");
-	    $group->identifColumn("Name", "Group");
-	    $group->select("Description", "Gruppen-Bezeichnung");
-	    $group->orderBy("Name");
+	    $nnTable= $this->needNnTable("Cluster", "ClusterGroup", "Group");
+	    $nnTable->setDisplayName("Group assignment to Cluster ".$res['ID']);
+	    $nnTable->select("Group", "domain", "domain");
+	    $nnTable->nnTableCheckboxColumn("Affilation");
+	    $nnTable->select("Group", "Name", "Group");
+	    $nnTable->select("ClusterGroup", "DateCreation", "membership since");
+	    //$nnTable->where($where);
+	    $nnTable->setMaxRowSelect(40);
+	    $nnTable->orderBy("Group", "domain");
+	    $nnTable->orderBy("Group", "Name");
 	    
+	    $domain= $nnTable->getTable("AccessDomain");
+	    $domain->identifColumn("Name", "domain");
 	    
-		
 	}
 }
 ?>

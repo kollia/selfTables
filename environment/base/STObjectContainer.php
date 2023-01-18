@@ -107,27 +107,42 @@ class STObjectContainer extends STBaseContainer
 		
 		return $this->needTable($sTableName, /*empty*/true);
 	}
-	function &needTable($sTableName, $bEmpty= false)
+	public function &needNnTable(string $fixTable, string $nnTable, string $joinTable)
 	{
-		STCheck::paramCheck($sTableName, 1, "string");
-		STCheck::paramCheck($bEmpty, 2, "null", "boolean");
-		
-		$this->initContainer();
-		
-		$orgTableName= $this->getTableName($sTableName);
-    	if(isset($orgTableName))
-    	    $sTableName= $orgTableName;
-		else
-		// not all databases save the tables case sensetive
-			$orgTableName= $sTableName;
-		STCheck::echoDebug("table", "need table <b>$sTableName</b> in container <b>".$this->getName()."</b>");
-		$sTableName= strtolower($sTableName);
-		$table= null;
-		if(isset($this->tables[$sTableName]))
-		  $table= &$this->tables[$sTableName];
-		else
-		{
-		    $gettable= $this->getTable($orgTableName);
+	    $table= $this->getTable($joinTable);
+	    $selector= new STDbSelector($table);
+	    $selector->setNnTable($nnTable, $fixTable);
+	    $selector->joinOver($fixTable);
+	    $selector->joinOver($nnTable);
+	    
+	    $this->needTableObject($selector);
+	    return $selector;
+	}
+	public function needTableObject(&$table)
+	{
+	    $orgTableName= $table->getName();
+	    // not all databases save the tables case sensetive
+	    $sTableName= strtolower($orgTableName);
+	    $this->tables[$sTableName]= &$table;
+	}
+	public function &needTable(string $sTableName) : object
+	{   
+	    $this->initContainer();
+	    
+	    $orgTableName= $this->getTableName($sTableName);
+	    if(isset($orgTableName))
+	        $sTableName= $orgTableName;
+        else
+            $orgTableName= $sTableName;
+        STCheck::echoDebug("table", "need table <b>$sTableName</b> in container <b>".$this->getName()."</b>");
+        // not all databases save the tables case sensetive
+        $sTableName= strtolower($sTableName);
+        $table= null;
+        if(isset($this->tables[$sTableName]))
+            $table= &$this->tables[$sTableName];
+        else
+        {
+            $gettable= $this->getTable($orgTableName);
             if(isset($gettable))
             {
                 $this->tables[$sTableName]= clone($gettable);
@@ -138,8 +153,8 @@ class STObjectContainer extends STBaseContainer
                 $table->bIdentifColumns= false;
                 $this->table[$sTableName]= &$table;
             }
-		}
-		return $table;
+        }
+        return $table;
 	}
 	function &getTable($tableName= null)//, $bAllByNone= true)
 	{
@@ -801,6 +816,18 @@ class STObjectContainer extends STBaseContainer
     			exit;
     		}
 		}
+		if(STCheck::isDebug())
+		{
+    		$displayTable= $this->getTable();
+    		if( typeof($displayTable, "STDbSelector") &&
+    		    $displayTable->bIsNnTable &&
+    		    !$displayTable->bNnTableColumnSelected     )
+    		{
+    		    $msg= "table '".$displayTable->getName()."' is declared";
+    		    $msg.= " as N to N table, but there is no STDbSelector::nnTableCheckboxColumn() defined";
+    		    STCheck::alert(true, "STObjectContainer::execute()", $msg);
+    		}
+		}		    
 		$result= STBaseContainer::execute($externSideCreator, $onError);
 		if($result != "NOERROR")
 		    return $result;

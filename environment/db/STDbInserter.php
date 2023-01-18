@@ -60,7 +60,7 @@ class STDbInserter
 		{
     		$statement= $this->getStatement($nr);
     		//echo "$statement<br>";
-			$db->fetch($statement, $onError);
+			$db->query($statement, $onError);
 			if($db->errno())
 			{
 				$this->nErrorRowNr= $nr;

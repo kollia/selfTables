@@ -24,7 +24,7 @@ class STUserClusterGroupManagement extends STObjectContainer
 	    $cluster= $this->needTable("Cluster");
 	    $cluster->setDisplayName("access CLUSTER");
 	    $userGroup= $this->needTable("UserGroup");
-	    //$userGroup->setDisplayName("");
+	    $userGroup->setDisplayName("User assignment ");
 	    //$clusterGroup= $this->needTable("ClusterGroup");
 	    //$clusterGroup->setDisplayName("");
 	    $this->setFirstTable("Cluster");
@@ -72,8 +72,6 @@ class STUserClusterGroupManagement extends STObjectContainer
 	        $prjIDTable->where("Name='$projectName'");
 	        $prjIDTable->execute();
 	        $projectID= $prjIDTable->getSingleResult();
-	        echo __FILE__.__LINE__."<br>";
-	        echo "project:$projectName ID:$projectID<br>";
 	    }
 	    
 	    

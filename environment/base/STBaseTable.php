@@ -809,16 +809,6 @@ class STBaseTable
 		{
 			$this->bIsNnTable= false;
 		}
-		function nnTable($checkBoxColumnName, $position= 0)
-		{
-			Tag::paramCheck($checkBoxColumnName, 1, "string");
-			Tag::paramCheck($position, 2, "int");
-			
-			Tag::alert(!$this->sPKColumn, "STBaseTable::nnTable()", "primary key for function ::nnTable() must be set in table".$this->Name);
-			$this->select($this->sPKColumn, $checkBoxColumnName);
-			$this->checkBox($checkBoxColumnName);
-			$this->bIsNnTable= true;
-		}
 		function isNnTable()
 		{
 			return $this->bIsNnTable;
@@ -1638,10 +1628,12 @@ class STBaseTable
 			    return true;
 			return false;
 		}
-		public function getDbColumnName(string $column)
+		public function getDbColumnName(string $column, int $warnFuncOutput= 0)
 		{
+		    if($warnFuncOutput>-1)
+		        $warnFuncOutput++;
 		    $instance= STDbTableDescriptions::instance($this->db->getDatabaseName());
-		    return $instance->getColumnName($this->getName(), $column);
+		    return $instance->getColumnName($this->getName(), $column, $warnFuncOutput);
 		}
 		/**
 		 * search whether $aliasName exist as alias name
@@ -1803,9 +1795,11 @@ class STBaseTable
 			}
 			return $fields;
 		}
-		function searchByColumn($columnName)
+		function searchByColumn($columnName, int $warnFuncOutput= 0)
 		{
-		    $columnName= $this->getDbColumnName($columnName);
+		    if($warnFuncOutput>-1)
+		        $warnFuncOutput++;
+		    $columnName= $this->getDbColumnName($columnName, $warnFuncOutput);
 			foreach($this->show as $field)
 			{
 				if($field["column"]==$columnName)
@@ -1911,15 +1905,15 @@ class STBaseTable
 		 * @param bool $firstAlias whether should search first for alias name (true) elsewhere for database column (false)
 		 * @return array
 		 */
-		private function findColumnAlias(string $name, bool $firstAlias= false)
+		private function findColumnAlias(string $name, bool $firstAlias= false, int $warnFuncOutput= 0)
 		{
 			$field= null;
 			if($firstAlias)
-				$field= $this->searchByAlias($name);
+			    $field= $this->searchByAlias($name, /*no warning*/-1);
 			if(!$field)
-				$field= $this->searchByColumn($name);
+				$field= $this->searchByColumn($name, /*no warning*/-1);
 			if(!$field && !$firstAlias)
-				$field= $this->searchByAlias($name);
+				$field= $this->searchByAlias($name, $warnFuncOutput+1);
 			// alex 19/09/2005: keine Warnung! wegen aliasTable
 			//STCheck::is_warning(!$field, "findAliasOrColumn()", "column ".$name." is not declared in table ".$this->Name);
 			if(!$field)
@@ -2974,10 +2968,53 @@ class STBaseTable
                 $where->andWhere($iWhere);
             $this->where($where);
         }
-        // da die Tabelle kein zweites mal Modifiziert werden soll
-        // setze bModifyFk in der Tabelle auf false
+        // because the table shouldn't modified by twice
+        // set bModifyFk to false
         $this->allowQueryLimitation(false);
         Tag::echoDebug("db.statements.where", "end of setForeignKeyModification for table ".$this->getName());
+	}
+	function addJoinLimitationByQuery(array $aAliasTables)
+	{
+	    $statement= "";
+	    if($this->modify())
+	    {
+	        $ownTableName= $this->getName();
+	        $query= new STQueryString();
+	        $fks= $this->getForeignKeys();
+	        $limitation= $query->getLimitation($ownTableName);
+	        if( isset($limitation) &&
+	            count($limitation)     )
+	        {// add limitation for allocated table
+	            foreach($limitation as $columnName=>$content)
+	            {
+	                $statement.= " and ";
+	                $statement.= $aAliasTables[$ownTableName].".$columnName=";
+	                $statement.= "'$content'";
+	            }
+	        }
+	        foreach($fks as $tableName=>$fields)
+	        {// add limitation for foreign keys
+	            $limitation= $query->getLimitation($tableName);
+	            foreach($fields as $content)
+	            {
+	                if(isset($limitation[$content['other']]))
+	                {
+	                    $statement.= " and ";
+	                    $statement.= $aAliasTables[$ownTableName].".".$content['own']."=";
+	                    $statement.= "'".$limitation[$content['other']]."'";
+	                }
+	            }
+	        }
+	        if(STCheck::isDebug())
+	        {
+	            if($statement == "")
+	                STCheck::echoDebug("db.statements.table", "no limitation from query be set");
+	                else
+	                    STCheck::echoDebug("db.statements.table", "add limitation \"$statement\" from query");
+	        }
+	    }else
+	        STCheck::echoDebug("db.statements.table", "do not add limitation from query -> not allowed");
+	        return $statement;
 	}
 	// alex 08/06/2005:	nun k�nnen Werte auch Statisch in der
 	//					STBaseTable gesetzt werden

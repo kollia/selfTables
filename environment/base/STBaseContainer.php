@@ -727,7 +727,7 @@ class STBaseContainer extends BodyTag
 		if(typeof($object, "STBaseContainer"))
 			$this->needContainer($object);
 		else
-			$this->needTable($object);
+			$this->needTableObject($object);
 	}
 	function addObjBehindHeadLineButtons(&$tag)
 	{

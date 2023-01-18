@@ -124,7 +124,7 @@ class STDbTableDescriptions
 		while(next($global_sttabledescriptions_class_instance));
 		return NULL;
 	}
-	public function getColumnName(string $table, string $column)
+	public function getColumnName(string $table, string $column, int $warnFuncOutput= 0)
 	{
 	    //echo __FILE__.__LINE__."<br>";
 	    //echo "STDbTableDescription::getColumnName($table, $column)<br>";
@@ -175,10 +175,15 @@ class STDbTableDescriptions
 				        }
 				    }
 				}
-				if($bfound)
+				if(!$bfound)
+				{
+				    if($warnFuncOutput>-1)
+				    {
+				        $warnFuncOutput++;				    
+				        STCheck::is_warning(true, "STDbTableDescriptor::getColumnName()", "cannot find column '$column' inside any pre-defined TableDescriptions or inside database as table $orgTable", $warnFuncOutput);
+				    }
+				}else
 					STCheck::echoDebug("description.tables.ok", "asked column <b>$column</b> be the same as in database");
-				else
-					STCheck::is_warning(true, "STDbTableDescriptor::getColumnName()", "cannot find column '$column' inside any pre-defined TableDescriptions or inside database as table $orgTable");
 			}
 		}else
 		{

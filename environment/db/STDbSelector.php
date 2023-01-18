@@ -22,6 +22,12 @@ class STDbSelector extends STDbTable
 		var $sqlStatement= "";
 		var	$bClearSelects= false;	// for later getting table
 									// by true it should also cleared
+		/**
+		 * whether the checkbox column
+		 * for an N to N table was selected if was declared as
+		 * @var boolean
+		 */
+		public $bNnTableColumnSelected= false;
 
 		// DbSelector spezifisch
 		var $bAddedTabels= false;
@@ -297,8 +303,8 @@ class STDbSelector extends STDbTable
 				Tag::echoDebug("selector", $this->Name.": select column $column($alias) for table $tableName");
 			}
 			$desc= STDbTableDescriptions::instance($this->db->getDatabaseName());
-			$orgColumn= $desc->getColumnName($tableName, $column);// if tableName is original function must not search
 			$tableName= $desc->getTableName($tableName);
+			$orgColumn= $desc->getColumnName($tableName, $column, /*warnFuncOutput*/1);// if tableName is original function must not search
 			if(STCheck::isDebug())
 			{
 				if($tableName===$this->Name)
@@ -370,42 +376,59 @@ class STDbSelector extends STDbTable
 			}
 			$this->limitRows= array("start"=>$start, "limit"=>$limit);
 		}
-		/*private*/function createNnTable()
+		public function setNnTable(string $nnTableName, string $fixTableName)
 		{
-		    $fk= &$this->getForeignKeys();
-			$sort= array();
-			$selected= array();
+		    $this->noInsert();
+		    $this->noUpdate();
+		    $this->noDelete();
+		    $fixTableName= $this->db->getTableName($fixTableName);
+		    $nnTableName= $this->db->getTableName($nnTableName);
+		    $nnTable= $this->getTable($nnTableName);
+		    STCheck::alert(!$this->sPKColumn, "STBaseTable::nnTableColumn()", "primary key for function ::nnTableColumn() must be set in table $nnTableName");
+		    $this->bIsNnTable= true;
+		    $this->aNnTableColumn= array( "table" => $nnTableName,
+		                                  "column" => $nnTable->sPKColumn    );
+		    $fks= &$nnTable->getForeignKeys();
+			$selected= 0;
 			// search the first selected column with foreign key
 			// to set it to an right join
 			// all other set to left join
-			foreach($fk as $table=>$content)
+			foreach($fks as $table=>$content)
 			{
 				foreach($content as $key=>$column)
 				{
-				    $nr= $this->getSelectedColumnKey($column["own"]);
-					if($nr!==null)
-					{
-						$sort[]= $nr;
-						$selected[$nr]= array(	"table"=>	$table,
-												"key"=>		$key	);
-					}
-					$fk[$table][$key]["join"]= "left";
+				    if( $table == $fixTableName ||
+				        $table == $this->Name       )
+				    {
+				        $fks[$table][$key]["join"]= "left";
+					    $selected++;
+				    }
 				}
 			}
-			sort($sort);
-			$nr= reset($sort);
-			if(count($selected)<1)
-			    showErrorTrace();
-			Tag::alert(count($selected)<1, "STBaseTable::nnTable()", "before use function nnTable, select leastwise an column with foreign keys", 2);
-			$fk[$selected[$nr]["table"]][$selected[$nr]["key"]]["join"]= "right";
+			Tag::alert($selected != 2, "STBaseTable::nnTable()", "before use function nnTable, select leastwise an column with foreign keys", 2);
 			$newFk= array();
 			// make an new sort of the foreign key array
 			// beacuse the right join must be the first one
-			foreach($sort as $nr)
+			foreach($fks as $nr)
 			{
-				$newFk[$selected[$nr]["table"]][]= $fk[$selected[$nr]["table"]][$selected[$nr]["key"]];
+				//$newFk[$selected[$nr]["table"]][]= $fks[$selected[$nr]["table"]][$selected[$nr]["key"]];
 			}
-			$this->aFks= $newFk;
+			//$this->aFks= $newFk;
+		}
+		/**
+		 * make a column selection of primary keys from N to N table with checkboxes
+		 * and all possible assignments where the box is checked
+		 * if the affilation is given
+		 *
+		 * @param string $checkBoxColumnName headline name from checkboxes
+		 */
+		public function nnTableCheckboxColumn(string $checkBoxColumnName)
+		{
+		    STCheck::alert(!$this->bIsNnTable, "STBaseTable::nnTableColumn()", "STDbSelector is not defined as N to N table");
+		    
+		    $this->bNnTableColumnSelected= true;
+		    $this->select($this->aNnTableColumn['table'], $this->aNnTableColumn['column'], $checkBoxColumnName);
+		    $this->checkBox($checkBoxColumnName);
 		}
 		function newIdentifColumn($table, $column, $alias)
 		{
@@ -565,8 +588,8 @@ class STDbSelector extends STDbTable
 		}
 		function getColumn($tableName, $columnName= "")
 		{
-			STCheck::paramCheck($tableName, 1, "string");
-			STCheck::paramCheck($columnName, 2, "string");
+			STCheck::param($tableName, 0, "string");
+			STCheck::param($columnName, 1, "string");
 			$nParams= func_num_args();
 			STCheck::lastParam(2, $nParams);
 
@@ -608,8 +631,6 @@ class STDbSelector extends STDbTable
 			if($this->sqlStatement != "")
 				return $this->sqlStatement;
 				
-			if($this->bIsNnTable)
-			    $this->createNnTable();
 			$aDeep= array();
 			$sFirstTable= $this->Name;
 
