@@ -459,13 +459,14 @@ class STItemBox extends STBaseBox
         }
 		if($this->asDBTable)
 		{
-			foreach($this->asDBTable->showTypes as $showColumn=>$is)
+			foreach($this->asDBTable->columns as $field)
 			{
-				if(	key($is)==="get" &&				    
-					!isset($set[$showColumn])	)
+				if(	$field['type']==="get" &&				    
+					!isset($set[$field['column']])	)
 				{
-					$content= $this->asDBTable->getColumnContent($showColumn);
-					$content["name"]= $showColumn;// if column is not set in Table;
+					//$content= $this->asDBTable->getColumnContent($showColumn);
+					$content= $field;
+					//$content["name"]= $showColumn;// if column is not set in Table;
 					$content["type"]= "getColumn";
 					$newFields[count($newFields)]= $content;
 				}

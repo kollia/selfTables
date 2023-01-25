@@ -28,6 +28,7 @@ class STDbSelector extends STDbTable
 		 * @var boolean
 		 */
 		public $bNnTableColumnSelected= false;
+		public $aNnTableColumn= array();
 
 		// DbSelector spezifisch
 		var $bAddedTabels= false;
@@ -390,34 +391,61 @@ class STDbSelector extends STDbTable
 		                                  "column" => $nnTable->sPKColumn    );
 		    $fks= &$nnTable->getForeignKeys();
 			$selected= 0;
-			// search the first selected column with foreign key
-			// to set it to an right join
-			// all other set to left join
+			// search where the foreign keys are pointed
+			// to set it  all to left joins
+			// and also insert getColumns to foreign keys
+			// for new inserts
 			foreach($fks as $table=>$content)
 			{
 				foreach($content as $key=>$column)
 				{
-				    if( $table == $fixTableName ||
-				        $table == $this->Name       )
+				    $toTable= "no";
+				    if($table == $fixTableName)
+				        $toTable= "fix";
+				    elseif($table == $this->Name)
+				        $toTable= "join";
+				    if($toTable != "no")
 				    {
 				        $fks[$table][$key]["join"]= "left";
-					    $selected++;
+				        $this->aNnTableColumn['fks'][$toTable]['table']= $table;
+				        $this->aNnTableColumn['fks'][$toTable]['column']= $column['other'];
+				        $this->getColumn($table, $column['other'], "join@$table@".$column['other']);
+				        $selected++;
 				    }
 				}
 			}
-			Tag::alert($selected != 2, "STBaseTable::nnTable()", "before use function nnTable, select leastwise an column with foreign keys", 2);
-			$newFk= array();
-			// make an new sort of the foreign key array
-			// beacuse the right join must be the first one
-			foreach($fks as $nr)
-			{
-				//$newFk[$selected[$nr]["table"]][]= $fks[$selected[$nr]["table"]][$selected[$nr]["key"]];
-			}
-			//$this->aFks= $newFk;
+			Tag::alert($selected != 2, "STBaseTable::nnTable()", "the N to N table $nnTableName need two columns with foreign key", 2);
+		}
+		/**
+		 * check whether given name is a valid column.<br />
+		 * The column can also be a quoted string,
+		 * or contain a keyword from database
+		 *
+		 * {@inheritDoc}
+		 * @see STBaseTable::validColumnContent()
+		 */
+		public function validColumnContent(string $content, &$abCorrect= null, bool $bAlias= false) : bool
+		{
+		    $field= null;
+		    if( $this->bIsNnTable &&
+		        isset($this->aNnTableColumn['fks']['join']['column']) &&
+		        $content == "join@".$this->aNnTableColumn['fks']['join']['column']    )
+		    {
+		        $content= $this->aNnTableColumn['fks']['join']['column'];
+    		    $field= array();
+    		    $field['columns'][]= $content;
+		    }
+		    $bRv= STDbTable::validColumnContent($content, $abCorrect, $bAlias);
+		    if( typeof($abCorrect, "array") &&
+		        isset($field)                 )
+		    {
+		        $abCorrect= $field;
+		    }
+		    return $bRv;
 		}
 		/**
 		 * make a column selection of primary keys from N to N table with checkboxes
-		 * and all possible assignments where the box is checked
+		 * and all possible assignments where the box is checked.<br />
 		 * if the affilation is given
 		 *
 		 * @param string $checkBoxColumnName headline name from checkboxes
@@ -427,6 +455,7 @@ class STDbSelector extends STDbTable
 		    STCheck::alert(!$this->bIsNnTable, "STBaseTable::nnTableColumn()", "STDbSelector is not defined as N to N table");
 		    
 		    $this->bNnTableColumnSelected= true;
+		    $this->aNnTableColumn['alias']= $checkBoxColumnName;
 		    $this->select($this->aNnTableColumn['table'], $this->aNnTableColumn['column'], $checkBoxColumnName);
 		    $this->checkBox($checkBoxColumnName);
 		}
@@ -586,21 +615,22 @@ class STDbSelector extends STDbTable
 			    $nRv/= 2;
 			return $nRv;
 		}
-		function getColumn($tableName, $columnName= "")
+		/**
+    	 * select column, do not calculate foreign keys by statement
+    	 * and not display inside STListBox or STItemBox
+    	 * 
+		 * @param string $tableName name of table
+		 * @param string $column name of column (parameter cannot be an null string, its only defined for compatibility with STBaseTable)
+    	 * @param string $alias alias name of column
+		 */
+		function getColumn(string $tableName, string $column= "", string $alias= "")
 		{
 			STCheck::param($tableName, 0, "string");
-			STCheck::param($columnName, 1, "string");
+			STCheck::param($column, 1, "string");
 			$nParams= func_num_args();
-			STCheck::lastParam(2, $nParams);
+			STCheck::lastParam(3, $nParams);
 
-			$desc= STDbTableDescriptions::instance($this->db->getDatabaseName());
-			$tableName= $desc->getTableName($tableName);
-			if($tableName==$this->Name)
-			{
-				STDbTable::getColumn($columnName);
-				return;
-			}
-			STCheck::is_warning(1, "STDbSelector::getColumn()", "toDo: function getColumn not available for other tables in STDbSelector");
+			$this->getColumnA($tableName, array( "column"=>$column, "alias"=>$alias));
 		}
 		function getErrorId()
 		{

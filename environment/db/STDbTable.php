@@ -627,33 +627,9 @@ class STDbTable extends STBaseTable
         else
             $aNeededColumns= $this->getIdentifColumns();
         $aGetColumns= array();
-        // put only all getColumns into array aGetColumns
-        foreach($this->showTypes as $column=>$extraField)
-        {
-            if(isset($extraField["get"]))
-                $aGetColumns[]= $column;
-        }
-        // add getColumns to selected show-columns
-        // which are in array aNeededColumns
-        foreach($aGetColumns as $column)
-        {
-            //if(!isset($aColumns[$column]))
-            {
-                $aNewColumn= array();
-                $aNewColumn["table"]= $this->getName();
-                $aNewColumn["column"]= $column;
-                $alias= $column;
-                if(!$bFirstSelect)// maybe two getColumns are the same from
-                {				// the main-table and sub-table
-                    $alias= $this->getName()."@".$alias;
-                }
-                $aNewColumn["alias"]= $alias;
-                $aNeededColumns[]= $aNewColumn;
-            }
-        }
         
         STCheck::flog("create select statement");
-        $this->db->removeNoDbColumns($aNeededColumns, $aTableAlias);
+        $this->removeNoDbColumns($aNeededColumns, $aTableAlias);
         if(!isset($withAlias))
         {
             $withAlias= false;
@@ -886,24 +862,146 @@ class STDbTable extends STBaseTable
         Tag::echoDebug("db.statements.select", "createt String is \"".$statement."\"");
         return $statement;
 	}
+	/**
+	 * remove columns if they are not in the database table
+	 *
+	 * @param array $aNeededColumns all column names in an array
+	 * @param array $aAliases all predefined alias names for tables
+	 */
+	protected function removeNoDbColumns(array &$aNeededColumns, array $aAliases)
+	{
+	    $nParams= func_num_args();
+	    STCheck::lastParam(2, $nParams);
+	    
+	    /*$exist= array();
+	     // set into array variable $exist all exists column
+	     foreach($oTable->columns as $content)
+	     {
+	     if($content["db"]!="alias")
+	     {
+	     $column= $content["name"];
+	     $exist[$column]= true;
+	     }
+	     }*/
+	    if(count($aAliases)>1)
+	        $bNeedAlias= true;
+        else
+            $bNeedAlias= false;
+        $needetTables= array();
+        foreach($aNeededColumns as $nr=>$content)
+        {
+            $column= $content["column"];
+            $inherit= $this->db->keyword($column);
+            if($inherit)
+            {
+                $columnString= "";
+                foreach($inherit["columns"] as $col)
+                {
+                    if(	$col=="distinct"
+                        or
+                        $col=="*")
+                    {
+                        $columnString.= $col;
+                        if($col!="*")
+                            $columnString.= " ";
+                    }else
+                    {
+                        if(!$needetTables[$content["table"]])
+                            $needetTables[$content["table"]]= &$this->getTable($content["table"]);
+                        if($needetTables[$content["table"]]->validColumnContent($col))
+                        {// if exists name in table
+                            if($bNeedAlias)
+                                $columnString.= $aAliases[$content["table"]].".";
+                                $columnString.= $col.",";
+                        }else
+                        {
+                            if(preg_match("/^([^.]+)\.([^.]+)$/", $col, $preg))
+                            {
+                                $table= &$this->getTable($preg[1]);
+                                if(	$table
+                                    and
+                                    $table->validColumnContent($preg[2])	)
+                                {
+                                    $columnString.= $aAliases[$preg[1]].".";
+                                    $columnString.= $preg[2].",";
+                                }
+                                unset($table);
+                            }
+                        }
+                    }
+                }
+                if($column!="*")
+                    $columnString= substr($columnString, 0, strlen($columnString)-1);
+                if($columnString=="")
+                    $columnString= "*";
+                $aNeededColumns[$nr]["column"]= $inherit["keyword"]."(".$columnString.")";
+            }else
+            {
+                if(!isset($needetTables[$content["table"]]))
+                    $needetTables[$content["table"]]= &$this->getTable($content["table"]);
+                if( !$needetTables[$content["table"]]->validColumnContent($column)
+                    and
+                    $column!="*"	)
+                {
+                    // alex 19/09/2005:	rather insert a null column
+                    $aNeededColumns[$nr]["column"]= "(null)";
+                }
+            }
+        }
+	}
+	/**
+	 * check whether given name is a valid column.<br />
+	 * The column can also be a quoted string,
+	 * or contain a keyword from database
+	 *
+	 * {@inheritDoc}
+	 * @see STBaseTable::validColumnContent()
+	 */
+	public function validColumnContent(string $content, &$abCorrect= null, bool $bAlias= false) : bool
+	{
+        $field= $this->getDatabase()->keyword($content);
+        if($field != false)
+        {
+            foreach($field['columns'] as $column)
+            {
+                if( $column != "*" &&
+                    !STBaseTable::validColumnContent($column, $abCorrect, $bAlias) )
+                {
+                    return false;
+                }
+            }
+            if(typeof($abCorrect, "array"))
+                $abCorrect= $field;
+            return true;
+        }
+        return STBaseTable::validColumnContent($content, $abCorrect, $bAlias);
+	}
 	// alex 19/04/2005:	alle links in eine Funktion zusammengezogen
 	//					und $address darf auch ein STDbTable,
 	// 					f�r die Verlinkung auf eine neue Tabelle, sein
-	protected function linkA(string $which, string $aliasColumn, $address= null, string $valueColumn= null)
+	/**
+	 * specify a column to select from database and whether how to display
+	 * 
+	 * {@inheritDoc}
+	 * @see STBaseTable::linkA()
+	 */
+	protected function linkA(string $which, string $tableName, array $aliasColumn, $address= null, string $valueColumn= null)
 	{
 	    if(STCheck::isDebug())
 	    {
     	    STCheck::param($which, 0, "string");
-    	    STCheck::param($aliasColumn, 1, "string");
-    	    STCheck::param($address, 2, "STBaseContainer", "STBaseTable", "string", "null");
-    	    STCheck::param($valueColumn, 3, "string", "null");
+    	    STCheck::param($tableName, 1, "string");
+    	    STCheck::param($address, 3, "STBaseContainer", "STBaseTable", "string", "null");
+    	    STCheck::param($valueColumn, 4, "string", "null");
 	    }
 	    
-	    $tableName= "";
 		if(typeof($address, "STDbTable"))
 		{// ist die Addresse ein STDbTable
 		 // diesen abfangen und in einen Container verpacken
-			$tableName= $address->getName();
+		    $tabName= $address->getName();
+		    $newContainerName= "dbtable ".$tabName;
+		    $address= new STDbTableContainer($newContainerName, $this->db);
+		    $address->needTable($tabName);
 			
 		}elseif($address != null &&
 		        !typeof($address, "STBaseContainer")  )
@@ -920,13 +1018,7 @@ class STDbTable extends STBaseTable
     			}
     		}
 		}
-		if($tableName != "")
-		{
-			$newContainerName= "dbtable ".$tableName;
-			$address= new STDbTableContainer($newContainerName, $this->db);
-			$address->needTable($tableName);
-		}
-		STBaseTable::linkA($which, $aliasColumn, $address, $valueColumn);
+		STBaseTable::linkA($which, $tableName, $aliasColumn, $address, $valueColumn);
 	}
 }
 

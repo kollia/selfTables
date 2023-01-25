@@ -45,6 +45,7 @@ class STClusterGroupManagement extends STObjectContainer
 	    $nnTable->select("ClusterGroup", "DateCreation", "membership since");
 	    //$nnTable->where($where);
 	    $nnTable->setMaxRowSelect(40);
+	    //$nnTable->orderBy("ClusterGroup", "Affilation", /*ASC*/false);
 	    $nnTable->orderBy("Group", "domain");
 	    $nnTable->orderBy("Group", "Name");
 	    

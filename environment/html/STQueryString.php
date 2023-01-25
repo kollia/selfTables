@@ -688,31 +688,12 @@ class STQueryString
 				return $this->param_vars[$valueName];
 			return NULL;
 		}
-		function getColumns($tableName= null)
-		{
-			$aRv= NULL;
-			if(!$tableName)
-			{
-				if(isset($this->param_vars["stget"]))
-				{
-					$aRv= $this->param_vars["stget"];
-					foreach($aRv as $table=>$content)
-					{
-						if(preg_match("/^(table|action|container|link|older)$/", $table))
-							unset($aRv[$table]);
-					}
-				}
-				
-			}else if(isset($this->param_vars["stget"][$tableName]))
-				$aRv= $this->param_vars["stget"][$tableName];
-			return $aRv;
-		}
 		/**
 		 * return limitation of table
 		 * 
 		 * @param string $tableName name of table
 		 * @return array return an array with one entry where the key is the column
-		 *                with the value of column as value. If not limitation exist
+		 *                with the value of column value. If not limitation exist
 		 *                it will be return NULL
 		 */
 		public function getLimitation(string $tableName)

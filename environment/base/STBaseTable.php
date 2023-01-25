@@ -458,10 +458,10 @@ class STBaseTable
 			// set to all extra actions also STADMIN
 		}
 		if(	!isset($this->abNewChoice["accessBy_".$action]) ||
-			!$this->abNewChoice["accessBy_".$action]			)
+			$this->abNewChoice["accessBy_".$action]	== true		)
 		{
 			$this->asAccessIds[$action]= array();
-			$this->abNewChoice["accessBy_".$action]= true;
+			$this->abNewChoice["accessBy_".$action]= false;
 		}
 		if(!is_array($this->asAccessIds[$action]))
 			$this->asAccessIds[$action]= array();
@@ -739,7 +739,9 @@ class STBaseTable
 			$aRv= array();
 			if($this->oWhere)
 				$whereResult= $this->oWhere->getSettingValue($columnName, $table);
-			if(count($whereResult))
+			if( isset($whereResult) &&
+			    is_array($whereResult) &&
+			    count($whereResult)          )
 			{
 				foreach($whereResult as $content)
 				{
@@ -748,13 +750,15 @@ class STBaseTable
 				}
 			}else
 			{
+			    $Rv= "";
 				if($bFirst)
 				{
 					$params= new STQueryString();
-					$params= $params->getColumns();
-					$Rv= $params[$table][$columnName];
+					$params= $params->getLimitation($table);
+					if(isset($param[$columnName]))
+					    $Rv= $params[$columnName];
 				}
-				if(!$Rv)
+				if(trim($Rv) == "")
 				{
 					//st_print_r($this->aFks,3);
 					//st_print_r($this->show,5);
@@ -1007,10 +1011,11 @@ class STBaseTable
 	    $field= $this->findAliasOrColumn($column);
 	    $column= $field["column"];
 	    
-	    if(!isset($this->abNewChoice["order"]))
+	    if( !isset($this->abNewChoice["order"]) ||
+	        $this->abNewChoice["order"] == true    )
 	    {
 	        $this->asOrder= array();
-	        $this->abNewChoice["order"]= true;
+	        $this->abNewChoice["order"]= false;
 	    }
 	    if($bASC)
 	        $sort= "ASC";
@@ -1450,27 +1455,37 @@ class STBaseTable
 											"(".$oTable->getDisplayName().")");
 			}
 
-			if(	!$add
-				and
-				!isset($this->abNewChoice["select"]))
+			if(	!$add &&
+				(   !isset($this->abNewChoice["select"]) ||
+				    $this->abNewChoice["select"] == true   )   )
 			{
-				$this->show= array();
-				$this->abNewChoice["select"]= true;
-			}
-			foreach($this->show as $content)
-			{
-				if(	$content["column"]==$column
-					and
-					$content["alias"]== $alias
-					and
-					$content["table"]===$table	)
-				{
-					STCheck::is_warning(1, "STBaseTable::select()", "column $column with alias $alias in table $table, selected in two times", 1);
-					return;
-				}
+			    foreach($this->show as $key => $fields)
+			    {
+			        if( isset($fields['type']) &&
+			            $fields['type'] == "select"  )
+			        {
+			            unset($this->show[$key]);
+			        }
+			    }
+				$this->abNewChoice["select"]= false;
 			}
 			if($alias===null)
-				$alias= $column;
+			    $alias= $column;
+			if(STCheck::isDebug())
+			{
+    			foreach($this->show as $count=>$content)
+    			{
+    				if(	$content["alias"]== $alias )
+    				{
+				        if($column == $content["column"])
+				        {
+				            $msg= "column '$column' with alias '$alias' in table '$table' selected in two times";
+				        }else
+				            $msg= "two columns '$column' and '".$content["column"]."' will be select with one alias '$alias'";
+    					STCheck::is_warning(1, "STBaseTable::select()", $msg, 1);
+    				}
+    			}
+			}
 			// if is set inner Table
 			// with actual number
 			// note begin- and end-column
@@ -1486,20 +1501,9 @@ class STBaseTable
 			$aColumn["table"]= $table;
 			$aColumn["column"]= $column;
 			$aColumn["alias"]= $alias;
+			$aColumn['type']= "select";
 			$aColumn["nextLine"]= $nextLine;
 			$this->show[]= $aColumn;
-			// if the column is set as getColumn
-			// delete it, because it should not be set both
-			if(	isset($this->showTypes[$column]) &&
-				isset($this->showTypes[$column]["get"]) &&
-				$this->showTypes[$column]["get"]==="get"	)
-			{
-				if(count($this->showTypes[$column])===1)
-					unset($this->showTypes[$column]);
-				else
-					unset($this->showTypes[$column]["get"]);
-				return;
-			}
 		}
 		/**
 		 * add content of string or HTML-Tags
@@ -1574,35 +1578,20 @@ class STBaseTable
 		 * The column can also be a quoted string,
 		 * or contain a keyword from database
 		 *  
-		 * @param string $column string to check
-		 * $param boolean $alias whether column can also be an alias name (default:false) 
+		 * @param string $content string to check
+		 * @param array|boolean|null can be an array where the correct column inside by return, or the next boolean parameter
+		 * @param boolean $alias whether column can also be an alias name (default:false) 
 		 * @return boolean true if the column parameter is valid
-		 */
-		public function validColumnContent(string $content, bool $bAlias= false) : bool
+		 */		
+		public function validColumnContent(string $content, &$abCorrect= null, bool $bAlias= false) : bool
 		{
-		    if(typeof($this, "STDbTable"))
-		    {
-		        $field= $this->getDatabase()->keyword($content);
-		        if($field != false)
-		        {
-		            foreach($field['columns'] as $column)
-		            {
-		                if( $column != "*" &&
-		                    !$this->validColumnContentA($column, $bAlias) )
-		                {
-		                    return false;
-		                }
-		            }
-		            return true;
-		        }		        
-		    }
-		    return $this->validColumnContentA($content, $bAlias);
-		}
-		private function validColumnContentA(string $content, bool $bAlias= false) : bool
-		{
+		    STCheck::param($abCorrect, 1, "array", "bool", "null");
+		    
 		    if(preg_match("/^['\"].*['\"]$/", $content))
 		        // column is maybe only an string content
 		        return true;
+		    if(typeof($abCorrect, "bool"))
+		        $bAlias= $abCorrect;
 		    return $this->columnExist($content, $bAlias);
 		}
 		public function columnExist(string $column, bool $bAlias= false) : bool
@@ -1613,7 +1602,7 @@ class STBaseTable
 			{
 			    $column= $split[1];
 			}
-			$dbColumn= $this->getDbColumnName($column);
+			$dbColumn= $this->getDbColumnName($column,3);//, /*no warn*/-1);
 			if(!isset($dbColumn))
 			    $dbColumn= $column;
 			foreach($this->columns as $tcolumn)
@@ -1884,6 +1873,8 @@ class STBaseTable
 		 */
 		public function findAliasOrColumn(string $alias)
 		{
+		    STCheck::param($alias, 0, "string");
+		    
 		    return $this->findColumnAlias($alias, /*firstAlias*/true);
 		}
 		/**
@@ -1907,6 +1898,8 @@ class STBaseTable
 		 */
 		private function findColumnAlias(string $name, bool $firstAlias= false, int $warnFuncOutput= 0)
 		{
+		    STCheck::param($name, 0, "string");
+		    
 			$field= null;
 			if($firstAlias)
 			    $field= $this->searchByAlias($name, /*no warning*/-1);
@@ -2038,7 +2031,7 @@ class STBaseTable
 	}
 		function clearSelects()
 		{
-			$this->show= array();
+		    $this->abNewChoice["select"]= true;
 		}
 		function clearNoFkSelects()
 		{
@@ -2136,10 +2129,10 @@ class STBaseTable
 
 			$column= $this->getDbColumnName($column);
 			if(	!isset($this->abNewChoice["identifColumn"]) ||
-				!$this->abNewChoice["identifColumn"]			)
+				$this->abNewChoice["identifColumn"]	== true		)
 			{
 				$this->identification= array();
-				$this->abNewChoice["identifColumn"]= true;
+				$this->abNewChoice["identifColumn"]= false;
 			}
 			$count= count($this->identification);
 			$this->identification[$count]= array();
@@ -2407,7 +2400,7 @@ class STBaseTable
 				$extraField.= "1";
 			else
 				$extraField.= "0";
-			$this->linkA($extraField, $column, $address, $valueColumn);
+			$this->linkA($extraField, $this->Name, array("column"=>$column), $address, $valueColumn);
 		}
 		function imagePkLink($column, $toPath= null, $byte= 0, $width= 0, $height= 0, $address= null)
 		{
@@ -2462,14 +2455,14 @@ class STBaseTable
 
 		$field= $this->findAliasOrColumn($columnName);
 		$column= $field["column"];
-		$this->linkA("download", $column, null, $this->sPKColumn);
+		$this->linkA("download", $this->Name, array("column"=>$columnName), null, $this->sPKColumn);
 	}
 	function disabled($columnName, $enum= null)
 	{
 		Tag::paramCheck($columnName, 1, "string");
 		Tag::paramCheck($enum, 2, "string", "null");
 
-		$this->linkA("disabled", $columnName, null, $enum);
+		$this->linkA("disabled", $this->Name, array("column"=>$columnName), null, $enum);
 	}
 	function changeFormOptions($submitButton, $formName= "st_checkForm", $action= null)
 	{
@@ -2482,8 +2475,8 @@ class STBaseTable
 		Tag::paramCheck($columnName, 1, "string");
 
 		$field= $this->findAliasOrColumn($columnName);
-		$column= $field["column"];
-		$this->linkA("check", $column, null, $this->sPKColumn);
+		$column= $field["alias"];
+		$this->linkA("check", $this->Name, array("column"=>$columnName), null, $this->sPKColumn);
 		$this->aCheckDef[$field["alias"]]= $trueValue;
 	}
 	// alex 08/06/2005:	alle links in eine Funktion zusammengezogen
@@ -2493,28 +2486,59 @@ class STBaseTable
 	 * specify a column to select from database and whether how to display
 	 * 
 	 * @param string $which what to do with the selection
-	 *                 check           -
+	 *                 check           - column with checkboxes
 	 *                 get             - only selection from database, but no display on STListBox
 	 *                 disabled        -
 	 *                 dropdown        -
 	 *                 namedlink       -
 	 *                 namedcolumnlink -
-	 *                 download        -                 
-	 * @param string $aliasColumn column or alias column name
+	 *                 download        -     
+	 * @param string $tableName name of the used table            
+	 * @param array $column array with column and alias name
 	 * @param object $address can be an address which should link to, or an STBaseContainer to which link should set
 	 * @param string $valueColumn pre defined link when selection should be disabled
 	 */ 
-	protected function linkA(string $which, string $aliasColumn, $address= null, string $valueColumn= null)
+	protected function linkA(string $which, string $tableName, array $column, $address= null, string $valueColumn= null)
 	{
 	    if(STCheck::isDebug())
 	    {
-    		STCheck::param($which, 0, "string");
-    		STCheck::param($aliasColumn, 1, "string");
-    		STCheck::param($address, 2, "string", "STBaseContainer", "STBaseTable", "null");
-    		STCheck::param($valueColumn, 3, "string", "null");
+	        STCheck::param($which, 0, "string");
+	        STCheck::param($tableName, 1, "string");
+    		STCheck::param($address, 3, "string", "STBaseContainer", "STBaseTable", "null");
+    		STCheck::param($valueColumn, 4, "string", "null");
 	    }
-		
-		$field= $this->findAliasOrColumn($aliasColumn);
+
+	    if( !isset($column['alias']) ||
+	        trim($column['alias']) == ""   )
+	    {
+	        $column['alias']= $column['column'];
+	        
+	    }elseif(!isset($column['column']) ||
+	            trim($column['column']) == ""   )
+	    {
+	        $column['column']= $column['alias'];
+	    }
+	    $aColumn= array();
+	    $desc= STDbTableDescriptions::instance($this->db->getDatabaseName());
+	    $tableName= $desc->getTableName($tableName);
+	    if($tableName != $this->Name)
+	    {
+	        $oTable= $this->getTable($tableName);
+	        $field= $oTable->findAliasOrColumn($column['alias']);
+	        if($field['type'] == "not found")
+	        {
+	            $field= $oTable->findColumnOrAlias($column['column']);
+	            $field['alias']= $column['alias'];
+	        }
+	    }else
+	    {
+	        $field= $this->findAliasOrColumn($column['alias']);
+	        if($field['type'] == "not found")
+	        {
+	            $field= $this->findColumnOrAlias($column['column']);
+	            $field['alias']= $column['alias'];
+	        }
+	    }
 		$aliasColumn= $field["alias"];
 		if(!isset($this->showTypes[$aliasColumn]))
 			$this->showTypes[$aliasColumn]= array();
@@ -2556,6 +2580,15 @@ class STBaseTable
 		{
 			$this->showTypes[$aliasColumn][$which][]= $valueColumn;
 			$valueColumn= null;	
+		}elseif($which=="get")
+		{
+		    $aColumn= array();
+	        $aColumn["table"]= $tableName;
+	        $aColumn["column"]= $field['column'];
+	        $aColumn["alias"]= $field['alias'];
+	        $aColumn['type']= "get";
+	        $aColumn["nextLine"]= true;
+	        $this->show[]= $aColumn;
 		}else
 			$this->showTypes[$aliasColumn][$which]= $to;
 		if($valueColumn)
@@ -2565,9 +2598,9 @@ class STBaseTable
 			$this->showTypes["valueColumns"][$aliasColumn]= $valueColumn;
 			$field= $this->findAliasOrColumn($valueColumn);
 			$bFound= false;
-			foreach($this->show as $column)
+			foreach($this->show as $showfield)
 			{
-				if($column["alias"]==$field["alias"])
+			    if($showfield["alias"]==$field["alias"])
 				{
 					$bFound= true;
 					break;
@@ -2601,7 +2634,7 @@ class STBaseTable
 	 */
 	public function link(string $alias, $address= null)
 	{
-	    $this->linkA("link", $alias, $address, null);
+	    $this->linkA("link", $this->Name, array("alias"=>$alias), $address, null);
 	}
 	/**
 	 * define column with link to address
@@ -2615,7 +2648,7 @@ class STBaseTable
 	 */
 	public function namedLink(string $alias, $address= null)
 	{
-	    $this->linkA("namedlink", $alias, $address);
+	    $this->linkA("namedlink", $this->Name, array("alias"=>$alias), $address);
 	}
 	/**
 	 * 
@@ -2635,7 +2668,7 @@ class STBaseTable
 	{
 		if(!$valueColumn)
 		    $valueColumn= $aliasColumn;
-		$this->linkA("namedcolumnlink", $aliasColumn, $address, $valueColumn);
+		$this->linkA("namedcolumnlink", $this->Name, array("alias"=>$aliasColumn), $address, $valueColumn);
 	}
 	/**
 	 * define column with link to address
@@ -2652,42 +2685,48 @@ class STBaseTable
 	{
 		$this->namedColumnLink($aliasColumn, $this->sPKColumn, $address);
 	}
-	function getColumn($column, $alias= "")
+	/**
+	 * select column, do not calculate foreign keys by statement
+	 * and not display inside STListBox or STItemBox
+	 * 
+	 * @param string $column name of column at current table
+	 * @param string $alias alias name of column
+	 * @param string $unknown unknown parameter for compatibility to STDbSelector
+	 */
+	public function getColumn(string $column, string $alias= "", string $unknown= "")
 	{
-		Tag::paramCheck($column, 1, "string");
-		Tag::paramCheck($alias, 2, "string", "empty(string)");
-
-		$field= $this->findAliasOrColumn($column);
-		// if column exists in selected list
-		// make no entry for getColumn
-		$wantColumn= $field["column"];
-		foreach($this->show as $content)
+	    STCheck::param($column, 0, "string");
+	    $nParams= func_num_args();
+	    STCheck::lastParam(2, $nParams);
+		
+		if($alias == "")
+		    $alias= $column;
+		$this->getColumnA($this->Name, array( "column"=>$column, "alias"=>$alias));
+	}
+	/**
+	 * select column, do not calculate foreign keys by statement
+	 * and not display inside STListBox or STItemBox
+	 * 
+	 * @param string $tableName name of table where column exist
+	 * @param array $column array with column and alias
+	 */
+	protected function getColumnA(string $tableName, array $column)
+	{
+		if(	!isset($this->abNewChoice["get"]) ||
+		    $this->abNewChoice["get"] == true   )   
 		{
-			if($content["column"]===$wantColumn)
-				return;
+		    foreach($this->show as $key => $fields)
+		    {
+		        if($fields['type'] == "get")
+		            unset($this->show[$key]);
+		    }
+		    $this->abNewChoice["get"]= false;
 		}
-		$this->linkA("get", $column, null, null);
+		$this->linkA("get", $tableName, $column, null, null);
 	}
 	function clearGetColumns()
 	{
-		$this->showTypes= array();
-		return;
-		// do not know why I do need this
-		$valueColumns= array();
-		foreach($this->showTypes as $column=>$value)
-		{
-			if($column=="valueColumns")
-			{
-				foreach($value as $need)
-					$valueColumns[$need]= "need";
-
-			}elseif(	isset($value["get"])
-						and
-						!isset($valueColumns[$column])	)
-			{
-				unset($this->showTypes[$column]["get"]);
-			}
-		}
+	    $this->abNewChoice['get']= true;
 	}
 	function clearRekursiveGetColumns($bFromIdentif= false)
 	{
@@ -2716,7 +2755,7 @@ class STBaseTable
 	}
 	function dropDownSelect($aliasColumn, $callbackFunction)
 	{
-		$this->linkA("dropdown", $aliasColumn, "st_callbackFunction", null);
+	    $this->linkA("dropdown", $this->Name, array("alias"=>$alias), "st_callbackFunction", null);
 		$this->joinCallback($callbackFunction, $aliasColumn);
 	}
 	function listCallback($callbackFunction, $columnName= null)

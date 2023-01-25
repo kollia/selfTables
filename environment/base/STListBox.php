@@ -760,10 +760,10 @@ class STListBox extends STBaseBox
 			 }
 			if($this->nMaxRowSelect===null)
 				return $oNumIndex;
-			// alex 15/06/2005:	nur wenn $needAlwaysIndex nicht auf false gesetzt ist
-			//						$needAlwaysIndex =	false	-	nie Index anzeigen
-			//											null	-	nur wenn $nMaxRowSelect gr�sser als vorhandene Zeilen
-			//											true	-	immer anzeigen
+			// alex 15/06/2005:	only if $needAlwaysIndex not false
+			//						$needAlwaysIndex =	false	-	don't show index
+			//											null	-	only if $nMaxRowSelect greater than exist row
+			//											true	-	show always
 			if(	(	$this->nMaxRowSelect
 					and
 					$this->nMaxRowSelect < $nMaxTableRows
@@ -965,12 +965,12 @@ class STListBox extends STBaseBox
 		 *						noErrorShow: do not ouput any error and also no stopping<br />
 		 *						onErrorMessage: show first error with Message-Box (default)<br />
 		 *	@return	int return 0, 1, -1, -2 or -5.<br>
-		 *			 0 - Die Tabelle wurde erzeugt<br>
-		 *			 1 - Die Checkboxen wurden mit der Datenbank abgeglichen<br>
-		 *			-1 - die solution ergab kein Ergebnis<br>
-		 *			-2 - zuerst muss die Funktion solution aufgerufen werden!<br>
-		 *			-5 - beim Checkbox-Abgleich wurde nichts ver�ndert<br>
-		 *			(die R&uuml;ckgabe im Positiven Bereich ist kein Fehler)
+		 *			 0 - the list table was displayed<br>
+		 *			 1 - The checkboxes were compared with the database<br>
+		 *			-1 - the solution gave no result<br>
+		 *			-2 - first should called the ::query() method<br>
+		 *			-5 - nothing was changed in the checkbox comparison<br>
+		 *			(he positive return is not an error)
 		 */
 		function createTags()
 		{
@@ -981,10 +981,20 @@ class STListBox extends STBaseBox
 				$this->asDBTable->bIsNnTable	)
 			{
 				$hTable= new DivTag();
+				$showTypes['check']= $this->asDBTable->aNnTableColumn['alias'];
 			}else// sonst gleich in die Tabelle =dieses Objekt($this)
 				$hTable= &$this;
-
-			//if(typeof($this->asDbTable, "STDbTable"))
+				
+			$aGetColumns= array();
+			foreach($this->asDBTable->show as $field)
+			{// create all getColumns for extraField
+			    if( isset($field['type']) &&
+			        $field['type'] == "get"  )
+			    {
+			        $aGetColumns[]= $field['alias'];
+			    }
+			}
+			
 			$indexTable= &$this->getIndexTable();
 			if($indexTable)
 			{
@@ -1005,9 +1015,9 @@ class STListBox extends STBaseBox
 				$hTable->addObj($idtr);
 			}
 
-			/*****************************************************************
-			 **        Ueberschrift-Zeile deffinieren wenn HORIZONTAL        **
-			 *****************************************************************/
+			/********************************************************
+			 **        defenition of Head-Row if HORIZONTAL        **
+			 ********************************************************/
 			if(	$this->arrangement==STHORIZONTAL
 				and
 				$this->bCaption					)
@@ -1017,9 +1027,8 @@ class STListBox extends STBaseBox
 				$firstRow= $this->SqlResult[0];
 	            foreach($firstRow as $key=>$value)
     	        {
-					if(	!isset($this->showTypes[$key]) ||
-						$this->showTypes[$key] != "get"		)
-					{
+					if(	!in_array($key, $aGetColumns) )
+					{// only if column no getColumn
 						$th= new ColumnTag(TH);
 							$this->insertAttributes($th, "th");
 						if($this->getTable()->doTableSorting)
@@ -1091,8 +1100,11 @@ class STListBox extends STBaseBox
 			    $msg.= "VERTICAL";
 			else
 			    $msg.= "unknown!";
-			STCheck::echoDebug("listbox.properties");
-			st_print_r($Rows,2);
+			STCheck::echoDebug("listbox.properties", $msg);
+			$space= STCheck::echoDebug("listbox.properties", "show follow columns:");
+			st_print_r($this->asDBTable->show,5,$space);
+			STCheck::echoDebug("listbox.properties", "from database result:");
+			st_print_r($Rows,2,$space);
 		}else
 			$_showColumnProperties= false;
 		$class= "Tr1";
@@ -1122,7 +1134,7 @@ class STListBox extends STBaseBox
 			if($_showColumnProperties)
 				echo "-------------------------------------------------<br />";
 			foreach($rowArray as $columnKey=>$columnValue)
-          	{
+			{
   				if($this->arrangement==STVERTICAL)
   				{// erstelle als erstes Feld die Ueberschrift
   					if(	!isset($this->showTypes[$rowKey]) ||
@@ -1146,7 +1158,7 @@ class STListBox extends STBaseBox
 				    $extraField= null;
 					$key= $columnKey;
 				}
-
+				
 				if(preg_match("/^###STcolumn([0-9]+)###_(.*)$/", $key, $preg))
 				{
 					$nDisplayColumn= $preg[1];
@@ -1164,6 +1176,11 @@ class STListBox extends STBaseBox
 					$extraField= $this->showTypes[$createdColumn];
 			    }
 			    
+			    if( !isset($extraField) &&
+			        in_array($createdColumn, $aGetColumns) )
+			    {
+			        $extraField= "get";       
+			    }
 				// hier wird gesetzt ob ein Zugriff vorhanden ist
 				$bHasAccess= true;
 				if(isset($this->bLinkAccess[$createdColumn]))
@@ -1694,6 +1711,7 @@ class STListBox extends STBaseBox
 			/*****************************************************************************/
 
 		}
+		
 		function createDbChanges()
 		{
 			global $HTTP_POST_VARS;
@@ -1703,14 +1721,28 @@ class STListBox extends STBaseBox
 				and
 				!$this->insertStatement					)
 			{// checkboxen mit Datenbank abgleichen
-
-				Tag::echoDebug("fieldArray", "file:".__file__." line:".__line__);
-				$fields= $this->db->fieldArray($this->statement, $this->getOnError("SQL"));
-				$showTypes= array_flip($this->showTypes);
-				$isCheck= $showTypes["check"];
-				if(isset($isCheck))
+			    $fields= $this->asDBTable->columns;
+			    if(!$this->asDBTable->bIsNnTable)
+			    {
+			        $showTypes= array_flip($this->showTypes);
+			        $columnName= $this->asDBTable->findAliasOrColumn($showTypes['check']);
+			        $isCheck= $showTypes['check'];
+			    }else
+			    {
+			        $columnName= $this->asDBTable->aNnTableColumn['alias'];
+			    }
+			        
+		        
+		        echo __FILE__.__LINE__."<br>";
+		        st_print_r($this->asDBTable->aNnTableColumn,4);
+		        st_print_r($fields,4);
+		        st_print_r($this->asDBTable->showTypes,4);
+		        st_print_r($this->showTypes,4);
+		        st_print_r($showTypes);
+				$checked= array();
+				if(isset($HTTP_POST_VARS[$isCheck]))
 				{
-					$box= $HTTP_POST_VARS[$isCheck];
+				    $box= $HTTP_POST_VARS[$isCheck];
 					//take checked directly from database
     				//$checked= $HTTP_POST_VARS["checked_".$isCheck];
 					foreach($this->SqlResult as $key=>$value)
@@ -1719,19 +1751,23 @@ class STListBox extends STBaseBox
 							$checked[$key]= "on";
 					}
 				}
-
+				
 				if(count($box) || count($checked))
 				{
+				    if($this->asDBTable->bIsNnTable)
+				        $columnName= $this->asDBTable->aNnTableColumn['column'];
+				    else
+				        $columnName= $this->asDBTable->findAliasOrColumn($showTypes['check']);
 					foreach($fields as $checkBoxColumn)
 					{
-						if($checkBoxColumn["name"]===$isCheck)
-							break;// on brake, the variable checkBoxColumn has all contents of the column
+					    if($checkBoxColumn["name"]===$columnName)
+						    break;// on break, the variable checkBoxColumn has all contents of the column
 					}
 					if(is_array($box))
 					{// all fields which are checked from gui
-        				foreach($box as $kBox => $vBox)
+        				foreach($box as $countBox => $valueBox)
         				{
-        					if(!isset($checked[$kBox]))
+        					if(!isset($checked[$countBox]))
         					{//the value is checked, but not in database
 								if($this->asDBTable->bIsNnTable)
 								{
@@ -1739,11 +1775,11 @@ class STListBox extends STBaseBox
 								{
 									if($this->asDBTable->aCheckDef[$isCheck])
 									{
-										$this->SqlResult[$kBox][$isCheck]= $this->asDBTable->aCheckDef[$isCheck];
+										$this->SqlResult[$countBox][$isCheck]= $this->asDBTable->aCheckDef[$isCheck];
 
 									}elseif($checkBoxColumn["type"]=="string")
 									{
-										$this->SqlResult[$kBox][$isCheck]= "##st_newSet";
+										$this->SqlResult[$countBox][$isCheck]= "##st_newSet";
 									}
 								}// end of if nnTable in table-object save
         					}// end of if not box-key also before checked (in database)
@@ -1759,7 +1795,7 @@ class STListBox extends STBaseBox
 								{
 								}else
 								{
-									if(preg_match("/not_null/", $checkBoxColumn["flags"]))
+								    if(preg_match("/not_null/", $checkBoxColumn["flags"]))
 									{
 										$this->SqlResult[$kChecked][$isCheck]= null;
 									}
@@ -1785,11 +1821,17 @@ class STListBox extends STBaseBox
 				$error==="NOERROR"						)
 			{// checkboxen mit Datenbank abgleichen
 
+			    $nnTableInsert= array();
 				Tag::echoDebug("fieldArray", "file:".__file__." line:".__line__);
-				$fields= $this->db->fieldArray($this->statement, $this->getOnError("SQL"));
+				//$fields= $this->db->fieldArray($this->statement, $this->getOnError("SQL"));
+				if($this->asDBTable->bIsNnTable)
+				    $tableName= $this->asDBTable->aNnTableColumn['table'];
+			    else
+			        $tableName= $this->asDBTable->getName();
+			    $fields= $this->db->list_fields($tableName, $this->getOnError("SQL"));
 				$showTypes= array_flip($this->showTypes);
 				$isCheck= $showTypes["check"];
-
+				
 				if(isset($isCheck))
 				{
 					$box= $HTTP_POST_VARS[$isCheck];
@@ -1797,14 +1839,19 @@ class STListBox extends STBaseBox
 					//(incomming parameter)
     				//$checked= $HTTP_POST_VARS["checked_".$isCheck];
 				}
+				echo __FILE__.__LINE__."<br>";
+				st_print_r($this->asDBTable->aNnTableColumn);
+				st_print_r($fields,5);
+				st_print_r($this->asDBTable->columns,4);
+				st_print_r($this->SqlResult,4);
+				st_print_r($box,4);
+				st_print_r($checked,4);
 				if(	!is_string($this->insertStatement)
 					and
 					$this->asDBTable->bIsNnTable
 					and
 					count($box) > count($checked)		)
 				{
-					$field= $this->asDBTable->searchByColumn($columnContent["name"]);
-   					$aliasName= $field["alias"];
    					$this->asDBTable->setForeignKeyModification();
 					foreach($this->asDBTable->columns as $columnContent)
 					{
@@ -1812,7 +1859,7 @@ class STListBox extends STBaseBox
 						{
 							if(isset($this->asDBTable->aSetAlso[$columnContent["name"]][STINSERT]))
 							{
-								$this->nnTableInsert[$columnContent["name"]]= $this->asDBTable->aSetAlso[$columnContent["name"]][STINSERT];
+								$nnTableInsert[$columnContent["name"]]= $this->asDBTable->aSetAlso[$columnContent["name"]][STINSERT];
 							}else
 							{
 								$value= $this->asDBTable->getWhereValue($columnContent["name"]);
@@ -1830,7 +1877,7 @@ class STListBox extends STBaseBox
 												$this->msg->setMessageId("NNTABLEINSERT_MUCH@", $columnContent["name"]);
 												return;
 											}else
-												$this->nnTableInsert[$columnContent["name"]]= $content["value"];
+												$nnTableInsert[$columnContent["name"]]= $content["value"];
 										}
 									}
 
@@ -1879,9 +1926,9 @@ class STListBox extends STBaseBox
 
 					if(is_array($box))
 					{// all fields which are checked from gui
-        				foreach($box as $kBox => $vBox)
+        				foreach($box as $countBox => $valueBox)
         				{
-        					if(!isset($checked[$kBox]))
+        					if(!isset($checked[$countBox]))
         					{//the value is checked, but not in database
 								$bOnDbChanged= true;
 								if($this->asDBTable->bIsNnTable)
@@ -1890,7 +1937,7 @@ class STListBox extends STBaseBox
 									{
         								$insert= $this->insertStatement;
         								foreach($aValues as $kValues => $vValues)
-        									$insert= preg_replace("/%".$kValues."%/", $HTTP_POST_VARS[$vValues][$kBox], $insert);
+        									$insert= preg_replace("/%".$kValues."%/", $HTTP_POST_VARS[$vValues][$countBox], $insert);
         								if(!$this->db->fetch($insert, $this->getOnError("SQL")))
     									{
     										$this->msg->setMessageId("SQL_ERROR", $this->db->getError());
@@ -1898,20 +1945,28 @@ class STListBox extends STBaseBox
 										}
 									}else
 									{
+									    echo __FILE__.__LINE__."<br>";
+									    st_print_r($this->asDBTable->aNnTableColumn);
+									    st_print_r($this->asDBTable->columns,4);
+									    st_print_r($nnTableInsert);
 										foreach($this->asDBTable->columns as $columnContent)
 										{
 											if(!preg_match("/auto_increment/", $columnContent["flags"]))
 											{
 												echo __file__.__line__."<br />";
 												echo "search value for column<br />";
-												$value= $this->nnTableInsert[$columnContent["name"]];
+												
+												$value= null;
+												if(isset($nnTableInsert[$columnContent["name"]]))
+												    $value= $nnTableInsert[$columnContent["name"]];
 												if($value===null)
 												{
     												$field= $this->asDBTable->searchByColumn($columnContent["name"]);
-    												$value= $this->SqlResult[$kBox][$field["alias"]];
+    												if(isset($this->SqlResult[$countBox][$field["alias"]]))
+    												    $value= $this->SqlResult[$countBox][$field["alias"]];
 												}
-												echo "value in row $kBox from column ". $field["alias"]." SqlResult is $value<br />";
-												echo "value from name ".$columnContent["name"]." in nnTableInsert is ".$this->nnTableInsert[$columnContent["name"]]."<br />";
+												echo "value in row $countBox from column ". $field["alias"]." SqlResult is $value<br />";
+												echo "value from name ".$columnContent["name"]." in nnTableInsert is ".$nnTableInsert[$columnContent["name"]]."<br />";
 												if(	$value===null
 													and
 													preg_match("/not_null/", $columnContent["flags"]))
@@ -1930,8 +1985,8 @@ class STListBox extends STBaseBox
 									}
         						}else// else no nnTable be set
 								{
-									$pkResult= $this->SqlResult[$kBox][$aliasPk];
-									$checkBoxResult= $this->SqlResult[$kBox][$isCheck];
+									$pkResult= $this->SqlResult[$countBox][$aliasPk];
+									$checkBoxResult= $this->SqlResult[$countBox][$isCheck];
 									$updater->where($pkName."=".$pkResult);
 									$updater->update($checkBoxColumn, $checkBoxResult);
 									$updater->fillNextRow();

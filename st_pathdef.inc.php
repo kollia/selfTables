@@ -239,6 +239,7 @@
 		$_stsitecreator=			$_stenvironmenttools_path."/base/STSiteCreator.php";
 		  
 		$_stdatabase=				$_stenvironmenttools_path."/db/STDatabase.php";
+		$_stdbmariadb=              $_stenvironmenttools_path."/db/STDbMariaDB.php";
 		$_stdbmysql=				$_stenvironmenttools_path."/db/STDbMySql.php";
 		$_stdbtable=				$_stenvironmenttools_path."/db/STDbTable.php";
 		$_stdbdeftable=				$_stenvironmenttools_path."/db/STDbDefTable.php";

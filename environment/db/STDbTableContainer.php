@@ -6,7 +6,13 @@ require_once($php_htmltag_class);
  
 $global_array_all_exist_stdbtableContainers= array();
 
-class unknown_STDbTableContainer
+/**
+ * represent a container with only one table inside
+ * with navigation lists if needed
+ * @author Alexander Kolli
+ *
+ */
+class STDbTableContainer
 {
 	var $bFirstContainer= false; // ob der Container der erste f�r STDbSiteCreator ist
 	var $name;  // Name des Containers mit dem er als Objekt gehandelt wird

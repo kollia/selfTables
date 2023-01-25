@@ -29,9 +29,10 @@ class STDbInserter
 	function insertByPost()
 	{
 	}
-	function fillColumn($column, $value)
+	function fillColumn(string $column, $value)
 	{
-		Tag::paramCheck($column, 1, "string");
+		STCheck::param($column, 0, "string");
+		STCheck::param($value, 1, "string", "int");
 
 		if(preg_match("/^[ ]*['\"](.*)['\"][ ]*$/", $value, $preg))
 			$value= $preg[1];

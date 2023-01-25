@@ -771,14 +771,9 @@ class STUserSession extends STDbSession
 		$oCluster= &$this->database->getTable("Cluster");
 		$clusterSelector= new STDbSelector($oCluster, STSQL_ASSOC);
 		$clusterSelector->select("Cluster", "ID");
-		$clusterSelector->getColumn("Cluster", "ProjectID");
+		$clusterSelector->select("Cluster", "ProjectID");
 		$clusterSelector->execute();
 		$aClusters= $clusterSelector->getResult();
-		//$statement= "select ".$this->asClusterTableColumns["ID"]["column"].",";
-		//$statement.= $this->asClusterTableColumns["ProjectID"]["column"];
-		//$statement.= " from ".$this->sClusterTable;
-		//$aClusters= $this->database->fetch_array($statement, MYSQL_ASSOC);
-		//echo "clusters from DB:";st_print_r($aClusters,2);echo "<br />";
 		foreach($aClusters as $row)
 			$this->setExistCluster($row["ID"], $row["ProjectID"]);
 		/**/if( Tag::isDebug("user") )

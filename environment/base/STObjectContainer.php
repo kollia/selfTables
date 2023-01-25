@@ -109,13 +109,23 @@ class STObjectContainer extends STBaseContainer
 	}
 	public function &needNnTable(string $fixTable, string $nnTable, string $joinTable)
 	{
-	    $table= $this->getTable($joinTable);
-	    $selector= new STDbSelector($table);
-	    $selector->setNnTable($nnTable, $fixTable);
-	    $selector->joinOver($fixTable);
-	    $selector->joinOver($nnTable);
-	    
-	    $this->needTableObject($selector);
+	    // not all databases save the tables case sensetive
+	    $sTableName= strtolower($this->getTableName($joinTable));
+	    if(!isset($this->tables[$sTableName]))
+	    {
+    	    $table= $this->getTable($joinTable);
+    	    $selector= new STDbSelector($table);
+    	    $selector->setNnTable($nnTable, $fixTable);
+    	    $selector->joinOver($fixTable);
+    	    $selector->joinOver($nnTable);
+    	    
+    	    $this->needTableObject($selector);
+	    }else
+	    {
+	        $selector= $this->tables[$sTableName];
+	        STCheck::alert(!typeof($selector, "STDbSelector") || !$selector->bIsNnTable, "STObjectContainer::needNnTable()",
+	            "the joinTable '$joinTable' (third parameter) was selected before, but not as N to N table");
+	    }
 	    return $selector;
 	}
 	public function needTableObject(&$table)

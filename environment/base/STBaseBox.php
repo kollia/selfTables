@@ -411,15 +411,9 @@ class STBaseBox extends TableTag
 		{
 			$this->uniqueKey[]= $keys;
 		}
-		function getFieldArray($statement= null)
+		protected function getFieldArray($statement= null)
 		{
-			if(STCheck::isDebug() && $this->fieldArray == null)
-			{
-				echo "<br>";
-				echo __FILE__.__LINE__."<br>";
-				echo "getFieldArray($statement)<br>";
-				st_print_r($this->fieldArray);
-			}
+		    STCheck::alert(!isset($this->fieldArray), "STBaseBox::getFieldArray()", "no local fieldArray be set");
 			if($statement==null)
 			{
 				$statement= reset($this->asTable);
