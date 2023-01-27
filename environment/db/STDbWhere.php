@@ -354,9 +354,11 @@ class STDbWhere
 			}
 			return true;
 		}
-		function getSettingValue($column, $table= "")
+		function getSettingValue($column, $table= "") : array
 		{
-			return $this->aValues[$table][$column];
+		    if(isset($this->aValues[$table][$column]))
+			    return $this->aValues[$table][$column];
+		    return array();
 		}
 		public function getStatement($oTable, $aktAlias, $aliases= null)
 		{

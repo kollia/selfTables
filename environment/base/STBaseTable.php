@@ -2988,6 +2988,7 @@ class STBaseTable
             if(	isset($limitation) &&
                 is_array($limitation)	)
             {
+                $where->forTable($tableName);
                 foreach($limitation as $column=>$value)
                 {
                     if($this->haveColumn($column))
@@ -3057,8 +3058,23 @@ class STBaseTable
 	}
 	// alex 08/06/2005:	nun k�nnen Werte auch Statisch in der
 	//					STBaseTable gesetzt werden
-	function preSelect($columnName, $value, $action= STINSERT)
- 	{
+	/**
+	 * define values for column which preselect for inserts or updates.<br />
+	 * should only used for an multible table container (STDbSelector)
+	 * if it is defined as N to N table
+	 * 
+	 * @param string $columnName name of column
+	 * @param string|int $value column content for preselect
+	 * @param string $action for which action (STINSERT or STUPDATE) should used
+	 */
+	public function preSelect($columnName, $value, $action= STINSERT)
+	{
+	    if(STCheck::isDebug())
+	    {
+	        STCheck::param($columnName, 0, "string");
+	        STCheck::param($value, 1, "string", "int");
+	        STCheck::param($action, 2, "check", $action===null||$action==STINSERT||$action==STUPDATE, "STINSERT", "STUPDATE");
+	    }
 		$field= $this->findAliasOrColumn($columnName);
 		$columnName= $field["column"];
 		if(	!isset($this->aSetAlso[$columnName]) ||

@@ -379,9 +379,11 @@ class STDbSelector extends STDbTable
 		}
 		public function setNnTable(string $nnTableName, string $fixTableName)
 		{
+		    $bfixFk=  false;
+		    $bJoinFk= false;
 		    $this->noInsert();
 		    $this->noUpdate();
-		    $this->noDelete();
+		    $this->noDelete();		    
 		    $fixTableName= $this->db->getTableName($fixTableName);
 		    $nnTableName= $this->db->getTableName($nnTableName);
 		    $nnTable= $this->getTable($nnTableName);
@@ -389,32 +391,40 @@ class STDbSelector extends STDbTable
 		    $this->bIsNnTable= true;
 		    $this->aNnTableColumn= array( "table" => $nnTableName,
 		                                  "column" => $nnTable->sPKColumn    );
-		    $fks= &$nnTable->getForeignKeys();
-			$selected= 0;
+		    
+		    //$this->getColumn($this->Name, $this->getPkColumnName(), "nnPK@".$this->Name.)
 			// search where the foreign keys are pointed
 			// to set it  all to left joins
 			// and also insert getColumns to foreign keys
-			// for new inserts
+		    // for new inserts
+		    $fks= &$nnTable->getForeignKeys();
 			foreach($fks as $table=>$content)
 			{
 				foreach($content as $key=>$column)
 				{
 				    $toTable= "no";
 				    if($table == $fixTableName)
+				    {
+				        $bfixFk= true;
 				        $toTable= "fix";
-				    elseif($table == $this->Name)
+				        
+				    }elseif($table == $this->Name)
+				    {
+				        $bJoinFk= true;
 				        $toTable= "join";
+				    }
 				    if($toTable != "no")
 				    {
 				        $fks[$table][$key]["join"]= "left";
 				        $this->aNnTableColumn['fks'][$toTable]['table']= $table;
 				        $this->aNnTableColumn['fks'][$toTable]['column']= $column['other'];
-				        $this->getColumn($table, $column['other'], "join@$table@".$column['other']);
-				        $selected++;
+				        if($toTable == "join")
+				            $this->getColumn($table, $column['other'], "join@$table@".$column['other']);
 				    }
 				}
 			}
-			Tag::alert($selected != 2, "STBaseTable::nnTable()", "the N to N table $nnTableName need two columns with foreign key", 2);
+			STCheck::alert(!$bJoinFk, "STBaseTable::setNnTable()", "the N to N table $nnTableName have no foreign key to table ".$this->Name, 2);
+			STCheck::alert(!$bfixFk, "STBaseTable::setNnTable()", "the N to N table $nnTableName have no foreign key to table $fixTableName", 2);
 		}
 		/**
 		 * check whether given name is a valid column.<br />

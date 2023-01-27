@@ -84,6 +84,7 @@ class STListBox extends STBaseBox
 				$this->msg->setMessageContent("NNTABLEINSERT_MUCH@2", "fuer den neuen Insert der n zu n Table sind zu viele Ergebnisse fuer die Spalte \"@\", im where-statement vorhanden");
 				$this->msg->setMessageContent("NNTABLEINSERT_FAULT@", "fuer den neuen Insert der n zu n Table ist die Spalte \"@\" nicht gesetzt");
 				$this->msg->setMessageContent("NOPK_FORDBCHANGE@", "fuer die aenderung in der Datenbank ist der primaerere Schluessel \"@\" nicht im Ergebnis.");
+				$this->msg->setMessageContent("NOFK_JOINFIELDEXIST@@@", "Fuer die N zu N Tabelle hat die Spalte \"@\" in der Tabelle '@' keinen Fremdschlüssel zur Tabelle '@'");
 				
 			}else // langauge have to be english ('en')
 			{
@@ -97,6 +98,7 @@ class STListBox extends STBaseBox
 				$this->msg->setMessageContent("NNTABLEINSERT_MUCH@2", "for the new insert of n to n table, exist to much values in column \"@\", of where-statement");
 				$this->msg->setMessageContent("NNTABLEINSERT_FAULT@", "for the new insert of n to n table is column \"@\" not filled");
 				$this->msg->setMessageContent("NOPK_FORDBCHANGE@", "for this changing in databse is the primary key \"@\" not in the result.");
+				$this->msg->setMessageContent("NOFK_JOINFIELDEXIST@@@", "For N to N table, column '@' from table '@' has no foreign key to table '@'");
 			}
 		}
 		function insertParam($param, $column= STALLDEF)
@@ -1725,20 +1727,12 @@ class STListBox extends STBaseBox
 			    if(!$this->asDBTable->bIsNnTable)
 			    {
 			        $showTypes= array_flip($this->showTypes);
-			        $columnName= $this->asDBTable->findAliasOrColumn($showTypes['check']);
 			        $isCheck= $showTypes['check'];
+			        $columnName= $this->asDBTable->findAliasOrColumn($isCheck);
 			    }else
-			    {
-			        $columnName= $this->asDBTable->aNnTableColumn['alias'];
-			    }
+			        $columnName= $isCheck= $this->asDBTable->aNnTableColumn['alias'];
 			        
 		        
-		        echo __FILE__.__LINE__."<br>";
-		        st_print_r($this->asDBTable->aNnTableColumn,4);
-		        st_print_r($fields,4);
-		        st_print_r($this->asDBTable->showTypes,4);
-		        st_print_r($this->showTypes,4);
-		        st_print_r($showTypes);
 				$checked= array();
 				if(isset($HTTP_POST_VARS[$isCheck]))
 				{
@@ -1754,10 +1748,6 @@ class STListBox extends STBaseBox
 				
 				if(count($box) || count($checked))
 				{
-				    if($this->asDBTable->bIsNnTable)
-				        $columnName= $this->asDBTable->aNnTableColumn['column'];
-				    else
-				        $columnName= $this->asDBTable->findAliasOrColumn($showTypes['check']);
 					foreach($fields as $checkBoxColumn)
 					{
 					    if($checkBoxColumn["name"]===$columnName)
@@ -1822,13 +1812,15 @@ class STListBox extends STBaseBox
 			{// checkboxen mit Datenbank abgleichen
 
 			    $nnTableInsert= array();
-				Tag::echoDebug("fieldArray", "file:".__file__." line:".__line__);
-				//$fields= $this->db->fieldArray($this->statement, $this->getOnError("SQL"));
 				if($this->asDBTable->bIsNnTable)
+				{
 				    $tableName= $this->asDBTable->aNnTableColumn['table'];
-			    else
+				    $useTable= $this->asDBTable->getTable($tableName);
+				}else
+				{
 			        $tableName= $this->asDBTable->getName();
-			    $fields= $this->db->list_fields($tableName, $this->getOnError("SQL"));
+			        $useTable= $this->asDBTable;
+				}
 				$showTypes= array_flip($this->showTypes);
 				$isCheck= $showTypes["check"];
 				
@@ -1839,21 +1831,38 @@ class STListBox extends STBaseBox
 					//(incomming parameter)
     				//$checked= $HTTP_POST_VARS["checked_".$isCheck];
 				}
-				echo __FILE__.__LINE__."<br>";
-				st_print_r($this->asDBTable->aNnTableColumn);
-				st_print_r($fields,5);
-				st_print_r($this->asDBTable->columns,4);
-				st_print_r($this->SqlResult,4);
-				st_print_r($box,4);
-				st_print_r($checked,4);
-				if(	!is_string($this->insertStatement)
-					and
-					$this->asDBTable->bIsNnTable
-					and
-					count($box) > count($checked)		)
+				$aInsert= array();
+				$aDelete= array();
+				// $box represent all checked values comming from gui
+				// $checked all checked inside database
+				foreach($box as $key=>$value)
 				{
-   					$this->asDBTable->setForeignKeyModification();
-					foreach($this->asDBTable->columns as $columnContent)
+				    if(!isset($checked[$key]))
+				        $aInsert[$key]= $value;
+				}
+				foreach($checked as $key=>$value)
+				{
+				    if(!isset($box[$key]))
+				        $aDelete[$key]= $value;
+				}
+				if(	!is_string($this->insertStatement) &&
+					$this->asDBTable->bIsNnTable &&
+					count($aInsert)		    )
+				{
+				    // check whether user want to insert also some value with STBaseTable::preSelect()
+				    // and also have to be exist some values from where statement
+				    $joinTableName= $this->asDBTable->aNnTableColumn['fks']['join']['table'];
+				    $this->asDBTable->setForeignKeyModification();
+				    $joinWhere= $this->asDBTable->getWhere();
+				    $nnTableName= $this->asDBTable->aNnTableColumn['table'];
+				    $useTable->setForeignKeyModification();
+				    $nnWhere= $useTable->getWhere();
+				    $fixTableName= $this->asDBTable->aNnTableColumn['fks']['fix']['table'];
+				    $fixTable= $this->asDBTable->getTable($fixTableName);
+				    $fixTable->setForeignKeyModification();
+				    $fixWhere= $fixTable->getWhere();
+				    $fks= $useTable->getForeignKeys();
+					foreach($useTable->columns as $columnContent)
 					{
 						if(!preg_match("/auto_increment/", $columnContent["flags"]))
 						{
@@ -1862,168 +1871,215 @@ class STListBox extends STBaseBox
 								$nnTableInsert[$columnContent["name"]]= $this->asDBTable->aSetAlso[$columnContent["name"]][STINSERT];
 							}else
 							{
-								$value= $this->asDBTable->getWhereValue($columnContent["name"]);
-								if(count($value))
-								{
-									$bSetValue= false;
-									foreach($value as $content)
-									{
-										if(	$content["type"]==="value"
-											and
-											$content["operator"]==="="	)
-										{
-											if($bSetValue)
-											{
-												$this->msg->setMessageId("NNTABLEINSERT_MUCH@", $columnContent["name"]);
-												return;
-											}else
-												$nnTableInsert[$columnContent["name"]]= $content["value"];
-										}
-									}
-
-								}
+							    $bDone= false;
+							    do{
+						            if(!$bDone)
+						            {// use joinTable
+						                $whereObj= $joinWhere;
+						                $tableName= $joinTableName;
+						                $bDone= 1;
+						            }elseif($bDone == 1)
+						            {// use nnTable
+						                $whereObj= $nnWhere;
+						                $tableName= $nnTableName;
+						                $bDone= 2;
+						            }else //$bDone == 2
+						            {// use fixTable
+						                $whereObj= $fixWhere;
+						                $tableName= $fixTableName;
+						                $bDone= true;
+						            }
+							        if(isset($whereObj))
+							        {
+							            $value= array();
+							            if($tableName == $nnTableName)
+							                $value= $whereObj->getSettingValue($columnContent["name"], $tableName);
+							            elseif(isset($fks[$tableName]))
+							            {
+							                foreach($fks[$tableName] as $fields)
+							                {
+							                    if($fields['own'] == $columnContent["name"])
+							                    {
+							                        $value= $whereObj->getSettingValue($fields['other'], $tableName);
+							                        break;
+							                    }
+							                }
+							            }
+							             
+        								if(count($value))
+        								{
+        									$bSetValue= false;
+        									foreach($value as $content)
+        									{
+        										if(	$content["type"]==="value"
+        											and
+        											$content["operator"]==="="	)
+        										{
+        											if($bSetValue)
+        											{
+        												$this->msg->setMessageId("NNTABLEINSERT_MUCH@", $columnContent["name"]);
+        												return;
+        											}else
+        												$nnTableInsert[$columnContent["name"]]= $content["value"];
+        										}
+        									}
+        								}
+        								
+							        }
+							    }while($bDone !== true);
 							}
 						}
 					}
 				}
 
-				// if count from $box not the same as $checked
+				// if count from $aInsert or $aDelete given
 				// user check or uncheck an box
-				if(count($box) || count($checked))
-				{
-					if(!$this->insertStatement)
+				if(count($aInsert) || count($aDelete))
+				{   // $box represent all checked values comming from gui
+				    // $checked all checked inside database
+					
+					if($this->asDBTable->bIsNnTable)
 					{
-						$pkName= $this->asDBTable->getPkColumnName();
-        				$field= $this->asDBTable->searchByColumn($pkName);
-        				$aliasPk= $field["alias"];
-						$existPk= false;
-						foreach($this->SqlResult[0] as $column=>$content)
-						{
-							if($column===$aliasPk)
-							{
-								$existPk= true;
-								break;
-							}
-						}
-						//if(!isset($this->SqlResult[0][$aliasPk]))
-						if(!$existPk)
-						{
-							$this->msg->setMessageId("NOPK_FORDBCHANGE@", $pkName);
-							return;
-						}
-						if($this->asDBTable->bIsNnTable)
-						{
-    						$inserter= new STDbInserter($this->asDBTable);
-    						$deleter= new STDbDeleter($this->asDBTable);
+					    $inserter= new STDbInserter($useTable);
+					    $deleter= new STDbDeleter($useTable);
 
-						}else
-    					{
-        					$field= $this->asDBTable->searchByAlias($isCheck);
-        					$checkBoxColumn= $field["column"];
-    						$updater= new STDbUpdater($this->asDBTable);
-    					}
+					}else
+					{
+    					$field= $this->asDBTable->searchByAlias($isCheck);
+    					$checkBoxColumn= $field["column"];
+    					$updater= new STDbUpdater($useTable);
 					}
 
-					if(is_array($box))
-					{// all fields which are checked from gui
-        				foreach($box as $countBox => $valueBox)
-        				{
-        					if(!isset($checked[$countBox]))
-        					{//the value is checked, but not in database
-								$bOnDbChanged= true;
-								if($this->asDBTable->bIsNnTable)
+    				foreach($aInsert as $countBox => $valueBox)
+    				{
+						$bOnDbChanged= true;
+						if($this->asDBTable->bIsNnTable)
+						{
+							if($this->insertStatement)
+							{
+							    // toDo: check whether we need this,
+							    //       maybe this statement was set from outside
+							    //       by older versions
+								$insert= $this->insertStatement;
+								foreach($aValues as $kValues => $vValues)
+									$insert= preg_replace("/%".$kValues."%/", $HTTP_POST_VARS[$vValues][$countBox], $insert);
+								if(!$this->db->fetch($insert, $this->getOnError("SQL")))
 								{
-									if($this->insertStatement)
+									$this->msg->setMessageId("SQL_ERROR", $this->db->getError());
+									break;
+								}
+							}else
+							{
+							    // fill all values which need for insert
+								foreach($useTable->columns as $columnContent)
+								{
+									if(!preg_match("/auto_increment/", $columnContent["flags"]))
 									{
-        								$insert= $this->insertStatement;
-        								foreach($aValues as $kValues => $vValues)
-        									$insert= preg_replace("/%".$kValues."%/", $HTTP_POST_VARS[$vValues][$countBox], $insert);
-        								if(!$this->db->fetch($insert, $this->getOnError("SQL")))
-    									{
-    										$this->msg->setMessageId("SQL_ERROR", $this->db->getError());
-											break;
-										}
-									}else
-									{
-									    echo __FILE__.__LINE__."<br>";
-									    st_print_r($this->asDBTable->aNnTableColumn);
-									    st_print_r($this->asDBTable->columns,4);
-									    st_print_r($nnTableInsert);
-										foreach($this->asDBTable->columns as $columnContent)
+										$value= null;
+										if(isset($nnTableInsert[$columnContent["name"]]))
+										    $value= $nnTableInsert[$columnContent["name"]];
+										if($value===null)
 										{
-											if(!preg_match("/auto_increment/", $columnContent["flags"]))
-											{
-												echo __file__.__line__."<br />";
-												echo "search value for column<br />";
-												
-												$value= null;
-												if(isset($nnTableInsert[$columnContent["name"]]))
-												    $value= $nnTableInsert[$columnContent["name"]];
-												if($value===null)
-												{
-    												$field= $this->asDBTable->searchByColumn($columnContent["name"]);
-    												if(isset($this->SqlResult[$countBox][$field["alias"]]))
-    												    $value= $this->SqlResult[$countBox][$field["alias"]];
-												}
-												echo "value in row $countBox from column ". $field["alias"]." SqlResult is $value<br />";
-												echo "value from name ".$columnContent["name"]." in nnTableInsert is ".$nnTableInsert[$columnContent["name"]]."<br />";
-												if(	$value===null
-													and
-													preg_match("/not_null/", $columnContent["flags"]))
-												{
-													$this->msg->setMessageId("NNTABLEINSERT_FAULT@", $columnContent["name"]);
-													return;
-												}
-												echo __file__.__line__."<br />";
-												echo "insert $value in column ".$columnContent["name"]."<br />";
-												$inserter->fillColumn($columnContent["name"], $value);
-											}
-										}
-										echo __file__.__line__."<br />";
-										echo "fill next row<br />";
-										$inserter->fillNextRow();
-									}
-        						}else// else no nnTable be set
-								{
-									$pkResult= $this->SqlResult[$countBox][$aliasPk];
-									$checkBoxResult= $this->SqlResult[$countBox][$isCheck];
-									$updater->where($pkName."=".$pkResult);
-									$updater->update($checkBoxColumn, $checkBoxResult);
-									$updater->fillNextRow();
-								}// end of if nnTable in table-object save
-        					}// end of if not box-key also before checked (in database)
-						}// end of for-loop which fields be checked in the gui
-					}// end of is value from box not null
-					if(is_array($checked))
+										    $foreignColumn= "";
+										    if(isset($fks[$joinTableName]))
+										    {
+										        foreach($fks[$joinTableName] as $field)
+    										    {
+    										        if($field['own'] == $columnContent['name'])
+    										            $foreignColumn= $field['other'];
+    										    }
+										    }
+										    if($foreignColumn == "")
+										    {
+										        //$this->msg->setMessageId("NOPK_FORDBCHANGE@", "xxx");
+										        $this->msg->setMessageId("NOFK_JOINFIELDEXIST@@@", $columnContent['name'], $nnTableName, $joinTableName);
+										        return;
+										    }else
+										        $joinFieldName= "join@$joinTableName@$foreignColumn";
+									        if(isset($this->SqlResult[$countBox][$joinFieldName]))
+									            $value= $this->SqlResult[$countBox][$joinFieldName];
+									    }
+									    
+										$field= $useTable->searchByColumn($columnContent["name"]);
+										if(isset($this->SqlResult[$countBox][$field["alias"]]))
+										    $value= $this->SqlResult[$countBox][$field["alias"]];
+									    if($value===null)
+									    {
+									        if(preg_match("/not_null/", $columnContent["flags"]))
+									        {
+									            $this->msg->setMessageId("NNTABLEINSERT_FAULT@", $columnContent["name"]);
+									            return;
+									        }
+									    }else
+									        $inserter->fillColumn($columnContent["name"], $value);
+									}// column is no auto_increment
+								}// end of loop from filling fields inside nnTable to insert
+								$inserter->fillNextRow();
+							}// end of no $this->insertStatement string exist
+						}else// else no nnTable be set
+						{
+						    $pkResult= $this->SqlResult[$countBox][$aliasPk];
+						    $checkBoxResult= $this->SqlResult[$countBox][$isCheck];
+						    $updater->where($pkName."=".$pkResult);
+						    $updater->update($checkBoxColumn, $checkBoxResult);
+						    $updater->fillNextRow();
+						}// end of if nnTable in table-object save
+					}// end of for-loop which fields should inserted ($aInsert)
+					if(count($aDelete))
 					{// all fields which are checked in the database
-        				foreach($checked as $kChecked => $vChecked)
+					    if($this->asDBTable->bIsNnTable)
+					    {
+					        $tableName= $useTable->getName();
+					        $tableColumn= $this->asDBTable->aNnTableColumn['column'];
+					        $tableAlias= $this->asDBTable->aNnTableColumn['alias'];
+					    }else
+					    {
+					        $tableName= $this->asDBTable->getName();
+					        $tableColumn= $this->asDBTable->getPkColumnName();
+					        $field= $useTable->searchByColumn($tableColumn);
+					        $tableColumn= $field["alias"];
+					        
+					        $existPk= false;
+					        foreach($this->SqlResult[0] as $column=>$content)
+					        {
+					            if($column===$tableColumn)
+					            {
+					                $existPk= true;
+					                break;
+					            }
+					        }
+					        if(!$existPk)
+					        {
+					            $this->msg->setMessageId("NOPK_FORDBCHANGE@", $tableColumn);
+					            return;
+					        }
+					    }
+        				foreach($aDelete as $kChecked => $vChecked)
         				{
-        					if(!isset($box[$kChecked]))
-        					{// but not on the GUI
-								$bOnDbChanged= true;
-								if($this->asDBTable->bIsNnTable)
+							$bOnDbChanged= true;
+							if($this->asDBTable->bIsNnTable)
+							{
+								if($this->deleteStatement)
 								{
-									if($this->deleteStatement)
-									{
-        								$delete= $this->deleteStatement;
-        								foreach($aValues as $kValues => $vValues)
-        									$delete= preg_replace("/%".$kValues."%/", $HTTP_POST_VARS[$vValues][$kChecked], $delete);
-        								if(!$this->db->solution($delete, $this->getOnError("SQL")))
-    										$this->msg->setMessageId("SQL_ERROR", $this->db->getError());
+    								$delete= $this->deleteStatement;
+    								foreach($aValues as $kValues => $vValues)
+    									$delete= preg_replace("/%".$kValues."%/", $HTTP_POST_VARS[$vValues][$kChecked], $delete);
+    								if(!$this->db->solution($delete, $this->getOnError("SQL")))
+										$this->msg->setMessageId("SQL_ERROR", $this->db->getError());
 
-									}else
-									{
-										$deleter->where($pkName."=".$this->SqlResult[$kChecked][$aliasPk]);
-									}
 								}else
 								{
-									$pkResult= $this->SqlResult[$kChecked][$aliasPk];
-									$checkBoxResult= $this->SqlResult[$kChecked][$isCheck];
-									$updater->where($pkName."=".$pkResult);
-									$updater->update($checkBoxColumn, $checkBoxResult);
-									$updater->fillNextRow();
+								    $value= $this->SqlResult[$kChecked][$tableAlias];
+								    $deleter->where("$tableColumn=$value");
 								}
-        					}
+							}else
+							{
+								$pkResult= $this->SqlResult[$kChecked][$aliasPk];
+								$checkBoxResult= $this->SqlResult[$kChecked][$isCheck];
+								$updater->where($pkName."=".$pkResult);
+								$updater->update($checkBoxColumn, $checkBoxResult);
+								$updater->fillNextRow();
+							}
         				}
 					}
 					if(	!$this->asDBTable->bIsNnTable

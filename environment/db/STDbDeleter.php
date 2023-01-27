@@ -3,20 +3,22 @@
 class STDbDeleter
 {
 	var	$table;
-	var $aWhere;
+	var $aWhere= array();
 	var $bModify= true;
 	var	$nErrorRowNr;
 	
 	// do not take by reference
 	// because into table comming
 	// where statements
-	function __construct($oTable)
+	public function __construct(object $oTable)
 	{
 	    Tag::paramCheck($oTable, 1, "STDbTable");
 		$this->table= &$oTable;
 	}
-	function where($stwhere)
+	public function where($stwhere)
 	{
+	    STCheck::param($stwhere, 0, "STDbWhere", "string");
+	    
 		if(is_string($stwhere))
 			$st_where= new STDbWhere($stwhere);
 		$this->aWhere[]= &$st_where;
@@ -54,7 +56,7 @@ class STDbDeleter
 			$table->andWhere($where);
 			//st_print_r($table->oWhere,20);
 			$statement= $db->getDeleteStatement($table);
-			$db->fetch($statement, $onError);
+			$db->query($statement, $onError);
 			if($db->errno())
 			{
 				$this->nErrorRowNr= $nr;

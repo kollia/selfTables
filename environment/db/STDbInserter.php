@@ -6,7 +6,7 @@ class STDbInserter
 {
 	var	$db;
 	var	$table;
-	var $columns;
+	var $columns= array();
 	var $nAktRow= 0;
 	var $sAccessClusterColumn;
 	/**
