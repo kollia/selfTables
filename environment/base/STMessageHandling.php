@@ -190,11 +190,8 @@ class STMessageHandling // implements STMessageHandlingInterface <- ab version 5
 				}
 				if($this->onError==onErrorMessage)
 				{
-				    Tag::echoDebug("STMessageHandling", "add javascript:alert() message to the scripts");
-				    echo __FILE__.__LINE__."<br>";
-				    echo "$string<br>";
+				    STCheck::echoDebug("STMessageHandling", "add javascript:alert() message to the scripts");
 				    $string= preg_replace("/'/", "\\'", $string);
-				    echo "$string<br>";
 					$this->addScripts(array("alert('$string');"), $scripts, $javaScript);
 				}
 			}else
