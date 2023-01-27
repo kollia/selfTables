@@ -68,21 +68,20 @@ class STMessageHandling // implements STMessageHandlingInterface <- ab version 5
 				and
 				$this->messageId!=null)
 				return;// damit der erste Fehler erhalten bleibt
-			Tag::echoDebug("STMessageHandling", "set MessageId: $messageId");
+			STCheck::echoDebug("STMessageHandling", "set MessageId: $messageId");
 			$this->messageId= $messageId;
 			
 			// alex 2006/01/17:	if an messageId have one or more '@',
 			//					but in function setMessageContent() is not given an Error-String
 			//					the messageId is only for handing over
+			$ats= array();
 			if(	preg_match("/@+$/", $messageId, $ats)
 				and
 				$this->aMessageStrings[$messageId]!=="")
-			{//st_print_r($ats); 
+			{//st_print_r($ats);
 				$need= strlen($ats[0]);
 				$have= func_num_args();
-				$sMessageString= trim($this->aMessageStrings[$messageId]);	
-				$newEntrys= preg_split("/@/", $newString);
-				$nEntrys= count($newEntrys);
+				$sMessageString= trim($this->aMessageStrings[$messageId]);
 				$split= preg_split("/@/", $sMessageString);							
 				Tag::alert($need!=($have-1), "STMessageHandling::setMessageID", "function must have ".($need)." params");
 				
@@ -191,7 +190,11 @@ class STMessageHandling // implements STMessageHandlingInterface <- ab version 5
 				}
 				if($this->onError==onErrorMessage)
 				{
-					Tag::echoDebug("STMessageHandling", "add javascript:alert() message to the scripts");
+				    Tag::echoDebug("STMessageHandling", "add javascript:alert() message to the scripts");
+				    echo __FILE__.__LINE__."<br>";
+				    echo "$string<br>";
+				    $string= preg_replace("/'/", "\\'", $string);
+				    echo "$string<br>";
 					$this->addScripts(array("alert('$string');"), $scripts, $javaScript);
 				}
 			}else
