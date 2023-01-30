@@ -1,0 +1,22 @@
+Dies ist ein Probe !!!
+Diese News-Letter soll in näherer Zukunft dazu verwendet werden,
+Dienstanweisungen vom Prof. Dr. Fotter zu versenden.
+
+Ich habe sie zur Zeit an die LDAP-Gruppe GARDIGINFO,
+sowie zu diversen Personen gehängt.
+
+Das heißt, folgende Personen sollten dieses EMail erhalten:
+  erich.sorantin@klinikum-graz.at
+  klaus.hausegger@klinikum-graz.at
+  ines.kurka@klinikum-graz.at
+  hubert.reiter@klinikum-graz.at
+  irene.stradner@klinikum-graz.at
+  kalman.palagyi@klinikum-graz.at
+  gerald.fritz@klinikum-graz.at
+  roman-benjamin.zotter@klinikum-graz.at
+  alexander.kolli@klinikum-graz.at
+  alexander.witsch@klinikum-graz.at
+  nadine.gollner@klinikum-graz.at
+
+mit den besten Grüßen
+            Alexander Kolli
