@@ -4,7 +4,7 @@
 function st_print_r($value, $deep=1, $space= 0, $bFirst= true)
 {
     if($bFirst)
-        echo myTools::getSpaces($space);
+        echo stTools::getSpaces($space);
 	if(	is_object($value)
 		or
 		is_array($value)	)
@@ -35,9 +35,9 @@ function st_print_r($value, $deep=1, $space= 0, $bFirst= true)
 			foreach($value as $key=>$entry)
 			{
 				$str= "[".$key."]";//echo $space." ".($keyLen-strlen($str));
-				$str.= myTools::getSpaces((($keyLen-strlen($str))))." => ";
+				$str.= stTools::getSpaces((($keyLen-strlen($str))))." => ";
 				if($count>1)
-					echo myTools::getSpaces($space);
+					echo stTools::getSpaces($space);
 				echo $str;
 				st_print_r($entry, ($deep-1), ($space+strlen($str)), false);
 				if($count != $lastCount)
@@ -83,15 +83,15 @@ function showErrorTrace($from= 0, $much= -3)
 	if(!phpVersionNeed("4.3.0"))
 		return;
 	$from++; // damit der n�chste Aufruf  nicht angezeigt wird
-	myTools::showErrorTrace($from, $much);
+	stTools::showErrorTrace($from, $much);
 }
 function printPassword($password, $placeholder= "*")
 {
-    echo myTools::getPlaceholdPassword($password, $placeholder, /*show password*/false);
+    echo stTools::getPlaceholdPassword($password, $placeholder, /*show password*/false);
 }
 function getPlaceholdPassword($password, $placeholder= "*")
 {
-    return myTools::getPlaceholdPassword($password, $placeholder, /*show password*/false);
+    return stTools::getPlaceholdPassword($password, $placeholder, /*show password*/false);
 }
 
 /**
@@ -139,7 +139,7 @@ function out($value, $debug=null)
 		if($debug==null)
 			$debug= $HTML_CLASS_DEBUG_CONTENT;
 
-		$opject= new myTools();
+		$opject= new stTools();
 		$sRv= $opject->out($value, $debug);
 
 		return $sRv;
@@ -341,7 +341,7 @@ function phpVersionNeed($needVersion, $functionName= null)
 		return $bOk;
 }
 
-class myTools
+class stTools
 {
 	public static function showErrorTrace($from= 0, $much= -3)
     {
