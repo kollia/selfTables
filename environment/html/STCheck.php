@@ -151,8 +151,12 @@ class STCheck
 		{
 			$intent= $backtraceCount + STCheck::countHtmlCode($prefStr);
 			st_print_r($value, $deep, $intent);
+		}elseif( is_string($value) &&
+		         trim($value) != ""   )
+		{
+		    echo $value;
 		}else
-			st_print_r($value, 1);
+		    st_print_r($value, 1);
 		if($break)
 			echo "<br />";
 		return $backtraceCount;
@@ -281,7 +285,7 @@ class STCheck
 			if($args[2]=="check")
 			{
 				STCheck::is_warning((!isset($args[3])||!is_bool($args[3])), "STCheck::param()", 
-					"fourth parameter not be set, or no correct boolean");
+					"fourth parameter not be set, or no correct boolean", 1);
 				$bError= false;
 				if(count($args)>=4)
 				{
@@ -332,8 +336,8 @@ class STCheck
 					if($args[2]=="check")
 						$types= "defined as ";
 					for($n= $begin; $n<($c-1); $n++)
-						$types.= $args[$n].", ";
-					$types= substr($types, 0, strlen($types)-2)." or ".$args[$c-1];
+					    $types.= "'".$args[$n]."', ";
+					$types= substr($types, 0, strlen($types)-2)." or '".$args[$c-1]."'";
 				}
 				if(is_string($param))
 					$param= "\"".$param."\"";
@@ -549,7 +553,34 @@ class STCheck
 					$pref.= "<b>file:</b>".$file." <b>line:</b>".$line." <b>:</b> ";
 					$space+= STCheck::countHtmlCode($pref);
 				}
-				return STCheck::writeIntentedLineB(count($backtrace), $pref, $string, /*deep*/0, $break) + $space + 1;
+				if(!isset($string))
+				    $outString= "( -NULL- )";
+				else if(is_string($string))
+				    $outString= $string;
+				elseif(is_array($string))
+				{
+				    if(!empty($string))
+				    {
+    				    $key= array_key_first($string);    				    
+    				    $outString= $string[$key];
+    				    unset($string[$key]);
+				    }else
+				        $outString= "array( -empty- )";
+				}
+				$space= STCheck::writeIntentedLineB(count($backtrace), $pref, $outString, /*deep*/0, $break) + $space;
+				if( !is_string($outString) ||
+				    trim($outString) == ""      )
+				{
+				    $space+= 1;
+				}
+				if(is_array($string))
+				{
+				    $spaces= STCheck::getSpaces($space);
+				    foreach($string as $row)
+				        echo $spaces.$row."<br>";
+				    echo "<br>";
+				}
+				return $space;
 			}
 			return 0;
 		}

@@ -733,7 +733,7 @@ class STUserSession extends STDbSession
 			$clusterTable= $this->database->getTable("Cluster");
 			$clusterTable->select("ID");
 			$clusterTable->select("ProjectID");
-			$statement= $this->database->getStatement($clusterTable);
+			$statement= $clusterTable->getStatement();
 			$aClusters= $this->database->fetch_array($statement, MYSQL_ASSOC);
 			//echo "clusters from DB:";st_print_r($aClusters);echo "<br />";
 			foreach($aClusters as $row)
@@ -1263,7 +1263,7 @@ class STUserSession extends STDbSession
 		$clusterGroup->clearFks();
 		$clusterGroup->modifyForeignKey(false);
 		$clusterGroup->where($this->asClusterGroupTableColumns["ClusterID"]["column"]."='".$cluster."'");
-		$statement= $this->database->getStatement($clusterGroup);
+		$statement= $clusterGroup->getStatement();
 		$clusterGroupResult= $this->database->fetch($statement, noErrorShow);
 		if(count($clusterGroupResult))
 		{

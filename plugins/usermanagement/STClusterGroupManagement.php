@@ -14,7 +14,7 @@ class STClusterGroupManagement extends STObjectContainer
 	}
 	function create()
 	{
-	    $this->needNnTable("Cluster", "ClusterGroup", "Group");
+	    $this->needNnTable("Group", "ClusterGroup", "Cluster");
 		//$clustergroup= &$this->needTable("ClusterGroup");
 	}
 	function init()
@@ -37,7 +37,7 @@ class STClusterGroupManagement extends STObjectContainer
 	    $where->where("ClusterID='".$res['ID']."'");
 	    $where->orWhere("ClusterId is null");
 	    
-	    $nnTable= $this->needNnTable("Cluster", "ClusterGroup", "Group");
+	    $nnTable= $this->needTable("Group");
 	    $nnTable->setDisplayName("Group assignment to Cluster ".$res['ID']);
 	    $nnTable->select("Group", "domain", "domain");
 	    $nnTable->nnTableCheckboxColumn("Affilation");

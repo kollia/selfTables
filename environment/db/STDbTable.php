@@ -8,6 +8,12 @@ class STDbTable extends STBaseTable
     var $container;
 	var $aAuto_increment= array(); // um ein Feld mit Autoincrement vor dem eigentlichen Insert zu holen
 	var	$password= array(); // all about to set an password in database
+	/**
+	 * array of statement parts,
+	 * the reason is to create not everey time the same statement
+	 * @var array
+	 */
+	private $aStatement= array();
 
     function __construct($Table, $container= null, $onError= onErrorStop)
     {
@@ -152,16 +158,15 @@ class STDbTable extends STBaseTable
 	    return $this->db->keyword($column);
 	}
 	//function select($tableName, $column, $alias= null, $nextLine= true, $add= false)
-	public function select($column, $alias= null, $fillCallback= null, $nextLine= null, $add= false)
+	public function select(string $column, $alias= null, $fillCallback= null, $nextLine= null, $add= false)
 	{
 		if(STCheck::isDebug())
 		{
-			Tag::paramCheck($column, 1, "string");
-			Tag::paramCheck($alias, 2, "string", "function", "TinyMCE", "bool", "null");
-			Tag::paramCheck($fillCallback, 3, "function", "TinyMCE", "bool", "null");
-			Tag::paramCheck($nextLine, 4, "bool", "null");
+			STCheck::param($alias, 1, "string", "function", "TinyMCE", "bool", "null");
+			STCheck::param($fillCallback, 2, "function", "TinyMCE", "bool", "null");
+			STCheck::param($nextLine, 3, "bool", "null");
 			$nParams= func_num_args();
-			Tag::lastParam(4, $nParams);
+			STCheck::lastParam(4, $nParams);
 		}
 
     	$field= $this->findColumnOrAlias($column);
@@ -604,6 +609,16 @@ class STDbTable extends STBaseTable
 		}
 		return $this->db->getStatement($this, $bFromIdentifications, $withAlias);
 	}
+	public function displayWrappedStatement()
+	{
+	    $array= $this->getWrappedStatement();
+	    foreach($array as $row)
+	        echo "$row<br />";
+	}
+	public function getWrappedStatement()
+	{
+	    return stTools::getWrappedStatement($this->getStatement());
+	}
 	// alex 24/05/2005:	boolean bMainTable auf die Haupttabelle ge�ndert
 	//					da dort wenn sie ein Selector ist noch �berpr�fungen
 	//					vorgenommen werden sollen, ob der FK auch ausgef�hrt wird
@@ -630,17 +645,27 @@ class STDbTable extends STBaseTable
         
         STCheck::flog("create select statement");
         $this->removeNoDbColumns($aNeededColumns, $aTableAlias);
-        if(!isset($withAlias))
+        if(!empty($aTableAlias))
         {
-            $withAlias= false;
-            foreach($aNeededColumns as $columns)
+            if(!isset($withAlias))
             {
-                if(!in_array($columns['table'], $aUseAliases))
-                    $aUseAliases[$aTableAlias[$columns['table']]]= $columns['table'];
+                $withAlias= false;
+                foreach($aNeededColumns as $columns)
+                {
+                    if(!in_array($columns['table'], $aUseAliases))
+                        $aUseAliases[$aTableAlias[$columns['table']]]= $columns['table'];
+                }
+                $joinOver= $this->getAlsoJoinOverTables();
+                foreach($joinOver as $newTableName)
+                {
+                    if(!in_array($newTableName, $aUseAliases))
+                        $aUseAliases[$aTableAlias[$newTableName]]= $newTableName;
+                }
+                if(count($aUseAliases) > 1)
+                    $withAlias= true;
             }
-            if(count($aUseAliases) > 1)
-                $withAlias= true;
-        }
+        }else
+            $withAlias= false;
         if(STCheck::isDebug())
         {
             $debugSess= "db.statements.aliases";
@@ -823,7 +848,8 @@ class STDbTable extends STBaseTable
             }
         }
         $whereClause= $this->getWhere();
-        if( isset($whereClause) &&
+        if( !empty($aTableAlias) &&
+            isset($whereClause) &&
             isset($whereClause->aValues)  )
         {
             foreach($whereClause->aValues as $tableName=>$content)
@@ -861,6 +887,158 @@ class STDbTable extends STBaseTable
         $statement= substr($statement, 0, strlen($statement)-1);
         Tag::echoDebug("db.statements.select", "createt String is \"".$statement."\"");
         return $statement;
+	}
+	/*private*/function getWhereAliases() : array
+	{
+	    $aRv= array();
+	    $aliasTables= $this->db->getAliasOrder();
+	    $ostwhere= $this->getWhere();
+	    $desc= null;
+	    if(isset($ostwhere))
+	    {
+    	    foreach($ostwhere->aValues as $table=>$content)
+    	    {
+    	        if(!isset($aliasTables[$table]))
+    	        {
+    	            if(!isset($desc))
+    	                $desc= STDbTableDescriptions::instance($this->db->getDatabaseName());
+    	            $table= $desc->getTableName($table);
+    	        }
+    	        $aRv[$table]= $aliasTables[$table];
+    	    }
+	    }
+	    if( STCheck::isDebug("db.statements.where") &&
+	        count($aRv)                                )
+	    {
+	        $msg= "need additional table alias from ";
+	        $msg.= get_class($this)."(<b>".$this->Name."</b>[".$this->ID."])";
+	        $msg.= " where statement";
+    	    $space= STCheck::echoDebug("db.statements.where", $msg);
+    	    st_print_r($aRv, 3, $space);
+	    }
+	    return $aRv;
+	}
+	/*private*/function newWhereCreation(array $aliases= null)
+	{
+	    $oWhere= $this->getWhere();
+	    if(isset($oWhere))
+	        $oWhere->reset();
+	    if(isset($aliases))
+	    {
+    	    foreach($aliases as $tableName=>$alias)
+    	    {
+    	        $table= $this->getTable($tableName);
+    	        $table->newWhereCreation();
+    	    }
+	    }
+	}
+	/*private*/function getWhereStatement(string $condition, STDbTable|array $from= null, array $aliases= null)
+	{
+	    if(STCheck::isDebug())
+	    {
+	       STCheck::param($condition, 0, "check", $condition=="on"||$condition=="where", "'on' string", "'where' string");
+	       if($condition == "on")
+	           STCheck::param($from, 1, "STDbTable");
+	    }
+	    
+	    if( STCheck::isDebug("db.statements.where") )
+	    {
+	        if(typeof($from, "STDbTable"))
+	            $fromTable= $from;
+	        else
+	            $fromTable= $this;
+	        $msg= "  excute where-statement outgoing from table ";
+	        $msg.= get_class($this)."(<b>".$this->Name."</b>[".$this->ID."])";
+	        $msg.= " on condition <b>$condition</b> for table ";
+	        $msg.= get_class($fromTable)."(<b>".$fromTable->Name."</b>[".$fromTable->ID."])";
+	        $blanc= "************************************************************************";
+	        $blanc.= $blanc;
+	        $blanc= "<b>$blanc</b>";
+	        $amsg[]= $blanc;
+	        $amsg[]= $msg;
+	        $amsg[]= $blanc;
+	        STCheck::echoDebug("db.statements.where", $amsg);
+	        $space= STCheck::echoDebug("db.statements.where", "for given aliases:");
+	        st_print_r($aliases, 1, $space);
+	        if(!isset($aliases))
+	            echo "<br />";
+	    }
+	    if( !isset($from) ||
+	        typeof($from, "array") )
+	    {
+	        $aliases= $from;
+	        $from= $this;
+	    }
+	    $aMade= array();
+	    $statement= "";
+	    $ostwhere= $this->getWhere();
+	    if(typeof($ostwhere, "STDbWhere"))
+	    {
+	        STCheck::echoDebug("db.statements.where", "execute for own table <b>".$this->Name."</b>");
+	        $statement= $ostwhere->getStatement($from, $condition, $aliases);
+	        $aMade[]= $this->getName();
+	    }
+	    if(is_array($aliases))
+	    {
+	        foreach($aliases as $tableName=>$alias)
+	        {
+	            if(!in_array($tableName, $aMade))
+	            {
+	                $table= $this->getTable($tableName);
+	                if(typeof($table, "STAlaisTable"))
+	                {
+	                    $ostwhere= $table->getWhere();
+	                    //echo "table:".$fromTable->getName()."<br />";
+	                    //st_print_r($fromTable->oWhere,10);
+	                    if(typeof($ostwhere, "STDbWhere"))
+	                    {
+	                        STCheck::echoDebug("db.statements.where", "execute for joind table <b>".$table->Name."</b>");
+	                        $whereStatement= $ostwhere->getStatement($table, $condition, $aliases);
+	                        if($whereStatement)
+	                        {
+	                            if(!preg_match("/^[ \t]*where/", $whereStatement))
+	                                $whereStatement= "and $whereStatement";
+	                            $statement.= " ".$whereStatement;
+	                        }
+	                        $aMade[]= $tableName;
+	                    }
+	                }
+	            }
+	        }
+	    }
+	    if( STCheck::isDebug("db.statements.where") )
+	    {
+	        $amsg= array();
+	        if(trim($statement) != "")
+	            $message= "created where statement for ";
+	        else
+	            $message= "for object ";
+            $message.= get_class($this)."(<b>".$this->getName()."</b>)";
+            $message.= " from container <b>".$this->container->getName()."</b>";
+            if(trim($statement) == "")
+	            $message.= " was no where statementd created";
+	        if(trim($statement) != "")
+	            $amsg[]= "     <b>$condition:</b> '$statement'";
+            $amsg[]= $message;
+            $amsg[]= $blanc;
+            STCheck::echoDebug("db.statements.where", $amsg);
+	    }
+	    return $statement;
+	}
+	public function where($stwhere, $operator= "")
+	{
+	    STCheck::param($stwhere, 0, "STDbWhere", "string", "empty(string)", "null");
+	    STCheck::param($operator, 1, "check", 
+	        $operator === "" ||
+	        $operator == "and" ||
+	        $operator == "or", "null string", "and", "or" );
+	    
+	    if( typeof($stwhere, "STDbWhere") &&
+	        $stwhere->sDbName == ""            )
+	    {
+	        $stwhere->setDatabase($this->db);
+	    }
+	    STBaseTable::where($stwhere, $operator);
 	}
 	/**
 	 * remove columns if they are not in the database table

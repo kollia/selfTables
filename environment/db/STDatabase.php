@@ -236,9 +236,9 @@ abstract class STDatabase extends STObjectContainer
 	{
 		return $this->bHasTables;
 	}
-	function haveTable($tableName)
+	function hasTable($tableName)
 	{
-	    if(STObjectContainer::haveTable($tableName))
+	    if(STObjectContainer::hasTable($tableName))
 	        return true;
         if($this->name === $this->db->getName())
         {
@@ -557,7 +557,13 @@ abstract class STDatabase extends STObjectContainer
 				    if(!$bExecuteDb)
 				        STCheck::echoDebug("db.test", "do not execute ".$preg[1]."-statement on database for testing");
 				}else
-				    STCheck::echoDebug("db.statement", "statement: \"".$statement."\" ");			
+				{
+				    $stats= array(  "show", "select", "update", "delete", "from",
+            				        array( "inner join", "left join", "right join" ),
+            				        "where", "having", "order", "limit"                  );
+				    $aStatement= stTools::getWrappedStatement($stats, $statement);
+				    STCheck::echoDebug("db.statement", $aStatement);
+				}
 				STCheck::flog("fetch statement on db with command querydb");
 			}
 			if($bExecuteDb)
@@ -1147,7 +1153,7 @@ abstract class STDatabase extends STObjectContainer
 			$table->where($where);
 			//$oTable->modifyForeignKey($bModify);
 		}
-		$where= $this->getWhereStatement($table, "");
+		$where= $table->getWhereStatement("where");
 		if($where!="")
 		{
 			if(preg_match("/^(and|or)/i", $where, $ereg))
@@ -1246,58 +1252,6 @@ abstract class STDatabase extends STObjectContainer
 	{
 		return $this->error;
 	}
-	function getWhereStatement($oTable, $aktAlias, $aliases= null)
-	{		
-		STCheck::paramCheck($oTable, 1, "STDbTable");
-
-		$aMade= array();
-		$statement= "";
-		$ostwhere= $oTable->getWhere();
-		if(typeof($ostwhere, "STDbWhere"))
-		{
-		    $statement= $ostwhere->getStatement($oTable, $aktAlias, $aliases);
-		    if( STCheck::isDebug("db.statements.where") &&
-		        typeof($oTable, "STDbSelector") &&
-		        $oTable->Name == "MUProject"          )
-		    {
-		        $space= STCheck::echoDebug("db.statements.where", "from where:");
-		        st_print_r($ostwhere, 2, $space);
-		        $space= STCheck::echoDebug("db.statements.where", "statement:'$statement'");
-		        st_print_r($aktAlias, 1, $space);echo "<br>";
-		        st_print_r($aliases, 1, $space);
-		    }
-		    $aMade[]= $oTable->getName();
-		}
-		if(is_array($aliases))
-		{
-    		foreach($aliases as $tableName=>$alias)
-    		{
-    		    if(!in_array($tableName, $aMade))
-    		    {
-        		    $table= $this->getTable($tableName);
-        		    if(typeof($table, "STAlaisTable"))
-        		    {
-            		    $ostwhere= $table->getWhere();
-                		//echo "table:".$fromTable->getName()."<br />";
-                		//st_print_r($fromTable->oWhere,10);
-            		    if(typeof($ostwhere, "STDbWhere"))
-            		    {
-                		    $whereStatement= $ostwhere->getStatement($table, $sTableAlias, $aTableAlias);
-                    		if($whereStatement)
-                    		{
-                    		    if(!preg_match("/^[ \t]*where/", $whereStatement))
-                    		        $whereStatement= "and $whereStatement";
-                    		    $statement.= " ".$whereStatement;
-                    		}
-                    		$aMade[]= $tableName;
-            		    }
-        		    }
-    		    }
-    		}
-		}
-		return $statement;
-	}
-	//var $counter= 1;
 	function getTableStatement($oMainTable, $tableName, &$aTableAlias, &$maked, $bMainTable)
 	{
 	    if(STCheck::isDebug())
@@ -1432,25 +1386,33 @@ abstract class STDatabase extends STObjectContainer
   				    Tag::echoDebug("db.statements.table", "make ".$joinArt." join to table ".$database.$table.
   				        " with alias-name ".$sTableAlias);
   				}
-  				$statement.= $join['table']->addJoinLimitationByQuery($aTableAlias);
-				$fromTable= $join["table"];// wenn die Tabelle von einer anderen DB kommt, steht sie im $join vom foreach des $oTable->FK
+  				$fromTable= $join["table"];// if the table comes from an other DB, table exist in $join from foreach of $oTable->FK
 				if(	$fromTable->container->db->getName() == $oMainTable->container->db->getName() &&
 					$fromTable->container->getName() != $oMainTable->container->getName()			)
-				{
+				{// take the correct table from container
 					$fromTable= $oMainTable->container->getTable($fromTable->getName());
 				}
-				if(!$fromTable)// sonst muss sie erst aus der aktuellen DB geholt werden
-					$fromTable= $oTable->getTable($table);
-				//echo "table:".$fromTable->getName()."<br />";
-				//st_print_r($fromTable->oWhere,10);
-				$whereStatement= $this->getWhereStatement($fromTable, $sTableAlias, $aTableAlias);
-				//echo "where:".$whereStatement."<br />";
+				if(!$fromTable)// otherwise it should select from the current container(-table)
+					$fromTable= $oTable->getTable($table);	
+			    $statement.= $fromTable->addJoinLimitationByQuery($aTableAlias);
+				$whereStatement= $fromTable->getWhereStatement("on", $fromTable, $aTableAlias);
 				if($whereStatement)
 				{
 				    if(!preg_match("/^[ \t]*and/", $whereStatement))
 				        $whereStatement= "and $whereStatement";
 					$statement.= " ".$whereStatement;
-					STCheck::echoDebug("db.statements.table", "get where statement '$whereStatement' from table '".$fromTable->getName()."(".$fromTable->ID.")'");
+					STCheck::echoDebug("db.statements.table", "get on condition '$whereStatement' from table '".$fromTable->getName()."(".$fromTable->ID.")'");
+				}
+				if($oMainTable->getName() != $fromTable->getName())
+				{
+    				$whereStatement= $oMainTable->getWhereStatement("on", $fromTable, $aTableAlias);
+    				if($whereStatement)
+    				{
+    				    if(!preg_match("/^[ \t]*and/", $whereStatement))
+    				        $whereStatement= "and $whereStatement";
+    				        $statement.= " ".$whereStatement;
+    				        STCheck::echoDebug("db.statements.table", "get on condition '$whereStatement' from main table '".$oMainTable->getName()."(".$oMainTable->ID.")'");
+    				}
 				}
 
 				if(!isset($maked[$table]))
@@ -1461,20 +1423,6 @@ abstract class STDatabase extends STObjectContainer
 					$maked[$table]= "finished";
 					$statement.= $this->getTableStatement($oMainTable, $table, $aTableAlias, $maked, false);
 					Tag::echoDebug("db.statements.table", "back in table <b>".$oTable->getName()."</b>");
- 					/*if(isset($join["table"]))
- 					{// take table from database, not from join
-						$jointableName= $join["table"]->getName();
-						$container= $this->getContainer();
-							if($join["table"]->db->dbName!=$container->db->dbName)
-								$container= $join["table"]->db;
-						$nextTable= $container->getTable($jointableName);
- 						$statement.= $this->getTableStatement($oMainTable, $nextTable, $aTableAlias, $maked, false);
- 					}else
-					{// take table from database, not from database
-						$container= &$this->getContainer();
- 						$nextTable= $container->getTable($table);
-						$statement.= $this->getTableStatement($nextTable, $aTableAlias, $maked, false);
-					}*/
 				}
 			}// end of if(	$bNeedColumn && isset($aTableAlias[$table])	)
    		}//end of foreach($content)
@@ -1498,11 +1446,18 @@ abstract class STDatabase extends STObjectContainer
         if($exist > 0)
             st_print_r($oTable->aBackJoin,3,$space);
 	}
+	// make no backjoin for follow tables
+	$noJoinTables= $oMainTable->getNotJoinOverTables();
+	foreach($noJoinTables as $noTable)
+	{
+	    if(isset($aTableAlias[$noTable]))
+	        unset($aTableAlias[$noTable]);
+	}
 		//look for tables which have an BackJoin
 		foreach($oTable->aBackJoin as $sBackTableName)
 		{
-		    if(  isset($aTableAlias[$sBackTableName]) && // need table inside statement
-			     !isset($maked[$sBackTableName])     )   // and was not done before
+		    if( isset($aTableAlias[$sBackTableName]) && // need table inside statement
+			    !isset($maked[$sBackTableName])          ) // and was not done before
 			{
 				$maked[$sBackTableName]= "finished";
     			$BackTable= &$oTable->getTable($sBackTableName);
@@ -1529,7 +1484,26 @@ abstract class STDatabase extends STObjectContainer
 													" with alias-name ".$sTableAlias);
 					}
 					$statement.= $BackTable->addJoinLimitationByQuery($aTableAlias);
-            		$statement.= $this->getTableStatement($oMainTable, $sBackTableName, $aTableAlias, $maked, false);
+					$statement.= $this->getTableStatement($oMainTable, $sBackTableName, $aTableAlias, $maked, false);
+					$whereStatement= $BackTable->getWhereStatement("on", $BackTable, $aTableAlias);
+					if($whereStatement)
+					{
+					    if(!preg_match("/^[ \t]*and/", $whereStatement))
+					        $whereStatement= "and $whereStatement";
+					        $statement.= " ".$whereStatement;
+					        STCheck::echoDebug("db.statements.table", "get on condition '$whereStatement' from table '".$fromTable->getName()."(".$fromTable->ID.")'");
+					}
+					if($oMainTable->getName() != $sBackTableName)
+					{
+					    $whereStatement= $oMainTable->getWhereStatement("on", $BackTable, $aTableAlias);
+					    if($whereStatement)
+					    {
+					        if(!preg_match("/^[ \t]*and/", $whereStatement))
+					            $whereStatement= "and $whereStatement";
+					            $statement.= " ".$whereStatement;
+					            STCheck::echoDebug("db.statements.table", "get on condition '$whereStatement' from main table '".$oMainTable->getName()."(".$oMainTable->ID.")'");
+					    }
+					}
     			}// end of if(!STCheck::is_warning(!$join))
 				unset($BackTable);
 			}// end of if($join)
@@ -1578,6 +1552,9 @@ abstract class STDatabase extends STObjectContainer
 		        STCheck::echoDebug("db.statements.table", "table found needed tables:");
 		        st_print_r($accessFoundTable, 20, $space);
 		    }
+		    echo __FILE__.__LINE__."<br>";
+		    echo "accessFoundTable:";
+		    st_print_r($accessFoundTable,20);
 		    $foundAccessOver= array();
 		    foreach($accessFoundTable as $firstTable => $reachFirstTable)
 		    {
@@ -1904,14 +1881,12 @@ abstract class STDatabase extends STObjectContainer
 	        (	!isset($this->aTableStructure[STALLDEF]) ||
 	            $this->aTableStructure[STALLDEF]["fromAll"]===false	)	)
 	    {
-	        if($this->wait){echo __FILE__.__LINE__."<br>";st_print_r($this->asExistTableNames);}
-	        if($this->wait){echo __FILE__.__LINE__."<br>";st_print_r($this->aTableStructure);}
 	        $bSearch= false;
 	        foreach($this->asExistTableNames as $tableName)
 	        {
 	            if(	!isset($this->aTableStructure[STALLDEF]["in"][$tableName])
 	                and
-	                $this->haveTable($tableName)								)
+	                $this->hasTable($tableName)								)
 	            {// if an new table founded in tableName list
 	                // search for all tables again
 	                $bSearch= true;
@@ -1919,7 +1894,6 @@ abstract class STDatabase extends STObjectContainer
 	                return true;
 	            }
 	        }
-	        if($this->wait){echo __FILE__.__LINE__."<br>";st_print_r($bSearch);}
 	        if(!$bSearch)
 	            return false;
 	    }
@@ -1942,7 +1916,7 @@ abstract class STDatabase extends STObjectContainer
     		$bGetTable= true;
     		if(!$bFromAll)
     		{
-    			if(!$container->haveTable($tableName))
+    			if(!$container->hasTable($tableName))
     			{
     			    STCheck::echoDebug("db.statements.table", "table $tableName do not exist inside container:".$container->getName());
     				$bGetTable= false;
@@ -1989,7 +1963,7 @@ abstract class STDatabase extends STObjectContainer
 			if($this->aTableStructure[STALLDEF]["fromAll"]===false)
 				$all= "exist";
 			$space= STCheck::echoDebug($debugName, "<b>foreign Key</b> structure from <b>$all</b> tables in container ".$container->getName());
-			st_print_r($this->aTableStructure,50, $space);
+			st_print_r($this->aTableStructure['struct'],50, $space);
 			echo "<br />";
 		}
 		
@@ -2422,16 +2396,19 @@ abstract class STDatabase extends STObjectContainer
 	        $nr= "t".$nr;
 	    return $this->aAliases;
 	}
-	var $wait= false;
 	function getStatement($oTable, $bFromIdentifications= false, $withAlias= null)
 	{
-		STCheck::param($oTable, 0, "STDbTable");
-		STCheck::param($bFromIdentifications, 1, "bool");
-		STCheck::param($withAlias, 2, "bool", "null");
-		
-		STCheck::echoDebug("db.statements", "create sql statement from table <b>".
-											$oTable->getName()."</b> inside container <b>".
-											$oTable->container->getName()."</b>");
+	    if(STCheck::isDebug())
+	    {
+    		STCheck::param($oTable, 0, "STDbTable");
+    		STCheck::param($bFromIdentifications, 1, "bool");
+    		STCheck::param($withAlias, 2, "bool", "null");
+    	
+    		$msg= "create sql statement from table ";
+    		$msg.= get_class($oTable)."(<b>".$oTable->Name."</b>[".$oTable->ID."])";
+    		$msg.= " inside container <b>".$oTable->container->getName()."</b>";
+    		STCheck::echoDebug("db.statements", $msg);
+	    }
     
 		$oTable->setForeignKeyModification();
 		$aliasTables= array();
@@ -2445,9 +2422,9 @@ abstract class STDatabase extends STObjectContainer
 		    foreach($joins as $table)
 		        $joinTables[$table]= $aliasTables[$table];
 		}
-		if(STCheck::isDebug("db.statements"))
+		if(STCheck::isDebug("db.statements.alias"))
 		{
-		      $space= STCheck::echoDebug("db.statements", "need follow tables inside select-statement");
+		      $space= STCheck::echoDebug("db.statements.alias", "follow alias tables can be used:");
 		      st_print_r($aliasTables, 1, $space);
 		}
 		// create statement
@@ -2467,13 +2444,17 @@ abstract class STDatabase extends STObjectContainer
 		// implement tables which are joined from user
 	    if(count($joinTables))
 	        $aliasTables= array_merge($aliasTables, $joinTables);
+        $whereAliases= $oTable->getWhereAliases();
+        if(count($whereAliases))
+            $aliasTables= array_merge($aliasTables, $whereAliases);
 	    if(STCheck::isDebug("db.statements"))
 	    {
 	        $space= STCheck::echoDebug("db.statements", "need follow tables inside select-statement");
 	        st_print_r($aliasTables, 1, $space);
 	    }
-	    $statement.= " from ".$tableName;
 	    STCheck::echoDebug("db.statements", "need follow <b>select</b> statement: $statement");
+	    $statement.= " from ".$tableName;
+	    $oTable->newWhereCreation($aliasTables);
 		if(count($aliasTables)>1)
 		{
 			$maked= array();
@@ -2491,7 +2472,7 @@ abstract class STDatabase extends STObjectContainer
 				// first parameter in function is no reference
 				// but it comes back the changed values
 				$bufferWhere= $oTable->oWhere;
-				$whereStatement= $this->getWhereStatement($oTable, "t1", $aliasTables);
+				$whereStatement= $oTable->getWhereStatement("where", $aliasTables);
 				if(STCheck::isDebug("db.statements"))
 				{	
 				    if(trim($whereStatement) == "")
@@ -2550,8 +2531,12 @@ abstract class STDatabase extends STObjectContainer
 		}
 		if(STCheck::isDebug())
 		{
+		    $stats= array(  "show", "select", "update", "delete", "from",
+            		        array( "inner join", "left join", "right join" ),
+            		        "where", "having", "order", "limit"                  );
 		    STCheck::echoDebug("db.statements", "<b>finisched <i>select</i> statement</b>:");
-		    STCheck::echoDebug("db.statements", $statement);
+		    $aStatement= stTools::getWrappedStatement($stats, $statement); 
+		    STCheck::echoDebug("db.statements", $aStatement);
 		}
 		return $statement;
 	}
@@ -2568,7 +2553,8 @@ abstract class STDatabase extends STObjectContainer
 			$tableName= $table->getName();
 		if($where)
 			$table->andWhere($where);
-		$whereStatement= $this->getWhereStatement($table, "");
+		//$whereStatement= $this->getWhereStatement($table, "");
+		$whereStatement= $table->getWhereStatement("where");
 		$statement= "delete from ".$tableName;
 		preg_match("/^(and|or)/i", $whereStatement, $ereg);
 		if(count($ereg) != 0)

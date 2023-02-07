@@ -214,33 +214,109 @@ class STDbSelector extends STDbTable
 			// alex 24/05/2005:	f�r aoToTables als Key den Namen eingef�hrt
 			return $oTable;
 		}
-		// param $table hat vorrang vor tableName in where-Objekt
-
-
-		// alex 13/10/2005:	herausgel�scht, alle where Komponenten
-		//					sollen jetzt wie bei einer normalen Tabelle gehandhabt werden
-		function where($where, $table= null)
-		{//echo "function where(";st_print_r($where,0);echo ", ";st_print_r($table);echo ")<br />";
-			Tag::paramCheck($where, 1, "string", "STDbWhere");
-			Tag::paramCheck($table, 2, "string", "STBaseTable", "null");
-			
-			if(is_string($where))
-				$where= new STDbWhere($where, $this->Name);
-			if(is_string($table))
-			{
-			    $table= $this->container->getTableName($table);
-			    $where->forTable($table, true);
-				
-			}elseif($table!==null)
-			{// wenn $table ein Objekt von STDbTable ist
-			 // wird zuerst gberprüft ob dieser mit add()
-			 // schon hinzugefügt wurde. Wenn ja, wird der
-			 // aus der member-Variable aoToTables genommen
-			 // sonst dieser hinzugefügt
-			 	$tableName= $table->getName();
-				$where->forTable($tableName);
-			}
-			STDbTable::where($where);
+		public function andWhere($table, $where= null)
+		{
+		    if(STCheck::isDebug())
+		    {
+		        STCheck::param($table, 0, "string", "STDbWhere", "STDbTable");
+		        STCheck::param($where, 1, "string", "STDbTable", "null");
+		    }
+		    if(!isset($where))
+		    {
+		        $where= $table;
+		        if(is_string($where))
+		            $where= new STDbWhere($where, $this->Name);
+		        if( typeof($where, "STDbWhere") &&
+		            $where->sDbName == ""         )
+		        {
+		            $where->setDatabase($this->db->getDatabaseName());
+		        }		        
+		    }
+		    STDbTable::where($where, "and");
+		}
+		public function orWhere($table, $where= null)
+		{
+		    if(STCheck::isDebug())
+		    {
+		        STCheck::param($table, 0, "string", "STDbWhere", "STDbTable");
+		        STCheck::param($where, 1, "string", "STDbTable", "null");
+		    }
+		    if(!isset($where))
+		    {
+		        $where= $table;
+		        if(is_string($where))
+		            $where= new STDbWhere($where, $this->Name);
+		            if( typeof($where, "STDbWhere") &&
+		                $where->sDbName == ""         )
+		            {
+		                $where->setDatabase($this->db->getDatabaseName());
+		            }
+		    }
+		    STDbTable::where($where, "or");
+		}
+		/*
+		 * implement where rule for table
+		 * 
+		 * @param string|STDbTable|STDbWhere $table can be a table object, a name of a table, or an where object/statement 
+		 * @param string|STDbWhere|null $where can be a where compairson (object/string) or an string operator of 'and' or 'or'
+		 * @param string $operator can be the operator of 'and' or 'or', or an null string
+		 */
+		public function where($table, $where= null, $operator= "")
+		{//echo "function where(";st_print_r($table,0);echo ", ";st_print_r($where,0);echo ", ";st_print_r($operator,0);echo ")<br />";
+		    if(STCheck::isDebug())
+		    {
+    			STCheck::param($table, 0, "string", "STDbTable", "STDbWhere");
+    			STCheck::param($where, 1, "string", "STDbWhere", "null");
+    			STCheck::param($operator, 2, "string", "empty(string)");
+		    }
+		    
+		    if( is_string($table) )
+		    {
+		        $sTable= $this->container->getTableName($table);
+		        if($this->db->hasTable($sTable))
+		        {// first string should be a table and second the where statement
+		            $table= $this->getTable($sTable);
+		        }else
+		        {
+		            // first string should be the where statement
+		            STCheck::warning( (   $where != "and" &&
+		                $where != "or"      ), "STDbSelector::where()",
+		                "second parameter can only be a string of 'and' or 'or'", 1   );
+		            if(!isset($where))
+		                $where= "";
+		            STDbTable::where($table, $where);
+		        }
+		    }elseif(typeof($table, "STDbWhere"))
+		    {
+		        STCheck::warning( (   isset($where) &&
+                    		            (   !is_string($where) ||
+                    		                (   $where != "and" &&
+                    		                    $where != "or"      )   )   ), "STDbSelector::where()",
+		            "if first parameter the where statement, the second can only be 'and' or 'or'", 1         );
+                if(!isset($where))
+                    $where= "";
+                //echo __FILE__.__LINE__."<br>";
+                //st_print_r($table);st_print_r($where);
+                STDbTable::where($table, $where);
+                return;
+		    }
+		    
+		    if( !isset($where) ||
+		        (   is_string($where) &&
+		            (   $where == "" ||
+		                $where == "and" ||
+		                $where == "or"    )   )   )
+		    {// $table should be the where statement
+		        $operator= $where;
+		        $where= $table;
+		        STDbTable::where($where, $operator);
+		        return;
+		    }
+		    
+            $where= new STDbWhere($where);
+            $where->table($table);
+            //$where->setDatabase($table->db);
+            STDbTable::where($where);
 		}
 		function join($columnName, &$oTable, $otherColumn= null)
 		{
@@ -293,15 +369,15 @@ class STDbSelector extends STDbTable
 		    }
 		    STDbTable::orderByI($tableName, $column, $bASC);
 		}
-		function select($tableName, $column= "", $alias= null, $nextLine= true, $add= false)
+		function select(string $tableName, $column= "", $alias= null, $nextLine= true, $add= false)
 		{
 			if(STCheck::isDebug())
 			{
-			    Tag::paramCheck($tableName, 1, "string"); // cannot be an null string
-				Tag::paramCheck($column, 2, "string", "empty(string)");
-				Tag::paramCheck($alias, 3, "string", "bool", "null");
-				Tag::paramCheck($nextLine, 4, "bool");
-				Tag::echoDebug("selector", $this->Name.": select column $column($alias) for table $tableName");
+			    STCheck::param($tableName, 0, "string"); // cannot be an null string
+				STCheck::param($column, 1, "string", "empty(string)");
+				STCheck::param($alias, 2, "string", "bool", "null");
+				STCheck::param($nextLine, 3, "bool");
+				STCheck::echoDebug("selector", $this->Name.": select column $column($alias) for table $tableName");
 			}
 			$desc= STDbTableDescriptions::instance($this->db->getDatabaseName());
 			$tableName= $desc->getTableName($tableName);
@@ -670,10 +746,7 @@ class STDbSelector extends STDbTable
 		{
 			if($this->sqlStatement != "")
 				return $this->sqlStatement;
-				
-			$aDeep= array();
-			$sFirstTable= $this->Name;
-
+			
 			$this->sqlStatement= $this->db->getStatement($this, false, $withAlias);
 			//echo $this->sqlStatement."<br />";
 			if($limit)

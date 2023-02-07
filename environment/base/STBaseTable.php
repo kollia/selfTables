@@ -38,11 +38,18 @@ class STBaseTable
 	var	$aBackJoin= array();// for join in table where the other have an foreigen key to the own
 							// and it should be in the select-statement
     /**
-     * array of table over which should also joined
+     * array of tables over which should also joined
      * inside the statment to reach correct usage
      * @var array
      */
-	protected $aJoinOverTables= array();
+	private $aJoinOverTables= array();
+	/**
+	 * array of tables over which not should joined
+	 * inside the statment to reach correct usage.<br />
+	 * (is always harder than the tables over which should joined)
+	 * @var array
+	 */
+	protected $aNoJoinOverTables= array();
     var $error;
 	var $errorText;
 	var	$showTypes= array();
@@ -827,9 +834,25 @@ class STBaseTable
 		    if(!in_array($table, $this->aJoinOverTables))
 		        $this->aJoinOverTables[]= $table;
 		}
+		public function noJoinOver(string $table)
+		{
+		    $table= $this->db->getTableName($table);
+		    if(!in_array($table, $this->aNoJoinOverTables))
+		        $this->aNoJoinOverTables[]= $table;
+		}
 		function getAlsoJoinOverTables() : array
 		{
+		    foreach($this->aNoJoinOverTables as $nojoin)
+		    {
+		        $key= array_search($nojoin, $this->aJoinOverTables);
+		        if($key !== false)
+		            unset($this->aJoinOverTables[$key]);
+		    }
 		    return $this->aJoinOverTables;
+		}
+		function getNotJoinOverTables() : array
+		{
+		    return $this->aNoJoinOverTables;
 		}
 		function foreignKey($ownColumn, $toTable, $otherColumn= null, $where= null)
 		{
@@ -1369,15 +1392,18 @@ class STBaseTable
 		//					zum f�llen einer nicht vorhandenen Spalte sein
 		// alex 21/09/2005:	ACHTUNG alias darf keine Funktion sein (auch nicht PHP-function)
 		// alex 06/08/2006: second column alias or third column fillCallback can also be an object from TinyMCE
-		function select($column, $alias= null, $fillCallback= null, $nextLine= null, $add= false)
+		function select(string $column, $alias= null, $fillCallback= null, $nextLine= null, $add= false)
 		{
-			Tag::paramCheck($column, 1, "string");
-			Tag::paramCheck($alias, 2, "string", "function", "TinyMCE", "bool", "null");
-			Tag::paramCheck($fillCallback, 3, "function", "TinyMCE", "bool", "null");
-			Tag::paramCheck($nextLine, 4, "bool", "null");
-			Tag::paramCheck($add, 5, "bool");
-			$nParams= func_num_args();
-			Tag::lastParam(5, $nParams);
+		    if(STCheck::isDebug())
+		    {
+    			STCheck::param($column, 1, "string");
+    			STCheck::param($alias, 2, "string", "function", "TinyMCE", "bool", "null");
+    			STCheck::param($fillCallback, 3, "function", "TinyMCE", "bool", "null");
+    			STCheck::param($nextLine, 4, "bool", "null");
+    			STCheck::param($add, 5, "bool");
+    			$nParams= func_num_args();
+    			STCheck::lastParam(5, $nParams);
+		    }
 			
 			if(STCheck::isDebug())
 			{
@@ -2172,7 +2198,7 @@ class STBaseTable
 		 	
 			return $this->where($stwhere, "or");
 		}
-		function where($stwhere, $operator= "")
+		public function where($stwhere, $operator= "")
 		{
 		 	STCheck::parameter($stwhere, 1, "STDbWhere", "string", "empty(string)", "null");
 		 	STCheck::parameter($operator, 2, "check", $operator === "", $operator == "and", $operator == "or");
@@ -2186,7 +2212,6 @@ class STBaseTable
 	 	        $space= STCheck::echoDebug("db.statements.where", $msg);
 	 	        if(!is_string($stwhere))
 	 	            st_print_r($stwhere,10, $space);
-	 	        //showErrorTrace();
 		 	}
 		 	if(	!isset($stwhere) ||
 				$stwhere == null ||
@@ -2199,7 +2224,7 @@ class STBaseTable
 		 	}
 		 	if($operator == "")
 		 		unset($this->oWhere);
-		 	
+
 	 		if(	isset($this->oWhere) &&
 	 			(	is_string($stwhere) ||
 	 				$this->oWhere->isModified()	)	)
@@ -2208,7 +2233,6 @@ class STBaseTable
  				if(	is_string($stwhere) &&
  					$this->Name != $this->oWhere->forTable()	)
  				{
- 					
  					$stwhere= new STDbWhere($stwhere, $this->Name);
  				}
  				if(	is_object($stwhere) &&
@@ -2224,11 +2248,11 @@ class STBaseTable
 	 		}else
 	 		{// no where be set
 	 			if(is_string($stwhere))
-	 				$this->oWhere= new STDbWhere($stwhere);
+	 			    $this->oWhere= new STDbWhere($stwhere, $this->Name);
  				else
  				    $this->oWhere= $stwhere;
  				$this->oWhere->setDatabase($this->db);
-				$this->oWhere->forTable($this->Name);
+				$this->oWhere->table($this->Name);
 	 		}
 	 		
 		 	return $this->oWhere;
@@ -2924,39 +2948,45 @@ class STBaseTable
 	{
 	    Tag::paramCheck($this, 1, "STDbTable");
 	    
+	    $tableMsg= "";
+	    if(STCheck::isDebug())
+	    {
+            $tableMsg= "inside table ".get_class($this)."(<b>".$this->getName()."</b>)";
+            $tableMsg.= " from container <b>".$this->container->getName()."</b>";
+	    }
+	    
 	    if(!$this->modify())
 	    {
-	        STCheck::echoDebug("db.statements.where", "do not need foreign Key modification".
-	            " inside table ".$this->getName().
-	            " from container ".$this->container->getName());
+	        STCheck::echoDebug("db.statements.where", "do not need foreign Key modification $tableMsg");
 	        return;
 	    }
-	    STCheck::echoDebug("db.statements.where", "need foreign Key modification".
-	        " inside table ".$this->getName().
-	        " from container ".$this->container->getName());
+	    STCheck::echoDebug("db.statements.where", "create <b>foreign Key</b> modification $tableMsg");
 	    
-	    $get= new STQueryString();
-	    $stget= $get->getArrayVars();
-	    if(	isset($stget["stget"])	)
-	    {
-	        $stget= $stget["stget"];
-	    }else
-	        $stget= array();
-	        
         $where= new STDbWhere();
         $fks= $this->getForeignKeyModification();
         if(STCheck::isDebug("db.statements.where"))
         {
-            STCheck::echoDebug("db.statements.where", "modify foreign Keys in table ".$this->getName());
-            $nIntented= STCheck::echoDebug("db.statements.where", "need foreign Keys from query: ");
-            st_print_r($fks, 3, $nIntented);
+            STCheck::echoDebug("db.statements.where", "modify foreign Keys $tableMsg");
+            if(empty($fks))
+            {
+                $need= "but need no";
+                $end= "";
+            }else
+            {
+                $need= "need";
+                $end= ":";
+            }
+            $nIntented= STCheck::echoDebug("db.statements.where", "$need foreign Keys from query$end");
+            if(!empty($fks))
+                st_print_r($fks, 3, $nIntented);
             echo "<br />";
         }
+        $query= new STQueryString();
         foreach($fks as $table=>$fields)
         {
             foreach($fields as $aColumnType)
             {
-                $limitation= $get->getLimitation($table);
+                $limitation= $query->getLimitation($table);
                 foreach($limitation as $column=>$value)
                 {
                     if($aColumnType["other"]==$column)
@@ -2984,11 +3014,12 @@ class STBaseTable
         if($this->bLimitOwn)
         {
             $tableName= $this->getName();
-            $limitation= $get->getLimitation($tableName);
+            $limitation= $query->getLimitation($tableName);
             if(	isset($limitation) &&
                 is_array($limitation)	)
             {
-                $where->forTable($tableName);
+                $where->setDatabase($this->db);
+                $where->table($tableName);
                 foreach($limitation as $column=>$value)
                 {
                     if($this->haveColumn($column))

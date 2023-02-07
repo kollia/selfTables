@@ -30,6 +30,18 @@ class STDbWhere
 	 * database name for which where-caluse is
 	 */
     var $sDbName= "";
+    /**
+     * whether the statement should written into the 'on' statement if possible, 
+     * otherwise by false value only into the 'where' statement
+     * @var boolean
+     */
+    var $bWriteOn= true;
+    /**
+     * whether where statement 
+     * was written for current object
+     * @var boolean
+     */
+    var $bWritten= false;
 	/**
 	 * create instance of where clausel
 	 *
@@ -82,9 +94,11 @@ class STDbWhere
 	}
 	function forTable($tableName= null, $overwrite= false)
 	{
-			STCheck::param($tableName, 0, "string", "STBaseTable", "null");
-			STCheck::param($overwrite, 1, "boolean");
+		STCheck::param($tableName, 0, "string", "STBaseTable", "null");
+		STCheck::param($overwrite, 1, "boolean");
 
+		STCheck::deprecated("STDbWhere::table()", "STDbWhere::forTable()");
+		//$desc= STDbTableDescriptions::
 		return $this->table($tableName, $overwrite);
 	}
 	/**
@@ -128,23 +142,26 @@ class STDbWhere
 		    $tableName= "";
 		    $dbName= "";
 		}
-                
+
 		if( $dbName == "" ||
 		    (   $overwrite &&
 		        $this->sDbName != ""    )   )
-		{
+		{	        
 		    $dbName= $this->sDbName;
 		}
-
+		
 		$desc= NULL;
 		if($dbName != "")
 		{
 			$desc= STDbTableDescriptions::instance($dbName);
 			if(isset($desc))
 				$tableName= $desc->getTableName($tableName);
-		}
+			else
+			    $errorMsg= "cannot read instance of database '$dbName'";
+		}else
+		    $errorMsg= "no database for STDbWehre object set";
 		if($desc == NULL)
-			STCheck::echoDebug("db.where", "cannot read instance of database $dbName");
+		    STCheck::echoDebug("db.statements.where", $errorMsg);
 
 		$overName= "";
 		if(	!isset($this->sForTable) ||
@@ -178,6 +195,9 @@ class STDbWhere
 		{
 			Tag::paramCheck($where, 1, "STDbWhere", "array", "string", "null");
 
+			echo __FILE__.__LINE__."<br>";
+			echo "getWhereTableNames()<br>";
+			exit;
 			$needetTables= array();
 			if(is_array($where))
 			{
@@ -241,11 +261,21 @@ class STDbWhere
 		   	$this->array[]= $statement;
 			return true;
 		}
-		function getArray()
+		/*remove*/private function getArray()
 		{
 			return $this->array;
 		}
-		function addValues($array)
+		public function writeOnCondition()
+		{
+		    $this->bWriteOn= true;
+		}
+		public function writeWhereCondition()
+		{
+		    $this->bWriteOn= false;
+		    echo __FILE__.__LINE__."<br>";
+		    st_print_r($this,20);
+		}
+		private function addValues($array)
 		{
 			foreach($array as $table=>$content)
 			{
@@ -262,7 +292,7 @@ class STDbWhere
 			//echo "add:";
 			//st_print_r($this->aValues,10);
 		}
-		function check($statement)
+		private function check($statement)
 		{
 			STCheck::param($statement, 0, "string", "STDbWhere", "empty(string)", "null");
 
@@ -276,7 +306,14 @@ class STDbWhere
 				if(count($statement->array)==0)
 					return false;
 				if($this->sForTable != "")
-					$statement->forTable($this->sForTable);
+				{
+					$statement->table($this->sForTable);
+					if( $statement->sDbName == "" &&
+					    $this->sDbName != ""           )
+					{
+					    $statement->setDatabase($this->sDbName);
+					}
+				}
 				$this->addValues($statement->aValues);
 				return true;
 			}
@@ -360,240 +397,226 @@ class STDbWhere
 			    return $this->aValues[$table][$column];
 		    return array();
 		}
-		public function getStatement($oTable, $aktAlias, $aliases= null)
+		private function createStringContent(string $content, string $aliasName) : string
 		{
-			STCheck::param($oTable, 0, "STDbTable");
-			STCheck::param($aktAlias, 1, "string", "empty(string)");
-			STCheck::param($aliases, 2, "array", "null");
+		    $old_content= $content;
+		    //echo $content."<br />";
+		    //$content= preg_quote($content); // preg_quote makes before = an backslash
+		    //echo $content."<br />";
+		    //-----------------------------------------------------------
+		    $pattern_first=  "([^><=!]*)"; // first is always the column
+		    //-----------------------------------------------------------
+		    $pattern_op=  "(>=|<=|<|>|=|<>|!=";
+		    $pattern_op.= "| +like +| +not +like +";			// operator
+		    $pattern_op.= "| +regexp +| +not +regexp +";
+		    $pattern_op.= "| +in| +not +in"; // behind in must not be an space
+		    $pattern_op.= "| +is +| +not +is +)";
+		    //-----------------------------------------------------------
+		    $pattern_second= "(.*)"; // second content can be an column or an content
+		    //-----------------------------------------------------------
+		    $preg= array();
+		    if(!preg_match("/^$pattern_first$pattern_op$pattern_second$/i", $content, $preg))
+		    {
+		        Tag::echoDebug("db.statements.where", "<b>WARNING</b> can not localize '".$old_content."'");
+		    }else
+		    {
+		        if(STCheck::isDebug("db.statements.where"))
+		        {
+		            $space= STCheck::echoDebug("db.statements.where", "localize statement string '$content' as:");
+		            st_print_r($preg, 2, $space);
+		        }
+		    }
+		    $preg[1]= trim($preg[1]);
+		    $preg[2]= trim($preg[2]);
+		    $preg[3]= trim($preg[3]);
+		    if(	!is_numeric($preg[1])
+		        and
+		        substr($preg[1], 0, 1)!= "'"
+		        and
+		        !preg_match("/null/i", $preg[1])
+		        and
+		        !preg_match("/now([ ]*)/i", $preg[1])
+		        and
+		        !preg_match("/sysdate([ ]*)/i", $preg[1])
+		        and
+		        !preg_match("/password([ ]*)/i", $preg[1])	)
+		    {
+		        $column= $preg[1];
+		        $value= $preg[3];
+		    }else
+		    {
+		        $column= $preg[3];
+		        $value= $preg[1];
+		    }
+		    if($aliasName)
+		        $column= $aliasName.".".$column;
+	        $content= $column." ".$preg[2]." ".$value;
+	        STCheck::echoDebug("db.statements.where", $old_content." become to column('".$column."') with content('".$content."')");
+	        return $content;
+		}
+		public function reset()
+		{
+		    $this->bWritten= false;
+		    foreach($this->array as $content)
+		    {
+		        if(typeof($content, "STDbWhere"))
+		            $content->reset();
+		    }
+		}   
+		public function getStatement(STDbTable $oTable, string $condition, array $aliases= null)
+		{
+			STCheck::param($condition, 1, "check", $condition=="on"||$condition=="where", "'on' string", "'where' string");
 
-			if(!$aliases)
-				$aliases= array();
-			
-			if(Tag::isDebug())
-			{
-				$message= "make where clause in table <b>".$oTable->getName()."</b> from container <b>".$oTable->container->getName()."</b>";
-				if($aktAlias!=="")
-					$message.= " with alias-table ".$aktAlias;
-				else
-					$message.= " without alias-table";
-				if(STCheck::isDebug("db.statements.where"))
-				{
-				    $nIntented= STCheck::echoDebug("db.statements.where", $message);
-					for($n= 0; $n < $nIntented; ++$n)
-						echo " ";
-					echo "                                                    has ";
-					if(!$oTable->modify())
-						echo "no ";
-					echo "permission to use query constraints<br>";
-					st_print_r($this, 10, $nIntented);
-				}
-			}
-
-			$aktTableName= $oTable->getName();
-			$statement= "";
-			$plusContent= "";
-			if(isset($this->aOtherTableWhere[$aktTableName]))
-				$statement= $this->aOtherTableWhere[$aktTableName];
-			if($statement != "")
-			{
-				if(	!isset($this) ||
-						!isset($this->sOp)	)
-				{
-					$plusContent= " and ";
-				}else
-					$plusContent= $this->sOp;
-					unset($this->aOtherTableWhere[$aktTableName]);
-			}
-			if($this===null)
-			{
-				if($statement)
-				{
-					Tag::echoDebug("db.statements.where", "result from other table(s) is '$statement'");
-					$statement= "($statement)";
-				}else
-					Tag::echoDebug("db.statements.where", "no where clausls");
-					//echo $statement."<br>";
-					return $statement;
-			}
-			$array= $this->getArray();
-		
-			$desc= null;
-			if($this->sDbName != "")
-			    $desc= STDbTableDescriptions::instance($this->sDbName);
-			if(isset($desc))
-			    $sForTable= $desc->getTableName($this->sForTable);
-			else
-			    $sForTable= $this->sForTable;
-			if(	!isset($sForTable) ||
-				!isset($aliases[$sForTable])	)
-			{
-				$aliasName= $aktAlias;
-				if(!isset($aliases[$sForTable]))
-					$sForTable= $aktTableName;
-			}else
-				$aliasName= $aliases[$sForTable];
-			
-			// tableOperator only for statements
-			// whitch are not in current table
-			$tableOperator= $this->sOp;
-			if($tableOperator)
-				$tableOperator.= " ";
-				else
-					$tableOperator= "and ";
-			
-			if(count($aliases)<=1)
-				$aliasName= "";
+			//echo __FILE__.__LINE__."<br>";
+			//echo "incomming aliases:";
+			//st_print_r($aliases);
 			if(STCheck::isDebug("db.statements.where"))
 			{
-				$nIntented= STCheck::echoDebug("db.statements.where", "given alias Names:");
-				st_print_r($aliases, 1, $nIntented);
-				echo "<br />";
-				if(!$sForTable)
-				{
-					$flipAlias= array_flip($aliases);
-					$sForTable= $flipAlias[$aktAlias];
-				}
-				Tag::echoDebug("db.statements.where", "alias for current Table is \"".$aktAlias."\"");
-				Tag::echoDebug("db.statements.where", "need for table ".$sForTable);
-				if(count($aliases)>1)
-					Tag::echoDebug("db.statements.where", "now alias is \"".$aliasName."\"");
-					else
-						Tag::echoDebug("db.statements.where", "no alias, because it only one alias set, do not need alias for table");
+			    $amsg= array();
+			    $blanc= "------------------------------------------------------------------------------";
+			    $blanc.= $blanc;
+			    STCheck::echoDebug("db.statements.where", $blanc);
+			    $bTableContainer= false;
+			    if(typeof($oTable, "STDbSelector"))
+			        $bTableContainer= true;
+				$message= "make where clause for condition <b>$condition</b> in table";
+				if($bTableContainer)
+				    $message.= "-container";
+				$message.= " ".get_class($oTable)."(<b>".$oTable->getName()."</b>)";
+				$message.= " from container <b>".$oTable->container->getName()."</b>";
+				$amsg[]= $message;
+				$message= "";
+				if($oTable->modify())
+				    $message.= "and has ";
+				else
+				    $message.= "but has no ";
+				$message.= "permission to use query constraints<br>";
+				$amsg[]= $message;
+				$nIntented= STCheck::echoDebug("db.statements.where", $amsg);				
+				st_print_r($this, 10, $nIntented);
 			}
-			//$statementForAkt= "";
-			foreach($array as $content)
+			if(!$aliases)
+			    $aliases= array();
+			$curAlias= "unknown";
+
+			$currentTableName= $oTable->getName();
+			$forTableName= $oTable->db->getTableName($this->sForTable);
+			$bMakeStatement= true;
+			if($this->bWritten == true)
 			{
-				if(is_string($content))
-				{
-					// alex 09/05/2005:	im preg_match anfang (^) und Ende ($) eingef�gt
-					//					da or auch in der Spalte zb. Kateg(or)y gefunden wurde
-					//					es d�rfte im content nur die Variablen and, or stehen
-					//					es m�ssen jedoch sehrwohl leerzeichen davor oder danach
-					//					existieren d�rfen
-					if(	!preg_match("/^[ ]*and[ ]*$/", $content) &&
-						!preg_match( "/^[ ]*or[ ]*$/", $content)		)
-					{  
-						$old_content= $content;
-						//echo $content."<br />";
-						//$content= preg_quote($content); // preg_quote makes before = an backslash
-						//echo $content."<br />";
-						//-----------------------------------------------------------
-						$pattern_first=  "([^><=!]*)"; // first is always the column
-						//-----------------------------------------------------------
-						$pattern_op=  "(>=|<=|<|>|=|<>|!=";
-						$pattern_op.= "| +like +| +not +like +";			// operator
-						$pattern_op.= "| +regexp +| +not +regexp +";
-						$pattern_op.= "| +in| +not +in"; // behind in must not be an space
-						$pattern_op.= "| +is +| +not +is +)";
-						//-----------------------------------------------------------
-						$pattern_second= "(.*)"; // second content can be an column or an content
-						//-----------------------------------------------------------
-						$preg= array();
-						if(!preg_match("/^$pattern_first$pattern_op$pattern_second$/i", $content, $preg))
-						{
-							Tag::echoDebug("db.statements.where", "<b>WARNING</b> can not localize '".$old_content."'");
-						}//st_print_r($preg);
-						$preg[1]= trim($preg[1]);
-						$preg[2]= trim($preg[2]);
-						$preg[3]= trim($preg[3]);
-						if(	!is_numeric($preg[1])
-								and
-								substr($preg[1], 0, 1)!= "'"
-								and
-								!preg_match("/null/i", $preg[1])
-								and
-								!preg_match("/now([ ]*)/i", $preg[1])
-								and
-								!preg_match("/sysdate([ ]*)/i", $preg[1])
-								and
-								!preg_match("/password([ ]*)/i", $preg[1])	)
-						{
-							$column= $preg[1];
-							$value= $preg[3];
-						}else
-						{
-							$column= $preg[3];
-							$value= $preg[1];
-						}
-						if($aliasName)
-							$column= $aliasName.".".$column;
-							$content= $column." ".$preg[2]." ".$value;
-							STCheck::echoDebug("db.statements.where", $old_content." become to column('".$column."') with content('".$content."')");
-							$statement.= $plusContent.$content;
-							//echo $statement."<br>";
-					}else
-					{
-						//$plusContent+=  " " + $content;
-						$plusContent= $content;
-						//echo $plusContent."<br>";
-					}
-				}elseif(typeof($content, "StDbWhere"))
-				{
-				    if($this->sDbName != "")
-				        $content->setDatabase($this->sDbName);
-					$statement.= $plusContent.$content->getStatement($oTable, $aktAlias, $aliases);
-					// alex 03/08/2005:	content must be an new object from STDbWhere
-/*					$oTable->where($content);
-					$newWhere= $this->getWhereStatement($oTable, $aliasName, $aliases);
-					if($newWhere)
-					{// if the aktual statement is not for the aktual table
-						// but the newWhere is from aktual table
-						// save it in statementForAkt and not to the aktual statement.
-						// the aktual statement will be saved then in $this->sOtherTableWhere
-						// and statementForAkt is giving back
-						//if($statementForAkt)
-						//	$statementForAkt.= $plusContent;
-							preg_match("/^((and|or) )?(\()?.*(\))?$/", trim($newWhere), $ereg);
-							if(	$ereg[1] != "" &&
-									isset($ereg[3]) &&
-									$ereg[3] != "("		)
-							{
-								if($ereg[1] == "and")
-									$nOp= 4;
-									else
-										$nOp= 3;
-										$newWhere= $ereg[1]." (".substr($newWhere, $nOp).")";
-							}
-							$statementForAkt.= $newWhere;
-							if($sForTable===$aktTableName)
-							{
-								$statement.= " ".$newWhere;
-								$statementForAkt= "";
-							}
-					}*/
-				}else//if($content)
-				{
-					STCheck::write("content is no string, nor is it an object of STDbWhere");
-					if(typeof("StDbWhere"))
-						echo "content is type of StDbWhere<br>";
-					echo get_class()."<br>";
-        			st_print_r($array, 3);
-        			echo __file__.__line__;
-        			exit;
-				}
-			}//foreach($array as $content)
-			if(	$sForTable!==$aktTableName
-					and
-					$statement					)
-			{
-				if(!preg_match("/^\(.*\)$/", trim($statement)))
-					$statement= "(".$statement.")";
-				if(isset($this->aOtherTableWhere[$sForTable]))
-				{
-					//echo "other table ".$this->aOtherTableWhere[$sForTable]." plus ".$statement."<br>";
-					$this->aOtherTableWhere[$sForTable].= $tableOperator.$statement;
-				}else
-					$this->aOtherTableWhere[$sForTable]= $tableOperator.$statement;
-				STCheck::echoDebug("db.statements.where", "write where-statement '$statement' into buffer for table <b>$sForTable</b>");
-				//STCheck::echoDebug("db.statements.where", "current table:$aktTableName result is '$statementForAkt'");
-				//echo "where result:$statement<br>";
-				//return $this->addBraces($statementForAkt);
-				return $this->addBraces($statement);
+			    $bMakeStatement= false;
+			    STCheck::echoDebug("db.statements.where", 
+			        "where statement was written for this STDbWhere(<b>$forTableName</b>) object before, so do noting");
 			}
-	//		if(!preg_match("/^(or|and)/i", $statement))
-	//			$statement= $tableOperator.$statement;
-			Tag::echoDebug("db.statements.where", "result is '$statement'");
-			return $this->addBraces($statement);
+			if( $bMakeStatement &&
+			    $currentTableName != $forTableName    )
+			{
+			    $bMakeStatement= false;
+			    STCheck::echoDebug("db.statements.where", 
+			        "current STDbWhere object is for <b>$forTableName</b> not for <b>$currentTableName</b>");
+			}
+			if( $bMakeStatement &&
+			    $condition == "on" &&
+			    $this->bWriteOn == false )
+			{
+			    $bMakeStatement= false;
+			    if(STCheck::isDebug())
+			    {
+			        if($this->bWriteOn)
+			            $condname= "on";
+		            else
+		                $condname= "where";
+		            $amsg[]= "where statment is only for <b>$condname</b> condition";
+		            $amsg[]= "do not create any where statement";
+		            STCheck::echoDebug("db.statements.where", $amsg);
+			    }
+			}
+			
+		    if( !isset($this->sOp)	)
+		    {
+		        $plusContent= " and ";
+		    }else
+		        $plusContent= $this->sOp;
+		    
+	        if(	!isset($forTableName) ||
+	            !isset($aliases[$forTableName])	)
+	        {
+	            $aliasName= $curAlias;
+	        }else
+	            $aliasName= $aliases[$forTableName];
+            if(count($aliases)<=1)
+                $aliasName= "";
+            if( STCheck::isDebug("db.statements.where") &&
+                $bMakeStatement                             )
+            {
+                $nIntented= STCheck::echoDebug("db.statements.where", "given alias Names:");
+                st_print_r($aliases, 1, $nIntented);
+                echo "<br />";
+                /*			if(!$forTableName)
+                 {
+                 $flipAlias= array_flip($aliases);
+                 $forTableName= $flipAlias[$curAlias];
+                 }*/
+                Tag::echoDebug("db.statements.where", "alias for current Table is \"".$curAlias."\"");
+                Tag::echoDebug("db.statements.where", "need for table ".$forTableName);
+                if(count($aliases)>1)
+                    Tag::echoDebug("db.statements.where", "now alias is \"".$aliasName."\"");
+                else
+                    Tag::echoDebug("db.statements.where", "no alias, because it only one alias set, do not need alias for table");
+            }
+		    
+		    $statement= "";
+		    foreach($this->array as $content)
+		    {
+		        if(is_string($content))
+		        {
+		            // alex 09/05/2005:	im preg_match anfang (^) und Ende ($) eingef�gt
+		            //					da or auch in der Spalte zb. Kateg(or)y gefunden wurde
+		            //					es d�rfte im content nur die Variablen and, or stehen
+		            //					es m�ssen jedoch sehrwohl leerzeichen davor oder danach
+		            //					existieren d�rfen
+		            if(	!preg_match("/^[ ]*and[ ]*$/", $content) &&
+		                !preg_match( "/^[ ]*or[ ]*$/", $content)		)
+		            {
+		                if($bMakeStatement)
+		                {
+		                    $newStatement= $this->createStringContent($content, $aliasName);
+		                    if($statement != "")
+		                        $statement.= $plusContent;
+		                    $statement.= $newStatement;
+		                }
+		            }else
+		            { // content is operator
+		                $plusContent= $content;
+		            }
+		        }elseif(typeof($content, "STDbWhere"))
+		        {
+		            if($this->sDbName != "")
+		                $content->setDatabase($this->sDbName);
+	                STCheck::echoDebug("db.statements.where", "found new STDbWhere object inside array and create rekursive");
+	                $newStatement= $content->getStatement($oTable, $condition, $aliases);
+	                if(trim($newStatement) != "")
+	                {// where statement exist for current Table
+	                    if(trim($statement) != "")
+	                        $statement.= $plusContent;
+	                    $statement.= $newStatement;
+	                }
+		        }else//if($content)
+		        {
+		            $space= STCheck::echoDebug("db.statements.where", "where content:");
+		            st_print_r($content, 10, $space);
+		            STCheck::alert(1, "STDbWhere::getStatement", "content of where-clause is no string, nor is it an object of STDbWhere");
+		        }
+		    }//foreach($array as $content)
+		    if($bMakeStatement)
+		        $this->bWritten= true;
+		    $statement= $this->addBraces($statement);
+		    if(STCheck::isDebug("db.statements.where"))
+		    {
+		        STCheck::echoDebug("db.statements.where", "result for current table is <b>'$statement'</b>");
+		        STCheck::echoDebug("db.statements.where", $blanc);
+		    }
+		    return $statement;
 		}
 		/**
 		 * add braces before and behind the statement
@@ -602,13 +625,24 @@ class STDbWhere
 		 * @param string $statement normaly statement
 		 * @return string statement with brackets 
 		 */
-		private function addBraces($statement)
+		private static function addBraces($statement)
 		{
 		    $ereg= array();
-			if(preg_match("/^(and|or)[ \t]+(.*)$/", trim($statement), $ereg))
+		    $statement= trim($statement);
+		    if($statement == "")
+		        return "";
+		    if( substr($statement, 0, 1) == "(" )  // if the first char is an bracket the last have to be also one
+		        //substr($statement, strlen($statement) - 1) == ")" )  // <- so do not need to check
+		    {
+		        return $statement;
+		    }
+			if(preg_match("/^(and|or)[ \t]+(.*)$/", $statement, $ereg))
 			{
 				//st_print_r($ereg);
-				$statement= "${ereg[1]} (${ereg[2]})";
+				$ereg2= trim($ereg[2]);
+				if( !substr($ereg2, 0, 1) == "(" )
+				    $ereg2= "($ereg2)";
+				$statement= "${ereg[1]} $ereg2";
 			}else
 				$statement= "($statement)";
 			return $statement;

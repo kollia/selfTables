@@ -24,7 +24,7 @@ function descriptionCallback(&$callbackObject, $columnName, $rownum)
         $cluster= new STDbSelector($clusterTable);
         $cluster->select("Project", "Name");
         $cluster->select("Cluster", "Description");
-        $cluster->where("GroupID=".$callbackObject->sqlResult[$rownum]['access to CLUSTERs'], "ClusterGroup");
+        $cluster->where("ClusterGroup", "GroupID=".$callbackObject->sqlResult[$rownum]['access to CLUSTERs']);
         $cluster->execute();
         $aResult= $cluster->getResult();
     }

@@ -107,7 +107,15 @@ class STObjectContainer extends STBaseContainer
 		
 		return $this->needTable($sTableName, /*empty*/true);
 	}
-	public function &needNnTable(string $fixTable, string $nnTable, string $joinTable)
+	/**
+	 * create N to N table with checkboxes which connect between fixTable and joinTable
+	 * 
+	 * @param string $joinTable table which can connect by clicking the checkbox
+	 * @param string $nnTable connection table between joinTable and fixTable
+	 * @param string $fixTable fix table which should be manifested with where statement 
+	 * @return STDbSelector return STDbSelector object with table name from joinTable
+	 */
+	public function &needNnTable(string $joinTable, string $nnTable, string $fixTable)
 	{
 	    // not all databases save the tables case sensetive
 	    $sTableName= strtolower($this->getTableName($joinTable));
@@ -116,8 +124,8 @@ class STObjectContainer extends STBaseContainer
     	    $table= $this->getTable($joinTable);
     	    $selector= new STDbSelector($table);
     	    $selector->setNnTable($nnTable, $fixTable);
-    	    $selector->joinOver($fixTable);
-    	    $selector->joinOver($nnTable);
+    	    //$selector->joinOver($fixTable);
+    	    //$selector->joinOver($nnTable);
     	    
     	    $this->needTableObject($selector);
 	    }else
@@ -329,7 +337,7 @@ class STObjectContainer extends STBaseContainer
 			$this->sFirstAction= $action;
 		$this->actions[$tableName]= $action;
 	}
-	function haveTable($tableName)
+	function hasTable($tableName)
 	{
 		// method needs initialization properties
 		// to know which tables are defined
@@ -341,7 +349,7 @@ class STObjectContainer extends STBaseContainer
 		if(   isset($this->parentContainer) &&
 		      $this->name !== $this->parentContainer->getName()   )
 		{
-		    return $this->parentContainer->haveTable();
+		    return $this->parentContainer->hasTable();
 		}
 		return false;
 	}

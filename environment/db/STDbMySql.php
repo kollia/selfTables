@@ -231,7 +231,7 @@ class STDbMySql extends STDatabase
 		if(STCheck::isDebug())
 		{
 		    $tm= hrtime(false);
-		    STCheck::echoDebug("db.statement", $statement);
+		    STCheck::echoDebug("db.statements", $statement);
 		    STCheck::echoDebug("db.statement.time", date("H:i:s")." ".(time()-$_st_page_starttime_));
 		    if($statement == "SHOW COLUMNS FROM ID")
 		        showErrorTrace();
@@ -365,8 +365,11 @@ class STDbMySql extends STDatabase
 			$this->list_dbtable_fields($tableName);
 
 		$flags= array();
-		if(!preg_match("/enum\((.+)\)/i", $this->databaseTables[$tableName][$field_offset]["Type"], $flags))
+		if( !isset($this->databaseTables[$tableName][$field_offset]["Type"]) ||
+		    !preg_match("/enum\((.+)\)/i", $this->databaseTables[$tableName][$field_offset]["Type"], $flags))
+		{
 			return null;
+		}
 		$enums= preg_split("/','/", $flags[1]);
 		$enums[0]= substr($enums[0], 1);
 		$enums[count($enums)-1]= substr($enums[count($enums)-1], 0, strlen($enums[count($enums)-1])-1);

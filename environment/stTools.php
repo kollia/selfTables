@@ -418,95 +418,152 @@ class stTools
 			$type= gettype($value);
 			if($type=="object")
 				$type.= " ".get_class($value);
-  		$sRv= "\n<br />(".$type.") ";
-  		if(!isset($value))
-  			$sRv.= "&gt;&gt;NULL&lt;&lt;<br>";
-  		elseif(	is_array($value)
-  				or
-  				is_object($value) )
-  		{
-  			$sRv.= $this->print_array($value, strlen($sRv));
-  		}else
-  			$sRv.= $value;
-			$sRv.= "<br />\n";
-			if($debug==true)
-				echo $sRv;
-			return $sRv;
-		}
-		var $objects= array();
-		function print_array($array, $spaces)
+	$sRv= "\n<br />(".$type.") ";
+	if(!isset($value))
+		$sRv.= "&gt;&gt;NULL&lt;&lt;<br>";
+	elseif(	is_array($value)
+			or
+			is_object($value) )
+	{
+		$sRv.= $this->print_array($value, strlen($sRv));
+	}else
+		$sRv.= $value;
+		$sRv.= "<br />\n";
+		if($debug==true)
+			echo $sRv;
+		return $sRv;
+	}
+	var $objects= array();
+	function print_array($array, $spaces)
+	{
+		$sRv= " {<br />\n";
+		$spaces+= 6;
+		foreach($array as $key=>$value)
 		{
-			$sRv= " {<br />\n";
-			$spaces+= 6;
-			foreach($array as $key=>$value)
+			$sRv.= $this->getSpaces($spaces);
+			$ob= $array[$key];
+			if(!$this->in_objects($ob))
 			{
-				$sRv.= $this->getSpaces($spaces);
-				$ob= $array[$key];
-				if(!$this->in_objects($ob))
-				{
-					$this->objects[]= $array[$key];
-  				$sRv.= "[$key] = ";
-  				if(	is_array($value)
-  					or
-  					is_object($value)	)
-  				{
-  					$sRv.= $this->print_array($value, strlen($key." = ")+$spaces);
-  				}else
-  					$sRv.= $value;
-				}else
-				{
-					if(is_array($value))
-						$sRv.= "Array";
-					else
-						$sRv.= "Object ".get_class($value);
-					$sRv.= " is shown";
-				}
-				$sRv.= "<br />\n";
-
-			}
-			$sRv.= $this->getSpaces($spaces)."}";
-			return $sRv;
-
-		}
-		public static function getSpaces($n)
-		{
-			$sRv= "";
-			for($o= 0; $o<$n; $o++)
-				$sRv.= " ";
-			return $sRv;
-		}
-		function in_objects(&$object)
-		{
-			if(	is_array($object)
+				$this->objects[]= $array[$key];
+			$sRv.= "[$key] = ";
+			if(	is_array($value)
 				or
-				is_object($object)	)
+				is_object($value)	)
 			{
-				if(is_array($object))
-					echo "Array ".reset($object);
+				$sRv.= $this->print_array($value, strlen($key." = ")+$spaces);
+			}else
+				$sRv.= $value;
+			}else
+			{
+				if(is_array($value))
+					$sRv.= "Array";
 				else
+					$sRv.= "Object ".get_class($value);
+				$sRv.= " is shown";
+			}
+			$sRv.= "<br />\n";
+
+		}
+		$sRv.= $this->getSpaces($spaces)."}";
+		return $sRv;
+
+	}
+	public static function getSpaces($n)
+	{
+		$sRv= "";
+		for($o= 0; $o<$n; $o++)
+			$sRv.= " ";
+		return $sRv;
+	}
+	function in_objects(&$object)
+	{
+		if(	is_array($object)
+			or
+			is_object($object)	)
+		{
+			if(is_array($object))
+				echo "Array ".reset($object);
+			else
+			{
+				echo get_class($object); echo " ".$object->Name;
+				for($n= 0; $n<count($this->objects); $n++)
 				{
-					echo get_class($object); echo " ".$object->Name;
-  					for($n= 0; $n<count($this->objects); $n++)
-  					{
-  						if($this->objects[$n]==$object)
-  						{
-							echo "==";
-							if(is_array($this->objects[$n]))
-								echo "Array ".reset($this->objects[$n]);
-							else
-							{
-								echo get_class($this->objects[$n]); echo " ".$this->objects[$n]->Name;
-								echo " is in array<br>";
-  								return true;
-  							}
-  						}
-						echo " is not in array<br>";
-						return false;
+					if($this->objects[$n]==$object)
+					{
+						echo "==";
+						if(is_array($this->objects[$n]))
+							echo "Array ".reset($this->objects[$n]);
+						else
+						{
+							echo get_class($this->objects[$n]); echo " ".$this->objects[$n]->Name;
+							echo " is in array<br>";
+							return true;
+						}
 					}
+					echo " is not in array<br>";
 					return false;
 				}
+				return false;
 			}
 		}
+	}
+	public static function getWrappedStatement(array $wrapp, string $statement) : array
+	{
+        $stats= array_reverse($wrapp);
+        
+        $aStatement= array();
+        $array['first']= $statement;
+        foreach($stats as $stat)
+        {
+            $array= stTools::Wrapp($stat, $array['first']);
+            $key= array_key_last($array);
+            if(is_array($stat))
+            {
+                while($array[$key] != "")
+                {
+                    $aStatement[]= $array[$key];
+                    $array= stTools::Wrapp($stat, $array['first']);
+                }
+            }else
+            {
+                if($array[$key] != "")
+                    $aStatement[]= $array[$key];
+            }
+        }
+        return array_reverse($aStatement);
+	}
+	private static function Wrapp($wrapp, $string)
+	{	    
+	    $aRv= array();
+	    if(is_array($wrapp))
+	    {
+	        $pattern= "/(.*)(";
+	        foreach($wrapp as $stat)
+	            $pattern.= "$stat|";
+            $pattern= substr($pattern, 0, -1).")(.*)/i";
+            $erg= array();
+            if(preg_match($pattern, $string, $erg))
+            {
+                $aRv['first']= $erg[1];
+                $aRv["second"]= $erg[2].$erg[3];
+            }else
+            {
+                $aRv['first']= $string;
+                $aRv["second"]= "";
+            }
+            return $aRv;
+	    }
+	    $pos= stripos($string, $wrapp);
+	    if($pos === false)
+	    {
+	        $aRv['first']= $string;
+	        $aRv[$wrapp]= "";
+	        return $aRv;
+	    }
+	    $aRv['first']= substr($string, 0, $pos);
+	    $aRv[$wrapp]= substr($string, $pos);
+	    return $aRv;
+	}
 }
 
 ?>
