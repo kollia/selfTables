@@ -1252,407 +1252,6 @@ abstract class STDatabase extends STObjectContainer
 	{
 		return $this->error;
 	}
-	function getTableStatement($oMainTable, $tableName, &$aTableAlias, &$maked, $bMainTable)
-	{
-	    if(STCheck::isDebug())
-	    {
-	        $sMessage= "make table statement from table $tableName which is";
-            if(!$bMainTable)
-                $sMessage.= " <b>not</b>";
-            $sMessage.= " the main table";
-	        STCheck::echoDebug("db.statements.table", $sMessage);
-	    }
-		$statement= "";
-		$tableStructure= $this->getTableStructure($this);
-		if($oMainTable->getName()!==$tableName)
-			$oTable= &$oMainTable->getTable($tableName);
-		else
-			$oTable= &$oMainTable;
-		if($bMainTable)
-			$aNeededColumns= $oTable->getSelectedColumns();
-		else
-			$aNeededColumns= $oTable->getIdentifColumns();
-		if( STCheck::isDebug("db.statements.table") &&
-		    $bMainTable /*columns only interrest by Maintable*/   )
-		{
-		    $space= STCheck::echoDebug("db.statements.table", "needed columns for table ".$oTable->getName());
-			echo "<pre>";
-			st_print_r($aNeededColumns, 2, $space);
-			STCheck::echoDebug("db.statements.table", "from table aliass:");
-			st_print_r($aTableAlias, 1, $space);
-			echo "</pre><br />";
-		}
-		$ownTableAlias= $aTableAlias[$oTable->getName()];
-		
-	if($bMainTable)
-	   $this->searchJoinTables($aTableAlias);
-	$fk= $oTable->getForeignKeys();	
-	if( STCheck::isDebug("db.statements.table") )
-    {
-    	$exist= count($fk);
-    	if($exist > 0)
-    	    $msg= "found ";
-    	else
-    	    $msg= "do not need ";
-    	$msg.= "foreign Keys for table ".get_class($oTable).":'".$oTable->getName()."' with ID:".$oTable->ID;
-    	$space= STCheck::echoDebug("db.statements.table", $msg);    	
-    	if($exist > 0)
-    	   st_print_r($fk,3,$space);
-    }
-	foreach($fk as $table=>$content)
-	{
-		foreach($content as $join)
-		{
-			$sTableName= $oTable->getName();
-			$bNeedColumn= false;
-			foreach($aNeededColumns as $aColumn)
-			{
-				if(	$join["own"]==$aColumn["column"]
-					and
-					!isset($maked[$table])				)
-				{// Abfrage ob die Spalten mit FK auch ben�tigt werden
-					$bNeedColumn= true;
-					break;
-				}
-			}
-			if(	$bNeedColumn===false &&
-				isset($aTableAlias[$table]) &&
-				!isset($maked[$table])          )
-			{// wenn die FK Spalte nicht in den ben�tigten Spalten ist,
-			 // das objekt aber vom Typ STDbSelector ist (wobei die FK-Spalten nicht aufgelistet werden)
-			 // und die Tabelle in den Aliases ist,
-			 // wird sie doch f�r den join ben�tigt
-			 	$bNeedColumn= true;
-			}
-			if(Tag::isDebug("db.statements.table"))
-			{
-				if($bNeedColumn===false)
-				{
-					$debugString= "do not need foreign key from column ".$join["own"]." to table ".$table." for statement";
-					Tag::echoDebug("db.statements.table", $debugString);
-					if(isset($maked[$table]))
-						Tag::echoDebug("db.statements.table", "join was inserted before");
-				}elseif(!isset($aTableAlias[$table]))
-					Tag::echoDebug("db.statements.table", "no such table $table for column ".$join["own"]." in createt Alias-Array");
-				else
-				{
-					Tag::echoDebug("db.statements.table", "need foreign key from column ".$join["own"]." to table ".$table.
-												" for select statement from container ".$oTable->container->getName());
-				}
-			}
-			if(	$bNeedColumn
-				and
-				isset($aTableAlias[$table])	)
-			{
- 				if($join["join"]=="outer")
- 					$statement.= " left";
-				else
-					$statement.= " ".$join["join"];
-
-				$database= null;
-				if(isset($aTableAlias["db.$table"]))
-					$database= $aTableAlias["db.$table"];
-				if($database) 	// wenn im aTableAlias Array eine Datenbank angegeben ist, die fremde DB
-				{				// von dieser auch im statement angeben
-					Tag::echoDebug("db.statements.table", "table is for database ".$database);
-					$database.= ".";
-				}
-
-
-				if(isset($maked[$table]))						// wenn der join innerhalb der gleichen Tabelle ist
-				{												// darf der AliasName nicht der gleiche sein
-					$sTableAlias= $aTableAlias["self.".$table];	// (zb. t1.parentID=t1.ID) weil die eigene Tabelle
-					if(!isset($sTableAlias))					// nochmals im Join angegeben werden muss
-					{											// also zb. t1.parentID=t5.ID
-						$sTableAlias= "t".(count($aTableAlias)+1);
-						$aTableAlias["self.".$table]= $sTableAlias;
-					}
-				}else
-					$sTableAlias= $aTableAlias[$table];
-
-				if(Tag::isDebug())
-				{
-					$joinArt= $join["join"];
-					if($joinArt==="outer")
-						$joinArt= "left";
-					Tag::echoDebug("db.statements.table", "make ".$joinArt." join to table ".$database.$table.
-												" with alias-name ".$sTableAlias);
-				}
-  				$statement.= " join ".$database.$table." as ".$sTableAlias;
-  				$statement.= " on ".$ownTableAlias.".".$join["own"];
-  				$statement.= "=".$sTableAlias.".".$join["other"];
-  				if(Tag::isDebug())
-  				{
-  				    Tag::echoDebug("db.statements.table", "make ".$joinArt." join to table ".$database.$table.
-  				        " with alias-name ".$sTableAlias);
-  				}
-  				$fromTable= $join["table"];// if the table comes from an other DB, table exist in $join from foreach of $oTable->FK
-				if(	$fromTable->container->db->getName() == $oMainTable->container->db->getName() &&
-					$fromTable->container->getName() != $oMainTable->container->getName()			)
-				{// take the correct table from container
-					$fromTable= $oMainTable->container->getTable($fromTable->getName());
-				}
-				if(!$fromTable)// otherwise it should select from the current container(-table)
-					$fromTable= $oTable->getTable($table);	
-			    $statement.= $fromTable->addJoinLimitationByQuery($aTableAlias);
-				$whereStatement= $fromTable->getWhereStatement("on", $fromTable, $aTableAlias);
-				if($whereStatement)
-				{
-				    if(!preg_match("/^[ \t]*and/", $whereStatement))
-				        $whereStatement= "and $whereStatement";
-					$statement.= " ".$whereStatement;
-					STCheck::echoDebug("db.statements.table", "get on condition '$whereStatement' from table '".$fromTable->getName()."(".$fromTable->ID.")'");
-				}
-				if($oMainTable->getName() != $fromTable->getName())
-				{
-    				$whereStatement= $oMainTable->getWhereStatement("on", $fromTable, $aTableAlias);
-    				if($whereStatement)
-    				{
-    				    if(!preg_match("/^[ \t]*and/", $whereStatement))
-    				        $whereStatement= "and $whereStatement";
-    				        $statement.= " ".$whereStatement;
-    				        STCheck::echoDebug("db.statements.table", "get on condition '$whereStatement' from main table '".$oMainTable->getName()."(".$oMainTable->ID.")'");
-    				}
-				}
-
-				if(!isset($maked[$table]))
-				{// debug-Versuch f�r komplikationen -> bitte auch member-Variable counter am Funktionsanfang aktivieren
-				 //			if($this->counter==4){
-				 //				echo "$statement OK".$this->counter;exit;}else $this->counter++;
-
-					$maked[$table]= "finished";
-					$statement.= $this->getTableStatement($oMainTable, $table, $aTableAlias, $maked, false);
-					Tag::echoDebug("db.statements.table", "back in table <b>".$oTable->getName()."</b>");
-				}
-			}// end of if(	$bNeedColumn && isset($aTableAlias[$table])	)
-   		}//end of foreach($content)
-	}// end of foreach($fk)
-
-	
-	if( STCheck::isDebug("db.statements.table") )
-	{
-	    $exist= count($oTable->aBackJoin);
-	    if($exist > 0)
-	        $msg= "found ";
-	    else
-	        $msg= "no ";
-        $msg.= "foreign Keys (BackJoin's) ";
-        if($exist == 0)
-            $msg.= "found ";
-        $msg.= "to own table '".$oTable->getName()."' with ID:".$oTable->ID." ";
-        if($exist > 0)
-            $msg.= "from follow tables:";
-        $space= STCheck::echoDebug("db.statements.table", $msg);
-        if($exist > 0)
-            st_print_r($oTable->aBackJoin,3,$space);
-	}
-	// make no backjoin for follow tables
-	$noJoinTables= $oMainTable->getNotJoinOverTables();
-	foreach($noJoinTables as $noTable)
-	{
-	    if(isset($aTableAlias[$noTable]))
-	        unset($aTableAlias[$noTable]);
-	}
-		//look for tables which have an BackJoin
-		foreach($oTable->aBackJoin as $sBackTableName)
-		{
-		    if( isset($aTableAlias[$sBackTableName]) && // need table inside statement
-			    !isset($maked[$sBackTableName])          ) // and was not done before
-			{
-				$maked[$sBackTableName]= "finished";
-    			$BackTable= &$oTable->getTable($sBackTableName);
-    			Tag::echoDebug("db.statements.table", "need backward from table $tableName to table $sBackTableName from container ".$BackTable->container->getName());
-    			$sTableAlias= $aTableAlias[$sBackTableName];
-    			$dbName= $BackTable->db->dbName;
-    			$database= "";
-    			$fks= $BackTable->getForeignKeys();
-    			$join= $fks[$tableName][0];
-				STCheck::is_warning(!$join, "STDatabase::getStatement()", "no foreign key be set from backward table $sBackTableName to table $tableName");
-    			if($join)
-    			{
-    				if($dbName!==$this->dbName)
-    					$database= $dbName.".";
-					$joinArt= $join["join"];
-					if($joinArt==="outer")
-						$joinArt= "left";
-                    $statement.= " ".$joinArt." join ".$database.$sBackTableName." as ".$sTableAlias;
-                    $statement.= " on ".$ownTableAlias.".".$join["other"];
-                    $statement.= "=".$sTableAlias.".".$join["own"];
-					if(Tag::isDebug())
-					{
-						Tag::echoDebug("db.statements.table", "make ".$joinArt." join to table ".$database.$sBackTableName.
-													" with alias-name ".$sTableAlias);
-					}
-					$statement.= $BackTable->addJoinLimitationByQuery($aTableAlias);
-					$statement.= $this->getTableStatement($oMainTable, $sBackTableName, $aTableAlias, $maked, false);
-					$whereStatement= $BackTable->getWhereStatement("on", $BackTable, $aTableAlias);
-					if($whereStatement)
-					{
-					    if(!preg_match("/^[ \t]*and/", $whereStatement))
-					        $whereStatement= "and $whereStatement";
-					        $statement.= " ".$whereStatement;
-					        STCheck::echoDebug("db.statements.table", "get on condition '$whereStatement' from table '".$fromTable->getName()."(".$fromTable->ID.")'");
-					}
-					if($oMainTable->getName() != $sBackTableName)
-					{
-					    $whereStatement= $oMainTable->getWhereStatement("on", $BackTable, $aTableAlias);
-					    if($whereStatement)
-					    {
-					        if(!preg_match("/^[ \t]*and/", $whereStatement))
-					            $whereStatement= "and $whereStatement";
-					            $statement.= " ".$whereStatement;
-					            STCheck::echoDebug("db.statements.table", "get on condition '$whereStatement' from main table '".$oMainTable->getName()."(".$oMainTable->ID.")'");
-					    }
-					}
-    			}// end of if(!STCheck::is_warning(!$join))
-				unset($BackTable);
-			}// end of if($join)
-		}// end of foreach($oTable->aBackJoin)
-		    
-		if( $bMainTable &&
-		    count($maked) < count($aTableAlias)   )
-		{
-		    if(STCheck::isDebug("db.statements.table"))
-		    {
-		        $space= STCheck::echoDebug("db.statements.table", "need select for tables:");
-		        st_print_r($aTableAlias, 2, $space);
-		        STCheck::echoDebug("db.statements.table", "<b>but have now made only for</b>");
-		        st_print_r($maked, 2, $space);
-		        $space= STCheck::echoDebug("db.statements.table", "structure of tables are");
-		        st_print_r($tableStructure, 20, $space);
-		    }
-		    $accessTable= array();
-		    $accessFoundTable= array();
-		    foreach($tableStructure as $table => $reach)
-		    {
-		        $found= array();
-		        if(!is_array($reach))
-		        {// reach = 'before'
-		            if(array_key_exists($table, $aTableAlias))
-		                $found['found'][$table]= array();
-		            else
-		                $found= array();
-		        }else
-		            $found= $this->searchInTableStructure($reach, $aTableAlias);
-		        if(count($found))
-		        {
-    		        $space= STCheck::echoDebug("db.statements.table", "found follow structure from table <b>$table</b>");
-    		        if(isset($found['found']))
-    		            $accessFoundTable[$table]= $found;
-    		        else
-    		            $accessTable[$table]= $found['access'];
-    	            if(STCheck::isDebug("db.statements.table"))
-    	                st_print_r($found, 20, $space);
-		        }
-		    }
-		    if(STCheck::isDebug("db.statements.table"))
-		    {
-		        STCheck::echoDebug("db.statements.table", "tables has access to other tables:");
-		        st_print_r($accessTable, 20, $space);
-		        STCheck::echoDebug("db.statements.table", "table found needed tables:");
-		        st_print_r($accessFoundTable, 20, $space);
-		    }
-		    echo __FILE__.__LINE__."<br>";
-		    echo "accessFoundTable:";
-		    st_print_r($accessFoundTable,20);
-		    $foundAccessOver= array();
-		    foreach($accessFoundTable as $firstTable => $reachFirstTable)
-		    {
-		        foreach($accessFoundTable as $secondTable => $reachSecondTable)
-		        {
-		            if( $firstTable != $secondTable &&
-		                $reachFirstTable['found'] != $reachSecondTable['found'] &&
-		                isset($reachFirstTable['access']) &&
-		                (   !array_key_exists($firstTable, $maked) ||
-		                    !array_key_exists($secondTable, $maked)   )   )
-		            {
-		                foreach($reachFirstTable['access'] as $foundTable)
-		                {
-		                    if( isset($reachSecondTable['access']) &&
-		                        in_array($foundTable, $reachSecondTable['access']))
-		                    {
-		                        $foundFirst= array_key_first($reachFirstTable['found']);
-		                        $foundSecond= array_key_first($reachSecondTable['found']);
-		                        $ofStr= "$foundSecond $foundFirst";
-		                        if( !isset($foundAccessOver[$ofStr]) ||
-		                            !in_array($foundTable, $foundAccessOver[$ofStr])  )
-		                        {
-		                            if(!isset($foundAccessOver[$ofStr]))
-    		                            $toStr= $foundFirst ." ". $foundSecond;
-		                            else
-		                                $toStr= $ofStr;
-    		                        $foundAccessOver[$toStr][]= $foundTable;
-    		                        if(STCheck::isDebug("db.statements.table"))
-    		                        {
-    		                            $msg= "found connection from table <b>$firstTable</b>($foundFirst) ";
-    		                            $msg.= "to tables <b>$secondTable</b>($foundSecond) ";
-    		                            $msg.= " over table <b>$foundTable</b>";
-    		                            STCheck::echoDebug("db.statements.table", $msg);
-    		                        }
-		                        }
-		                    }
-		                }
-		            }
-		        }
-		    }
-		    if(STCheck::isDebug())
-		    {
-		        $bTableDebug= STCheck::isDebug("db.statements.table");
-		        STCheck::debug("db.statements.table");
-		        if(count($foundAccessOver) > 0)
-		        {
-		            if(!$bTableDebug)
-		            {
-		                echo "<br />";
-		                $space= STCheck::echoDebug("db.statements.table", "structure of tables are");
-		                st_print_r($tableStructure, 20, $space);
-		            }
-    		        echo "<br /><br /><br />";
-    		        $foundtables= false;
-    		        $ambiguous= false;
-    		        foreach($foundAccessOver as $conns)
-    		        {
-    		            if( is_array($conns) &&
-    		                count($conns) > 0     )
-    		            {
-    		                $foundtables= true;
-    		                if(count($conns) > 1)
-    		                {
-    		                    $ambiguous= true;
-    		                    break;
-    		                }
-    		            }
-    		        }
-    		        if($foundtables)
-    		        {
-        		        $xtable= "table as follow";
-        		        if($ambiguous)
-        		            $msg= "found ambiguous connection over follow tables, please choose the best one";
-        		        else
-        		        {
-        		            $msg= "found connection over table <b>$tableName</b>, for better performance,";
-        		            $res= reset($foundAccessOver);
-        		            $xtable= reset($res);
-        		        }
-            		    STCheck::echoDebug("db.statements.table", $msg);
-            		    $space= STCheck::echoDebug("db.statements.table", "implement ".get_class($oMainTable)."(<b>$tableName</b>)->joinOver<b>(</b>&lt;$xtable&gt;<b>)</b>");
-            		    if($ambiguous)
-            		        st_print_r($foundAccessOver, 2, $space);
-            		    echo "<br />";
-            		    echo "$statement<br>";
-            		    echo "---------------------------------------------------------------------------------------------------------";
-            		    echo "---------------------------------------------------------------------------------------------------------<br />";
-            		    showErrorTrace();
-            		    echo "<br /><br /><br />";
-            		    exit;
-    		        }
-		        }
-		    }
-		    STCheck::alert(count($maked) < count($aTableAlias), "STDatabase::getTableStatement()", "do not join to all alias tables see STCheck::debug('db.statements.table')");
-		}
-		STCheck::echoDebug("db.statements.table", "TableStatement - Result from table '".$oTable->getName()."'= '$statement'");
-		return $statement;
-	}
 	private function searchInTableStructure(array $structure, array $needTables)
 	{	    
 	    $aRv= array();
@@ -1679,7 +1278,7 @@ abstract class STDatabase extends STObjectContainer
 	    }
 	    return $aRv;
 	}
-	private function searchJoinTables(&$aAliases)
+	public function searchJoinTables(&$aAliases)
 	{
 	    if(STCheck::isDebug("db.table.fk"))
 	    {
@@ -2428,7 +2027,6 @@ abstract class STDatabase extends STObjectContainer
 		      st_print_r($aliasTables, 1, $space);
 		}
 		// create statement
-		$statement= "select ";
 		$bMainTable= !$bFromIdentifications;// wenn der erste ->getSlectStatement() Aufruf nicht für
 											// die Haupttabelle getätigt wird, werden nur die Tabellen Identificatoren genommen
 		$mainTable= $bMainTable;
@@ -2438,9 +2036,7 @@ abstract class STDatabase extends STObjectContainer
 									//					die Haupttabelle als dritter Parameter mitgegeben werden
 		$tableName= $oTable->getName();
 		$this->bFirstSelectStatement= true;
-		if($oTable->isDistinct())
-		    $statement.= "distinct ";
-		$statement.= $oTable->getSelectStatement(/*first select*/$bMainTable, $mainTable, $aliasTables, $withAlias);
+		$statement= $oTable->getSelectStatement($aliasTables, $withAlias);
 		// implement tables which are joined from user
 	    if(count($joinTables))
 	        $aliasTables= array_merge($aliasTables, $joinTables);
@@ -2453,49 +2049,46 @@ abstract class STDatabase extends STObjectContainer
 	        st_print_r($aliasTables, 1, $space);
 	    }
 	    STCheck::echoDebug("db.statements", "need follow <b>select</b> statement: $statement");
-	    $statement.= " from ".$tableName;
 	    $oTable->newWhereCreation($aliasTables);
 		if(count($aliasTables)>1)
 		{
-			$maked= array();
-			$maked[$tableName]= "finished";
-			$statement.= " as ".$aliasTables[$tableName];
-			$tableStatement= $this->getTableStatement($oTable, $tableName, $aliasTables, $maked, /*first access*/true);
+			$tableStatement= $oTable->getTableStatement($aliasTables);
 			STCheck::echoDebug("db.statements", "need follow aditional <b>table</b> statement: $tableStatement");
 			$statement.= " $tableStatement";
-		}//else
-		{
-				// create $bufferWhere to copy the original
-				// behind the function getWhereStatement()
-				// back into the table
-				// problems by php version 4.0.6:
-				// first parameter in function is no reference
-				// but it comes back the changed values
-				$bufferWhere= $oTable->oWhere;
-				$whereStatement= $oTable->getWhereStatement("where", $aliasTables);
-				if(STCheck::isDebug("db.statements"))
-				{	
-				    if(trim($whereStatement) == "")
-				        $msg= "do not need a <b>where</b> statement";
-				    else
-				        $msg= "need follow <b>where</b> statement: $whereStatement";
-				    STCheck::echoDebug("db.statements", $msg);
-				}
-				$oTable->oWhere= $bufferWhere;
-				if($whereStatement)
-				{
-					preg_match("/^(and|or)/i", $whereStatement, $ereg);
-					if(isset($ereg[1]))
-					{
-						if($ereg[1] == "and")
-							$nOp= 4;
-						else
-							$nOp= 3;
-						$whereStatement= substr($whereStatement, $nOp);
-					}
-					$statement.= " where $whereStatement";
-				}
+		}else
+		    $statement.= " from ".$tableName;
+		
+		// create $bufferWhere to copy the original
+		// behind the function getWhereStatement()
+		// back into the table
+		// problems by php version 4.0.6:
+		// first parameter in function is no reference
+		// but it comes back the changed values
+		$bufferWhere= $oTable->oWhere;
+		$whereStatement= $oTable->getWhereStatement("where", $aliasTables);
+		if(STCheck::isDebug("db.statements"))
+		{	
+		    if(trim($whereStatement) == "")
+		        $msg= "do not need a <b>where</b> statement";
+		    else
+		        $msg= "need follow <b>where</b> statement: $whereStatement";
+		    STCheck::echoDebug("db.statements", $msg);
 		}
+		$oTable->oWhere= $bufferWhere;
+		if($whereStatement)
+		{
+			preg_match("/^(and|or)/i", $whereStatement, $ereg);
+			if(isset($ereg[1]))
+			{
+				if($ereg[1] == "and")
+					$nOp= 4;
+				else
+					$nOp= 3;
+				$whereStatement= substr($whereStatement, $nOp);
+			}
+			$statement.= " where $whereStatement";
+		}
+		
 		// Order Statement hinzufügen wenn vorhanden
 		if(	!isset($oTable->bOrder) ||
 			$oTable->bOrder == true		)

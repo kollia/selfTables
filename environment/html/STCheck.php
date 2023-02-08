@@ -24,6 +24,13 @@ $g__STCheck_exit_entry= array();
 $global_activeOutputBuffer= false;
 $global_outputBufferWasErased= false;
 
+/**
+ * definition of explicit creation of statements
+ * for "db.statement" debug output
+ * @var integer $__stdbtables_statement_count
+ */
+$__stdbtables_statement_count= 0;
+
 class STCheck
 {
 	var $m_bOpenErr= false;

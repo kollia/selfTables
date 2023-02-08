@@ -19,7 +19,6 @@ class STDbSelector extends STDbTable
 		var $count= 0;
 		var	$dbCount;
 		var	$defaultTyp;
-		var $sqlStatement= "";
 		var	$bClearSelects= false;	// for later getting table
 									// by true it should also cleared
 		/**
@@ -740,18 +739,14 @@ class STDbSelector extends STDbTable
 				}
   			}
 		}
-		function setStatement($statement)
-		{ $this->sqlStatement= $statement; }
 		function getStatement($limit= null, $withAlias= null)
 		{
-			if($this->sqlStatement != "")
-				return $this->sqlStatement;
-			
-			$this->sqlStatement= $this->db->getStatement($this, false, $withAlias);
+			$statement= STDbTable::getStatement(false, $withAlias);
+			//$this->sqlStatement= $this->db->getStatement($this, false, $withAlias);
 			//echo $this->sqlStatement."<br />";
 			if($limit)
-			    $this->sqlStatement.= " limit ".$limit;
-			return $this->sqlStatement;
+			    $statement.= " limit ".$limit;
+			return $statement;
 		}
 		function searchValue($searchValue)
 		{
