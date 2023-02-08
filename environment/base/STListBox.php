@@ -846,106 +846,106 @@ class STListBox extends STBaseBox
 		}
 		function &getIndexTableTag($firstParams, $backParams, &$nameTags, $nextParams, $lastParams)
 		{//echo "getIndexTableTag($firstParams,\n<br /> $backParams,\n<br /> &$nameTags,\n<br /> $nextParams,\n<br /> $lastParams)<br />";
-							$indexTable= new TableTag();
-								$indexTable->border(0);
-								$itr= new RowTag("index");
-            						$itd= new ColumnTag(TD);
-										$itd->align("center");
-										$itd->width("50");
-								if($firstParams)
-								{
-            							$first= new ButtonTag("indexButtons");
-            								$first->add("<<");
-											$first->onClick($firstParams);
-									if($this->nShowFirstRow==0)
-											$first->disabled();
-								}
-								if(	$this->nShowFirstRow
-									or
-									!$this->bDropIndexButton	)
-								{
-									if($firstParams)
-									{
-										$itd->addObj($first);
-									$itr->add($itd);
-										
-            						$itd= new ColumnTag(TD);
-										$itd->align("center");
-										$itd->width("50");
-									}
-								}
-								if($backParams)
-								{
-            							$back= new ButtonTag("indexButtons");
-            								$back->add("<");
-											$back->onClick($backParams);
-									if($this->nShowFirstRow==0)
-											$back->disabled();
-								}
-								if(	$this->nShowFirstRow
-									or
-									!$this->bDropIndexButton	)
-								{
-									if($backParams)
-										$itd->addObj($back);
-								}
-								$itr->add($itd);
+			$indexTable= new TableTag();
+				$indexTable->border(0);
+				$itr= new RowTag("index");
+					$itd= new ColumnTag(TD);
+						$itd->align("center");
+						$itd->width("50");
+				if($firstParams)
+				{
+						$first= new ButtonTag("indexButtons");
+							$first->add("<<");
+							$first->onClick($firstParams);
+					if($this->nShowFirstRow==0)
+							$first->disabled();
+				}
+				if(	$this->nShowFirstRow
+					or
+					!$this->bDropIndexButton	)
+				{
+					if($firstParams)
+					{
+						$itd->addObj($first);
+					$itr->add($itd);
+						
+					$itd= new ColumnTag(TD);
+						$itd->align("center");
+						$itd->width("50");
+					}
+				}
+				if($backParams)
+				{
+						$back= new ButtonTag("indexButtons");
+							$back->add("<");
+							$back->onClick($backParams);
+					if($this->nShowFirstRow==0)
+							$back->disabled();
+				}
+				if(	$this->nShowFirstRow
+					or
+					!$this->bDropIndexButton	)
+				{
+					if($backParams)
+						$itd->addObj($back);
+				}
+				$itr->add($itd);
 
-								$itd= new ColumnTag(TD);
-									$itd->align("center");
-									$itd->width("200");
-								if($nameTags)
-								{
-										$itd->addObj($nameTags);
-								}
-									$itr->add($itd);
-									$itd= new ColumnTag(TD);
-										$itd->align("center");
-										$itd->width("50");
-								if($nextParams)
-								{
-									if(	$this->nMaxRowSelect
-										and
-										($this->nShowFirstRow+$this->nMaxRowSelect) < $this->nMaxTableRows	)
-									{
-										$bLastRow= false;
-									}else
-										$bLastRow= true;
-            							$next= new ButtonTag("indexButtons");
-            								$next->add(">");
-											$next->onClick($nextParams);
-										if($bLastRow)
-											$next->disabled();
-								}
-								if(	!$this->bDropIndexButton
-									or
-									!$bLastRow	)
-								{
-									if($nextParams)
-										$itd->addObj($next);
-									$itr->add($itd);
-										
-            						$itd= new ColumnTag(TD);
-										$itd->align("center");
-										$itd->width("50");
-								}
-								if($lastParams)
-								{
-            							$last= new ButtonTag("indexButtons");
-            								$last->add(">>");
-											$last->onClick($lastParams);
-										if($bLastRow)
-											$last->disabled();
-								}
-								if(	!$this->bDropIndexButton
-									or
-									!$bLastRow	)
-								{
-									if($lastParams)
-										$itd->addObj($last);
-								}
-								$itr->add($itd);
-							$indexTable->add($itr);
+				$itd= new ColumnTag(TD);
+					$itd->align("center");
+					$itd->width("200");
+				if($nameTags)
+				{
+						$itd->addObj($nameTags);
+				}
+					$itr->add($itd);
+					$itd= new ColumnTag(TD);
+						$itd->align("center");
+						$itd->width("50");
+				if($nextParams)
+				{
+					if(	$this->nMaxRowSelect
+						and
+						($this->nShowFirstRow+$this->nMaxRowSelect) < $this->nMaxTableRows	)
+					{
+						$bLastRow= false;
+					}else
+						$bLastRow= true;
+						$next= new ButtonTag("indexButtons");
+							$next->add(">");
+							$next->onClick($nextParams);
+						if($bLastRow)
+							$next->disabled();
+				}
+				if(	!$this->bDropIndexButton
+					or
+					!$bLastRow	)
+				{
+					if($nextParams)
+						$itd->addObj($next);
+					$itr->add($itd);
+						
+					$itd= new ColumnTag(TD);
+						$itd->align("center");
+						$itd->width("50");
+				}
+				if($lastParams)
+				{
+						$last= new ButtonTag("indexButtons");
+							$last->add(">>");
+							$last->onClick($lastParams);
+						if($bLastRow)
+							$last->disabled();
+				}
+				if(	!$this->bDropIndexButton
+					or
+					!$bLastRow	)
+				{
+					if($lastParams)
+						$itd->addObj($last);
+				}
+				$itr->add($itd);
+			$indexTable->add($itr);
 			return $indexTable;
 		}
 		function callback($columnName, $callbackFunction, $action= STLIST)
@@ -1663,7 +1663,24 @@ class STListBox extends STBaseBox
 			if(!$CallbackClass->bSkip)	// wenn der User in einem Callback skipRow gew�hlt hat
 				$hTable->add($tr);		// wird die RowColumn $tr nicht eingebunden
       	}// end of Row loop
-
+        if($indexTable)
+        {
+            $idtr= new RowTag();
+                $this->insertAttributes($idtr, "tr");
+                $idtd= new ColumnTag(TD);
+                    $this->insertAttributes($idtd, "td");
+                if(isset($this->SqlResult[0]))
+                    $colspan= count($this->SqlResult[0]);
+                else
+                    $colspan= 1;
+                if($this->asDBTable->nDisplayColumns)
+                    $colspan*= $this->asDBTable->nDisplayColumns;
+                $idtd->colspan($colspan);
+                $idtd->align("center");
+                $idtd->addObj($indexTable);
+                $idtr->addObj($idtd);
+            $hTable->addObj($idtr);
+        }
 
 
 			/**********************************************************************************
