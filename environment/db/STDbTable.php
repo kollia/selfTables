@@ -131,6 +131,7 @@ class STDbTable extends STBaseTable
 		$this->onError= $oTable->onError;
 		$this->sAcessClusterColumn= $oTable->sAcessClusterColumn;
 		$this->password= $oTable->password;
+		$this->aStatement= $oTable->aStatement;
 	}
 	public function getColumnName($column)
 	{
@@ -602,21 +603,24 @@ class STDbTable extends STBaseTable
 	}
 	public function getStatement(bool $bFromIdentifications= false, bool $withAlias= null)
 	{
-	    if(STCheck::isDebug("db.statement"))
+	    if(STCheck::isDebug())
 	    {
 	        global $__stdbtables_statement_count;
 	        
 	        $__stdbtables_statement_count++;
-	        echo "<br />";
-	        echo "<hr />";
-	        STCheck::echoDebug("db.statement", "create $__stdbtables_statement_count. statement for table ".$this->Name);
-	        echo "<hr />";
+	        if(STCheck::isDebug("db.statement"))
+	        {
+    	        echo "<br />";
+    	        echo "<hr />";
+    	        STCheck::echoDebug("db.statement", "create $__stdbtables_statement_count. statement for table ".$this->Name);
+    	        echo "<hr />";
+	        }
 	    }
 		if(isset($this->aStatement['full']))
 		{
 		    if(STCheck::isDebug("db.statements"))
 		    {
-		        $arr[]= "use pre-defined statement:";
+		        $arr[]= "use pre-defined full statement in ".get_class($this)."(<b>".$this->Name."</b>[".$this->ID."]):";
 		        $arr[]= $this->aStatement['full'];
 		        STCheck::echoDebug("db.statements", $arr);
 		    }
@@ -633,7 +637,44 @@ class STDbTable extends STBaseTable
 	}
 	public function setStatement(string $statement)
 	{
-	    $this->aStatement['full']= $statement;
+	    if(STCheck::isDebug("db.statement"))
+	    {
+	        $msg[]= "set statement from outside of ".get_class($this)."(<b>".$this->Name."</b>[".$this->ID."]):";
+	        $msg[]= $statement;
+	        STCheck::echoDebug("db.statement", $msg);
+	    }
+	    $stats= array(  "select", "from", "where", "order" );	    
+	    $arr= stTools::getWrappedStatement($stats, $statement);
+	    if( isset($arr) &&
+	        is_array($arr) &&
+	        count($arr)        )
+	    {
+	        $this->aStatement= array();
+    	    $this->aStatement['full']= $statement;
+    	    foreach($arr as $clause)
+    	    {
+    	        if(strtolower(substr($clause, 0, 6)) == "select")
+    	            $this->aStatement['select']= $clause;
+            elseif(strtolower(substr($clause, 0, 4)) == "from")
+                $this->aStatement['table']= $clause;
+            elseif(strtolower(substr($clause, 0, 5)) == "where")
+                $this->aStatement['where']= $clause;
+            elseif(strtolower(substr($clause, 0, 5)) == "order")
+                $this->aStatement['order']= $clause;
+    	    }    
+	    }else
+	        STCheck::is_warning(1, "STDbTable::setStatement()", "cannot read correct statement:$statement");
+	}
+	public function getResultCountStatement()
+	{
+	    if(!isset($this->aStatement['table']))
+	        $this->getStatement();
+        $statement= "select count(*) ";
+        if(isset($this->aStatement['table']))
+            $statement.= $this->aStatement['table'];
+        if(isset($this->aStatement['where']))
+            $statement.= " ".$this->aStatement['where'];
+        return $statement;
 	}
 	public function displayWrappedStatement()
 	{

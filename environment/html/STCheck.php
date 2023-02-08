@@ -30,6 +30,8 @@ $global_outputBufferWasErased= false;
  * @var integer $__stdbtables_statement_count
  */
 $__stdbtables_statement_count= 0;
+$__stdbtables_statement_count_from= -1;
+$__stdbtables_statement_count_to= -1;
 
 class STCheck
 {
@@ -386,8 +388,14 @@ class STCheck
 	        $global_activeOutputBuffer= false;
 	        $global_outputBufferWasErased= true;
 		}
-		//function debug($a,$b,$boolean= true)
-		public static function debug($boolean= true)
+		/**
+		 * set debugging state
+		 * 
+		 * @param boolean|string general debugging state by (true), or by explicit string, see: st_pathdef.inc.php
+		 * @param integer $from output string "db.statement" only since the statement creation growing to this number
+		 * @param integer $to do not output after this number occured
+		 */
+		public static function debug(bool|string $boolean= true, int $from= null, int $to= null)
 		{
 			global	$HTTP_POST_VARS,
 					$HTTP_POST_FILES,
@@ -396,8 +404,26 @@ class STCheck
 					$HTML_CLASS_DEBUG_CONTENT_CLASS_FUNCTION,
 					$global_logfile_dataname,
 					$global_activeOutputBuffer,
-					$global_outputBufferWasErased;
+					$global_outputBufferWasErased,
+					$__stdbtables_statement_count_from,
+					$__stdbtables_statement_count_to;
 			
+			if( (   !is_string($boolean) ||
+					    $boolean != "db.statement"   ) &&
+			        isset($from)                             )
+			{
+			    STCheck::debug(true);
+			    $msg= "if first parameter is not \"db.statement\" second and third parameter";
+			    $msg.= " ('\$from' and '\$to') are not allowed";
+			    STCheck::warning(1, "STCheck::debug()", $msg, 1);
+			    echo "<br />";
+			}else
+			{
+    			if(isset($from))
+    			    $__stdbtables_statement_count_from= $from;
+    			if(isset($to))
+    			    $__stdbtables_statement_count_to= $to;
+			}
 			if($boolean !== false)
 			{
 			    global_debug_definition(true);
@@ -408,7 +434,11 @@ class STCheck
     				ob_start();
     			}
 			}else
+			{
 			    global_debug_definition(false);
+			    $__stdbtables_statement_count_from= -1;
+			    $__stdbtables_statement_count_to= -1;
+			}
 			if(	!$HTML_CLASS_DEBUG_CONTENT
 				and
 				$boolean	)
@@ -496,8 +526,11 @@ class STCheck
 		}
 		public static function isDebug($inClassFunction= null)
 		{
-			global $HTML_CLASS_DEBUG_CONTENT;
-			global $HTML_CLASS_DEBUG_CONTENT_CLASS_FUNCTION;
+			global $HTML_CLASS_DEBUG_CONTENT,
+			       $HTML_CLASS_DEBUG_CONTENT_CLASS_FUNCTION,
+			       $__stdbtables_statement_count,
+			       $__stdbtables_statement_count_from,
+			       $__stdbtables_statement_count_to;
 
 			if(!$HTML_CLASS_DEBUG_CONTENT)
 				return false;
@@ -505,6 +538,17 @@ class STCheck
 			{
 			    if($HTML_CLASS_DEBUG_CONTENT_CLASS_FUNCTION != "")
 			    {
+			        if( substr($inClassFunction, 0, 12) == "db.statement" &&
+			            (   (   $__stdbtables_statement_count_from > 0 &&
+			                    $__stdbtables_statement_count < $__stdbtables_statement_count_from  ) ||
+			                (   $__stdbtables_statement_count_to > 0 &&
+			                    $__stdbtables_statement_count > $__stdbtables_statement_count_to   )    )   )
+			        {
+			            //echo "count ";st_print_r($__stdbtables_statement_count);
+			            //echo " from:";st_print_r($__stdbtables_statement_count_from);
+			            //echo " to:";st_print_r($__stdbtables_statement_count_to);echo "<br>";
+			            return false;
+			        }
     				//echo "inClass ".$inClassFunction."=".$HTML_CLASS_DEBUG_CONTENT_CLASS_FUNCTION."<br />";;
     				//echo "<br />preg_match('/(^|\/)".$inClassFunction."/i', '".$HTML_CLASS_DEBUG_CONTENT_CLASS_FUNCTION."')";
     			    if(	preg_match("/(^|\/)".$inClassFunction."/i", $HTML_CLASS_DEBUG_CONTENT_CLASS_FUNCTION)   )
@@ -532,8 +576,6 @@ class STCheck
 		 */
 		public static function echoDebug($inClassFunction, $string= null, $break= true)
 		{
-			global $HTML_CLASS_DEBUG_CONTENT;
-
 			if(!STCheck::isDebug())
 				return 0;
 			STCheck::print_query_post();

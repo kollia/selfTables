@@ -384,7 +384,6 @@ class STListBox extends STBaseBox
 			// alex 03/08/2005: kontrolle der fixen Einschr�nkung nach STDatabase verschoben
 
 			
-			$tableDb= &$oTable->getDatabase();
 			if(typeof($oTable, "STDBSelector"))
 			{
 				$this->oSelector= &$oTable;
@@ -402,7 +401,8 @@ class STListBox extends STBaseBox
 			}
 			
 			// toDo: DbSelector find not the right Statement / Alias-Table
-			$statement= $tableDb->getStatement($oTable);
+			//$statement= $tableDb->getStatement($oTable);
+			$statement= $oTable->getStatement();
 			$this->oSelector->setStatement($statement);
 			$this->statement= $this->oSelector->getStatement();
 			$aliases= array();
@@ -730,8 +730,13 @@ class STListBox extends STBaseBox
 			 	
 				$needAlwaysIndex= $oTable->needAlwaysIndex();
 				$tableName= $oTable->getName();
+				$countStatement= $this->oSelector->getResultCountStatement();
+				
 				$cTab= new STDbSelector($oTable);
-				$cTab->allowQueryLimitation($oTable->modify());
+				$cTab->setStatement($countStatement);
+				
+				// old explicit creation
+/*				$cTab->allowQueryLimitation($oTable->modify());
 				$cTab->clearRekursiveNoFkSelects();
 				$cTab->clearRekursiveGetColumns();
     			if($this->bGetedSearchboxResult)
@@ -746,7 +751,7 @@ class STListBox extends STBaseBox
 				}else
 				    $cTab->count("*");
 				if($cTab->isNnTable())// when table is an n to n table
-				    $cTab->noNnTable();// it's nessesary to set the table to no n to n table
+				    $cTab->noNnTable();// it's nessesary to set the table to no n to n table        */
     			$cTab->execute();
     			$nMaxTableRows= $cTab->getSingleResult();
 				if(!isset($nMaxTableRows))
