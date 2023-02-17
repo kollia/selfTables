@@ -395,7 +395,7 @@ class STDbTableContainer
 		$this->sFirstAction= $action;
 		$this->actions[$tableName]= $action;
 	}
-	function hasTable($tableName)
+	function isDbTable($tableName)
 	{
 	    //echo __FILE__.__LINE__."<br>";
 	    //echo "----------------------------------------------------------------------------------------------------------------------------<br>";
@@ -410,7 +410,7 @@ class STDbTableContainer
 		$tableName= $HTTP_GET_VARS["stget"]["table"];		
 		if($tableName)
 		{
-			if(!$this->hasTable($tableName))
+			if(!$this->isDbTable($tableName))
 				return null;
 			return $tableName;
 		}

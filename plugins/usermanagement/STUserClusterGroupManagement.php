@@ -6,6 +6,60 @@ require_once( $_stquerystring );
 require_once( $_stdbselector );
 require_once( $_stclustergroupmanagement );
 
+$__global_UserClusterGroup_CALLBACK= array();
+
+function permissionCallback(&$callbackObject, $columnName, $rownum)
+{//st_print_r($callbackObject->sqlResult[$rownum]);
+    //$callbackObject->echoResult();
+    global $__global_UserClusterGroup_CALLBACK;
+    
+    if($rownum == 0)
+    {
+        $instance= STUserSession::instance();
+        $__global_UserClusterGroup_CALLBACK['domain']= $instance->mainDOMAIN;
+    }
+    
+    if($callbackObject->getValue() == 1)
+    {
+        $aResult=	array(	"Name"=>"",
+            "Description"=>"Zugriff auf alle Projekte und Untergruppen "	);
+        $aResult= array($aResult);// es wird eine Zeile vorget�uscht
+    }else
+    {
+        $clusterTable= $callbackObject->getTable("Cluster");
+        $cluster= new STDbSelector($clusterTable);
+        $cluster->select("Project", "Name");
+        $cluster->select("Cluster", "Description");
+        $cluster->select("Group", "Name", "group");
+        $cluster->where("ClusterGroup", "GroupID=".$callbackObject->getValue());
+        $cluster->orderBy("Project", "Name");
+        $cluster->allowQueryLimitation(false);
+        $cluster->execute();
+        $aResult= $cluster->getResult();
+    }
+    $source=   "<table>";
+    foreach($aResult as $row)
+    {
+        $source.=  "	<tr>";
+        $source.=  "		<td>";
+        $source.=  "			<b>";
+        $source.=  "				[".$row["Name"]."]";
+        $source.=  "			</b>";
+        $source.=  "		</td>";
+        $source.=  "		<td>";
+        $source.=  "				".$row["Description"];
+        $source.=  "		</td>";
+        $source.=  "	</tr>";
+    }
+    $source.=  "</table>";
+    $callbackObject->setValue($source);
+    
+    if( $callbackObject->sqlResult[$rownum]["domain"] != $__global_UserClusterGroup_CALLBACK['domain'] )
+    {
+        $callbackObject->disabled();
+    }
+}
+
 class STUserClusterGroupManagement extends STObjectContainer
 {
     private $clusterGroup;
@@ -57,18 +111,26 @@ class STUserClusterGroupManagement extends STObjectContainer
 	    //$group= $this->getTable("User");
 	    
 	    //$gr= $this->getTable("Group");
+	    $domain= $this->getTable("AccessDomain");
+	    $domain->identifColumn("Name", "Domain");
 	    
 	    $group= $this->needTable("Group");
 	    $group->identifColumn("Name", "Group");
+	    $group->distinct();
+	    $group->select("AccessDomain", "Name", "domain");
 	    $group->select("Group", "Name", "group");
 	    $group->nnTableCheckboxColumn("Affilation");
 	    $group->select("Group", "ID", "Permissions");
+	    $group->listCallback("permissionCallback", "Permissions");
 	    $group->select("UserGroup", "DateCreation", "member since");
-	    $group->setMaxRowSelect(40);
+	    //$group->orderBy("AccessDomain", "Name");
+	    //$group->orderBy("Group", "Name");
+	    $group->setMaxRowSelect(20);
 	    $group->noJoinOver("Log");
 	    $group->joinOver("ClusterGroup");
 	    $group->joinOver("Cluster");
 	    $group->joinOver("Project");
+	    $group->allowQueryLimitation(true);
 	    
 	    
 	    
@@ -91,7 +153,7 @@ class STUserClusterGroupManagement extends STObjectContainer
 	        {
 	            $field= array();
 	            $field[]= $content['ID'];
-	            $field[]= $content['domain']." - ".$content['user']." - ".$content['full'];
+	            $field[]= $content['Domain']." - ".$content['user']." - ".$content['full'];
 	            $users[]= $field;
 	        }
 	        $post= new STPostArray();
@@ -126,10 +188,10 @@ class STUserClusterGroupManagement extends STObjectContainer
     	    //$userWhere->writeWhereCondition();
     	    $group->where($userWhere);
     	    
-    	    $groupWhere= new STDbWhere();
+/*    	    $groupWhere= new STDbWhere();
     	    $groupWhere->table("Group");
-    	    $groupWhere->where("domain=$projectName");
-    	    //$group->andWhere($groupWhere);
+    	    $groupWhere->where("domain='Abwesenheitsplaner'");
+    	    $group->andWhere($groupWhere);*/
 	    }
 	  
 		$cluster= $this->getTable("Cluster");

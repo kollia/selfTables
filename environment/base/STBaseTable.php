@@ -141,7 +141,7 @@ class STBaseTable
 	{
 	    global $__static_global_STBaseTable_ID;
 	    
-		Tag::paramCheck($oTable, 1, "string", "STBaseTable", "null");
+		STCheck::param($oTable, 0, "string", "STBaseTable", "null");
 
 
         $__static_global_STBaseTable_ID++;
@@ -151,50 +151,61 @@ class STBaseTable
 								"form"=>	"st_checkForm",
 								"action"=>	null			);
     	$this->error= false;
-		if($oTable !== null)
-		{
-		    if(typeof($oTable, "STBaseTable"))
-		    {
-                if( STCheck::isDebug("table") ||
-                    STCheck::isDebug("db.table.fk") )
-                {
-                    $check= "table";
-                    if(STCheck::isDebug("db.table.fk"))
-                        $check= "db.table.fk";
-                    $space= STCheck::echoDebug($check, "create new ".get_class($this)."::<b>".$oTable->Name."</b> with ID:".$this->ID." from ".get_class($oTable)."::<b>".$oTable->Name."</b> with ID:".$oTable->ID);
-                    for($c= 0; $c < $space; $c++)
-                        echo " ";
-                    echo "old <b>FKs</b>:<br>";
-                    st_print_r($oTable->aBackJoin, 3, $space);
-                    $this->copy($oTable);
-                    for($c= 0; $c < $space; $c++)
-                        echo " ";
-                    echo "new <b>FKs</b>:<br>";
-                    st_print_r($this->aBackJoin, 3, $space);
-                    
-                }else // no debugging for "table" or "db.table.fk" but debugging defined
-                    $this->copy($oTable);
-		    }else
-		        $this->Name= $oTable;
-	        $this->bCorrect= true;
-	        if(Tag::isDebug("table"))
-	        {
-	            STCheck::echoDebug("table", "create new ID:".$this->ID." for ".get_class($this)."(".$this->Name.")");
-	            if($oTable === null)
+    	$this->bCorrect= false;
+    	if($oTable !== null)
+    	{
+    	    if(typeof($oTable, "STBaseTable"))
+    	        $this->copy($oTable);       
+    	    else
+    	        $this->Name= $oTable;
+            $this->bCorrect= true;
+    	}else
+    	    $this->Name= "- NULL -";
+    	
+    	STCheck::increase("table");
+        if( STCheck::isDebug() &&
+            (   STCheck::isDebug("table") ||
+                STCheck::isDebug("db.table.fk") )   )
+        {
+            if($oTable === null)
+            {
+                $msg= "create non correct null table $this.";
+                $color= "red";
+                
+            }else
+            {
+                $msg= array();
+                $msg[]= "create new table $this";
+                $color= "darkblue";
+                if(typeof($oTable, "STBaseTable"))
 	            {
-	                STCheck::echoDebug("table", "create non correct null table.");
-	            }elseif(is_string($oTable))
-	            {
-	                Tag::echoDebug("table", "create new table <b>".$oTable."</b>");
-	            }else
-	                Tag::echoDebug("table", "copy table <b>".$oTable->Name."</b>");
-	        }
-		}else 
-		{
-			$this->Name= "NULL";
-			$this->bCorrect= false;
-		}
-		//STCheck::echoDebug("table", "crate table ".$this->Name." with ID:".$this->ID);
+	                $msg[]= "        by copy  $oTable";
+	                $color= "blue";
+	            }
+            }
+            if(STCheck::isDebug("table"))
+            {
+                echo "<br /><br /><br /><br /><br /><hr color='$color' />";
+                STCheck::echoDebug("table", $msg);
+            }
+            
+            if( typeof($oTable, "STBaseTable") &&
+                STCheck::isDebug("db.table.fk")     )
+            {
+                $check= "table";
+                if(STCheck::isDebug("db.table.fk"))
+                    $check= "db.table.fk";
+                $space= STCheck::echoDebug($check, "create new ".get_class($this)."::<b>".$oTable->Name."</b> with ID:".$this->ID." from ".get_class($oTable)."::<b>".$oTable->Name."</b> with ID:".$oTable->ID);
+                for($c= 0; $c < $space; $c++)
+                    echo " ";
+                echo "old <b>FKs</b>:<br>";
+                st_print_r($oTable->aBackJoin, 3, $space);
+                for($c= 0; $c < $space; $c++)
+                    echo " ";
+                echo "new <b>FKs</b>:<br>";
+                st_print_r($this->aBackJoin, 3, $space);
+            }
+        }
 	}
 	function __clone()
 	{
@@ -203,8 +214,7 @@ class STBaseTable
 	    $__static_global_STBaseTable_ID++;
 	    $oldID= $this->ID;
 	    $this->ID= $__static_global_STBaseTable_ID;
-	    STCheck::echoDebug("table", "clone table ".$this->Name." from ID:$oldID to new ID:".$this->ID);
-	    
+	    	    
 	    $this->bInsert= true;
 	    $this->bUpdate= true;
 	    $this->bDelete= true;
@@ -214,6 +224,8 @@ class STBaseTable
 	     */
 	    $this->doTableSorting= true;
 	    $this->bShowName= true;
+	    $this->bLimitOwn= true;
+	    $this->bModifyFk= true;
 	    // alex 08/06/2005:	nun koennen Werte auch Statisch in der
 	    //					STDbTable gesetzt werden
 	    $this->aSetAlso= array();
@@ -235,7 +247,27 @@ class STBaseTable
 	    $this->aFks= &$main->aFks;
 	    $this->aBackJoin= &$main->aBackJoin;
 	    //---------------------------------------------------------------------------------
-	    
+	    STCheck::increase("table");
+	    if(STCheck::isDebug("table"))
+	    {
+    	    echo "<br /><br /><br /><br /><br />";
+    	    //showErrorTrace();
+    	    echo "<hr color='yellow' />";
+    	    STCheck::echoDebug("table", "clone STBaseTable::content from ID:[$oldID] to $this");
+	    }
+	}
+	public function __toString() : string
+	{
+	    return $this->toString();
+	}
+	public function toString(bool $htmlTags= true) : string
+	{
+	    $str= get_class($this)."(";
+	    if($htmlTags) $str.= "<b>";
+	    $str.= $this->Name;
+	    if($htmlTags) $str.= "</b>";
+	    $str.= "[".$this->ID."])";
+	    return $str;
 	}
 	function title($title)
 	{
@@ -269,7 +301,6 @@ class STBaseTable
 		$this->aFks= &$Table->aFks;
 		$this->aBackJoin= &$Table->aBackJoin;
 		//---------------------------------------------------------------------------------
-		$this->bModifyFk= $Table->bModifyFk;
     	$this->identification= $Table->identification;
     	$this->showTypes= $Table->showTypes;
 		$this->aActiveLink= $Table->aActiveLink;
@@ -278,7 +309,6 @@ class STBaseTable
     	$this->sPKColumn= $Table->sPKColumn;
 		$this->show= $Table->show;
     	$this->columns= $Table->columns;
-		$this->bLimitOwn= $Table->bLimitOwn;
 		$this->bDistinct= $Table->bDistinct;
 		$this->aSetAlso= $Table->aSetAlso;
 		$this->asForm=$Table->asForm;
@@ -597,9 +627,18 @@ class STBaseTable
 		}
 		return $customID;
 	}
-	public function limitByOwn(bool $bLimit)
+	public function allowQueryLimitationByOwn($bModify= true)
 	{
-		$this->bLimitOwn= $bLimit;
+	    if(STCheck::isDebug("db.statements.where"))
+	    {
+	        if($bModify)
+	            $msg= "enable ";
+	        else
+	            $msg= "disable ";
+	        $msg.= " own table ".$this->toString()." limitation";
+	        STCheck::echoDebug("db.statements.where", $msg);
+	    }
+	    $this->bLimitOwn= $bModify;
 	}
 	/**
 	 * use also limitation of table from an older container
@@ -607,6 +646,11 @@ class STBaseTable
 	 */
 	public function useLimitationBefore()
 	{// old function name was deleteLimitation()
+	    if(STCheck::isDebug("db.statements.where"))
+	    {
+	        $msg= "enable before limitation by own table ".$this->toString();
+	        STCheck::echoDebug("db.statements.where", $msg);
+	    }
 		$this->sDeleteLimitation= "true";
 	}
 	/**
@@ -615,10 +659,20 @@ class STBaseTable
 	 */
 	public function useNoLimitationBefore()
 	{// old function name was noLimitationDelete()
+	    if(STCheck::isDebug("db.statements.where"))
+	    {
+	        $msg= "disable before limitation by own table ".$this->toString();
+	        STCheck::echoDebug("db.statements.where", $msg);
+	    }
 		$this->sDeleteLimitation= "false";
 	}
 	public function deleteLimitationByOlder()
 	{
+	    if(STCheck::isDebug("db.statements.where"))
+	    {
+	        $msg= "allow only one limitation before by own table ".$this->toString();
+	        STCheck::echoDebug("db.statements.where", $msg);
+	    }
 	    echo "use limitation link set before<br>";
 		echo "depricated method never testet<br>";
 	    showErrorTrace();
@@ -910,7 +964,7 @@ class STBaseTable
 		else
 		{
 			$toTableName= $toTable;
-			$toTable= $this->container->getTable($toTableName);
+			$toTable= $this->getTable($toTableName);
 		}
 		// alex 26/04/2005:	where und otherColumn tauschen wenn n�tig
 		if(	typeof($otherColumn, "stdbwhere") ||
@@ -1475,7 +1529,7 @@ class STBaseTable
 				if($table===$this->Name)
 					$oTable= &$this;
 				else
-					$oTable= &$this->db->getTable($table);
+					$oTable= &$this->getTable($table);
 				STCheck::alert(!$oTable->validColumnContent($column), "STBaseTable::selectA()",
 											"column $column not exist in table ".$table.
 											"(".$oTable->getDisplayName().")");
@@ -1508,7 +1562,7 @@ class STBaseTable
 				            $msg= "column '$column' with alias '$alias' in table '$table' selected in two times";
 				        }else
 				            $msg= "two columns '$column' and '".$content["column"]."' will be select with one alias '$alias'";
-    					STCheck::is_warning(1, "STBaseTable::select()", $msg, 1);
+    					STCheck::is_warning(1, "STBaseTable::select()", $msg, 2);
     				}
     			}
 			}
@@ -2261,17 +2315,6 @@ class STBaseTable
 		{
 			$this->oWhere= null;
 		}
-		function allowQueryLimitation($bModify= true)
-		{
-			if($bModify)
-				$this->bModifyFk= true;
-			else
-				$this->bModifyFk= false;
-		}
-		function modify()
-		{
-			return $this->bModifyFk;
-		}
 		public function getWhere()
 		{
 			if(!isset($this->oWhere))
@@ -2292,7 +2335,7 @@ class STBaseTable
 			else
 				$this->oWhere= $stwhere;
 		}*/
-		function getName()
+		function getName() : string
 		{
 			return $this->Name;
 		}
@@ -2782,49 +2825,76 @@ class STBaseTable
 	    $this->linkA("dropdown", $this->Name, array("alias"=>$alias), "st_callbackFunction", null);
 		$this->joinCallback($callbackFunction, $aliasColumn);
 	}
-	function listCallback($callbackFunction, $columnName= null)
+	public function listCallback($callbackFunction, $alias= null)
 	{
-		$this->callbackA(STLIST, $columnName, $callbackFunction);
+	    if(STCheck::isDebug())
+	    {
+	        STCheck::param($callbackFunction, 0, "string");
+	        STCheck::param($alias, 1, "string", "empty(string)", "null");
+	    }
+	    
+	    $struct['action']= STLIST;
+	    $struct['function']= $callbackFunction;
+	    if( isset($alias) &&
+	        trim($alias) != ""   )
+	    {
+	        $struct['column']= $alias;
+	    }
+	    $this->callbackA($struct);
 	}
-	function insertCallback($callbackFunction, $columnName= null)
+	public function insertCallback($callbackFunction, $alias= null)
 	{
-		$this->callbackA(STINSERT, $columnName, $callbackFunction);
+	    if(STCheck::isDebug())
+	    {
+	        STCheck::param($callbackFunction, 0, "string");
+	        STCheck::param($alias, 1, "string", "empty(string)", "null");
+	    }
+	    
+	    $struct['action']= STINSERT;
+	    $struct['function']= $callbackFunction;
+	    if( isset($alias) &&
+	        trim($alias) != ""   )
+	    {
+	        $struct['column']= $alias;
+	    }
+	    $this->callbackA($struct);
 	}
-	function updateCallback($callbackFunction, $columnName= null)
+	public function updateCallback($callbackFunction, $alias= null)
 	{
 		$this->callbackA(STUPDATE, $columnName, $callbackFunction);
 	}
-	function indexCallback($callbackFunction)
+	public function indexCallback($callbackFunction)
 	{
 		$this->callbackA(STLIST, null, $callbackFunction);
 		//$this->aCallbacks["index"][]= $callbackFunction;
 	}
-	function deleteCallback($callbackFunction)
+	public function deleteCallback($callbackFunction)
 	{
 		$this->callbackA(STDELETE, null, $callbackFunction);
 	}
-	function joinCallback($callbackFunction, $columnName= null)
+	public function joinCallback($callbackFunction, $alias= null)
 	{
 		$this->callbackA("join", $columnName, $callbackFunction);
 	}
-    /*private*/function callbackA($action, $columnName, $callbackFunction)
+    protected function callbackA(array $struct)//$action, $columnName, $callbackFunction)
     {
-		if($columnName)
+		if(isset($struct['column']))
 		{
-			$field= $this->findAliasOrColumn($columnName);
-			if($action==STLIST)
-				$columnName= $field["alias"];
+		    $field= $this->findAliasOrColumn($struct['column']);
+		    if($struct['action']==STLIST)
+			    $column= $field["alias"];
 			else
-				$columnName= $field["column"];
+			    $column= $field["column"];
+		    $struct['column']= $column;
 		}else
-			$columnName= $action;
-    	Tag::alert(!function_exists($callbackFunction), "STBaseTable::callback()",
-    			"user defined function <b>$callbackFunction</b> does not exist<br />");
-    	if(!isset($this->aCallbacks[$columnName]))
-    		$this->aCallbacks[$columnName]= array();
-    	$this->aCallbacks[$columnName][]= array("action"=>$action, "function"=>$callbackFunction);
+		    $column= $struct['action'];
+		STCheck::alert(!function_exists($struct['function']), "STBaseTable::callback()",
+		    "user defined function <b>".$struct['function']."()</b> does not exist<br />", 2);
+		if(!isset($this->aCallbacks[$column]))
+		    $this->aCallbacks[$column]= array();
+	    $this->aCallbacks[$column][]= $struct;
     }
-	function clearCallbacks()
+    public function clearCallbacks()
 	{
 		$this->aCallbacks= array();
 	}
@@ -2844,23 +2914,7 @@ class STBaseTable
 			{
 				if($fromColumn==$columns["own"])
 				{
-					if($columns["table"])
-					{
-						if(typeof($columns["table"], "STDbTable"))
-						{
-							//echo __file__.__line__."<br>";
-							//echo "own database:     ".$this->container->getDatabaseName()."<br>";
-							//echo "foreign database: ".$columns["table"]->container->getDatabaseName()."<br>";
-							if($columns["table"]->container->db->getDatabaseName()!==$this->container->db->getDatabaseName())
-								$container= &STBaseContainer::getContainer($columns["table"]->container->getName());
-							else
-								$container= &$this->container;
-						}else
-							return $columns["table"];
-					}else
-						$container= &$this->container;
-
-					$table= &$container->getTable($table);
+					$table= &$this->getTable($table);
 					return $table;
 				}
 			}
@@ -2928,87 +2982,116 @@ class STBaseTable
 	}
 	function getForeignKeyModification()
 	{
-	    $stget= new STQueryString();
-	    $stget= $stget->getArrayVars();
-	    if(isset($stget["stget"]))
-	        $stget= $stget["stget"];
+	    $query= new STQueryString();
+	    $query= $query->getArrayVars();
+	    if(isset($query["stget"]['limit']))
+	        $query= $query["stget"]['limit'];
         else
-            $stget= array();
-            
+            $query= array();
+          
+         
         $aRv= array();
         $fks= $this->getForeignKeys();
         foreach($fks as $table=>$aFkFields)
         {
-            if(isset($stget[$table]))//[$aColumnType["other"]]
+            if(isset($query[$table]))//[$aColumnType["other"]]
                 $aRv[$table]= $aFkFields;
         }
         return $aRv;
 	}
-	function setForeignKeyModification()
+	public function modifyQueryLimitation()
 	{
-	    Tag::paramCheck($this, 1, "STDbTable");
+	    STCheck::paramCheck($this, 1, "STDbTable");
 	    
 	    $tableMsg= "";
 	    if(STCheck::isDebug())
 	    {
-            $tableMsg= "inside table ".get_class($this)."(<b>".$this->getName()."</b>)";
+            $tableMsg= "inside table ".$this->toString();
             $tableMsg.= " from container <b>".$this->container->getName()."</b>";
 	    }
 	    
-	    if(!$this->modify())
+	    $where= new STDbWhere();
+	    if($this->bModifyFk)
 	    {
-	        STCheck::echoDebug("db.statements.where", "do not need foreign Key modification $tableMsg");
-	        return;
-	    }
-	    STCheck::echoDebug("db.statements.where", "create <b>foreign Key</b> modification $tableMsg");
-	    
-        $where= new STDbWhere();
-        $fks= $this->getForeignKeyModification();
-        if(STCheck::isDebug("db.statements.where"))
-        {
-            STCheck::echoDebug("db.statements.where", "modify foreign Keys $tableMsg");
-            if(empty($fks))
+    	    STCheck::echoDebug("db.statements.where", "create <b>foreign Key</b> modification $tableMsg");
+    	    
+            $fks= $this->getForeignKeyModification();
+            if(STCheck::isDebug("db.statements.where"))
             {
-                $need= "but need no";
-                $end= "";
+                STCheck::echoDebug("db.statements.where", "modify foreign Keys $tableMsg");
+                if(empty($fks))
+                {
+                    $need= "but need no";
+                    $end= ", because no ";
+                    if(!empty($this->aFks))
+                        $end.= "important ";
+                    $end.= "foreign Keys exist";
+                }else
+                {
+                    $need= "need";
+                    $end= ":";
+                }
+                $nIntented= STCheck::echoDebug("db.statements.where", "$need foreign Keys from query$end");
+                if(!empty($fks))
+                    st_print_r($fks, 3, $nIntented);
+                elseif(!empty($this->aFks))
+                    st_print_r($this->aFks, 3, $nIntented);
+                echo "<br />";
+            }
+            $query= new STQueryString();
+            foreach($fks as $table=>$fields)
+            {
+                foreach($fields as $aColumnType)
+                {
+                    $limitation= $query->getLimitation($table);
+                    foreach($limitation as $column=>$value)
+                    {
+                        if($aColumnType["other"]==$column)
+                        {
+                            $clausel= $aColumnType["own"]."=";
+                            if(!is_numeric($value))
+                                $value= "'".$value."'";
+                            $clausel.= $value;
+                            
+                            $where->andWhere($clausel);
+                        }else
+                        {
+                            $clausel= $column."=";
+                            if(!is_numeric($value))
+                                $value= "'".$value."'";
+                            $clausel.= $value;
+                            $iWhere= new STDbWhere($clausel);
+                            $iWhere->table($table);
+                            $where->andWhere($iWhere);
+                        }
+                        Tag::echoDebug("db.statements.where", "set where $clausel from FK");
+                    }
+                }
+            }
+	    }
+	    if(STCheck::isDebug("db.statements.where"))
+	    {
+            $tableName= $this->getName();
+            $limitation= $query->getLimitation($tableName);
+            if( !$this->bLimitOwn ||
+                empty($limitation)  )
+            {
+                $need= "and need no";
+                if(!$this->bLimitOwn)
+                    $end= ", because not allowed from outside";
+                else
+                    $end= ", because no limitation inside query found";
             }else
             {
-                $need= "need";
+                $need= "and need";
                 $end= ":";
             }
-            $nIntented= STCheck::echoDebug("db.statements.where", "$need foreign Keys from query$end");
-            if(!empty($fks))
-                st_print_r($fks, 3, $nIntented);
-            echo "<br />";
-        }
-        $query= new STQueryString();
-        foreach($fks as $table=>$fields)
-        {
-            foreach($fields as $aColumnType)
+            $nIntented= STCheck::echoDebug("db.statements.where", "$need limitation for own table$end");
+            if( $this->bLimitOwn &&
+                !empty($limitation) )
             {
-                $limitation= $query->getLimitation($table);
-                foreach($limitation as $column=>$value)
-                {
-                    if($aColumnType["other"]==$column)
-                    {
-                        $clausel= $aColumnType["own"]."=";
-                        if(!is_numeric($value))
-                            $value= "'".$value."'";
-                        $clausel.= $value;
-                        
-                        $where->andWhere($clausel);
-                    }else
-                    {
-                        $clausel= $column."=";
-                        if(!is_numeric($value))
-                            $value.= "'".$value."'";
-                        $clausel.= $value;
-                        $iWhere= new STDbWhere($clausel);
-                        $iWhere->forTable($table);
-                        $where->andWhere($iWhere);
-                    }
-                    Tag::echoDebug("db.statements.where", "set where $clausel from FK");
-                }
+                st_print_r($limitation, 3, $nIntented);
+                echo "<br />";
             }
         }
         if($this->bLimitOwn)
@@ -3026,8 +3109,8 @@ class STBaseTable
                     {
                         if(!is_numeric($value))
                             $value= "'".$value."'";
-                            Tag::echoDebug("db.statements.where", "set where $column=$value for own table");
-                            $where->andWhere($column."=".$value);
+                        Tag::echoDebug("db.statements.where", "set where $column=$value for own table");
+                        $where->andWhere($column."=".$value);
                     }
                 }
             }
@@ -3039,10 +3122,6 @@ class STBaseTable
                 $where->andWhere($iWhere);
             $this->where($where);
         }
-        // because the table shouldn't modified by twice
-        // set bModifyFk to false
-        $this->allowQueryLimitation(false);
-        Tag::echoDebug("db.statements.where", "end of setForeignKeyModification for table ".$this->getName());
 	}
 	function addJoinLimitationByQuery(array $aAliasTables)
 	{
@@ -3078,14 +3157,24 @@ class STBaseTable
 	        }
 	        if(STCheck::isDebug())
 	        {
+	            if(STCheck::isDebug("db.statements.where"))
+	                $debugstr= "db.statements.where";
+	            else
+	                $debugstr= "db.statements.table";
 	            if($statement == "")
-	                STCheck::echoDebug("db.statements.table", "no limitation from query be set");
-	                else
-	                    STCheck::echoDebug("db.statements.table", "add limitation \"$statement\" from query");
+	                STCheck::echoDebug($debugstr, "no limitation from query be set (inside ".$this->toString().")");
+                else
+                    STCheck::echoDebug($debugstr, "add limitation \"$statement\" from query (inside ".$this->toString().")");
 	        }
-	    }else
-	        STCheck::echoDebug("db.statements.table", "do not add limitation from query -> not allowed");
-	        return $statement;
+	    }elseif(STCheck::isDebug())
+	    {
+	        if(STCheck::isDebug("db.statements.where"))
+	            $debugstr= "db.statements.where";
+            else
+                $debugstr= "db.statements.table";
+	        STCheck::echoDebug($debugstr, "do not add limitation from query -> not allowed (inside ".$this->toString().")");
+	    }
+        return $statement;
 	}
 	// alex 08/06/2005:	nun k�nnen Werte auch Statisch in der
 	//					STBaseTable gesetzt werden

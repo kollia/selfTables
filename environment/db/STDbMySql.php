@@ -66,7 +66,7 @@ class STDbMySql extends STDatabase
   			echo "<b>ERROR".$this->conn->connect_errno.": </b>".$this->conn->connect_error;
   			exit;
   		}
-		Tag::echoDebug("db.statement", "connect to MySql-database with user $user on host $host in db-container ".$this->getName());
+		Tag::echoDebug("db", "connect to MySql-database with user $user on host $host in db-container ".$this->getName());
   		$this->host= $host;
   		$this->user= $user;
 		$this->dbName= $database;

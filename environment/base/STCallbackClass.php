@@ -2,7 +2,8 @@
 
 class STCallbackClass
 {
-		var $tableName;
+		var $table;
+		var $container;
 		var	$db;
 		var	$sqlResult;
 		var $showType;
@@ -32,10 +33,11 @@ class STCallbackClass
 		 */
 		private $count= -1;
 
-		function __construct(&$container, $sqlResult)
+		public function __construct(STDbTable &$table, array $sqlResult)
 		{
-			$this->container= &$container;
-			$this->db= &$container->getDatabase();
+		    $this->table= &$table;
+			$this->container= &$table->container;
+			$this->db= &$this->container->getDatabase();
 			$this->sqlResult= &$sqlResult;
 			$this->clear();
 		}

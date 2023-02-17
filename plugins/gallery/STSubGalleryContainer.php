@@ -90,7 +90,7 @@ class STSubGalleryContainer extends STObjectContainer
 		$this->oGalleryTable= &$this->needTable("gallery");
 		//echo "exist gallery-tables";
 		//st_print_r($this->tables);
-		$this->oGalleryTable->limitByOwn(false);
+		$this->oGalleryTable->allowQueryLimitationByOwn(false);
 		$this->insertByMainListLink("stget[gallery]=new");
 		$this->deleteByContainerLink("stget[link][n]", "gallery");
 	}	
@@ -155,7 +155,7 @@ class STSubGalleryContainer extends STObjectContainer
 		{//Tag::debug("db.statement");
         	$selector= new OSTDbSelector($this->oGalleryTable);
 			$selector->where($pkName."=".$this->nAktOrderID);
-			//$selector->limitByOwn(true);
+			//$selector->allowQueryLimitationByOwn(true);
 			$selector->modifyForeignKey(false);
     		$selector->execute(MYSQL_ASSOC);
 			$selectorResult= $selector->getRowResult();
@@ -288,7 +288,7 @@ class STSubGalleryContainer extends STObjectContainer
     			$this->oGalleryTable->modifyForeignKey(false);
     			$this->oGalleryTable->where($parentName."=".$parentID);
     			$this->oGalleryTable->setMaxRowSelect(1);
-    			$this->oGalleryTable->LimitByOwn(false);//Tag::debug("db.statement");
+    			$this->oGalleryTable->allowQueryLimitationByOwn(false);//Tag::debug("db.statement");
     			$this->oGalleryTable->useNoLimitationBefore();
 				$this->oGalleryTable->listLayout(STVERTICAL);
 				$bASC= true;
@@ -326,7 +326,7 @@ class STSubGalleryContainer extends STObjectContainer
     				$this->oGalleryTable->setListCaption($this->bAdmin);
     			}
     			$this->oGalleryTable->modifyForeignKey(false);
-    			//$this->oGalleryTable->limitByOwn(false);
+    			//$this->oGalleryTable->allowQueryLimitationByOwn(false);
     			$this->oGalleryTable->useNoLimitationBefore();
 				$bASC= true;
 				if($selectorResult[$orderName]=="DESC")

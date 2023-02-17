@@ -482,8 +482,7 @@ class STDbWhere
 				$message= "make where clause for condition <b>$condition</b> in table";
 				if($bTableContainer)
 				    $message.= "-container";
-				$message.= " ".get_class($oTable)."(<b>".$oTable->getName()."</b>)";
-				$message.= " from container <b>".$oTable->container->getName()."</b>";
+				$message.= " ".$oTable->toString();
 				$amsg[]= $message;
 				$message= "";
 				if($oTable->modify())
@@ -509,6 +508,7 @@ class STDbWhere
 			        "where statement was written for this STDbWhere(<b>$forTableName</b>) object before, so do noting");
 			}
 			if( $bMakeStatement &&
+			    $condition == "on" && // if condition is 'where' can implement by all tables
 			    $currentTableName != $forTableName    )
 			{
 			    $bMakeStatement= false;

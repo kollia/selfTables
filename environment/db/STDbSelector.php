@@ -1,9 +1,10 @@
 <?php
 
+require_once($_stbasecontainer);
 require_once($_stdbtable);
 require_once($_stdbwhere);
 
-class STDbSelector extends STDbTable
+class STDbSelector extends STDbTable implements STContainerTempl
 {
 		var $selector= array();
 		//var $oMainTable= null;
@@ -48,31 +49,27 @@ class STDbSelector extends STDbTable
 			$this->onError= $onError;
 			//$db= &$oTable->getDatabase();
 			//$this->oMainTable= &$oTable;
-			STCheck::echoDebug("table", "copy ".get_class($oTable)."::".$oTable->getName()." into ".get_class($this)." from ID:".$oTable->ID);
 			$this->aoToTables[$oTable->getName()]= &$oTable;
 			STDbTable::__construct($oTable);
-			STCheck::echoDebug("table", "copy ".get_class($oTable)."::".$oTable->getName()." into ".get_class($this)." to ID:".$this->ID);
+			STCheck::echoDebug("table", "copy ".$oTable->toString()." into own ".$this->toString());
 		}
-		/*function getName()
+		function __clone()
 		{
-			if(count($this->table)==0)
-				return "";
-			return $this->table[0]["table"]->getName();
-		}*/
+		    STDbTable::__clone();
+		    STCheck::echoDebug("table", "clone STDbSelector::content ".$this->Name.":".$this->ID);
+		}
 		function add($table)
 		{
 			Tag::paramCheck($table, 1, "string", "STDbTable");
-			Tag::alert($this->bAddedFkTables, "OSTDbSelector::add()", "cannot add an new table, if bevore made ::select to an other");
+			Tag::alert($this->bAddedFkTables, "STDbSelector::add()", "cannot add an new table, if bevore made ::select to an other");
 
 			if(is_string($table))
 			{
 				$sTableName= $table;
-				$table= $this->db->getTable($sTableName);
+				$table= $this->getTable($sTableName);
 				//$table= new STDbTable($table, $this->db, $this->onError);
 			}else
 				$sTableName= $table->getName();
-			if(!typeof($table, "OSTDbSelector"))
-				$table= new STDbSelector($table);
 			$this->aoToTables[$sTableName]= &$table;
 			$this->bAddedTabels= true;
 			//$this->FK[$table->getName()]= array("own"=>$ownColumn, "other"=>$otherColumn, "join"=>$join);
@@ -80,26 +77,22 @@ class STDbSelector extends STDbTable
 		/*protected*/function addFKTables($dbName, &$aDone, $sFromTableName)
 		{
 			// if sFromTableName in array aDone,
-			// do not again
+		    // do not again
+		    echo __FILE__.__LINE__."<br>";
+		    echo "addFKTables($dbName, &";st_print_r($aDone, 1, false);echo ", $sFromTableName)<br>";
 			if(isset($aDone[$sFromTableName]))
 				return;
 			$aDone[$sFromTableName]= true;
 			if($this->Name==$sFromTableName)
 			{
 				$oTable= &$this;
-				$aktDb= &$this->db;
 			}else
 			{
-				if($dbName==$this->db->dbName)
-					$aktDb= &$this->db;
-				else
-					$aktDb= &STBaseContainer::getContainer($dbName);
 				$oTable= &$this->aoToTables[$sFromTableName];
 				if(!$oTable)
 				{
-					$oTable= $this->container->getTable($sFromTableName);
-					if(!typeof($oTable, "OSTDbSelector"))
-						$oTable= new OSTDbSelector($oTable);
+					$oTable= $this->getTable($sFromTableName);
+					$oTable->allowQueryLimitation($this->bModifyFk);
 					if($this->bClearSelects)
 						$oTable->clearIdentifColumns();
 					$this->aoToTables[$sFromTableName]= &$oTable;
@@ -121,14 +114,12 @@ class STDbSelector extends STDbTable
     						$container= $column["table"]->container;
     				}
     				if(!$container)
-    					$container= $this->container;
+    					$container= $this;
     				if(!$db)
     					$db= $this->container->getDatabase();
     				$fkTable= $container->getTable($tableName);
     				if($fkTable)
     				{
-    					if(!typeof($fkTable, "STDbSelector"))
-    						$fkTable= new STDbSelector($fkTable);
     					$this->aoToTables[$tableName]= $fkTable;
     					$this->addFKTables($db->dbName, $aDone, $tableName);
     				}
@@ -166,6 +157,29 @@ class STDbSelector extends STDbTable
 						return false;
 				return $oTable->isIdentifColumn($columnName, $aliasName);
 		}
+		public function getTableName(string $tableName= null)
+		{
+		    echo __FILE__.__LINE__."<br>";
+		    echo "need table name from ".$this->toString()." but get from ".$this->container->toString()."<br>";
+		    return $this->container->getTableName($tableName);
+		}
+		/**
+		 * whether table object exist 
+		 * inside parent container from which was pulled
+		 * this table
+		 *
+		 * @param string $tableName name of table
+		 * @return bool whether exist
+		 */
+		public function hasTable(string $tableName) : bool
+		{
+		    if(!isset($this->container))
+		    {
+		        STCheck::warning(1, "STDbSelector::hasTable()", "no container for this table ".$this->toString()." defined");
+		        return false;
+		    }
+		    return $this->container->hasTable($tableName);
+		}
 		/**
 		 * fetch table from database of given or current container<br />
 		 * and if table new, store a clone in own object
@@ -174,18 +188,20 @@ class STDbSelector extends STDbTable
 		 * @param string $sContainer container name from which table should fetched
 		 * @return object of table or null
 		 */
-		public function &getTable(string $sTableName, string $sContainer= null)
+		public function &getTable(string $sTableName= null, string $sContainer= null)
 		{
-			STCheck::param($sTableName, 0, "string");
-			STCheck::param($sContainer, 1, "string", "null");
-			
+			if( !isset($sTableName) ||
+			    trim($sTableName == "")  )
+			{
+			    $sTableName= $this->getTableName();
+			}
 			if( $sContainer != null &&
 			    $sContainer != $this->container->getName() )
 			{
 			    $container= &STBaseContainer::getContainer($sContainer);
 			}else
 			    $container= &$this->container;
-			$sTableName= $this->container->getTableName($sTableName);
+			$sTableName= $container->getTableName($sTableName);
 			if($this->Name==$sTableName)
 				return $this;
 			if(!isset($this->aoToTables[$sTableName]))
@@ -195,23 +211,48 @@ class STDbSelector extends STDbTable
 					and
 					!$this->bAddedTabels		)
 				{
-					$done= array();
-					$this->addFKTables($this->db->dbName, $done, $this->Name);
+					//$done= array();
+					//$this->addFKTables($this->db->dbName, $done, $this->Name);
 					$this->bAddedFkTables= true;
 
 					if(isset($this->aoToTables[$sTableName]))
 					   $oTable= &$this->aoToTables[$sTableName];
 				}
 				if(!$oTable)
-					$oTable= clone $container->getTable($sTableName);
+				{
+				    $getTable= $container->getTable($sTableName);
+				    $oTable= clone $getTable;
+				    $oTable->container= &$this;
+				    if(STCheck::isDebug())
+				    {
+				        $msg= array();
+				        $msg[]= "new not exist table $oTable filled with own container";
+				        $msg[]= "    was cloned from $getTable";
+				        STCheck::echoDebug("table", $msg);
+				        STCheck::warning(!isset($oTable), "STDbSelector::getTable()", 
+				            "table $sTableName do not exist inside container ".$container->getName());
+				    }
+				}
 				if($oTable)
+				{
+				    $oTable->container= $this;
+				    $oTable->allowQueryLimitation($this->bModifyFk);
 					$this->aoToTables[$sTableName]= &$oTable;
-				else
+				}else
 					unset($this->aoToTables[$sTableName]);
 			}else
 			    $oTable= &$this->aoToTables[$sTableName];
 			// alex 24/05/2005:	f�r aoToTables als Key den Namen eingef�hrt
 			return $oTable;
+		}
+		public function allowQueryLimitation($bModify= true)
+		{
+		    foreach($this->aoToTables as $table)
+		    {
+		        if($table->Name != $this->Name)
+		            $table->allowQueryLimitation($bModify);
+		    }
+		    STDbTable::allowQueryLimitation($bModify);
 		}
 		public function andWhere($table, $where= null)
 		{
@@ -269,22 +310,29 @@ class STDbSelector extends STDbTable
     			STCheck::param($operator, 2, "string", "empty(string)");
 		    }
 		    
+		    if( !isset($where) ||
+		        (   is_string($where) &&
+		            (   $where == "" ||
+		                $where == "and" ||
+		                $where == "or"    )   )   )
+		    {// $table should be the where statement
+		        if(!isset($where))
+		            $operator= "";
+		        else
+		            $operator= $where;
+		        
+		        $where= $table;
+		        STDbTable::where($where, $operator);
+		        return;
+		    }
+		    
 		    if( is_string($table) )
 		    {
 		        $sTable= $this->container->getTableName($table);
-		        if($this->db->hasTable($sTable))
-		        {// first string should be a table and second the where statement
-		            $table= $this->getTable($sTable);
-		        }else
-		        {
-		            // first string should be the where statement
-		            STCheck::warning( (   $where != "and" &&
-		                $where != "or"      ), "STDbSelector::where()",
-		                "second parameter can only be a string of 'and' or 'or'", 1   );
-		            if(!isset($where))
-		                $where= "";
-		            STDbTable::where($table, $where);
-		        }
+		        STCheck::alert(!$this->db->isDbTable($sTable), "STDbSelector::where()",
+		            "table '$sTable' first parameter, do not exist inside database", 1);
+		        $table= $this->getTable($sTable);
+		        
 		    }elseif(typeof($table, "STDbWhere"))
 		    {
 		        STCheck::warning( (   isset($where) &&
@@ -298,18 +346,6 @@ class STDbSelector extends STDbTable
                 //st_print_r($table);st_print_r($where);
                 STDbTable::where($table, $where);
                 return;
-		    }
-		    
-		    if( !isset($where) ||
-		        (   is_string($where) &&
-		            (   $where == "" ||
-		                $where == "and" ||
-		                $where == "or"    )   )   )
-		    {// $table should be the where statement
-		        $operator= $where;
-		        $where= $table;
-		        STDbTable::where($where, $operator);
-		        return;
 		    }
 		    
             $where= new STDbWhere($where);
@@ -353,9 +389,6 @@ class STDbSelector extends STDbTable
 			if(is_string($oTable))
 				$oTable= &$this->getTable($oTable);
 			$bInnerJoin= false;
-			if(!typeof($oTable, "OSTDbSelector"))
-				$oTable= new STDbSelector($oTable);
-			//$this->aoToTables[]= &$oTable;
 			STDbTable::foreignKeyObj($columnName, $oTable, $otherColumn);
 		}
 		public function orderBy($tableName, $column= true, $bASC= true)
@@ -376,6 +409,7 @@ class STDbSelector extends STDbTable
 				STCheck::param($column, 1, "string", "empty(string)");
 				STCheck::param($alias, 2, "string", "bool", "null");
 				STCheck::param($nextLine, 3, "bool");
+				STCheck::param($nextLine, 4, "bool");
 				STCheck::echoDebug("selector", $this->Name.": select column $column($alias) for table $tableName");
 			}
 			$desc= STDbTableDescriptions::instance($this->db->getDatabaseName());
@@ -386,7 +420,7 @@ class STDbSelector extends STDbTable
 				if($tableName===$this->Name)
 					$oTable= &$this;
 				else
-					$oTable= &$this->db->getTable($tableName);
+					$oTable= &$this->getTable($tableName);
 				STCheck::alert(!$oTable->validColumnContent($column), "STBaseTable::selectA()",
 											"column $column not exist in table ".$tableName.
 											"(".$oTable->getDisplayName().")");
@@ -397,45 +431,17 @@ class STDbSelector extends STDbTable
 			//$tableName= $this->container->getTableName($tableName);
 			if(is_bool($alias))
 			{
-			 $nextLine= $alias;
-			 $alias= null;
+                $nextLine= $alias;
+                $alias= null;
 			}
 			if(!$alias)
 			    $alias= $orgColumn;
-			//$table= &$this->getTable($tableName);
-			//Tag::alert($table==null, "OSTDBSelector::select", "tablename ".$tableName." not given in database");
-			/*if($table===null)
-			{
-			    $table= $this->container->getTable($tableName);
-					$this->add($table);
-			}*/
-
+			
 			$select= array(	"type"=>	"select",
 			    "column"=>	$orgColumn,
 							"alias"=>	$alias,
 							"next"=>	$nextLine	);
 			$this->aNewSelects[$tableName][]= $select;
-			/*if($tableName!=$this->Name)
-			{
-				//return;
-
-				// makes all this next code in function execute
-				$this->bAddedFkTables= true;
-				$bSelected= false;
-				foreach($this->aFks as $fkTableName=>$fk)
-				{
-					if($fkTableName==$tableName)
-					{
-						if(!$this->isSelect($this->Name, $fk["own"], $fk["own"]))
-							$this->selectA($this->Name, $fk["own"], $fk["own"], $nextLine);
-						$this->newIdentifColumn($fkTableName, $column, $alias);
-						$this->aoToTables[$tableName]= $table;
-						$bSelected= true;
-					}
-				}
-				STCheck::is_warning(!$bSelected, "OSTDBSelector::select", "found no foreign key from table ".$this->Name." to table $tableName");
-				return;
-			}*/
 			if(!$this->bClearedByFirstSelect)
 			{
 				$this->clearSelects();

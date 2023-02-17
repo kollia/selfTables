@@ -236,16 +236,15 @@ abstract class STDatabase extends STObjectContainer
 	{
 		return $this->bHasTables;
 	}
-	function hasTable($tableName)
+	public function isDbTable(string $tableName) : bool
 	{
-	    if(STObjectContainer::hasTable($tableName))
-	        return true;
         if($this->name === $this->db->getName())
         {
             $tableName= $this->getTableName($tableName);
             if(in_array($tableName, $this->asExistTableNames))
                 return true;
-        }
+        }else
+            return $this->db->isDbTable($tableName);
         return false;
 	}
 	function setTimeFormat($sFormat)
@@ -1485,7 +1484,7 @@ abstract class STDatabase extends STObjectContainer
 	        {
 	            if(	!isset($this->aTableStructure[STALLDEF]["in"][$tableName])
 	                and
-	                $this->hasTable($tableName)								)
+	                $this->isDbTable($tableName)								)
 	            {// if an new table founded in tableName list
 	                // search for all tables again
 	                $bSearch= true;
@@ -1497,13 +1496,13 @@ abstract class STDatabase extends STObjectContainer
 	            return false;
 	    }
 	}
-	function getTableStructure($container, $bFromAll= false)
+	function getTableStructure(STContainerTempl $container, bool $bFromAll= true)
 	{
-		Tag::paramCheck($container, 1, "STObjectContainer");
-		Tag::paramCheck($bFromAll, 2, "bool");
-
-		if(!$this->newUnsearchedTables($bFromAll))
+	    if( isset($this->aTableStructure["struct"]) &&
+	        !$this->newUnsearchedTables($bFromAll)     )
+		{
 		    return $this->aTableStructure["struct"];
+		}
 		$this->aTableStructure[STALLDEF]["fromAll"]= $bFromAll;
 		$aHaveFks= array();
 		
@@ -1574,6 +1573,19 @@ abstract class STDatabase extends STObjectContainer
 	private function createBackJoins($tableStructure)
 	{
 	    if(is_array($tableStructure))
+	    {
+	        if(STCheck::isDebug())
+	        {
+	            if(STCheck::isDebug("db.table.fk"))
+	                $classification= "db.table.fk";
+	            else
+	                $classification= "table";
+	            if(STCheck::isDebug($classification))
+	            {
+	                $space= STCheck::echoDebug($classification, "structure of given foreigen key tables:");
+	                st_print_r($tableStructure, 20, $space);
+	            }
+	        }
     	    foreach ($tableStructure as $toTableName=>$fks)
     	    {
     	        if(is_array($fks))
@@ -1588,6 +1600,7 @@ abstract class STDatabase extends STObjectContainer
         	        $this->createBackJoins($fks);
     	        }
     	    }
+	    }
 	}
 	private function searchTableStructure($fromTableName, $rootTableName, $aHaveFks)
 	{
@@ -1724,6 +1737,10 @@ abstract class STDatabase extends STObjectContainer
 	}
 	/**
 	 * returning an single array with an tablename which reach all other tables from $aNeededTables
+	 * 
+	 * @param STObjectContainer $container
+	 * @param array $aNeededTables
+	 * @return array
 	 */
 	function getFirstSelectTableNames($container, $aNeededTables)
 	{
@@ -2004,12 +2021,12 @@ abstract class STDatabase extends STObjectContainer
     		STCheck::param($withAlias, 2, "bool", "null");
     	
     		$msg= "create sql statement from table ";
-    		$msg.= get_class($oTable)."(<b>".$oTable->Name."</b>[".$oTable->ID."])";
+    		$msg.= $oTable->toString();
     		$msg.= " inside container <b>".$oTable->container->getName()."</b>";
     		STCheck::echoDebug("db.statements", $msg);
 	    }
     
-		$oTable->setForeignKeyModification();
+		$oTable->modifyQueryLimitation();
 		$aliasTables= array();
 		//STCheck::write("search for aliases");
 		$aliasTables= $this->getAliasOrder();
@@ -2293,10 +2310,7 @@ abstract class STDatabase extends STObjectContainer
 		if(STCheck::isDebug())
 		{
 		    $msg= "get table \"$tableName\" from DB <b>".$this->getName()."</b> as original table <b>$orgTableName</b>";
-    		if(STCheck::isDebug("table"))
-    		    STCheck::echoDebug("table", $msg);
-		    else
-		        STCheck::echoDebug("db.statements.table", $msg);     
+    		STCheck::echoDebug("db.statements.table", $msg);     
 		}
 		$table= new STDbTable($orgTableName, $this);
 		$desc= &STDbTableDescriptions::instance($this->getDatabaseName());
@@ -2318,7 +2332,7 @@ abstract class STDatabase extends STObjectContainer
 			if(!$table)
 				STCheck::echoDebug("table", "table ".$orgTableName." not exist in database");
 			else
-			    STCheck::echoDebug("table", "return table:".get_class($table)." <b>$orgTableName</b> with ID:".$table->ID);
+			    STCheck::echoDebug("table", "created table:".$table->toString());
 		}
 		return $table;
 	}

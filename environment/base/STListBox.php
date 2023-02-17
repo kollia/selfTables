@@ -286,13 +286,13 @@ class STListBox extends STBaseBox
 			// to generate new the where clausel
 			if(isset($this->asDBTable->aCallbacks[STLIST]))
 			{
-				$callbackClass= new STCallbackClass($this->tableContainer, $this->sqlResult);
+			    $callbackClass= new STCallbackClass($this->asDBTable, $this->sqlResult);
 				$callbackClass->indexTable= &$this->oIndexTable;
 				$callbackClass->before= true;
 				$anTable= &$this->getTable();
 				//modify forign key to see in the callback-function
 				// and also to can set the hole where clausel after in the table
-				$anTable->setForeignKeyModification();
+				$anTable->modifyQueryLimitation();
 				$this->where= $anTable->oWhere;
 				//$this->asDBTable->modifyForeignKey(false);
 				//$callbackClass->where= $oTable->oWhere;
@@ -1061,7 +1061,7 @@ class STListBox extends STBaseBox
 
 
 			$Rows= &$this->SqlResult;
-			$CallbackClass= new STCallbackClass($this->tableContainer, $Rows);
+			$CallbackClass= new STCallbackClass($this->asDBTable, $Rows);
 			$CallbackClass->before= false;
 			$CallbackClass->nDisplayColumns= $this->asDBTable->nDisplayColumns;
 			$CallbackClass->arrangement= $this->arrangement;
@@ -1874,14 +1874,14 @@ class STListBox extends STBaseBox
 				    // check whether user want to insert also some value with STBaseTable::preSelect()
 				    // and also have to be exist some values from where statement
 				    $joinTableName= $this->asDBTable->aNnTableColumn['fks']['join']['table'];
-				    $this->asDBTable->setForeignKeyModification();
+				    $this->asDBTable->modifyQueryLimitation();
 				    $joinWhere= $this->asDBTable->getWhere();
 				    $nnTableName= $this->asDBTable->aNnTableColumn['table'];
-				    $useTable->setForeignKeyModification();
+				    $useTable->modifyQueryLimitation();
 				    $nnWhere= $useTable->getWhere();
 				    $fixTableName= $this->asDBTable->aNnTableColumn['fks']['fix']['table'];
 				    $fixTable= $this->asDBTable->getTable($fixTableName);
-				    $fixTable->setForeignKeyModification();
+				    $fixTable->modifyQueryLimitation();
 				    $fixWhere= $fixTable->getWhere();
 				    $fks= $useTable->getForeignKeys();
 					foreach($useTable->columns as $columnContent)

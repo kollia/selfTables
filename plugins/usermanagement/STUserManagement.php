@@ -120,7 +120,8 @@ class STUserManagement extends STObjectContainer
 		    $user->select("NrLogin", "logged in");
 		    $user->select("LastLogin", "last login");
 		    
-		    $groups->select("ID", "access to CLUSTERs", "descriptionCallback");
+		    $groups->select("ID", "access to CLUSTERs");
+		    $groups->listCallback("descriptionCallback", "ID");
 		    $groups->orderBy("domain");
 		    $groups->orderBy("Name");
 		    $groups->setMaxRowSelect(50);

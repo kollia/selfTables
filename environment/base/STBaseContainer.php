@@ -2,7 +2,38 @@
 
 require_once($php_html_description);
 
-class STBaseContainer extends BodyTag
+interface STContainerTempl
+{
+    /**
+     * name of container
+     * @return string name of container
+     */
+    public function getName() : string;
+    /**
+     * return actual table name, or correct table name in database (pre-definition from STDbTableDescriptions is allowed)
+     * 
+     * @param string $name name of the table or null if want to know the current actual table
+     * @return string name of table
+     */
+    public function getTableName(string $name= null);
+    /**
+     * return table object if exist
+     * 
+     * @param string $sTableName name of table, if not given method return current table
+     * @param string $sContainer name of container, if not given table should come from current container
+     * @param STBaseTable|null table object or null if not exist
+     */
+    public function &getTable(string $sTableName= null, string $sContainer= null);
+    /**
+     * whether table object exist inside container
+     *
+     * @param string $tableName name of table
+     * @return bool whether exist
+     */
+    public function hasTable(string $tableName) : bool;
+}
+
+class STBaseContainer extends BodyTag implements STContainerTempl
 {
     var $language= "en";
 	var $bFirstContainer= false; // ob der Container der erste fuer STDbSiteCreator ist
@@ -694,7 +725,7 @@ class STBaseContainer extends BodyTag
 	{
 		return $this->sParentContainer;
 	}*/
-	function getName()
+	function getName() : string
 	{
 		return $this->name;
 	}
@@ -1404,45 +1435,57 @@ class STBaseContainer extends BodyTag
 		STCheck::echoDebug("containerChoice", " ");
 
 
-			// f�ge die buttons geordnet in die Tabelle
-    		$table= new TableTag();
-    			$table->width("100%");
-			foreach($containerButtons as $button)
-			{
-    			$tr= new RowTag();
-    				$td= new ColumnTag(TD);
-    					$td->align("right");
-    					$td->add($button);
-    				$tr->add($td);
-    			$table->add($tr);
-			}
-			if(	!$bNeededBackButton &&
-				$sBackButtonContainerName &&
-				isset($backButton)				)
-			{
-    			$tr= new RowTag();
-    				$td= new ColumnTag(TD);
-    					$td->align("right");
-    					$td->add($backButton);
-    				$tr->add($td);
-    			$table->add($tr);
-				$this->aContainer[$sBackButtonContainerName]= STBaseContainer::getContainer($sBackButtonContainerName);
-			}
-			$divTag->addObj($table);
+		// f�ge die buttons geordnet in die Tabelle
+		$table= new TableTag();
+			$table->width("100%");
+		foreach($containerButtons as $button)
+		{
+			$tr= new RowTag();
+				$td= new ColumnTag(TD);
+					$td->align("right");
+					$td->add($button);
+				$tr->add($td);
+			$table->add($tr);
+		}
+		if(	!$bNeededBackButton &&
+			$sBackButtonContainerName &&
+			isset($backButton)				)
+		{
+			$tr= new RowTag();
+				$td= new ColumnTag(TD);
+					$td->align("right");
+					$td->add($backButton);
+				$tr->add($td);
+			$table->add($tr);
+			$this->aContainer[$sBackButtonContainerName]= STBaseContainer::getContainer($sBackButtonContainerName);
+		}
+		$divTag->addObj($table);
 
-			$this->aBehindHeadLineButtons= array_merge(	$this->oExternSideCreator->aBehindHeadLineButtons,
-														$this->aBehindHeadLineButtons);
-			$anz= count($this->aBehindHeadLineButtons);
-			if($anz)
+		$this->aBehindHeadLineButtons= array_merge(	$this->oExternSideCreator->aBehindHeadLineButtons,
+													$this->aBehindHeadLineButtons);
+		$anz= count($this->aBehindHeadLineButtons);
+		if($anz)
+		{
+			for($n= 0; $n<$anz; $n++)
 			{
-				for($n= 0; $n<$anz; $n++)
-				{
-					$tag= &$this->aBehindHeadLineButtons[$n];
-					$divTag->addObj($tag);
-				}
+				$tag= &$this->aBehindHeadLineButtons[$n];
+				$divTag->addObj($tag);
 			}
 		}
-	function &getTable()
+	}
+	/**
+	 * whether table object exist inside container
+	 *
+	 * @param string $tableName name of table
+	 * @return bool whether exist
+	 */
+	public function hasTable(string $tableName) : bool
+	{
+	    // dummy function for STSiteCreator
+	    // this container STBaseContainer contains no table
+	    return false;
+	}
+	public function &getTable(string $sTableName= null, string $sContainer= null)
 	{
 		$Rv= null;
 		// dummy function for STSiteCreator
@@ -1461,7 +1504,7 @@ class STBaseContainer extends BodyTag
 		// this container STBaseContainer contains no table
 		return null;
 	}
-	function getTableName()
+	function getTableName(string $name= null)
 	{
 		// dummy function for STSessionSiteCreator
 		// this container STBaseContainer contains no table

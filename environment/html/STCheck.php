@@ -2,7 +2,6 @@
 
 require_once($_stquerystring);
 
-$member_tag_def= false;
 /**
 * when file cannot open, display error message only
 * on first time
@@ -27,11 +26,11 @@ $global_outputBufferWasErased= false;
 /**
  * definition of explicit creation of statements
  * for "db.statement" debug output
- * @var integer $__stdbtables_statement_count
+ * @var array $__stdbtables_statement_count
  */
-$__stdbtables_statement_count= 0;
-$__stdbtables_statement_count_from= -1;
-$__stdbtables_statement_count_to= -1;
+$__stdbtables_statement_count= array( 'db.statement'=>0, 'table'=>0 );
+$__stdbtables_statement_count_from= array();
+$__stdbtables_statement_count_to= array();
 
 class STCheck
 {
@@ -180,9 +179,22 @@ class STCheck
 			if($time> $_st_page_starttime_)
 				$_st_page_starttime_= $time;
 		}
+		static function info($trigger, $functionName, $message, $outFunc= 0)
+		{
+		    /**
+		     * see for compatibility STCheck::is_error()
+		     */
+		    if(!STCheck::isDebug())
+		    {
+		        if($trigger)
+		            return true;
+		        return false;
+		    }
+		    return STCheck::error_message("Info", $trigger, $functionName, $message, $outFunc+1);
+		}
 		static function warning($trigger, $functionName, $message, $outFunc= 0)
 		{
-			STCheck::is_warning($trigger, $functionName, $message, $outFunc+1);
+			return STCheck::is_warning($trigger, $functionName, $message, $outFunc+1);
 		}
 		static function is_warning($trigger, $functionName, $message, $outFunc= 0)
 		{
@@ -405,26 +417,32 @@ class STCheck
 					$global_logfile_dataname,
 					$global_activeOutputBuffer,
 					$global_outputBufferWasErased,
+					$__stdbtables_statement_count,
 					$__stdbtables_statement_count_from,
 					$__stdbtables_statement_count_to;
 			
-			if( (   !is_string($boolean) ||
-					    $boolean != "db.statement"   ) &&
-			        isset($from)                             )
+			if( isset($from) )
 			{
-			    STCheck::debug(true);
-			    $msg= "if first parameter is not \"db.statement\" second and third parameter";
-			    $msg.= " ('\$from' and '\$to') are not allowed";
-			    STCheck::warning(1, "STCheck::debug()", $msg, 1);
-			    echo "<br />";
-			}else
-			{
-    			if(isset($from))
-    			    $__stdbtables_statement_count_from= $from;
-    			if(isset($to))
-    			    $__stdbtables_statement_count_to= $to;
+			    $filter= STCheck::array_key_filter($boolean);
+			    if( !is_string($boolean) ||
+			        $filter == ""            )
+    			{
+    			    STCheck::debug(true);
+    			    $msg= "if first parameter not contain as prefix (\"";
+    			    $msg.= implode("\", \"", array_keys($__stdbtables_statement_count));
+    			    $msg.= "\") second and third parameter";
+    			    $msg.= " ( \$from and \$to ) are not allowed";
+    			    STCheck::warning(1, "STCheck::debug()", $msg, 1);
+    			    echo "<br />";
+    			}else
+    			{
+    			    $__stdbtables_statement_count_from[$filter]= $from;
+        			if(isset($to))
+        			    $__stdbtables_statement_count_to[$filter]= $to;
+    			}
 			}
-			if($boolean !== false)
+			if( is_string($boolean) ||
+			    $boolean !== false       )
 			{
 			    global_debug_definition(true);
 			    if( $global_activeOutputBuffer == false &&
@@ -436,8 +454,8 @@ class STCheck
 			}else
 			{
 			    global_debug_definition(false);
-			    $__stdbtables_statement_count_from= -1;
-			    $__stdbtables_statement_count_to= -1;
+			    $__stdbtables_statement_count_from= array();
+			    $__stdbtables_statement_count_to= array();
 			}
 			if(	!$HTML_CLASS_DEBUG_CONTENT
 				and
@@ -523,14 +541,48 @@ class STCheck
 				echo "<br />\n";
 				$HTML_CLASS_DEBUG_CONTENT_PRINT_QUERY= true;
 			}
+		}		
+		private static function array_key_filter(string $inClassFunction) : string
+		{
+		    global $__stdbtables_statement_count;
+
+		    foreach($__stdbtables_statement_count as $type=>$nr)
+		    {
+		        if(preg_match("/^$type/", $inClassFunction))
+		            return $type;
+		    }
+		    return "";
+		}
+		/**
+         * increase the debugging inClassFunction string.<br />
+         * <b>WARNING:</b> do not set increasing inside any
+         * if-sentence of <code>if( STChek::isDebug() )</code>
+         * (this will not always reach the increasing!!)<br />
+         * (the inclassFunction string has also be defined inside $__stdbtables_statement_count)
+         * 
+         * @param string $inClassFunction definition for all debugging strings which should output on screen
+         * @return number of increasing
+		 */
+		public static function increase(string $inClassFunction) : int
+		{
+		    global $HTML_CLASS_DEBUG_CONTENT,
+		           $__stdbtables_statement_count;
+		    
+            if(!STCheck::warning(!isset($__stdbtables_statement_count[$inClassFunction]),
+                    "STCheck::incfrease()", "cannot increase [$inClassFunction] debugging", 1))
+            {
+                $__stdbtables_statement_count[$inClassFunction]++;
+                return $__stdbtables_statement_count[$inClassFunction];
+            }
+            return 0;
 		}
 		public static function isDebug($inClassFunction= null)
 		{
 			global $HTML_CLASS_DEBUG_CONTENT,
 			       $HTML_CLASS_DEBUG_CONTENT_CLASS_FUNCTION,
-			       $__stdbtables_statement_count,
 			       $__stdbtables_statement_count_from,
-			       $__stdbtables_statement_count_to;
+			       $__stdbtables_statement_count_to,
+			       $__stdbtables_statement_count;
 
 			if(!$HTML_CLASS_DEBUG_CONTENT)
 				return false;
@@ -538,11 +590,12 @@ class STCheck
 			{
 			    if($HTML_CLASS_DEBUG_CONTENT_CLASS_FUNCTION != "")
 			    {
-			        if( substr($inClassFunction, 0, 12) == "db.statement" &&
-			            (   (   $__stdbtables_statement_count_from > 0 &&
-			                    $__stdbtables_statement_count < $__stdbtables_statement_count_from  ) ||
-			                (   $__stdbtables_statement_count_to > 0 &&
-			                    $__stdbtables_statement_count > $__stdbtables_statement_count_to   )    )   )
+			        $isType= STCheck::array_key_filter($inClassFunction);
+			        if( $isType !== "" &&
+			            (   (   isset($__stdbtables_statement_count_from[$isType]) &&
+			                    $__stdbtables_statement_count[$isType] < $__stdbtables_statement_count_from[$isType]  ) ||
+			                (   isset($__stdbtables_statement_count_to[$isType]) &&
+			                    $__stdbtables_statement_count[$isType] > $__stdbtables_statement_count_to[$isType]   )    )   )
 			        {
 			            //echo "count ";st_print_r($__stdbtables_statement_count);
 			            //echo " from:";st_print_r($__stdbtables_statement_count_from);

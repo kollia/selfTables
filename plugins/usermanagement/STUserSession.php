@@ -685,7 +685,7 @@ class STUserSession extends STDbSession
   			$project->select("Project", "ID");
   			$project->select("Project", "Name");
   			$project->select("Project", "Path");
-  			$project->limitByOwn(false);
+  			$project->allowQueryLimitationByOwn(false);
 			$where= new STDbWhere();
 			if(is_numeric($ProjectName))
 				$where->andWhere("ID=".$ProjectName);

@@ -41,6 +41,16 @@ class STDbTable extends STBaseTable
 			$tableName= $desc->getTableName($Table);
 			$this->onError= $onError;
 		}
+		if(isset($container))
+		{
+		    if(is_string($container))
+		        $this->container= &STBaseContainer::getContainer($container);
+	        else
+	            $this->container= $container;            
+		}else
+		    $this->container= &$Table->container;
+		
+		STBaseTable::__construct($Table);
 		if(Tag::isDebug())
 		{
 			Tag::alert(	!$container
@@ -61,17 +71,7 @@ class STDbTable extends STBaseTable
 		if(typeof($Table, "STBaseTable"))
 		{
 		    $this->copy($Table);
-		}//else
-		STBaseTable::__construct($Table);
-		if($container)
-		{
-			if(is_string($container))
-				$containerName= $container;
-			else
-				$containerName= $container->getName();
-			$this->container= &STBaseContainer::getContainer($containerName);
-		}else
-			$this->container= &$Table->container;
+		}
 		$this->db= &$this->container->getDatabase();
 		if(typeof($Table, "STBaseTable"))
 		{
@@ -114,6 +114,12 @@ class STDbTable extends STBaseTable
       		}
 		}
     }
+    public function __clone()
+    {
+        STBaseTable::__clone();
+        STCheck::echoDebug("table", "clone STDbTable::content ".$this->Name.":".$this->ID);
+        unset($this->container);
+    }
 	function copy($oTable)
 	{
 		STCheck::param($oTable, 0, "STDbTable");
@@ -132,6 +138,25 @@ class STDbTable extends STBaseTable
 		$this->sAcessClusterColumn= $oTable->sAcessClusterColumn;
 		$this->password= $oTable->password;
 		$this->aStatement= $oTable->aStatement;
+	}
+	public function toString(bool $htmlTags= true) : string
+	{
+	    $str= "";
+	    if(!typeof($this, "STDbSelector"))
+	    {
+	        if(isset($this->container))
+    	        $str= get_class($this->container);
+	        else
+	            $str= "\"noDef-container\"";
+	        $str.= "(";
+    	    if($htmlTags) $str.= "<b>";
+    	    if(isset($this->container))
+    	        $str.= $this->container->getName();
+    	    if($htmlTags) $str.= "</b>";
+    	    $str.= ")->";
+	    }
+	    $str.= STBaseTable::toString();
+	    return $str;
 	}
 	public function getColumnName($column)
 	{
@@ -462,10 +487,7 @@ class STDbTable extends STBaseTable
 	 * @return NULL
 	 */
 	public function &getTable(string $sTableName, string $sContainer= null)
-	{
-	    STCheck::param($sTableName, 0, "string");
-	    STCheck::param($sContainer, 1, "string", "null");
-	    
+	{   
 	    if( $sContainer != null &&
 	        $sContainer != $this->container->getName() )
 	    {
@@ -603,16 +625,14 @@ class STDbTable extends STBaseTable
 	}
 	public function getStatement(bool $bFromIdentifications= false, bool $withAlias= null)
 	{
+	    $nr= STCheck::increase("db.statement");
 	    if(STCheck::isDebug())
 	    {
-	        global $__stdbtables_statement_count;
-	        
-	        $__stdbtables_statement_count++;
 	        if(STCheck::isDebug("db.statement"))
 	        {
-    	        echo "<br />";
-    	        echo "<hr />";
-    	        STCheck::echoDebug("db.statement", "create $__stdbtables_statement_count. statement for table ".$this->Name);
+    	        echo "<br /><br />";
+    	        echo "<hr color='black'/>";
+    	        STCheck::echoDebug("db.statement", "create $nr. statement for table ".$this->toString());
     	        echo "<hr />";
 	        }
 	    }
@@ -632,6 +652,7 @@ class STDbTable extends STBaseTable
 	    {
 	        $space= STCheck::echoDebug("db.statements", "stored full statement:");
 	        st_print_r($this->aStatement, 2, $space);
+	        echo "<hr />";
 	    }
 	    return $statement;
 	}
@@ -1058,19 +1079,23 @@ class STDbTable extends STBaseTable
     			 // wird sie doch f�r den join ben�tigt
     			 	$bNeedColumn= true;
     			}
-    			if(Tag::isDebug("db.statements.table"))
+    			if(STCheck::isDebug("db.statements"))
     			{
+    			    if(STCheck::isDebug("db.statements.table"))
+    			        $debugtype= "db.statements.table";
+    			    else
+    			        $debugtype= "db.statements.where";
     				if($bNeedColumn===false)
     				{
     					$debugString= "do not need foreign key from column ".$join["own"]." to table ".$table." for statement";
-    					Tag::echoDebug("db.statements.table", $debugString);
+    					STCheck::echoDebug("db.statements.table", $debugString);
     					if(isset($maked[$table]))
-    						Tag::echoDebug("db.statements.table", "join was inserted before");
+    					    STCheck::echoDebug("db.statements.table", "join was inserted before");
     				}elseif(!isset($aTableAlias[$table]))
-    					Tag::echoDebug("db.statements.table", "no such table $table for column ".$join["own"]." in createt Alias-Array");
+    				    STCheck::echoDebug("db.statements.table", "no such table $table for column ".$join["own"]." in createt Alias-Array");
     				else
     				{
-    					Tag::echoDebug("db.statements.table", "need foreign key from column ".$join["own"]." to table ".$table.
+    				    STCheck::echoDebug("db.statements.table", "need foreign key from column ".$join["own"]." to table ".$table.
     												" for select statement from container ".$oTable->container->getName());
     				}
     			}
@@ -1112,22 +1137,32 @@ class STDbTable extends STBaseTable
     					Tag::echoDebug("db.statements.table", "make ".$joinArt." join to table ".$database.$table.
     												" with alias-name ".$sTableAlias);
     				}
+    				$where= $ownTableAlias.".".$join["own"];
+    				$where.= "=".$sTableAlias.".".$join["other"];
       				$statement.= " join ".$database.$table." as ".$sTableAlias;
-      				$statement.= " on ".$ownTableAlias.".".$join["own"];
-      				$statement.= "=".$sTableAlias.".".$join["other"];
-      				if(Tag::isDebug())
+      				$statement.= " on ".$where;
+      				if(STCheck::isDebug())
       				{
-      				    Tag::echoDebug("db.statements.table", "make ".$joinArt." join to table ".$database.$table.
+      				    STCheck::echoDebug("db.statements.table", "make ".$joinArt." join to table ".$database.$table.
       				        " with alias-name ".$sTableAlias);
+      				    STCheck::echoDebug("db.statements.where", "add foreign in on-clause \"$where\"");
       				}
-      				$fromTable= $join["table"];// if the table comes from an other DB, table exist in $join from foreach of $oTable->FK
-    				if(	$fromTable->container->db->getName() == $oMainTable->container->db->getName() &&
-    					$fromTable->container->getName() != $oMainTable->container->getName()			)
-    				{// take the correct table from container
-    					$fromTable= $oMainTable->container->getTable($fromTable->getName());
-    				}
-    				if(!$fromTable)// otherwise it should select from the current container(-table)
-    					$fromTable= $oTable->getTable($table);	
+      				
+      				if(0)
+      				{
+          				$fromTable= $join["table"];// if the table comes from an other DB, table exist in $join from foreach of $oTable->FK
+        				if(	$fromTable->container->db->getName() == $oMainTable->container->db->getName() &&
+        					$fromTable->container->getName() != $oMainTable->container->getName()			)
+        				{// take the correct table from container
+        				    $fromOwnTable= $oMainTable->getTable($join['table']->Name);    				    
+        					$fromTable= $oMainTable->container->getTable($fromTable->getName());
+        					echo __FILE__.__LINE__."<br>";
+        					echo "own getTable: ".$fromOwnTable->toString()." but use ".$fromTable->toString()."<br>";
+        				}
+        				if(!$fromTable)// otherwise it should select from the current container(-table)
+        				    $fromTable= $oTable->getTable($join['table']->Name);
+      				}else
+      				    $fromTable= $oTable->getTable($join['table']->Name);
     			    $statement.= $fromTable->addJoinLimitationByQuery($aTableAlias);
     				$whereStatement= $fromTable->getWhereStatement("on", $fromTable, $aTableAlias);
     				if($whereStatement)
@@ -1205,7 +1240,7 @@ class STDbTable extends STBaseTable
 				STCheck::is_warning(!$join, "STDatabase::getStatement()", "no foreign key be set from backward table $sBackTableName to table $this->Name");
     			if($join)
     			{
-    			    $oBackTable= $oMainTable->getTable($sBackTableName);
+    			    $oBackTable= $oTable->getTable($sBackTableName);
     				if($dbName!==$ownDatabaseName)
     					$database= $dbName.".";
 					$joinArt= $join["join"];
@@ -1269,7 +1304,7 @@ class STDbTable extends STBaseTable
 		            else
 		                $found= array();
 		        }else
-		            $found= $this->searchInTableStructure($reach, $aTableAlias);
+		            $found= $this->db->searchInTableStructure($reach, $aTableAlias);
 		        if(count($found))
 		        {
     		        $space= STCheck::echoDebug("db.statements.table", "found follow structure from table <b>$table</b>");
@@ -1482,6 +1517,7 @@ class STDbTable extends STBaseTable
 	        $amsg[]= $blanc;
 	        $amsg[]= $msg;
 	        $amsg[]= $blanc;
+	        echo "<br />";
 	        STCheck::echoDebug("db.statements.where", $amsg);
 	        $space= STCheck::echoDebug("db.statements.where", "for given aliases:");
 	        st_print_r($aliases, 1, $space);
@@ -1551,6 +1587,40 @@ class STDbTable extends STBaseTable
 	    if($condition == "where")	        
 	        $this->aStatement['where']= $statement;
 	    return $statement;
+	}
+	/**
+     * allow modification by every table has an limit in the query string
+     * or an foreign key table limit points to own table with also limitation from query
+     * 
+     * @param bool $bModify whether should modification enabled or disabled (default:enable[true])
+	 */
+	public function allowQueryLimitation($bModify= true)
+	{
+        if(STCheck::isDebug("db.statements.where"))
+        {
+            if($bModify)
+                $do= "allow";
+            else
+                $do= "disable";
+            $do.= " query limitation inside ".$this->toString();
+            STCheck::echoDebug("db.statements.where", $do);
+            STCheck::info(1, "STDbTable::allowQueryLimitation()", $do, 2);
+        }
+        $this->bModifyFk= $bModify;
+        $this->allowQueryLimitationByOwn($bModify);
+	}
+	public function allowFkQueryLimitation($bModify= true)
+	{
+	    $this->bModifyFk= $bModify;
+	}
+	public function modify()
+	{
+	    if( $this->bModifyFk ||
+	        $this->bLimitOwn   )
+	    {
+	        return true;
+	    }
+	    return false;
 	}
 	public function where($stwhere, $operator= "")
 	{

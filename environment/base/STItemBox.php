@@ -345,7 +345,7 @@ class STItemBox extends STBaseBox
 		{
 			foreach($joinArray as $name=>$join)
 			{
-				$oCallbackClass= new STCallbackClass($this->tableContainer, $join);
+			    $oCallbackClass= new STCallbackClass($this->asDBTable, $join);
 				$oCallbackClass->sqlResult= $post;
 				$oCallbackClass->joinResult= $joinArray[$name];
 				//echo $name;st_print_r($this->aDisabled);echo "<br />";
@@ -601,13 +601,13 @@ class STItemBox extends STBaseBox
 			//$post["STBoxes_action"]= "before";
 
 		}
-		$oCallbackClass= new STCallbackClass($this->tableContainer, $post);
+		$oCallbackClass= new STCallbackClass($this->asDBTable, $post);
 		$oCallbackClass->before= true;
 		$oCallbackClass->rownum= 0;
 		$oCallbackClass->sqlResult= $post;
 		if($this->asDBTable)
 		{
-		    $this->asDBTable->setForeignKeyModification();
+		    $this->asDBTable->modifyQueryLimitation();
 			$oCallbackClass->where= $this->asDBTable->getWhere();
 		}else
 			$oCallbackClass->where= $this->where;
@@ -1583,7 +1583,7 @@ class STItemBox extends STBaseBox
 				
 		$message= $this->msg->getAktualMessageId();
 
-		$oCallbackClass= new STCallbackClass($this->tableContainer, $this->getChangedResult());
+		$oCallbackClass= new STCallbackClass($this->asDBTable, $this->getChangedResult());
 		$oCallbackClass->before= false;
 		$oCallbackClass->rownum= 0;
 		$oCallbackClass->MessageId= $message;
@@ -1793,13 +1793,13 @@ class STItemBox extends STBaseBox
 				$bError= true;
 				
 			// alle callbacks welche vom Anwender gesetzt wurden durchlaufen
-			$oCallbackClass= new STCallbackClass($this->tableContainer, $post);
+			$oCallbackClass= new STCallbackClass($this->asDBTable, $post);
 			$oCallbackClass->before= true;
 			$oCallbackClass->rownum= 0;
 			$oCallbackClass->MessageId= "PREPARE";
 			if($this->asDBTable)
 			{
-			    $this->asDBTable->setForeignKeyModification();
+			    $this->asDBTable->modifyQueryLimitation();
 				$oCallbackClass->where= $this->asDBTable->getWhere();
 			}
 			$sErrorString= $this->makeCallback($this->action, $oCallbackClass, $this->action, 0);
@@ -2577,14 +2577,13 @@ class STItemBox extends STBaseBox
 			$table->where($this->where);
 			$table->clearSelects();
 			$table->clearFKs();
-			$table->limitByOwn(true);
-			$table->allowQueryLimitation(true);
+			//$table->allowQueryLimitation(true);
 			//st_print_r($table->oWhere);
-			$table->setForeignKeyModification();
+			$table->modifyQueryLimitation();
 			$statement= $this->db->getStatement($table);
 			$this->db->query($statement, $this->getOnError("SQL"));
 			$result= $this->db->fetch_row(MYSQL_ASSOC, $this->getOnError("SQL"));
-			$oCallbackClass= new STCallbackClass($this->tableContainer, $result);
+			$oCallbackClass= new STCallbackClass($this->asDBTable, $result);
 			$oCallbackClass->before= true;
 			$oCallbackClass->MessageId= "PREPARE";
 			$sErrorString= $this->makeCallback(STDELETE, $oCallbackClass, STDELETE, 0);

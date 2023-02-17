@@ -163,25 +163,29 @@ class STObjectContainer extends STBaseContainer
             $gettable= $this->getTable($orgTableName);
             if(isset($gettable))
             {
-                $this->tables[$sTableName]= clone($gettable);
+                $this->tables[$sTableName]= $gettable;
                 $table= &$this->tables[$sTableName];
                 $table->abNewChoice= array();
                 $table->bSelect= false;
                 $table->bTypes= false;
                 $table->bIdentifColumns= false;
-                $this->table[$sTableName]= &$table;
+                //$this->table[$sTableName]= &$table;
             }
         }
         return $table;
 	}
-	function &getTable($tableName= null)//, $bAllByNone= true)
+	public function &getTable(string $tableName= null, string $sContainer= null)
 	{
-		STCheck::paramCheck($tableName, 1, "string", "empty(string)", "null");
-		//Tag::paramCheck($bAllByNone, 2, "bool");
-
 		$nParams= func_num_args();
-		Tag::lastParam(1, $nParams);
-
+		STCheck::lastParam(2, $nParams);
+		
+		if( $sContainer != null &&
+		    $sContainer != $this->name )
+		{
+		    $container= &STBaseContainer::getContainer($sContainer);
+		    return $container->getTable($tableName);
+		}else
+		    $container= &$this;
 		// method needs initialization properties
 		// only if he is not initializised
 		// and not in the create or initialize phase
@@ -198,7 +202,7 @@ class STObjectContainer extends STBaseContainer
 		// check first right name of table
 		if($tableName==null)
 		{
-		    $tableName= $this->getTableName();
+		    $orgTableName= $tableName= $container->getTableName();
 		}
 		if(!$tableName)
 		{
@@ -210,7 +214,8 @@ class STObjectContainer extends STBaseContainer
 			return $Rv;
 		}
 
-		$orgTableName= $this->getTableName($tableName);
+		if(!isset($orgTableName))
+		  $orgTableName= $container->getTableName($tableName);
     	if($orgTableName)
     	    $tableName= $orgTableName;
 		else
@@ -239,7 +244,8 @@ class STObjectContainer extends STBaseContainer
 		    if(STCheck::isDebug("table"))
 		    {
     		    $space= STCheck::echoDebug("table", "get in <b>evidence</b> holded table <b>$tableName</b> from container <b>".$this->getName()."</b>");
-    		    st_print_r($this->oGetTables, 1, $space);
+    		    //st_print_r($this->oGetTables, 1, $space);
+    		    //showErrorTrace();
 		    }
 		    $table= &$this->oGetTables[$tableName];
 		    
@@ -248,30 +254,45 @@ class STObjectContainer extends STBaseContainer
 		{	// alex 24/05/2005:	// alex 17/05/2005:	die Tabelle wird von der �berschriebenen Funktion
 			//					getTable() aus dem Datenbank-Objekt geholt.
 		    //					nat�rlich wird die Tabelle kopiert, da sie wom�glich noch ge�ndert wird
+		    $oldTable= $this->parentContainer->getTable($orgTableName);
 		    Tag::echoDebug("table", "clone table <b>$tableName</b> from parent container <b>".$this->parentContainer->getName()."</b>");
-			$table= clone $this->parentContainer->getTable($orgTableName);//, $bAllByNone);
-			if(isset($table))
+			$table= clone $oldTable;
+			STCheck::alert(!isset($table), "STObjectContainer::getTable()", "cannot clone $oldTable");
+			
+			$table->abNewChoice= array();
+			$table->bSelect= false;
+			$table->bTypes= false;
+			$table->bIdentifColumns= false;
+			unset($table->container);
+			$table->container= $this;
+			$this->oGetTables[$tableName]= &$table;
+			if(STCheck::isDebug())
 			{
-				$table->abNewChoice= array();
-				$table->bSelect= false;
-				$table->bTypes= false;
-				$table->bIdentifColumns= false;
-				unset($table->container);
-				$table->container= $this;
-				$this->oGetTables[$tableName]= &$table;
+			    $msg= array();
+			    $msg[]= "new not exist table $table filled with own container";
+			    $msg[]= "    was cloned from $oldTable";
+			    STCheck::echoDebug("table", $msg);
+			    STCheck::warning(!isset($table), "STDbSelector::getTable()",
+			        "table ".$table->getName()." do not exist inside container ".$container->getName());
 			}
 		}else
 		{
-		    Tag::echoDebug("table", "create table <b>$tableName</b> inside database container <b>".$this->getName()."</b>");
 		    $table= &$this->createTable($orgTableName);
 		    $this->oGetTables[$tableName]= &$table;
 		}
 		
 		return $table;
 	}
+	/**
+	 * create unknown table if container not from STDatabase
+	 * 
+	 * @param string $tableName name of table which is not used
+	 * @return STBaseTable table object
+	 */
 	function &createTable($tableName)
 	{
-	    $table= new STBaseTable();
+	    $table= new STBaseTable($tableName);	    
+	    Tag::echoDebug("table", "created dummy table ".$table->toString()." inside database container <b>".$this->getName()."</b>");
 	    return $table;
 	}
 	function &getTables($onError= onErrorStop)
@@ -337,26 +358,35 @@ class STObjectContainer extends STBaseContainer
 			$this->sFirstAction= $action;
 		$this->actions[$tableName]= $action;
 	}
-	function hasTable($tableName)
+	/**
+	 * whether table object exist inside container
+	 *
+	 * @param string $tableName name of table
+	 * @return bool whether exist
+	 */
+	public function hasTable(string $tableName) : bool
 	{
-		// method needs initialization properties
-		// to know which tables are defined
-		$this->createContainer();
-		
-		$tableName= strtolower($this->getTableName($tableName));
-		if(isset($this->oGetTables[$tableName]))
-		    return true;
-		if(   isset($this->parentContainer) &&
-		      $this->name !== $this->parentContainer->getName()   )
-		{
-		    return $this->parentContainer->hasTable();
-		}
-		return false;
+	    // method needs initialization properties
+	    // to know which tables are defined
+	    $this->createContainer();
+	    
+	    $tableName= strtolower($this->getTableName($tableName));
+	    if(isset($this->oGetTables[$tableName]))
+	        return true;
+	    return false;
 	}
-	function getTableName($tableName= null)
+	/**
+	 * whether table exist inside database
+	 *
+	 * @param string $tableName name of table
+	 * @return bool whether exist
+	 */
+	public function isDbTable(string $tableName) : bool
 	{
-		STCheck::param($tableName, 0, "string", "null");
-
+		return $this->db->isDbTable($tableName);
+	}
+	function getTableName(string $tableName= null)
+	{
 		$bStdTab= false;
 		if($tableName === null)
 		{
@@ -1160,7 +1190,7 @@ class STObjectContainer extends STBaseContainer
 			{
 				$box->table($table);
 				$this->setAllMessagesContent(STUPDATE, $box);
-				$table->setForeignKeyModification();
+				$table->modifyQueryLimitation();
 				//st_print_r($table->oWhere);
 				//$whereStatement= $this->db->getWhereStatement($table, "t1");
 				//echo "statement ".$whereStatement."<br />";
