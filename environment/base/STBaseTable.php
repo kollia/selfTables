@@ -1080,14 +1080,12 @@ class STBaseTable
 	{
 	    STCheck::paramCheck($bASC, 2, "bool");
 	    
+	    $field= $this->findAliasOrColumn($column);
+	    $column= $field["column"];
 	    $this->orderByI($this->getName(), $column, $bASC);
 	}
 	protected function orderByI(string $tableName, string $column, bool $bASC)
 	{
-	    $tableName= $this->container->getTableName($tableName);
-	    $field= $this->findAliasOrColumn($column);
-	    $column= $field["column"];
-	    
 	    if( !isset($this->abNewChoice["order"]) ||
 	        $this->abNewChoice["order"] == true    )
 	    {

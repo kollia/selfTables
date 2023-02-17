@@ -397,8 +397,19 @@ class STDbSelector extends STDbTable implements STContainerTempl
 		    {// method is as normaly table orderBy
 		        $bASC= $column;
 		        $column= $tableName;
-		        $tableName= $this->getName();
+		        STDbTable::orderBy($column, $bASC);
+		        return;
 		    }
+		    
+		    $tableName= $this->container->getTableName($tableName);
+		    if($tableName == $this->Name)
+		    {
+		        STDbTable::orderBy($column, $bASC);
+		        return;
+		    }
+		    $table= $this->getTable($tableName);
+		    $field= $table->findAliasOrColumn($column);
+		    $column= $field['column'];
 		    STDbTable::orderByI($tableName, $column, $bASC);
 		}
 		function select(string $tableName, $column= "", $alias= null, $nextLine= true, $add= false)

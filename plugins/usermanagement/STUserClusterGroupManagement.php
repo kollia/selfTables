@@ -123,8 +123,10 @@ class STUserClusterGroupManagement extends STObjectContainer
 	    $group->select("Group", "ID", "Permissions");
 	    $group->listCallback("permissionCallback", "Permissions");
 	    $group->select("UserGroup", "DateCreation", "member since");
-	    //$group->orderBy("AccessDomain", "Name");
-	    //$group->orderBy("Group", "Name");
+	    echo __FILE__.__LINE__."<br>";
+	    $group->orderBy("AccessDomain", "Name");
+	    echo __FILE__.__LINE__."<br>";
+	    $group->orderBy("Group", "Name");
 	    $group->setMaxRowSelect(20);
 	    $group->noJoinOver("Log");
 	    $group->joinOver("ClusterGroup");
