@@ -1159,7 +1159,7 @@ class STBaseTable
 		$statement= substr($statement, 0, strlen($statement)-1);
 		$tableName= $this->getName();
 		$query= new STQueryString();
-		$queryArr= $query->getArrayVars();
+		$queryArr= $query->getArrayVars();		
 		if(isset($queryArr["stget"]["sort"][$tableName]))
 		{
 			$query_statement= "";
@@ -1167,10 +1167,13 @@ class STBaseTable
 			{
 				//preg_match("/^([^_]+)_(ASC|DESC)$/i", $column, $inherit);
 			    preg_match("/^(.+)_(ASC|DESC)$/i", $column, $inherit);
-				$field= $this->searchByAlias($inherit[1]);
+			    $field= $this->searchByAlias($inherit[1]);
 				if( isset($field["column"]) )
 				{
-				    $query_statement.= $field["column"]." ".$inherit[2].",";
+				    $aliasTable= "";
+				    if(count($aTableAlias) > 1)
+				        $aliasTable= $aTableAlias[$field['table']].".";
+				    $query_statement.= $aliasTable.$field["column"]." ".$inherit[2].",";
 				}elseif(STCheck::isDebug())
 				{
 				    if( isset($queryArr["stget"]["action"]) &&
@@ -1186,7 +1189,11 @@ class STBaseTable
 				}
 			}
 			if(strlen($query_statement) > 0)
-			   $statement= substr($query_statement, 0, strlen($query_statement)-1);
+			    $query_statement= substr($query_statement, 0, strlen($query_statement)-1);
+			if($statement != "")
+			    $statement= $query_statement.",".$statement;
+			else
+			    $statement= $query_statement;
 		}
 		return $statement;
 	}
@@ -1719,10 +1726,12 @@ class STBaseTable
 					$field["alias"] == $aliasName	)
 				{
 					$aRv= $field;
-					$aRv["table"]= $this->Name;
+					// 17/02/2023 alex
+					// table should always from original
+					//$aRv["table"]= $this->Name;
 					$aRv["type"]= "alias";
 					$aRv["get"]= "select";
-					$aRv["alias"]= $field["alias"];
+					//$aRv["alias"]= $field["alias"];
 					return $aRv;
 				}
 			}
@@ -1731,11 +1740,13 @@ class STBaseTable
     			if( isset($column["alias"]) &&
     				$column["alias"] == $aliasName	)
     			{
-					$aRv= $column;
-					$aRv["table"]= $this->Name;
+    			    $aRv= $column;
+    			    // 17/02/2023 alex
+    			    // table should always from original
+    			    //$aRv["table"]= $this->Name;
 					$aRv["type"]= "alias";
     				$aRv["get"]= "identif";
-					$aRv["alias"]= $column["alias"];
+					//$aRv["alias"]= $column["alias"];
 					//st_print_r($aRv);
     				return $aRv;
     			}
