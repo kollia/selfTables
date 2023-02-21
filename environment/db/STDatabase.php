@@ -1251,7 +1251,7 @@ abstract class STDatabase extends STObjectContainer
 	{
 		return $this->error;
 	}
-	private function searchInTableStructure(array $structure, array $needTables)
+	public function searchInTableStructure(array $structure, array $needTables)
 	{	    
 	    $aRv= array();
 	    foreach($structure as $table => $reach)
@@ -2012,16 +2012,19 @@ abstract class STDatabase extends STObjectContainer
 	        $nr= "t".$nr;
 	    return $this->aAliases;
 	}
-	function getStatement($oTable, $bFromIdentifications= false, $withAlias= null)
+	function getStatement(STDbTable $oTable, bool $bFromIdentifications= false, bool $withAlias= null)
 	{
 	    if(STCheck::isDebug())
 	    {
     		STCheck::param($oTable, 0, "STDbTable");
     		STCheck::param($bFromIdentifications, 1, "bool");
     		STCheck::param($withAlias, 2, "bool", "null");
-    	
+
     		$msg= "create sql statement from table ";
     		$msg.= $oTable->toString();
+    		echo __FILE__.__LINE__."<br>";
+    		st_print_r($oTable, 0);
+    		st_print_r($oTable->container, 0);
     		$msg.= " inside container <b>".$oTable->container->getName()."</b>";
     		STCheck::echoDebug("db.statements", $msg);
 	    }
