@@ -2121,6 +2121,7 @@ class STBaseTable
 		function clearSelects()
 		{
 		    $this->abNewChoice["select"]= true;
+		    $this->show= array();
 		}
 		function clearNoFkSelects()
 		{
