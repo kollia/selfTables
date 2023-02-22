@@ -2022,9 +2022,6 @@ abstract class STDatabase extends STObjectContainer
 
     		$msg= "create sql statement from table ";
     		$msg.= $oTable->toString();
-    		echo __FILE__.__LINE__."<br>";
-    		st_print_r($oTable, 0);
-    		st_print_r($oTable->container, 0);
     		$msg.= " inside container <b>".$oTable->container->getName()."</b>";
     		STCheck::echoDebug("db.statements", $msg);
 	    }
