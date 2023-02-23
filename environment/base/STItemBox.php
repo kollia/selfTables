@@ -1586,7 +1586,7 @@ class STItemBox extends STBaseBox
 				
 		$message= $this->msg->getAktualMessageId();
 
-		$oCallbackClass= new STCallbackClass($this->asDBTable, $this->getChangedResult());
+		$oCallbackClass= new STCallbackClass($this->asDBTable, $this->aResult);
 		$oCallbackClass->before= false;
 		$oCallbackClass->rownum= 0;
 		$oCallbackClass->MessageId= $message;
@@ -1659,63 +1659,57 @@ class STItemBox extends STBaseBox
 		$query= new STQueryString();
 		$get= $query->getArrayVars();
 
-		if(!$this->asDBTable)
+		$aSetAlso= $this->asDBTable->aSetAlso;
+		// alex 03/08/2005:	setze zus�tzlich alle Felder
+		//					welche von den Get-Parameter hereinkommen
+		//					und mit den Foreign Keys �bereinstimmen
+		//					aber noch nicht gesetzt sind,
+		//					sowie der Foreign Key muss ein inner Join sein
+		if($this->action==STINSERT)
 		{
-			$table= reset($this->asTable);
-		}else
-		{
-			$aSetAlso= $this->asDBTable->aSetAlso;
-			// alex 03/08/2005:	setze zus�tzlich alle Felder
-			//					welche von den Get-Parameter hereinkommen
-			//					und mit den Foreign Keys �bereinstimmen
-			//					aber noch nicht gesetzt sind,
-			//					sowie der Foreign Key muss ein inner Join sein
-			if($this->action==STINSERT)
+			if(!is_array($aSetAlso))
+				$aSetAlso= array();
+			$fks= $this->asDBTable->getForeignKeyModification();
+			foreach($fks as $table=>$fields)
 			{
-				if(!is_array($aSetAlso))
-					$aSetAlso= array();
-				$fks= $this->asDBTable->getForeignKeyModification();
-				foreach($fks as $table=>$fields)
-				{
-				    foreach($fields as $column)
-				    {
-    					if(	!isset($aSetAlso[$column["own"]][STINSERT])
-    						and
-    						!isset($aSetAlso[$column["own"]]["All"])
-    						and
-    						$column["join"]=="inner"
-    						and
-    						!$this->asDBTable->isSelect($column["own"])	)
-    					{
-    						if(!isset($aSetAlso[$column["own"]]))
-    							$aSetAlso[$column["own"]]= array();
-    						$aSetAlso[$column["own"]][STINSERT]= $get["stget"][$table][$column["other"]];
-    					}
-				    }
-				}
-			}
-
-			// alex 07/06/2005: setAlso aus dem STBaseTable �bernehmen
-			if(is_array($aSetAlso))
-				foreach($aSetAlso as $column=>$content)
-				{
-					foreach($content as $action=>$value)
+			    foreach($fields as $column)
+			    {
+					if(	!isset($aSetAlso[$column["own"]][STINSERT])
+						and
+						!isset($aSetAlso[$column["own"]]["All"])
+						and
+						$column["join"]=="inner"
+						and
+						!$this->asDBTable->isSelect($column["own"])	)
 					{
-						// alex 01/09/2005:	action kann auch "All" sein
-						//					wenn das setAlso in der Tabelle
-						//					f�r alle Aktionen gesetzt wurde
-						if(	(	$action==$this->action
-								or
-								$action=="All"			) &&								
-							!isset($this->aSetAlso[$column])		)
-						{
-							$this->aSetAlso[$column]= $value;
-						}
+						if(!isset($aSetAlso[$column["own"]]))
+							$aSetAlso[$column["own"]]= array();
+						$aSetAlso[$column["own"]][STINSERT]= $get["stget"][$table][$column["other"]];
+					}
+			    }
+			}
+		}
+
+		// alex 07/06/2005: setAlso aus dem STBaseTable �bernehmen
+		if(is_array($aSetAlso))
+			foreach($aSetAlso as $column=>$content)
+			{
+				foreach($content as $action=>$value)
+				{
+					// alex 01/09/2005:	action kann auch "All" sein
+					//					wenn das setAlso in der Tabelle
+					//					f�r alle Aktionen gesetzt wurde
+					if(	(	$action==$this->action
+							or
+							$action=="All"			) &&								
+						!isset($this->aSetAlso[$column])		)
+					{
+						$this->aSetAlso[$column]= $value;
 					}
 				}
-			///////////////////////////////////////////////////////////////
-			$table= $this->asDBTable->getName();
-		}
+			}
+		///////////////////////////////////////////////////////////////
+		$table= $this->asDBTable->getName();
 
 		/*st_print_r($this->asDBTable->columns,5);
 		if($HTTP_POST_VARS)
@@ -1928,6 +1922,7 @@ class STItemBox extends STBaseBox
 				$statement= null;
             	if($this->action==STINSERT)
 				{
+				    $db_case= new STDbInserter($this->asDBTable);
 					if(isset($this->asDBTable))
 					{
 						if(	!$bError
@@ -1948,19 +1943,19 @@ class STItemBox extends STBaseBox
 					}
             	}else
 				{
-            		$statement= $this->db->getUpdateStatement($table, $where, $post);
-					if(!$statement)
-					{
-						$this->msg->setMessageId("NOUPDATE");
-						$bError= true;
-					}
+				    $changedValues= $this->getChangedResult($post);
+				    $db_case= new STDbUpdater($this->asDBTable);
+				    foreach($changedValues as $column => $value)
+				        $db_case->update($column, $value);
 				}
 
 				if(!$bError)
 				{
-					if(!$this->db->fetch($statement, $this->getOnError("SQL")))
-            		{
-            			$this->setSqlError(null);
+				    $res= $db_case->execute($this->getOnError("SQL"));
+					if($res != 0)
+					{
+					    $this->msg->setMessageId("NOUPDATE");
+            			$this->setSqlError($res);
             			$bError= true;
 					}
             	}
@@ -2001,44 +1996,22 @@ class STItemBox extends STBaseBox
         return !$bError;
 
 	}
-		function getOldResult($column= null)
+		function getChangedResult(array $post_vars) : array
 		{
-			if($column)
-			{
-				if(isset($this->sqlResult[$column]))
-					return $this->sqlResult[$column];
-				return null;
-			}	
+		    $result= array();
 			if(isset($this->sqlResult))
-				return $this->sqlResult;
-			return null;
-		}
-		function getChangeResult($column= null)
-		{
-			if($column)
 			{
-				if(isset($this->aResult[$column]))
-					return $this->aResult[$column];
-				return null;
+			    foreach ($this->sqlResult as $column => $content)
+			    {
+			        if( array_key_exists($column, $post_vars) &&
+			            $post_vars[$column] !== $content         )
+			        {
+			            $result[$column]= $post_vars[$column];
+			        }
+			    }
 			}
-			if(isset($this->aResult))
-				return $this->aResult;
-			return null;
-		}
-		function getChangedResult($column= null)
-		{
-			if(isset($this->sqlResult))
-				$result= $this->sqlResult;
-			if(isset($this->aResult))
-			{
-				foreach ($this->aResult as $column => $content)
-					$result[$column]= $content;
-			}
-			if(isset($result))
-				return $result;
-			return null;
-		}
-			
+			return $result;
+		}			
 		function getLastInsertID()
 		{
 			return $this->lastInsertID;
@@ -2227,6 +2200,8 @@ class STItemBox extends STBaseBox
 			    echo "inncomming post variable: <b>(\$post)</b><br />" ;
 			    st_print_r($post, 5, 10);
 			}
+			echo __FILE__.__LINE__."<br>";
+			echo "set sql result<br>";
 			$this->sqlResult= $result;
 			$this->setSqlError($result);
 			$newFields= array();

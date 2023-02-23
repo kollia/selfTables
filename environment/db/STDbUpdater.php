@@ -1,13 +1,9 @@
 <?php
 
+require_once($_stdbsqlcases);
 
-class STDbUpdater
+class STDbUpdater extends STDbSqlCases
 {
-    /**
-     * current database table
-     * @var STDbTable table
-     */
-	var	$table;
 	/**
 	 * updating content of columns
 	 * for more than one row
@@ -27,15 +23,10 @@ class STDbUpdater
 	//var $wheres= array();
 	/**
 	 * exist sql statement
-	 * @var string array
+	 * @var string arraytableName
 	 */
 	private $statements= array();
 	
-	function __construct(&$oTable)
-	{
-	    Tag::paramCheck($oTable, 1, "STDbTable");
-		$this->table= &$oTable;
-	}
 	function update($column, $value)
 	{
 		Tag::paramCheck($column, 1, "string");
@@ -50,16 +41,70 @@ class STDbUpdater
 	{
 		++$this->nAktRow;
 	}
-	public function getStatement($nr= 0) : string
+	public function getStatement(int $nr= 0) : string
 	{
 	    if(!isset($this->statements[$nr]))
 	    {
 	        $where= null;
 	        if(isset($this->wheres[$nr]))
 	            $where= $this->wheres[$nr];
-	        $this->statement[$nr]= $this->table->db->getUpdateStatement($this->table, $where, $this->columns[$nr]);
+	        $this->statement[$nr]= $this->getUpdateStatement($where, $this->columns[$nr]);
 	    }
 	    return $this->statement[$nr];
+	}
+	private function getUpdateStatement($where= "", $values= null)
+	{
+	    Tag::paramCheck($where, 2, "STDbWhere", "string", "empty(string)", "null");
+	    
+	    $update_string= "";
+        $result= $this->make_sql_values($values);
+        if(!count($result))
+            return null;
+        if(STCheck::isDebug("db.statement.modify"))
+        {
+            $space= STCheck::echoDebug("db.statement.modify", "update follow values inside database table <b>$table</b>");
+            st_print_r($result,3, $space);
+        }
+        $types= $this->read_inFields("type");
+        foreach($result as $key => $value)
+        {
+            if(STCheck::isDebug("db.statement.modify"))
+            {
+                STCheck::echoDebug("db.statement.modify", "field <b>$key</b>:");
+                STCheck::echoDebug("db.statement.modify", "   from type '".$types[$key]."'");
+                STCheck::echoDebug("db.statement.modify", "   with flag '".$flags[$key]."'");
+                STCheck::echoDebug("db.statement.modify", "   and value '$value'");
+                echo "<br />";
+            }
+            $update_string.= $key."=".$this->add_quotes($types[$key], $value).",";
+        }
+        $update_string= substr($update_string, 0, strlen($update_string)-1);
+        $sql="UPDATE ".$this->table->Name." set $update_string";
+        
+        if($where)
+        {
+            // alex 03/08/2005:	gib where-class in Tabelle
+            //$oTable= new STDbTable($table, $this);
+            //$bModify= $oTable->modify();
+            //$oTable->modifyForeignKey(false);
+            $this->table->andWhere($where);
+            //$oTable->modifyForeignKey($bModify);
+        }
+        $this->table->modifyQueryLimitation();
+        $where= $this->table->getWhereStatement("where");
+        if($where!="")
+        {
+            if(preg_match("/^(and|or)/i", $where, $ereg))
+            {
+                if($ereg[1] == "and")
+                    $where= substr($where, 4);
+                else
+                    $where= substr($where, 3);
+            }
+            $sql.= " where $where";
+        }
+        STCheck::echoDebug("db.main.statement", $sql);
+        return $sql;
 	}
 	public function execute($onError= onErrorStop)
 	{

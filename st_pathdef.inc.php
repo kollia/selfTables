@@ -247,6 +247,7 @@
 		$_stdbselector=				$_stenvironmenttools_path."/db/STDbSelector.php";
 		$_stdbinserter=				$_stenvironmenttools_path."/db/STDbInserter.php";
 		$_stdbdefinserter=			$_stenvironmenttools_path."/db/STDbDefInserter.php";
+		$_stdbsqlcases=             $_stenvironmenttools_path."/db/STDbSqlCases.php";
 		$_stdbupdater=				$_stenvironmenttools_path."/db/STDbUpdater.php";
 		$_stdbdeleter=				$_stenvironmenttools_path."/db/STDbDeleter.php";
 		$_stdbtablecreator= 		$_stenvironmenttools_path."/db/STDbTableCreator.php";
