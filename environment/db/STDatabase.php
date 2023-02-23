@@ -1090,14 +1090,11 @@ abstract class STDatabase extends STObjectContainer
 	        {
 	            $value= "null";
 	        }
-	    }else
+	    }elseif(isset($value))
 	    {
-	        if( !preg_match("/^now\(\)$/i", $value) &&
-    	        !preg_match("/^sysdate\(\)$/i", $value) &&
-    	        !preg_match("/^password\(.*\)$/i", $value)	)
-    	    {
+	        $keyword= $this->keyword($value);
+	        if($keyword === false)
     	        $value= "'".$value."'";
-    	    }
 	    }
 	    return $value;
 	}
@@ -2362,7 +2359,7 @@ abstract class STDatabase extends STObjectContainer
 	 * @return array array of keyword, column, type and len, otherwise false.<br />
 	 *                 the keyword is in lower case and have to be const/max/min<br />
 	 *                 the column is the column inside the keyword (not shure whether it's a correct name/alias)<br />
-	 *                 the type of returned value by execute
+	 *                 the type of returned value by execute the keyword on database
 	 *                 the len of returned value by execute
 	 */
 	public abstract function keyword(string $column);
