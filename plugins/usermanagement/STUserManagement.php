@@ -104,7 +104,7 @@ class STUserManagement extends STObjectContainer
 		
 		$groups= &$this->needTable("Group");
 		$groups->select("domain", "Domain");
-		$groups->preSelect("domain", $session->mainDOMAIN);
+		$groups->preSelect("domain", $session->getCustomDomain()['Name']);
 		$groups->disabled("domain");
 		$groups->select("Name", "Group");
 		
