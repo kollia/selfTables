@@ -1486,17 +1486,11 @@ class STDbTable extends STBaseTable
 	    {
 	        if($condition == "where")
 	        {
-	            echo __FILE__.__LINE__."<br>";
-	            echo "use pre-defined where statement from condition $condition:";
-	            echo $this->aStatement[$condition]."<br>";
 	            return $this->aStatement['where'];
 	        }
             $tabName= $from->getName();
 	        if(isset($this->aStatement[$condition][$tabName]))
 	        {
-	            echo __FILE__.__LINE__."<br>";
-	            echo "use pre-defined where statement from condition $condition in table $tabName:";
-	            echo $this->aStatement[$condition][$tabName]."<br>";
 	            return $this->aStatement[$condition][$tabName];
 	        }
 	    }

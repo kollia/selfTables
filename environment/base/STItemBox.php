@@ -642,7 +642,7 @@ class STItemBox extends STBaseBox
 			if(isset($result[$tablePk]))
 				$this->lastInsertID= $result[$tablePk];
 			$this->setSqlError($result);
-	
+
 			if(is_array($result))
 			{
 				if($HTTP_POST_VARS)
@@ -661,6 +661,7 @@ class STItemBox extends STBaseBox
 				}else
 					$post= $result;
 				
+				$this->aResult= $post;
 				$oCallbackClass->sqlResult= $post;
 				if(STCheck::isDebug())
 				{
