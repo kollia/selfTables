@@ -220,9 +220,17 @@ class STDbInserter
 				$updater->execute();
 		}
 	}
-	function getErrorString()
+	public function getErrorString() : string
 	{
-		return "by row ".$this->nErrorRowNr." ".$this->table->db->getError();
+	    $msg= "";
+	    if(count($this->columns) > 1)
+		    $msg.= "by row ".$this->nErrorRowNr." ";
+	    $msg.= $this->table->db->getError();
+	    return $msg;
+	}
+	public function getErrorId() : int
+	{
+	    return $this->db->errno();
 	}
 }
 ?>

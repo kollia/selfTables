@@ -120,8 +120,11 @@ class STUserManagement extends STObjectContainer
 		    $user->select("NrLogin", "logged in");
 		    $user->select("LastLogin", "last login");
 		    
-		    $groups->select("ID", "access to CLUSTERs");
-		    $groups->listCallback("descriptionCallback", "ID");
+		    $groups->select("domain", "Domain");
+		    $groups->preSelect("domain", $session->getCustomDomain()['name']);
+		    $groups->disabled("domain");
+		    $groups->select("Name", "Group");
+		    $groups->select("ID", "Description", "descriptionCallback");
 		    $groups->orderBy("domain");
 		    $groups->orderBy("Name");
 		    $groups->setMaxRowSelect(50);
@@ -139,15 +142,21 @@ class STUserManagement extends STObjectContainer
 		global $HTTP_SERVER_VARS;
 		
 		$instance= &STSession::instance();
-    
-		$partition= $this->getTable("Partition");
+		
+		echo __FILE__.__LINE__."<br>";
+		st_print_r($instance, 0);
+/*		$partition= $this->getTable("Partition");
 		$partition->clearSelects();
 		$partition->clearGetColumns();
 		$partition->count();
 		$selector= new STDbSelector($partition);
 		$selector->execute();
-		$res= $selector->getSingleResult();
+		$res= $selector->getSingleResult();*/
 
+		// create custom domain database entry
+		$domain= $instance->getCustomDomain();
+		
+		echo __FILE__.__LINE__."<br>";
     	$projectName= $instance->userManagementProjectName;
     	$project= $this->getTable("Project");
     	$project->clearSelects();
@@ -162,15 +171,11 @@ class STUserManagement extends STObjectContainer
     		$instance->projectID= $userManagementID;
 		else
 			$instance->projectID= 1;
-			
-			echo __FILE__.__LINE__."<br>";
-			echo "exist partitions:$res<br>";
-			st_print_r($userManagementID);
-		if($res<1)
-		{
+	
+//		if($res<1)// result STPartition
+//		{
 			if(!isset($userManagementID))
 			{
-			    echo __FILE__.__LINE__."<br>";
 			    $desc= STDbTableDescriptions::instance($this->getDatabase()->getDatabaseName());
 				// fill project-cluster per hand
 				// because no project is inserted
@@ -184,11 +189,10 @@ class STUserManagement extends STObjectContainer
         		$project->accessBy("STUM-Insert", STINSERT);
         		$project->accessBy("STUM-Update", STUPDATE);
         		$project->accessBy("STUM-Delete", STDELETE);
-    			$project->accessCluster("has_access", "Name", "Permission to see the project @");
+ /*   			$project->accessCluster("has_access", "Name", "Permission to see the project @");
     			$project->insertCluster("can_insert", "Name", "Permission to create a new project");
     			$project->updateCluster("can_update", "Name", "Changing-Permission at project @");
-    			$project->deleteCluster("can_delete", "Name", "Deleting-Permission at project @");
-    			echo __FILE__.__LINE__."<br>";
+    			$project->deleteCluster("can_delete", "Name", "Deleting-Permission at project @");*/
     			$inserter= new STDbInserter($project);
     			$inserter->fillColumn("Name", $projectName);
     			$inserter->fillColumn("Path", $HTTP_SERVER_VARS["SCRIPT_NAME"]);
@@ -217,27 +221,39 @@ class STUserManagement extends STObjectContainer
 					$updater->execute();
 				}
 			}
-		}
-		$this->createCluster("STUM-Access", "Permission to see all projects inside UserManagement");
-		$this->createCluster("STUM-Insert", "Permission to create projects inside  UserManagement");
-		$this->createCluster("STUM-Update", "Permission to edit projects inside  UserManagement");
-		$this->createCluster("STUM-Delete", "Permission to delete projects inside  UserManagement");			
-
-
+			//		}
+		$this->createCluster($instance->usermanagementAccessCluster, "Permission to see all projects inside UserManagement", /*addGroup*/true);
+		$this->createCluster($instance->usermanagementChangeCluster, "Permission to create projects inside  UserManagement", /*addGroup*/true);			
+		
+		$this->createGroup($instance->usermanagementAdminGroup); 
+		$this->createGroup($instance->onlineGroup);
+		$this->createGroup($instance->loggedinGroup);
+		
+		echo __FILE__.__LINE__."<br>";
+		$this->joinClusterGroup($instance->usermanagementAccessCluster, $instance->usermanagementAdminGroup);
+		$this->joinClusterGroup($instance->usermanagementChangeCluster, $instance->usermanagementAdminGroup);
+		
+		
 		// select all needed tabels for an join
 		// from table-cluster to table-user
 		$this->getTable("Cluster");
 		$this->getTable("ClusterGroup");
 
 		$user= $this->getTable("User");
-		$user->clearSelects();
-		$user->clearGetColumns();
-		$user->count();
-		$selector= new OSTDbSelector($user);
+		//$user->clearSelects();
+		//$user->clearGetColumns();
+		//$user->count();
+		$selector= new STDbSelector($user);
+		$selector->count("User");
+		$selector->joinOver("Group");
 		$where= new STDbWhere("ID='".$instance->allAdminCluster."'");
+		//$where->andWhere("domain=$defaultDomainKey");
 		$where->forTable("Cluster");
+		echo __FILE__.__LINE__."<br>";
 		$selector->where($where);
 		$statement= $selector->getStatement();
+		echo __FILE__.__LINE__."<br>";
+		echo "statement:$statement<br>";
 		$selector->execute();
 		if(!$selector->getSingleResult())
 		{
@@ -247,11 +263,11 @@ class STUserManagement extends STObjectContainer
 			$creator= new STSiteCreator($db);
 			$creator->setMainContainer("um_install");
 			$container= &$creator->getContainer("um_install");
-			STCheck::debug(false);
+			//STCheck::debug(false);
 			$result= $creator->execute();
 			if($result=="NOERROR")
 			{
-				$desc= &STDbTableDescriptions::instance($this->database->getDatabaseName());
+				$desc= &STDbTableDescriptions::instance($this->getDatabase()->getDatabaseName());
 				$userName= $desc->getColumnName("User", "UserName");
 				$pwd= $desc->getColumnName("User", "Pwd");
 				$sqlResult= $container->getResult();
@@ -268,8 +284,6 @@ class STUserManagement extends STObjectContainer
 			exit;
 		}
 
-		$this->createGroup($instance->onlineGroup, "user has access also if they not logged-in");
-		$this->createGroup($instance->loggedinGroup, "user has access to this group if they be logged-in");
 
 		$created= $this->createCluster("STUM-UserAccess", "Berechtigung zum editieren des eigenen User-Accounts");
 		if($created==="NOERROR")// if Cluster is created, make an join to the LOGGED_IN group.

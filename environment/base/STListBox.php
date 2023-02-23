@@ -502,7 +502,7 @@ class STListBox extends STBaseBox
 					if($errId > 0)
 					{
     					$sqlErrorMessage= "ERROR($errId): ";
-    					$sqlErrorMessage.= $this->oSelector->getErrorMessage();
+    					$sqlErrorMessage.= $this->oSelector->getErrorString();
     					$this->msg->setMessageId("SQL_ERROR", $sqlErrorMessage);
 					}
 

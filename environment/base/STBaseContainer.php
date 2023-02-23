@@ -1549,27 +1549,23 @@ class STBaseContainer extends BodyTag implements STContainerTempl
 		Tag::deprecated("STDbBaseContainer::getDisplayName()", "STDbTableContainer::getIdentification()");
 		return $this->getDisplayName();
 	}
-	function createCluster($clusterName, $description, $partition= null)
+	function createCluster($clusterName, $description, $addGroup= true)
 	{
 		if(STUserSession::sessionGenerated())
 		{
-			if($partition===null)
-				$partition= "regular system clusters";
 			$instance= &STUserSession::instance();
-			if($instance->existsDbCluster($clusterName))
-				return "NOCLUSTERCREATE";
-			return $instance->createCluster($clusterName, $description, $partition, true);
+			return $instance->createCluster($clusterName, $description, $addGroup);
 		}
 		return false;
 	}
-	function createGroup($groupName, $description)
+	function createGroup(string $groupName, string $domainName)
 	{
 		if(STUserSession::sessionGenerated())
 		{
-			$instance= &STUserSession::instance();
-			return $instance->createGroup($groupName, $description);
+		    $instance= &STUserSession::instance();
+			return $instance->createGroup($groupName, $domainName);
 		}
-		return -1;
+		return "NOUSERSESSIONEXIST";
 	}
 	function joinUserGroup($user, $group)
 	{
@@ -1581,7 +1577,7 @@ class STBaseContainer extends BodyTag implements STContainerTempl
 			$instance= &STUserSession::instance();
 			return $instance->joinUserGroup($user, $group);
 		}
-		return -1;
+		return "NOUSERSESSIONEXIST";
 	}
 	function joinClusterGroup($clusterName, $group)
 	{

@@ -155,7 +155,7 @@ abstract class STDatabase extends STObjectContainer
 * @access private
 * @var array string
 */
-	var	$asExistTableNames= array();
+	protected	$asExistTableNames= array();
 	var $aOtherTableWhere= array();
 	var $lastStatement;
 	var $foreignKey= false;
@@ -603,8 +603,6 @@ abstract class STDatabase extends STObjectContainer
 		//if($this->isError())	// ??? was soll das?
 		//	return "";			// damit der Fehler nur einmal ausgegeben wird?
 
-		if($this->errno()==0)
-			return "kein Ergebnis vorhanden";
 		$string= "";
 		if($withTags)
      		$string=  "<b>";
@@ -623,8 +621,11 @@ abstract class STDatabase extends STObjectContainer
 	        $string.= STCheck::getSpaces($space);		
 		$string.= "MySql error message:";
 		if($withTags)
-			$string.= "</b>";
-     	$string.=  " ".$this->error();
+			$string.= "</b>";			
+		if($this->errno()==0)
+		    $string.= " no results";
+		else
+     	    $string.=  " ".$this->error();
 		if($withTags)
 			$string.= "<br />\n";
 	  	return $string;
@@ -828,7 +829,9 @@ abstract class STDatabase extends STObjectContainer
  	function errno()
  	{
  	    if(isset($this->errno))
+ 	    {
  	        return $this->errno;
+ 	    }
 		$this->errno= $this->errnodb();
 		$this->error= $this->errordb();
 	    return $this->errno;

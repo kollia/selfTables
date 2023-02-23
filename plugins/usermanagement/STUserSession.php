@@ -7,7 +7,18 @@ class STUserSession extends STDbSession
 	var $user;
 	var $userID;
 	var $bLog;
+	/**
+	 * main domain name for all user
+	 * registerd with this usermanagement
+	 * @var string
+	 */
+	private $mainDOMAIN= "CO";
+	private $accessDomains= array(   array(  "ID" => -1,
+	                                       "Name" => "xxx", // <- will be defined inside constructor
+        	                               "Prefix" => "*",
+        	                               "Description" => "default domain for all User and Groups which have access over this UserManagement"    )   );
 	var	$userManagementProjectName= "UserManagement";
+	
 	// ATTENTION - group name has to be exist inside SQL Group Table
 	/**
 	 * user has always access to projects
@@ -24,19 +35,21 @@ class STUserSession extends STDbSession
 	 */
 	var $loggedinGroup= "LOGGED_IN";
 	/**
+	 * user has access to all cluster
+	 * defined for UserManagement
+	 * @var string
+	 */
+	var $usermanagementAdminGroup= "UM_ADMIN";
+	/**
 	 * user linked with this cluster
 	 * is administrator and has
 	 * access to all other clusters
 	 * and so also to all projects
 	 * @var string
 	 */
+	var $usermanagementAccessCluster= "UM_ACCESS";
+	var $usermanagementChangeCluster= "UM_CHANGE";
 	var	$allAdminCluster= "allAdmin";
-	/**
-	 * main domain name for all user
-	 * registerd with this usermanagement
-	 * @var string
-	 */
-	var $mainDOMAIN= "custom";
     
 	var	$sGroupTable= "Group";
 
@@ -54,6 +67,7 @@ class STUserSession extends STDbSession
 
 	protected function __construct($Db)
 	{
+	    $this->accessDomains[0]['Name']= $this->mainDOMAIN;
 		STDbSession::__construct($Db);
 		STDbSession::storeSessionOnFile(true);
 		$this->bLog= true;		
@@ -96,6 +110,8 @@ class STUserSession extends STDbSession
 	{ return $this->allAdminCluster; }
 	public function defineDatabaseTableDescriptions($dbTableDescription)
 	{
+	    global $_stum_installcontainer;
+	    
 	    STCheck::paramCheck($dbTableDescription, 1, "STDbTableDescriptions");
 	    
 	    if($this->bDescriptionDefined)
@@ -110,15 +126,15 @@ class STUserSession extends STDbSession
         $dbTableDescription->column("Query", "path", "TEXT", /*null*/false);
         $dbTableDescription->indexKey("Query", "path", 1, 255);
         
-        $dbTableDescription->table("Translate");
-        $dbTableDescription->column("Translate", "ID", "varchar(50)", /*null*/false);
+/*        $dbTableDescription->table("Translate");
+        $dbTableDescription->column("Translate", "ID", "varchar(50)", false);
         $dbTableDescription->primaryKey("Translate", "ID");
         $dbTableDescription->uniqueKey("Translate", "ID", 1);
         $dbTableDescription->indexKey("Translate", "ID", 1);
-        $dbTableDescription->column("Translate", "lang", "char(3)", /*null*/false);
+        $dbTableDescription->column("Translate", "lang", "char(3)", false);
         $dbTableDescription->uniqueKey("Translate", "lang", 1);
         $dbTableDescription->indexKey("Translate", "lang", 1);
-        $dbTableDescription->column("Translate", "translation", "text", /*null*/false);
+        $dbTableDescription->column("Translate", "translation", "text", false);*/
         
         $dbTableDescription->table("AccessDomain");
         $dbTableDescription->column("AccessDomain", "ID", "TINYINT", /*null*/false);
@@ -126,7 +142,7 @@ class STUserSession extends STDbSession
         $dbTableDescription->autoIncrement("AccessDomain", "ID");
         $dbTableDescription->column("AccessDomain", "Name", "varchar(10)", /*null*/false);
         $dbTableDescription->column("AccessDomain", "Label", "varchar(30)", /*null*/false);
-        $dbTableDescription->column("AccessDomain", "description", "varchar(50)");
+        $dbTableDescription->column("AccessDomain", "Description", "varchar(255)");
         $dbTableDescription->column("AccessDomain", "DateCreation", "DATETIME", /*null*/false);
         
         $dbTableDescription->table("Project");
@@ -138,24 +154,24 @@ class STUserSession extends STDbSession
         $dbTableDescription->column("Project", "Path", "varchar(255)", /*null*/false);
         $dbTableDescription->column("Project", "Description", "text");
         $dbTableDescription->column("Project", "DateCreation", "datetime", /*null*/false);
-        $dbTableDescription->column("Project", "has_access", "varchar(255)", /*null*/false);
-        $dbTableDescription->column("Project", "can_insert", "varchar(255)", /*null*/false);
-        $dbTableDescription->column("Project", "can_update", "varchar(255)", /*null*/false);
-        $dbTableDescription->column("Project", "can_delete", "varchar(255)", /*null*/false);
+ /*       $dbTableDescription->column("Project", "has_access", "varchar(255)", false);
+        $dbTableDescription->column("Project", "can_insert", "varchar(255)", false);
+        $dbTableDescription->column("Project", "can_update", "varchar(255)", false);
+        $dbTableDescription->column("Project", "can_delete", "varchar(255)", false);*/
         
-        $dbTableDescription->table("Partition");
-        $dbTableDescription->column("Partition", "ID", "SMALLINT", /*null*/false);
+/*        $dbTableDescription->table("Partition");
+        $dbTableDescription->column("Partition", "ID", "SMALLINT", false);
         $dbTableDescription->primaryKey("Partition", "ID");
         $dbTableDescription->autoIncrement("Partition", "ID");
-        $dbTableDescription->column("Partition", "Name", "varchar(100)", /*null*/false);
+        $dbTableDescription->column("Partition", "Name", "varchar(100)", false);
         $dbTableDescription->uniqueKey("Partition", "Name", 1);
-        $dbTableDescription->column("Partition", "ProjectID", "TINYINT", /*null*/false);
+        $dbTableDescription->column("Partition", "ProjectID", "TINYINT", false);
         $dbTableDescription->foreignKey("Partition", "ProjectID", "Project");
-        $dbTableDescription->column("Partition", "has_access", "varchar(255)", /*null*/false);
-        //$dbTableDescription->column("Partition", "can_insert", "varchar(255)", /*null*/false);
-        //$dbTableDescription->column("Partition", "can_update", "varchar(255)", /*null*/false);
-        $dbTableDescription->column("Partition", "can_delete", "varchar(255)", /*null*/false);
-        $dbTableDescription->column("Partition", "DateCreation", "DATETIME", /*null*/false);
+        $dbTableDescription->column("Partition", "has_access", "varchar(255)", false);
+        //$dbTableDescription->column("Partition", "can_insert", "varchar(255)", false);
+        //$dbTableDescription->column("Partition", "can_update", "varchar(255)", false);
+        $dbTableDescription->column("Partition", "can_delete", "varchar(255)", false);
+        $dbTableDescription->column("Partition", "DateCreation", "DATETIME", /false);*/
         
         $dbTableDescription->table("User");
         $dbTableDescription->column("User", "ID", "INT", /*null*/false);
@@ -181,7 +197,7 @@ class STUserSession extends STDbSession
         $dbTableDescription->column("Cluster", "ProjectID", "TINYINT", /*null*/false);
         $dbTableDescription->foreignKey("Cluster", "ProjectID", "Project", 1);
         $dbTableDescription->column("Cluster", "Description", "TEXT", /*null*/false);
-        $dbTableDescription->column("Cluster", "identification", "SMALLINT", /*null*/false);
+        //$dbTableDescription->column("Cluster", "identification", "SMALLINT", /*null*/false);
         //$dbTableDescription->foreignKey("Cluster", "identification", "Partition", 2);
         //$dbTableDescription->column("Cluster", "lastDynamicAccess", "set('false', 'true')", true);
         $dbTableDescription->column("Cluster", "DateCreation", "DATETIME", /*null*/false);
@@ -240,6 +256,7 @@ class STUserSession extends STDbSession
         $dbTableDescription->column("Log", "description", "TEXT", /*null*/false);
         $dbTableDescription->column("Log", "DateCreation", "DATETIME", /*null*/false);
         
+        STObjectContainer::install("um_install", "STUM_InstallContainer", "userDb", $_stum_installcontainer);
 	}
 	/* fault whether I do not know
 	 static public function sessionGenerated()
@@ -1048,19 +1065,58 @@ class STUserSession extends STDbSession
 		//$this->checkForLoggedIn();
 		return 0;
 	}
-	function existsDbCluster($clusterName)
+	public function existsDbCluster(string $clusterName)
 	{
 		$cluster= $this->database->getTable("Cluster");
 		$selector= new STDbSelector($cluster);
 		$selector->clearSelects();
 		$selector->count();
-		$selector->where($selector->getPkColumnName()."='".$clusterName."'");
+		$selector->where($selector->getPkColumnName()."='$clusterName'");
 		$selector->execute();
 		$exists= $selector->getSingleResult();
 		if($exists)
 			return true;
 		return false;
-
+	}
+	public function existsDbClusterGroupJoin(string $clusterName, string $groupName)
+	{
+	    $clusterWhere= new STDbWhere();
+	    $clusterWhere->table("Cluster");
+	    $clusterWhere->where("ID=$clusterName", "Cluster");
+	    $groupWhere= new STDbWhere();
+	    $groupWhere->table("Group");
+	    $groupWhere->orWhere("Name=$groupName", "Group");
+	    
+	    $clustergroup= new STDbSelector($this->database->getTable("ClusterGroup"));
+	    $clustergroup->count();
+	    $clustergroup->where($clusterWhere);
+	    $clustergroup->andWhere($groupWhere);
+	    $clustergroup->execute();
+	    $count= $clustergroup->getSingleResult();
+	    if($count > 0)
+	        return true;
+	    return false;
+	}
+	public function existsDbGroup(string $groupName, string $domainName)
+	{
+	    $domain= $this->getDomainID($domainName);
+	    $group= $this->database->getTable("Group");
+	    
+	    $selector= new STDbSelector($group);
+	    $selector->clearSelects();
+	    $selector->count();
+	    
+	    $oWhere= new STDbWhere();
+	    $oWhere->where("Name='$groupName'");
+	    $oWhere->andWhere("domain='$domain'");
+	    $oWhere->forTable("Group");
+	    
+	    $selector->where($oWhere);
+	    $selector->execute();
+	    $exists= $selector->getSingleResult();	    
+	    if($exists)
+	        return true;
+	    return false;
 	}
 	function getPartitionID($partitionName)
 	{
@@ -1102,22 +1158,44 @@ class STUserSession extends STDbSession
 		$last= $inserter->getLastInsertID();
 		$this->nPartition[$partitionName]= $last;
 		return $last;
-	}
-	function createCluster($clusterName, $accessInfoString, $sIdentifString= "regular system clusters", $addGroup= true)
+	}	
+	public function getDomain(string $domainName)
 	{
-		Tag::paramCheck($clusterName, 1, "string");
-		Tag::paramCheck($accessInfoString, 2, "string");
-		Tag::paramCheck($sIdentifString, 3, "string");
-		Tag::paramCheck($addGroup, 4, "bool");
-
+	    foreach($this->accessDomains as $domain)
+	    {
+	        if($domain['Name'] == $domainName)
+	            return $domain;
+	    }
+	    return null;
+	}
+	public function getCustomDomain() : array
+	{
+	    $domain= $this->getDomain($this->mainDOMAIN);
+	    if( $domain == null ||
+	        $domain['ID'] == -1    )
+	    {
+	        if(!isset($domain))
+	        {// only for wrong warning
+	            exit;
+	        }
+	        if($this->createDomain($domain['Name'], $domain['Prefix'], $domain['Description']) == -1)
+	            return null;
+	        $domain= $this->getDomain($this->mainDOMAIN);
+	    }
+	    return $domain;
+	}
+	public function createCluster(string $clusterName, string $accessInfoString, bool $addGroup= true) : string
+	{
+	    if($this->doClusterExist($clusterName, $this->getProjectID()))
+	        return "NOCLUSTERCREATE";
 		$this->setExistCluster($clusterName, $this->getProjectID());
-		$partitionId= $this->getPartitionID($sIdentifString);
+		//$partitionId= $this->getPartitionID($sIdentifString);
 		$oCluster= &$this->database->getTable("Cluster");
 		$insert= new STDbInserter($oCluster);
 		$insert->fillColumn("ID", $clusterName);
 		$insert->fillColumn("ProjectID", $this->projectID);
 		$insert->fillColumn("Description", $accessInfoString);
-		$insert->fillColumn("identification", $partitionId);
+		//$insert->fillColumn("identification", $partitionId);
 		$insert->fillColumn("DateCreation", "sysdate()");
 
 		//$statement= $this->database->getInsertStatement($this->sClusterTable, $clusterContent);
@@ -1137,49 +1215,125 @@ class STUserSession extends STDbSession
 
 		return "NOERROR";
 	}
-	function createGroup($groupName, $groupDescription= "")
+	private function getDomainKey(string $domainName)
 	{
+	    $nRv= -1;
+	    foreach($this->accessDomains as $key => $domain)
+	    {
+	        if($domain['Name'] == $domainName)
+	        {
+	            $nRv= $key;
+	            break;
+	        }
+	    }
+	    return $nRv;
+	}
+	public function createDomain(string $name, string $prefix, string $description) : int
+	{
+	    $id= $this->getDomainID($name);
+	    if($id == -1)
+	    {
+	        $domain= $this->getUserDb()->getTable("AccessDomain");
+	        $ins= new STDbInserter($domain);
+	        $ins->fillColumn("Name", $name);
+	        $ins->fillColumn("Label", $prefix);
+	        $ins->fillColumn("Description", $description);
+	        $ins->fillColumn("DateCreation", "sysdate()");
+	        $ins->execute(noErrorShow);
+	        $id= $ins->getLastInsertID();
+	        if( $ins->getErrorId() != 0 ||
+	            $id == null                )
+	        {
+	            $id= -1;
+	        }
+	    }
+	    return $id;
+	}
+	public function getDomainID(string $domainName)
+	{
+	    $nRv= -1;
+	    $nKey= $this->getDomainKey($domainName);
+	    if($nKey != -1)
+	        $nRv= $this->accessDomains[$nKey]['ID'];
+	    if($nRv == -1)
+	    {
+	        $domain= $this->getUserDb()->getTable("AccessDomain");
+	        $domainSelector= new STDbSelector($domain);
+	        $domainSelector->select("AccessDomain", "ID");
+	        $domainSelector->select("AccessDomain", "Name");
+	        $domainSelector->select("AccessDomain", "Label");
+	        $domainSelector->select("AccessDomain", "Description");
+	        $domainSelector->where("Name='$domainName'");
+	        $domainSelector->execute();
+	        $res= $domainSelector->getRowResult();
+	        if( $res == null &&
+	            $domainSelector->getErrorId() == 0 )
+	        {
+	            $nRv= -1;
+	        }else
+	        {
+	            $nRv= $res['ID'];
+	            if($nKey == -1)
+	            {
+	                $d= array( "ID" => $res['ID'],
+	                           "Name" => $res['Name'],
+	                           "Label" => $res['Label'],
+	                           "Description" => $res['Description']    );
+	                $this->accessDomains[]= $d;
+	            }else
+	                $this->accessDomains[$nKey]['ID']= $res['ID'];
+	        }
+	    }
+	    return $nRv;
+	}
+	public function createGroup(string $groupName, string $domain= null)
+	{
+	    if(!isset($domain))
+	        $domain= $this->accessDomains[0]['Name'];
+	    $domainID= $this->getDomainID($domain);
+	    if($this->existsDbGroup($groupName, $domain))
+	       return -1; 
+        
 		$group= $this->database->getTable("Group");
 		$inserter= new STDbInserter($group);
 		$inserter->fillColumn("Name", $groupName);
-		if($groupDescription)
-			$inserter->fillColumn("description", $groupDescription);
-		$inserter->fillColumn("DateCreation", "sysdate()");
-		if($inserter->execute(noErrorShow))
-			return -1;
+		$inserter->fillColumn("domain", $domainID);
+		$inserter->fillColumn("DateCreation", "sysdate()");		
+		if($inserter->execute())//noErrorShow))
+		{
+		    echo __FILE__.__LINE__."<br>";
+		    echo "errno:".$inserter->getErrorId()."<br>";
+		    echo $inserter->getErrorString()."<br>";
+			return false;
+		}
 		$groupID= $this->database->getLastInsertedPk();
 		return $groupID;
 	}
-	function joinClusterGroup($clusterName, $group)
+	public function joinClusterGroup(string $clusterName, string $group)
 	{
-		if(STCheck::isDebug())
-		{
-			$cluster= $this->database->getTable("Cluster");
-			$cluster->clearSelects();
-			$cluster->clearGetColumns();
-			$cluster->count();
-			$cluster->where("ID='".$clusterName."'");
-			$selector= new STDbSelector($cluster);
-			$selector->execute();
-			if(STCheck::is_error(!$selector->getSingleResult(), "STUserSession::joinClusterGroup()", "group ".$group." for join to <b>CLUSTER</b> does not exist"))
-				return -1;
-		}
-		if(is_string($group))
-		{
-			$grouptable= $this->database->getTable("Group");
-			$grouptable->clearSelects();
-			$grouptable->select("ID");
-			$grouptable->where("Name='".$group."'");
-			$selector= new STDbSelector($grouptable);
-			$selector->execute();
-			$groupId= $selector->getSingleResult();
-			if(!$groupId)
-			{
-				STCheck::is_error(1, "STUserSession::joinClusterGroup()", "group ".$group." for join to <b>CLUSTER</b> does not exist");
-				return -1;
-			}
-		}else
-			$groupId= $group;
+	    echo __FILE__.__LINE__."<br>";
+	    echo "create join between $clusterName and $group<br>";
+	    $cluster= new STDbSelector($this->database->getTable("Cluster"));
+		$cluster->select("Cluster", "ID");
+		$cluster->where("ID='".$clusterName."'");
+		$cluster->execute();
+		if(STCheck::is_error(!$cluster->getErrorId(), "STUserSession::joinClusterGroup()", "group ".$group." for join to <b>CLUSTER</b> does not exist"))
+		    return -1;
+	    $clusterId= $cluster->getSingleResult();
+	    echo __FILE__.__LINE__."<br>";
+		
+		$grouptable= new STDbSelector($this->database->getTable("Group"));
+		$grouptable->select("Group", "ID");
+		$grouptable->where("Name='".$group."'");
+		$grouptable->execute();
+		if(STCheck::is_error($grouptable->getErrorId(), "STUserSession::joinClusterGroup()", "group ".$group." for join to <b>CLUSTER</b> does not exist"))
+		    return -1;
+	    $groupId= $grouptable->getSingleResult();
+	    echo __FILE__.__LINE__."<br>";
+		
+		if($this->existsDbClusterGroupJoin($clusterName, $group))
+		    return -1;
+	    echo __FILE__.__LINE__."<br>";
 
 		$clusterGroup= $this->database->getTable("ClusterGroup");
 		$inserter= new STDbInserter($clusterGroup);

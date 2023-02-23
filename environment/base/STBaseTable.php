@@ -2276,6 +2276,9 @@ class STBaseTable
 	 	        $space= STCheck::echoDebug("db.statements.where", $msg);
 	 	        if(!is_string($stwhere))
 	 	            st_print_r($stwhere,10, $space);
+	 	        if($operator == "")
+	 	            STCheck::echoDebug("db.statements.where", "no operator for where method be set, so clear all old where clauses");
+	 	        showErrorTrace();
 		 	}
 		 	if(	!isset($stwhere) ||
 				$stwhere == null ||

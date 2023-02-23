@@ -552,6 +552,35 @@ class STSession
 	        $_SESSION[$var1]= $value;	        
 	    }
 	}
+	public function isSetRecursiveSessionVar($value, $var1, $var2= null, $var3= null, $var4= null, $var5= null) : bool
+	{
+	    if(isset($var5))
+	    {
+	        if($_SESSION[$var1][$var2][$var3][$var4][$var5] == $value)
+	            return true;
+	        
+	    }else if(isset($var4))
+	    {
+	        if($_SESSION[$var1][$var2][$var3][$var4] == $value)
+	            return true;
+	        
+	    }else if(isset($var3))
+	    {
+	        if($_SESSION[$var1][$var2][$var3] == $value)
+	            return true;
+	        
+	    }else if(isset($var2))
+	    {
+	        if($_SESSION[$var1][$var2] == $value)
+	            return true;
+	        
+	    }else
+	    {
+	        if($_SESSION[$var1] == $value)
+	            return true;
+	    }
+	    return false;
+	}
 	public function addSessionVar($var, $value)
 	{
 	    if( !isset($_SESSION[$var]) ||
@@ -609,11 +638,54 @@ class STSession
 	        $_SESSION[$var1][]= $value;
 	    }
 	}
-	function setExistCluster($cluster, $project= 1)
+	public function isSetRecursiveArraySessionVar($value, $var1, $var2= null, $var3= null, $var4= null, $var5= null) : bool
+	{
+	    if(isset($var5))
+	    {
+	        if( isset($_SESSION[$var1][$var2][$var3][$var4][$var5]) &&
+	            is_array($_SESSION[$var1][$var2][$var3][$var4][$var5]) &&
+	            in_array($value, $_SESSION[$var1][$var2][$var3][$var4][$var5])     )
+	            return true;
+	            
+	    }else if(isset($var4))
+	    {
+	        if( isset($_SESSION[$var1][$var2][$var3][$var4]) &&
+	            is_array($_SESSION[$var1][$var2][$var3][$var4]) &&
+	            in_array($value, $_SESSION[$var1][$var2][$var3][$var4])     )
+	            return true;
+	            
+	    }else if(isset($var3))
+	    {
+	        if( isset($_SESSION[$var1][$var2][$var3]) &&
+	            is_array($_SESSION[$var1][$var2][$var3]) &&
+	            in_array($value, $_SESSION[$var1][$var2][$var3])     )
+	            return true;
+	            
+	    }else if(isset($var2))
+	    {
+	        if( isset($_SESSION[$var1][$var2]) &&
+	            is_array($_SESSION[$var1][$var2]) &&
+	            in_array($value, $_SESSION[$var1][$var2])     )
+	            return true;
+	            
+	    }else
+	    {
+	        if( isset($_SESSION[$var1]) &&
+	            is_array($_SESSION[$var1]) &&
+	            in_array($value, $_SESSION[$var1])     )
+	            return true;
+	    }
+	    return false;
+	}
+	function setExistCluster($cluster, $project)
 	{
 	    $this->setRecursiveSessionVar($project, "ST_EXIST_CLUSTER", $cluster);
 	}
-	function setMemberCluster($cluster, $projectName, $projectID= 1)
+	function doClusterExist($cluster, $project) : bool
+	{
+	    return $this->isSetRecursiveSessionVar($project, "ST_EXIST_CLUSTER", $cluster);
+	}
+	function setMemberCluster($cluster, $projectName, $projectID)
 	{
 	    if( !isset($cluster) ||
 	        !is_string($cluster) ||

@@ -75,7 +75,11 @@ class STDbDeleter
 		}
 		return $db->errno();
 	}
-	function getErrorString()
+	public function getErrorId() : int
+	{
+	    return $this->table->db->errno();
+	}
+	public function getErrorString() : string
 	{
 		if($this->error)
 			return "by row ".$this->nErrorRowNr.": ".$this->error;

@@ -134,7 +134,11 @@ class STDbUpdater extends STDbSqlCases
 		//echo "error:".$db->errno()."<br />";
 		return $db->errno();
 	}
-	function getErrorString()
+	public function getErrorId() : int
+	{
+	    return $this->table->db->errno();
+	}
+	public function getErrorString() : string
 	{
 		$errorString= "";
 		if($this->table->db->errno())

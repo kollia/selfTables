@@ -40,7 +40,7 @@ class STDbSessionHandler implements SessionHandlerInterface
         $res= $oSelector->getRowResult();
         if($oSelector->getErrorId() != 0)
         {
-            STCheck::warning(true, "cannot read session from database: ".$oSelector->getErrorMessage());
+            STCheck::warning(true, "cannot read session from database: ".$oSelector->getErrorString());
             return false;
         }
         if(isset($res["ses_value"]))

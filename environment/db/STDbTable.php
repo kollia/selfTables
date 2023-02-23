@@ -4,8 +4,17 @@ require_once($_stbasetable);
 
 class STDbTable extends STBaseTable
 {
-	var	$db; // database
-    var $container;
+    /**
+     * current database from where table
+     * @var object
+     */
+	public $db;
+	/**
+	 * current container in which
+	 * the table is located
+	 * @var object
+	 */
+    public $container;
 	var $aAuto_increment= array(); // um ein Feld mit Autoincrement vor dem eigentlichen Insert zu holen
 	var	$password= array(); // all about to set an password in database
 	/**
@@ -21,9 +30,6 @@ class STDbTable extends STBaseTable
 		Tag::paramCheck($container, 2, "STObjectContainer", "string", "null");
 
 		$this->abNewChoice= array();
-		$this->bSelect= false;
-		$this->bTypes= false;
-		$this->bIdentifColumns= false;
 
 		if(typeof($Table, "STBaseTable"))
 		{

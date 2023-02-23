@@ -12,6 +12,16 @@ require_once($_stdatabase);
 	*/
 class STDbMySql extends STDatabase
 {
+    /**
+     * connection object to database
+     * @var object
+     */
+    private $conn= NULL;
+    /**
+     * current mysql version
+     * @var string
+     */
+    protected $mysqlVersion= array();
 	/**
 	 * last call of msqli::query
 	 */
@@ -87,7 +97,7 @@ class STDbMySql extends STDatabase
 	 */
 	public function getServerVersion() : array
 	{
-	    if(isset($this->mysqlVersion))
+	    if(!empty($this->mysqlVersion))
 	        return $this->mysqlVersion;
         $version= $this->conn->get_server_info();
         $this->mysqlVersion= array();
@@ -244,9 +254,11 @@ class STDbMySql extends STDatabase
 		    if(STCheck::isDebug())
 		    {
     		    if(!STCheck::isDebug("db.statement"))
-    		        echo "<b>statement:</b>$statement<br />";
-                echo $ex->getTraceAsString();
-                echo "<br /><br />";
+    		    {
+    		        STCheck::echoDebug("db.statement", $this->getError());
+                    //echo $ex->getTraceAsString();
+                    //echo "<br /><br />";
+    		    }
 		    }
 		    $this->lastDbResult= null;
 		}

@@ -734,11 +734,11 @@ class STDbSelector extends STDbTable implements STContainerTempl
 
 			$this->getColumnA($tableName, array( "column"=>$column, "alias"=>$alias));
 		}
-		function getErrorId()
+		public function getErrorId() : int
 		{
 			return $this->errorID;
 		}
-		function getErrorMessage()
+		public function getErrorString() : string
 		{
 			return $this->errorMessage;
 		}
