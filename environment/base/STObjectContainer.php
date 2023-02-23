@@ -255,7 +255,14 @@ class STObjectContainer extends STBaseContainer
 			//					getTable() aus dem Datenbank-Objekt geholt.
 		    //					nat�rlich wird die Tabelle kopiert, da sie wom�glich noch ge�ndert wird
 		    $oldTable= $this->parentContainer->getTable($orgTableName);
-		    Tag::echoDebug("table", "clone table <b>$tableName</b> from parent container <b>".$this->parentContainer->getName()."</b>");
+		    if(STCheck::isDebug("table"))
+		    {
+		        $msg= "get table <b>$tableName</b> ";
+		        $msg.= "from parent container <b>".$this->parentContainer->getName()."</b> ";
+		        $msg.= "for container <b>".$this->name."</b> ";
+		        $msg.= "and clone to new one";
+		        STCheck::echoDebug("table", $msg);
+		    }
 			$table= clone $oldTable;
 			STCheck::alert(!isset($table), "STObjectContainer::getTable()", "cannot clone $oldTable");
 			
@@ -280,7 +287,7 @@ class STObjectContainer extends STBaseContainer
 		    $table= &$this->createTable($orgTableName);
 		    $this->oGetTables[$tableName]= &$table;
 		}
-		
+		//showErrorTrace();
 		return $table;
 	}
 	/**

@@ -618,7 +618,9 @@ class STItemBox extends STBaseBox
 
         	if($this->asDBTable)
         	{
+        	    STCheck::echoDebug("table", "clone table as <b>[secure]</b> into own table. (maybe table will change afterwards)");
         		$oTable= clone $this->asDBTable;
+        		$oTable->container= $this->asDBTable->container;
         		$oTable->clearFKs();// ich will die Spalten ohne verweiss auf eine N�chste Tabelle
         		$oTable->clearSqlAliases();
         		$oTable->clearAliases();// sowie alle orginal Spalten-Namen
