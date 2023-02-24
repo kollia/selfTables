@@ -2125,18 +2125,16 @@ abstract class STDatabase extends STObjectContainer
 	}
 	function createStringForDb(&$string)
 	{
-		if(	!is_numeric($string)
-			and
-			!preg_match("/^now\([ ]*\)/i", $string)
-			and
-			!preg_match("/^sysdate\([ ]*\)/i", $string)
-			and
-			!preg_match("/^password\(.*\)/i", $string)	)
-		{
-			$string= "'".$string."'";
-			return true;
-		}
-		return false;
+	    $keyword= false;
+	    if(is_string($string))
+	        $keyword= $this->keyword($string);
+        if(	!is_numeric($string) &&
+            $keyword !== false     )
+        {
+            $string= "'".$string."'";
+            return true;
+        }
+        return false;
 	}
 	function getDatabaseByName($dbName)
 	{

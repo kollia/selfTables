@@ -515,7 +515,7 @@ class STDbMySql extends STDatabase
 	    return array(  "keyword" => $keyword,
 	                   "columns" => $inherit,
 	                   "type" => $allowed[$keyword]['type'],
-	                   "len" => $allowed[$keyword]['type']     );
+	                   "len" => $allowed[$keyword]['len']     );
 	}
 	protected function insert_id()
 	{
