@@ -852,25 +852,23 @@ class STDbTable extends STBaseTable
             }
             
             if($aliasCount>1)
-            {		// wenn die Tabelle null ist, gibts sie nicht im FK
-                $fkTableName= $this->getFkTableName($column["column"]);
-                if(STCheck::isDebug() && $fkTableName)
-                    STCheck::echoDebug("db.statements.select", "from ".get_class($this)." ".$this->getName()." for column ".$column["column"]." is Fk-Table \"".$fkTableName."\"");
-                if(	$fkTableName
-                    and
-                    typeof($oMainTable, "STDbSelector")	)
+            {
+                $fkTableName= null;
+                if( typeof($oMainTable, "STDbSelector") &&
+                    (   !isset($oMainTable->abNewChoice["select"]) ||
+                        $oMainTable->abNewChoice["select"] == "true"   )   )
                 {
                     // alex 24/05/2005:	if table is an existing foreign Key
                     //                  and the current/main table an STDbSelector,
                     //                  than check whether a table version exist in the selector.
                     //					Otherwise it shouldn't made any output from the linked table.
-                    if(!isset($oMainTable->aoToTables[$fkTableName]))
-                        $fkTableName= null;
+                    // alex 24/02/2023: now search only for foreign keys when inside an STDbSelector container
+                    //                  no extra choice was made
+                    $fkTableName= $this->getFkTableName($column["column"]);
+                    if(STCheck::isDebug() && $fkTableName)
+                        STCheck::echoDebug("db.statements.select", "from ".get_class($this)." ".$this->getName()." for column ".$column["column"]." is Fk-Table \"".$fkTableName."\"");
                 }
-                if(	!$fkTableName // wenn keine Tabelle im FK ist kann die Spalte nur von der Aktuellen-Tabelle sein
-                    or
-                    //$isSelector
-                    //or
+                if(	!$fkTableName ||// if no FK table exist, the column can only be from the current table
                     isset($aShowTypes[$column["alias"]]))
                 {
                     $aliasTable= $aTableAlias[$column["table"]];

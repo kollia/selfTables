@@ -23,7 +23,15 @@ class STBaseTable
 	var	$sFirstAction= STLIST;
 	var	$identification= array();
 	var	$bDisplayIdentifs= true;
-	var	$abNewChoice= array(); // hier wird in der Tabelle abgespeichert ob in der neuen schon etwas neu ausgefuehrt wurde
+	/**
+	 * whether in a selected- or an identifier-columns
+	 * has made an new choice of columns ( key [select or identif] has the value 'false' )
+	 * otherwise ( key non exist or is 'true' for new choose)
+	 * the selection should takes the columns from table inside database (if first table)
+	 * or should take the columns from parent table
+	 * @var array
+	 */
+	var	$abNewChoice= array();
 	var	$show= array();
 	/**
 	 * pre-defined value-property like an flag in database
