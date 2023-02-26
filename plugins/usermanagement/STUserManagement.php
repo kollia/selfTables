@@ -76,17 +76,6 @@ class STUserManagement extends STObjectContainer
 	    
 	    $user= &$this->needTable("User");
 	    $user->setDisplayName("User");
-	    // *WARNING* column domain was GroupType
-	    $user->select("domain", "Domain");
-	    $user->preSelect("domain", "custom");
-	    $user->disabled("domain");
-	    $user->select("user", "User");
-	    $user->select("FullName", "full qualified name");
-	    $user->select("email", "Email");
-	    //$user->select("Description");
-	    $user->orderBy("domain");
-	    $user->orderBy("user");
-	    $user->setMaxRowSelect(50);
 	       
 	    $groups= &$this->needTable("Group");
 	    $groups->setDisplayName("Groups");
@@ -97,14 +86,22 @@ class STUserManagement extends STObjectContainer
 	}
 	function init()
 	{
-	    $session= &STUserSession::instance();
-	    
 	    $action= $this->getAction();
-		$user= &$this->needTable("User");
+	    $session= &STUserSession::instance();
+	    $domain= $session->getCustomDomain();
+	    
+	    $user= &$this->needTable("User");
+	    $user->select("domain", "Domain");
+	    $user->preSelect("domain", "custom");
+	    $user->disabled("domain");
+	    $user->select("user", "User");
+	    $user->select("FullName", "full qualified name");
+	    $user->select("email", "Email");
+	    //$user->select("Description");
 		
 		$groups= &$this->needTable("Group");
 		$groups->select("domain", "Domain");
-		$groups->preSelect("domain", $session->getCustomDomain()['Name']);
+		$groups->preSelect("domain", $domain['Name']);
 		$groups->disabled("domain");
 		$groups->select("Name", "Group");
 		
@@ -116,15 +113,14 @@ class STUserManagement extends STObjectContainer
 		
 		if($action==STLIST)
 		{
-		    STCheck::echoDebug("container", "new linked object defined to ".get_class($this)."(<b>$this->name</b>)");
 		    $user->select("NrLogin", "logged in");
 		    $user->select("LastLogin", "last login");
+		    $user->orderBy("domain");
+		    $user->orderBy("user");
+		    $user->setMaxRowSelect(50);
 		    
-		    $groups->select("domain", "Domain");
-		    $groups->preSelect("domain", $session->getCustomDomain()['name']);
-		    $groups->disabled("domain");
-		    $groups->select("Name", "Group");
-		    $groups->select("ID", "Description", "descriptionCallback");
+		    $groups->select("ID", "Description");
+		    $groups->listCallback("descriptionCallback", "Description");
 		    $groups->orderBy("domain");
 		    $groups->orderBy("Name");
 		    $groups->setMaxRowSelect(50);
