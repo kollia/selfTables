@@ -1671,21 +1671,63 @@ class STBaseTable
 		 * The column can also be a quoted string,
 		 * or contain a keyword from database
 		 *  
-		 * @param string $content string to check
-		 * @param array|boolean|null can be an array where the correct column inside by return, or the next boolean parameter
+		 * @param string|int|float $content string to check
+		 * @param array|boolean|null $abCorrect can be an empty array where the correct column inside by return, or the next boolean parameter
 		 * @param boolean $alias whether column can also be an alias name (default:false) 
 		 * @return boolean true if the column parameter is valid
 		 */		
-		public function validColumnContent(string $content, &$abCorrect= null, bool $bAlias= false) : bool
+		public function validColumnContent($content, &$abCorrect= null, bool $bAlias= false) : bool
 		{
 		    STCheck::param($abCorrect, 1, "array", "bool", "null");
 		    
-		    if(preg_match("/^['\"].*['\"]$/", $content))
-		        // column is maybe only an string content
+		    if(is_numeric($content))
+		    {
+		        if(is_array($abCorrect))
+		        {
+    		        $abCorrect['keyword']= "@value";
+    		        $abCorrect['content']= array();
+    		        if(is_float($content))
+    		        {
+    		            $abCorrect['type']= "real";
+    		            $abCorrect['len']= 11;
+    		        }else
+    		        {
+    		            $abCorrect['type']= "int";
+    		            $abCorrect['len']= null;
+    		        }
+		        }
 		        return true;
+		    }
+		    if(preg_match("/^['\"].*['\"]$/", $content))
+		    {// column is maybe only an string content		        
+		        if(is_array($abCorrect))
+		        {
+		            $abCorrect['keyword']= "@value";
+		            $abCorrect['content']= array( substr($content, 1, -1) );
+		            $abCorrect['type']= "string";
+		            $abCorrect['len']= strlen($content) - 2;
+		        }
+		        return true;
+		    }
 		    if(typeof($abCorrect, "bool"))
 		        $bAlias= $abCorrect;
-		    return $this->columnExist($content, $bAlias);
+		    if(is_array($abCorrect))
+		    {
+		        $abCorrect['keyword']= "@field";
+		        $abCorrect['content']= array();
+		        $abCorrect['type']= "string";
+		        $abCorrect['len']= strlen($content) - 2;
+		    }
+		    $field= $this->findColumnAlias($content, $bAlias, 2);
+		    if( $field['type'] == "not found" ||
+		        (   $bAlias == false &&
+		            $field['type'] == "alias"  )   )
+		    {
+		        return false;
+		    }
+		    if(is_array($abCorrect))
+		        $abCorrect['content']= $field;
+		    return true;
 		}
 		public function columnExist(string $column, bool $bAlias= false) : bool
 		{
@@ -2223,7 +2265,7 @@ class STBaseTable
 		}
 		public function identifColumn(string $column, string $alias= null)
 		{
-			Tag::alert(!$this->validColumnContent($column), "STBaseTable::identifColumn()", "column $column not exist in table ".$this->Name);
+			Tag::alert(!$this->validColumnContent($column), "STBaseTable::identifColumn()", "column '$column' not exist in table ".$this->Name, 1);
 
 			$column= $this->getDbColumnName($column);
 			if(	!isset($this->abNewChoice["identifColumn"]) ||

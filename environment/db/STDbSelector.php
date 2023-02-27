@@ -526,7 +526,7 @@ class STDbSelector extends STDbTable implements STContainerTempl
 		 * {@inheritDoc}
 		 * @see STBaseTable::validColumnContent()
 		 */
-		public function validColumnContent(string $content, &$abCorrect= null, bool $bAlias= false) : bool
+		public function validColumnContent($content, &$abCorrect= null, bool $bAlias= false) : bool
 		{
 		    $field= null;
 		    if( $this->bIsNnTable &&
@@ -535,7 +535,7 @@ class STDbSelector extends STDbTable implements STContainerTempl
 		    {
 		        $content= $this->aNnTableColumn['fks']['join']['column'];
     		    $field= array();
-    		    $field['columns'][]= $content;
+    		    $field['content'][]= $content;
 		    }
 		    $bRv= STDbTable::validColumnContent($content, $abCorrect, $bAlias);
 		    if( typeof($abCorrect, "array") &&

@@ -15,6 +15,10 @@ class STDbWhere
  	 * @private
  	 */
     var	$sForTable= "";
+    /**
+     * table object
+     */
+    private $oTable= null;
 	/**
 	 * if the clausel will be add to an other table,
 	 * use this operator
@@ -30,6 +34,7 @@ class STDbWhere
 	 * database name for which where-caluse is
 	 */
     var $sDbName= "";
+    private $oDb= null;
     /**
      * whether the statement should written into the 'on' statement if possible, 
      * otherwise by false value only into the 'where' statement
@@ -75,16 +80,20 @@ class STDbWhere
 	}
 	public function setDatabase($db)
 	{
-	    STCheck::param($db, 0, "STDatabase", "STDbTable", "string");
+	    STCheck::param($db, 0, "STDatabase", "STDbTable");
 	    
 	    if(typeof($db, "STDatabase"))
-	        $this->sDbName= $db->getDatabaseName();
-	    else if(typeof($db, "STDbTable"))
 	    {
+	        $this->oDb= $db;
+	        $this->sDbName= $db->getDatabaseName();
+	    }else if(typeof($db, "STDbTable"))
+	    {
+	        $this->oDb= $db->getDatabase();
 	        $this->table($db);
-	        $this->sDbName= $db->getDatabase()->getDatabaseName();
+	        $this->sDbName= $this->oDb->getDatabaseName();
 	    }else
-	        $this->sDbName= $db;
+	        STCheck::alert(1, "STDbWhere::setDatabase()", "parameter is no Database or Table");
+	    STCheck::echoDebug("db.statements.where", "set database '".$this->sDbName."' for where clause");
 	}
 	function isModified()
 	{
@@ -403,14 +412,22 @@ class STDbWhere
 		    //echo $content."<br />";
 		    //$content= preg_quote($content); // preg_quote makes before = an backslash
 		    //echo $content."<br />";
+		    
+		    $oTable= $this->oDb->getTable($this->sForTable);
 		    //-----------------------------------------------------------
-		    $pattern_first=  "([^><=!]*)"; // first is always the column
+		    $pattern_first=  "([^><=! \\t]*)"; // first is always the column
 		    //-----------------------------------------------------------
-		    $pattern_op=  "(>=|<=|<|>|=|<>|!=";
-		    $pattern_op.= "| +like +| +not +like +";			// operator
-		    $pattern_op.= "| +regexp +| +not +regexp +";
-		    $pattern_op.= "| +in| +not +in"; // behind in must not be an space
-		    $pattern_op.= "| +is +| +not +is +)";
+		    $operators= $this->oDb->getOperatorArray();
+		    $pattern_op= "(";
+		    foreach($operators as $op)
+		    {
+		        if(isset($op))
+		        {
+    		        $str= preg_replace("/[ \\t]+/", "[ \\t]+", $op);
+    		        $pattern_op.= "$str|";
+		        }
+		    }		    
+		    $pattern_op= substr($pattern_op, 0, -1).")";
 		    //-----------------------------------------------------------
 		    $pattern_second= "(.*)"; // second content can be an column or an content
 		    //-----------------------------------------------------------
@@ -426,32 +443,43 @@ class STDbWhere
 		            st_print_r($preg, 2, $space);
 		        }
 		    }
-		    $preg[1]= trim($preg[1]);
-		    $preg[2]= trim($preg[2]);
-		    $preg[3]= trim($preg[3]);
-		    if(	!is_numeric($preg[1])
-		        and
-		        substr($preg[1], 0, 1)!= "'"
-		        and
-		        !preg_match("/null/i", $preg[1])
-		        and
-		        !preg_match("/now([ ]*)/i", $preg[1])
-		        and
-		        !preg_match("/sysdate([ ]*)/i", $preg[1])
-		        and
-		        !preg_match("/password([ ]*)/i", $preg[1])	)
+		    
+		    $sOrgField1= trim($preg[1]);
+		    $operator= trim($preg[2]);
+		    $sOrgField2= trim($preg[3]);
+		    
+		    $content1= $content2= array();
+		    $field1= $oTable->validColumnContent($sOrgField1, $content1, /*alias*/true);
+		    STCheck::warning(!$field1, "STDbWhere::getStatement()",
+		        "incorrect first field of comparison from where statement '$old_content'", /*output*/2);
+		    if($content1['keyword'] == "@field")
 		    {
-		        $column= $preg[1];
-		        $value= $preg[3];
+		        $sfield1= $content1['content']['column'];
+		        if($aliasName)
+		            $sfield1= "$aliasName.$sfield1";
 		    }else
+		        $sfield1= $sOrgField1;
+		    $field2= $oTable->validColumnContent($sOrgField2, $content2, /*alias*/true);
+		    STCheck::warning(!$field2, "STDbWhere::getStatement()",
+		        "incorrect second field of comparison from where statement '$old_content'", /*output*/2);
+		    if($content2['keyword'] == "@field")
 		    {
-		        $column= $preg[3];
-		        $value= $preg[1];
-		    }
-		    if($aliasName)
-		        $column= $aliasName.".".$column;
-	        $content= $column." ".$preg[2]." ".$value;
-	        STCheck::echoDebug("db.statements.where", $old_content." become to column('".$column."') with content('".$content."')");
+		        $sfield2= $content1['content']['column'];
+		        if($aliasName)
+		            $sfield2= "$aliasName.$sfield2";
+		    }else
+		        $sfield2= $sOrgField2;
+		    
+	        $content= $sfield1.$operator.$sfield2;
+	        if(STCheck::isDebug("db.statements.where"))
+	        {
+	            if($content1['keyword'] == "@field")
+	                STCheck::echoDebug("db.statements.where", 
+	                    "first field '$sOrgField1' become to column('".$sfield1."') with content('".$content."')");
+                if($content2['keyword'] == "@field")
+                    STCheck::echoDebug("db.statements.where",
+                        "second field '$sOrgField2' become to column('".$sfield2."') with content('".$content."')");
+	        }
 	        return $content;
 		}
 		public function reset()

@@ -2136,6 +2136,54 @@ abstract class STDatabase extends STObjectContainer
         }
         return false;
 	}
+	/**
+	 * return an array of all operators
+	 * the key inside the array shouldn't changed
+	 * if an operator not exist, value should be null
+	 *
+	 * @return string[] operator array
+	 */
+	abstract public function getOperatorArray();
+	function getRegexpOperator()
+	{
+	    return getOperatorArray()["regexp"];
+	}
+	function getLikeOperator()
+	{
+	    return getOperatorArray()["like"];
+	}
+	function getIsOperator()
+	{
+	    return getOperatorArray()["="];
+	}
+	function getGreaterOperator()
+	{
+	    return getOperatorArray()[">"];
+	}
+	function getGreaterEqualOperator()
+	{
+	    return getOperatorArray()[">="];
+	}
+	function getLowerOperator()
+	{
+	    return getOperatorArray()["<"];
+	}
+	function getLowerEqualOperator()
+	{
+	    return getOperatorArray()["<="];
+	}
+	function getIsNotOperator()
+	{
+	    return getOperatorArray()["!="];
+	}
+	function getIsNullOberator()
+	{
+	    return getOperatorArray()["is"];
+	}
+	function getIsNotNullOperator()
+	{
+	    return getOperatorArray()["is not"];
+	}
 	function getDatabaseByName($dbName)
 	{
 		$containers= STObjectContainer::getAllContainer();
@@ -2153,19 +2201,6 @@ abstract class STDatabase extends STObjectContainer
 		//					nicht aktualiesiert, muss diese Funktion �berladen werden
 		return $this;
 	}
-/*	function &getTable($tableName= "")//, $bAllByNone= false)
-	{
-		Tag::paramCheck($tableName, 1, "string", "empty(string)", "null");
-		$nParams= func_num_args();
-		STCheck::lastParam(1, $nParams);
-		Tag::alert($this->dbType=="BLINDDB", "STDatabase::getTable() ::needTable()", "can not read any Table from STDatabase BLINDDB");
-		
-		echo __FILE__.__LINE__."<br>";
-		echo "----------------------------------------------------------------------------------------------------------------------------<br>";
-		$table= STObjectContainer::getTable($tableName);
-		if(isset($table))
-		    return $table;
-	}*/
     function &createTable($tableName)
     {
         $table= null;
@@ -2213,18 +2248,6 @@ abstract class STDatabase extends STObjectContainer
 		}
 		return $table;
 	}
-/*	public function &getTable($tableName)
-	{
-		$table= STObjectContainer::getTable($tableName);
-		if(typeof($table, "STBaseTable"))
-			return $table;
-		$orgTableName= $this->getTableName($tableName);
-		
-		// otherwise create an new table-object with the new container
-		$table= new STDbTable($orgTableName, $this);
-		return $table;
-	}*/
-	//deprecated wurde als doChoice in STObjectContainer verschoben
 	function noChoise($table)
 	{
 		if(typeof($table, "MUDbTable"))
@@ -2232,17 +2255,42 @@ abstract class STDatabase extends STObjectContainer
 		$this->aNoChoice[$table]= $table;
 	}
 	abstract protected function insert_id();
+	abstract protected function getValueKeywords() : array;
+	abstract protected function getFunctionKeywords() : array;
 	/**
 	 * inform whether content of parameter is an keyword
-	 * 
+	 *
 	 * @param string $column content of column
-	 * @return array array of keyword, column, type and len, otherwise false.<br />
+	 * @return array array of keyword, content, type and len, otherwise false.<br />
 	 *                 the keyword is in lower case and have to be const/max/min<br />
-	 *                 the column is the column inside the keyword (not shure whether it's a correct name/alias)<br />
-	 *                 the type of returned value by execute the keyword on database
+	 *                 the content is an array with columns or strings which where seperated with an comma (not shure whether it's a correct name/alias)<br />
+	 *                 the type of returned value by execute
 	 *                 the len of returned value by execute
 	 */
-	public abstract function keyword(string $column);
+	public function keyword(string $column)
+	{
+	    $lwStr= strtolower(trim($column));
+	    $single= $this->getValueKeywords();
+	    $allowed= array_merge($this->getFunctionKeywords(), $single);
+	    if(isset($single[$lwStr]))
+	    {
+	        $keyword= $lwStr;
+	        $inherit= array();
+	    }else
+	    {
+	        $preg= array();
+	        if(!preg_match("/^([^\(\)]+)\((.*)\)$/", trim($column), $preg))
+	            return false;
+	            $keyword= strtolower($preg[1]);
+	            if(!array_key_exists($keyword, $allowed))
+	                return false;
+	                $inherit= preg_split("/[ ,]/", $preg[2], PREG_SPLIT_NO_EMPTY);
+	    }
+	    return array(  "keyword" => $keyword,
+	        "content" => $inherit,
+	        "type" => $allowed[$keyword]['type'],
+	        "len" => $allowed[$keyword]['len']     );
+	}
 	function getLastInsertID()
 	{
 		return $this->insert_id();

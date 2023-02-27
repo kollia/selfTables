@@ -898,7 +898,7 @@ class STDbTable extends STBaseTable
                         $debugString.= ".".$column["column"];
                         if(	isset($column["alias"]) )
                             $debugString.= " as ".$column["alias"];
-                            Tag::echoDebug("db.statements.select", $debugString);
+                        Tag::echoDebug("db.statements.select", $debugString);
                     }
                 }else
                 {
@@ -1668,7 +1668,7 @@ class STDbTable extends STBaseTable
             if($inherit)
             {
                 $columnString= "";
-                foreach($inherit["columns"] as $col)
+                foreach($inherit["content"] as $col)
                 {
                     if(	$col=="distinct"
                         or
@@ -1730,7 +1730,7 @@ class STDbTable extends STBaseTable
 	 * {@inheritDoc}
 	 * @see STBaseTable::validColumnContent()
 	 */
-	public function validColumnContent(string $content, &$abCorrect= null, bool $bAlias= false) : bool
+	public function validColumnContent($content, &$abCorrect= null, bool $bAlias= false) : bool
 	{
         $field= $this->getDatabase()->keyword($content);
         if($field != false)

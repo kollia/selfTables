@@ -485,37 +485,26 @@ class STDbMySql extends STDatabase
 			throw new Exception("type '$type' does not exist inside known list");
 		return $this->columnTypes[$type];
 	}
-	/**
-	 * inform whether content of parameter is an keyword
-	 *
-	 * @param string $column content of column
-	 * @return array array of keyword, column, type and len, otherwise false.<br />
-	 *                 the keyword is in lower case and have to be const/max/min<br />
-	 *                 the column is the column inside the keyword (not shure whether it's a correct name/alias)<br />
-	 *                 the type of returned value by execute
-	 *                 the len of returned value by execute
-	 */
-	public function keyword(string $column)
+	protected function getValueKeywords() : array
 	{
-	    $preg= array();
-	    if(!preg_match("/^([^\(\)]+)\((.*)\)$/", trim($column), $preg))
-	        return false;
-	    $allowed= array(
+	    return array(
+	        "null" => array( "type" => "byte", "len" => 1 ),
+	        "false" => array( "type" => "byte", "len" => 1 ),
+	        "true" => array( "type" => "byte", "len" => 1 )
+	    );
+	}
+	protected function getFunctionKeywords() : array
+	{
+	    return array(
 	        "now" => array( "type" => "date", "len" => 10 ),
 	        "date" => array( "type" => "date", "len" => 10 ),
 	        "sysdate" => array( "type" => "date", "len" => 10 ),
 	        "password" => array( "type" => "char", "len" => 512 ),
 	        "count" => array( "type" => "int", "len" => 11 ),
 	        "min" => array( "type" => "int", "len" => 11 ),
-	        "max" => array( "type" => "int", "len" => 11 )              );	    
-	    $keyword= strtolower($preg[1]);
-	    if(!array_key_exists($keyword, $allowed))
-	        return false;
-	    $inherit= preg_split("/[ ,]/", $preg[2], PREG_SPLIT_NO_EMPTY);
-	    return array(  "keyword" => $keyword,
-	                   "columns" => $inherit,
-	                   "type" => $allowed[$keyword]['type'],
-	                   "len" => $allowed[$keyword]['len']     );
+	        "max" => array( "type" => "int", "len" => 11 ),
+	        "in" => array( "type" => "text", "len" => $this->getTextLen() )
+	    );
 	}
 	protected function insert_id()
 	{
@@ -577,45 +566,34 @@ class STDbMySql extends STDatabase
 		$typ= $this->getTyp($typ);
 	 	return $this->fetch($statement, $typ, $onError);
 	}
-	function getRegexpOperator()
+	/**
+	 * return an array of all operators
+	 * the key inside the array shouldn't changed
+	 * if an operator not exist, value should be null
+	 * 
+	 * @return string[] operator array
+	 */
+	public function getOperatorArray()
 	{
-		return "regexp";
-	}
-	function getLikeOperator()
-	{
-		return "like";
-	}
-	function getIsOperator()
-	{
-		return "=";
-	}
-	function getGreaterOperator()
-	{
-		return ">";
-	}
-	function getGreaterEqualOperator()
-	{
-		return ">=";
-	}
-	function getLowerOperator()
-	{
-		return "<";
-	}
-	function getLowerEqualOperator()
-	{
-		return "<=";
-	}
-	function getIsNotOperator()
-	{
-		return "!=";
-	}
-	function getIsNullOberator()
-	{
-		return "is";
-	}
-	function getIsNotNullOperator()
-	{
-		return "is not";
+	    $arr= 
+	       array(
+	           "regexp"   => "regexp",
+	           "not regexp" => "not regexp",
+	           "like"     => "like",
+	           "not like" => "not like",
+    	       "is"      => "is",
+	           "is not"  => "is not",
+	        // "not in"   => "not in", <- in is an keyword
+	           "not"     => "not", // take not in last position
+    	       "="       => "=",
+    	       ">"       => ">",
+    	       ">="      => ">",
+    	       "<"       => "<",
+    	       "<="      => "<=",
+    	       "!="      => "!=",
+	           "<>"      => "<>"
+	       );
+	    return $arr;
 	}
 	function getIntLen()
 	{
