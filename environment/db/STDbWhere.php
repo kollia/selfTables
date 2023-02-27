@@ -620,7 +620,7 @@ class STDbWhere
 		        }elseif(typeof($content, "STDbWhere"))
 		        {
 		            if($this->sDbName != "")
-		                $content->setDatabase($this->sDbName);
+		                $content->setDatabase($this->oDb);
 	                STCheck::echoDebug("db.statements.where", "found new STDbWhere object inside array and create rekursive");
 	                $newStatement= $content->getStatement($oTable, $condition, $aliases);
 	                if(trim($newStatement) != "")

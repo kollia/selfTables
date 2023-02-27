@@ -16,7 +16,8 @@ function permissionCallback(&$callbackObject, $columnName, $rownum)
     if($rownum == 0)
     {
         $instance= STUserSession::instance();
-        $__global_UserClusterGroup_CALLBACK['domain']= $instance->mainDOMAIN;
+        $domain= $instance->getCustomDomain();
+        $__global_UserClusterGroup_CALLBACK['domain']= $domain['Name'];
     }
     
     if($callbackObject->getValue() == 1)
@@ -91,26 +92,20 @@ class STUserClusterGroupManagement extends STObjectContainer
 	    $action= $this->getAction();
 	    $currentTableName= $this->getTableName();
 	    $groupTableName= $this->getTableName("Group");
-	    $clusterTableName= $this->getTableName("Cluster");
-	    $prj= $this->getTable("Project");
-	    
-	    $query= new STQueryString();	    
-	    $projectName= "-xxx-";
-/*	    $limitation= $query->getLimitation($prj->getName());
-	    if(isset($limitation))
-	    {
-	        $projectName= $limitation['Name'];
-	        $prjIDTable= new STDbSelector($prj);
-	        $prjIDTable->select("Project", "ID", "ID);
-	        $prjIDTable->where("Name='$projectName'");
-	        $prjIDTable->execute();
-	        $projectID= $prjIDTable->getSingleResult();
-	    }*/	   
+	    $projectName= STUserSession::instance()->getProjectName();
 	    
 	    
-	    //$group= $this->getTable("User");
+	    $query= new STQueryString();
+	    $prjName= $query->getLimitation("MUProject")['Name'];
+	    $projectCenter= new CenterTag();
+    	    $projectHeadline= new H2Tag();
+    	        $projectHeadline->add("Project ");
+    	        $projectName= new SpanTag("projectname");
+    	            $projectName->add($prjName);
+    	            $projectHeadline->add($projectName);
+    	        $projectCenter->add($projectHeadline);
+	    $this->addBehindHeadLineButtons($projectCenter);
 	    
-	    //$gr= $this->getTable("Group");
 	    $domain= $this->getTable("AccessDomain");
 	    $domain->identifColumn("Name", "Domain");
 	    
@@ -123,9 +118,7 @@ class STUserClusterGroupManagement extends STObjectContainer
 	    $group->select("Group", "ID", "Permissions");
 	    $group->listCallback("permissionCallback", "Permissions");
 	    $group->select("UserGroup", "DateCreation", "member since");
-	    echo __FILE__.__LINE__."<br>";
 	    $group->orderBy("AccessDomain", "Name");
-	    echo __FILE__.__LINE__."<br>";
 	    $group->orderBy("Group", "Name");
 	    $group->setMaxRowSelect(20);
 	    $group->noJoinOver("Log");
@@ -142,7 +135,7 @@ class STUserClusterGroupManagement extends STObjectContainer
 	        $user= $this->getTable("User");
 	        $user= new STDbSelector($user);
 	        $user->select("User", "ID", "ID");
-	        $user->select("User", "domain", "domain");
+	        $user->select("User", "domain", "Domain");
 	        $user->select("User", "user", "user");
 	        $user->select("User", "FullName", "full");
 	        $user->orderBy("User", "domain");

@@ -3073,6 +3073,7 @@ class STBaseTable
             $tableMsg.= " from container <b>".$this->container->getName()."</b>";
 	    }
 	    
+	    $query= new STQueryString();
 	    $where= new STDbWhere();
 	    if($this->bModifyFk)
 	    {
@@ -3101,7 +3102,6 @@ class STBaseTable
                     st_print_r($this->aFks, 3, $nIntented);
                 echo "<br />";
             }
-            $query= new STQueryString();
             foreach($fks as $table=>$fields)
             {
                 foreach($fields as $aColumnType)
