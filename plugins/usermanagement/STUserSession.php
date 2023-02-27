@@ -12,7 +12,7 @@ class STUserSession extends STDbSession
 	 * registerd with this usermanagement
 	 * @var string
 	 */
-	private $mainDOMAIN= "CO";
+	private $mainDOMAIN= "CU";
 	private $accessDomains= array(   array(  "ID" => -1,
 	                                       "Name" => "xxx", // <- will be defined inside constructor
         	                               "Prefix" => "*",
@@ -101,6 +101,32 @@ class STUserSession extends STDbSession
 	        $object= &$instance;	        
 	       
 	    return STDbSession::init($object, $prefix);
+	}
+	/**
+	 * set new custom domain.<br />
+	 * have to set inside the constructor of the overloaded class
+	 * 
+	 * @param string $name name of the new custom domain
+	 * @param string $prefix prefix with which a new cluster be filled
+	 * @param string $description description for this domain
+	 */
+	public function setNewCustomDomain(string $name, string $prefix= null, string $description= null)
+	{
+	    $this->mainDOMAIN= $name;
+	    $domainKey= null;
+	    foreach($this->accessDomains as $key => $curDomain)
+	        if($curDomain["ID"] == -1)
+	        {
+	            $domainKey= $key;
+	            break;
+	        }
+	    if(isset($domain))
+	    {
+    	    if(isset($prefix))
+    	        $this->accessDomains[$domainKey]['Prefix']= $prefix;
+	        if(isset($description))
+	            $this->accessDomains[$domainKey]['Description']= $description;
+	    }
 	}
 	public function getOnlineGroup() : string
 	{ return $this->onlineGroup; }
@@ -1171,16 +1197,21 @@ class STUserSession extends STDbSession
 	public function getCustomDomain() : array
 	{
 	    $domain= $this->getDomain($this->mainDOMAIN);
-	    if( $domain == null ||
-	        $domain['ID'] == -1    )
+	    STCheck::alert(!isset($domain), "STUserSession::getCustomDomain()", "get from method STUserSession::getDomain() wrong null value");
+	    if( $domain['ID'] == -1 )
 	    {
-	        if(!isset($domain))
-	        {// only for wrong warning
-	            exit;
+	        $table= $this->database->getTable("AccessDomain");
+	        $domainTable= new STDbSelector($table);
+	        $domainTable->select("AccessDomain", $table->getPKColumnName(), "ID");
+	        $domainTable->where("Name='".$this->mainDOMAIN."'");
+	        $domainTable->execute(onErrorStop);
+	        $domain['ID']= $domainTable->getSingleResult();
+	        if( $domain['ID'] == -1 )
+	        {	            
+    	        if($this->createDomain($domain['Name'], $domain['Prefix'], $domain['Description']) == -1)
+    	            return null;
+    	        $domain= $this->getDomain($this->mainDOMAIN);
 	        }
-	        if($this->createDomain($domain['Name'], $domain['Prefix'], $domain['Description']) == -1)
-	            return null;
-	        $domain= $this->getDomain($this->mainDOMAIN);
 	    }
 	    return $domain;
 	}
