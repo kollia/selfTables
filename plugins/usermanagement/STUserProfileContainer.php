@@ -36,11 +36,11 @@ class STUserProfileContainer extends STObjectContainer
 		$action= $this->getAction();
 		if($action==STLIST)
 		{
-		    $user->select("NrLogin", "besucht");
-			$user->select("LastLogin", "letzter Zugriff");
+		    $user->select("NrLogin", "logged in");
+			$user->select("LastLogin", "last login");
 		}else
 		{
-			$user->select("Pwd");
+			$user->select("Pwd", "Pwd");
 			$user->password("Pwd", true);
 			if($this->currentContainer())
 				$user->passwordNames("altes Passwort", "neues Passwort", "Passwort wiederholung");

@@ -28,8 +28,8 @@ function permissionCallback(&$callbackObject, $columnName, $rownum)
     {
         $clusterTable= $callbackObject->getTable("Cluster");
         $cluster= new STDbSelector($clusterTable);
-        $cluster->select("Project", "Name");
-        $cluster->select("Cluster", "Description");
+        $cluster->select("Project", "Name", "Name");
+        $cluster->select("Cluster", "Description", "Description");
         $cluster->select("Group", "Name", "group");
         $cluster->where("ClusterGroup", "GroupID=".$callbackObject->getValue());
         $cluster->orderBy("Project", "Name");
@@ -101,7 +101,7 @@ class STUserClusterGroupManagement extends STObjectContainer
 	    {
 	        $projectName= $limitation['Name'];
 	        $prjIDTable= new STDbSelector($prj);
-	        $prjIDTable->select("Project", "ID");
+	        $prjIDTable->select("Project", "ID", "ID);
 	        $prjIDTable->where("Name='$projectName'");
 	        $prjIDTable->execute();
 	        $projectID= $prjIDTable->getSingleResult();
@@ -141,7 +141,7 @@ class STUserClusterGroupManagement extends STObjectContainer
 	    {
 	        $user= $this->getTable("User");
 	        $user= new STDbSelector($user);
-	        $user->select("User", "ID");
+	        $user->select("User", "ID", "ID");
 	        $user->select("User", "domain", "domain");
 	        $user->select("User", "user", "user");
 	        $user->select("User", "FullName", "full");
@@ -199,7 +199,7 @@ class STUserClusterGroupManagement extends STObjectContainer
 		$cluster= $this->getTable("Cluster");
 		$cluster->select("ID", "Cluster");
 		$cluster->namedLink("Cluster", $this->clusterGroup);
-		$cluster->select("Description");
+		$cluster->select("Description", "Description");
 		$cluster->joinOver("Project");
 /*		if( $currentTableName == $clusterTableName &&
 		    $action == STLIST)

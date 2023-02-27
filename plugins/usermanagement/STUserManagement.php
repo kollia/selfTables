@@ -22,8 +22,8 @@ function descriptionCallback(&$callbackObject, $columnName, $rownum)
     {
         $clusterTable= $callbackObject->getTable("Cluster");
         $cluster= new STDbSelector($clusterTable);
-        $cluster->select("Project", "Name");
-        $cluster->select("Cluster", "Description");
+        $cluster->select("Project", "Name", "Name");
+        $cluster->select("Cluster", "Description", "Description");
         $cluster->where("ClusterGroup", "GroupID=".$callbackObject->sqlResult[$rownum]['access to CLUSTERs']);
         $cluster->execute();
         $aResult= $cluster->getResult();
@@ -72,7 +72,7 @@ class STUserManagement extends STObjectContainer
 	    
 	    $domain= $this->getTable("AccessDomain");
 	    $domain->identifColumn("Name", "Domain");
-	    //$domain->select("ID", "Domain");
+	    //$domain->select("ID", "Domain", "Domain);
 	    
 	    $user= &$this->needTable("User");
 	    $user->setDisplayName("User");
@@ -92,12 +92,12 @@ class STUserManagement extends STObjectContainer
 	    
 	    $user= &$this->needTable("User");
 	    $user->select("domain", "Domain");
-	    $user->preSelect("domain", "custom");
+	    $user->preSelect("domain", $domain['Name']);
 	    $user->disabled("domain");
 	    $user->select("user", "User");
 	    $user->select("FullName", "full qualified name");
 	    $user->select("email", "Email");
-	    //$user->select("Description");
+	    //$user->select("Description", "Description);
 		
 		$groups= &$this->needTable("Group");
 		$groups->select("domain", "Domain");
@@ -107,7 +107,7 @@ class STUserManagement extends STObjectContainer
 		
 		$project= &$this->needTable("Project");
 		$project->select("Name", "Project");
-		$project->select("Description");
+		$project->select("Description", "Description");
 		$project->select("Path", "Position");
 		$project->orderBy("Name");
 		
@@ -128,7 +128,7 @@ class STUserManagement extends STObjectContainer
 		    $project->namedLink("Project", $this->userClusterGroup);
 		}else
 		{
-			$user->select("Pwd");
+			$user->select("Pwd", "Pwd");
 			$user->password("Pwd", true);
 		    $user->passwordNames("new Passwort", "Password repetition");
 		}
@@ -158,7 +158,7 @@ class STUserManagement extends STObjectContainer
     	$project->clearSelects();
     	$project->clearIdentifColumns();
     	$project->clearGetColumns();
-    	$project->select("ID");
+    	$project->select("ID", "ID");
 		$project->where("Name='".$projectName."'");
     	$selector= new STDbSelector($project);
     	$selector->execute();

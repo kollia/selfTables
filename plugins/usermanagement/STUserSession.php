@@ -787,8 +787,8 @@ class STUserSession extends STDbSession
 		//$statement= "select ID,ProjectID from MUCluster";
 		$oCluster= &$this->database->getTable("Cluster");
 		$clusterSelector= new STDbSelector($oCluster, STSQL_ASSOC);
-		$clusterSelector->select("Cluster", "ID");
-		$clusterSelector->select("Cluster", "ProjectID");
+		$clusterSelector->select("Cluster", "ID", "ID");
+		$clusterSelector->select("Cluster", "ProjectID", "ProjectID");
 		$clusterSelector->execute();
 		$aClusters= $clusterSelector->getResult();
 		foreach($aClusters as $row)
@@ -1259,10 +1259,10 @@ class STUserSession extends STDbSession
 	    {
 	        $domain= $this->getUserDb()->getTable("AccessDomain");
 	        $domainSelector= new STDbSelector($domain);
-	        $domainSelector->select("AccessDomain", "ID");
-	        $domainSelector->select("AccessDomain", "Name");
-	        $domainSelector->select("AccessDomain", "Label");
-	        $domainSelector->select("AccessDomain", "Description");
+	        $domainSelector->select("AccessDomain", "ID", "ID");
+	        $domainSelector->select("AccessDomain", "Name", "Name");
+	        $domainSelector->select("AccessDomain", "Label", "Label");
+	        $domainSelector->select("AccessDomain", "Description", "Description");
 	        $domainSelector->where("Name='$domainName'");
 	        $domainSelector->execute();
 	        $res= $domainSelector->getRowResult();
@@ -1314,7 +1314,7 @@ class STUserSession extends STDbSession
 	    echo __FILE__.__LINE__."<br>";
 	    echo "create join between $clusterName and $group<br>";
 	    $cluster= new STDbSelector($this->database->getTable("Cluster"));
-		$cluster->select("Cluster", "ID");
+		$cluster->select("Cluster", "ID", "ID");
 		$cluster->where("ID='".$clusterName."'");
 		$cluster->execute();
 		if(STCheck::is_error(!$cluster->getErrorId(), "STUserSession::joinClusterGroup()", "group ".$group." for join to <b>CLUSTER</b> does not exist"))
@@ -1323,7 +1323,7 @@ class STUserSession extends STDbSession
 	    echo __FILE__.__LINE__."<br>";
 		
 		$grouptable= new STDbSelector($this->database->getTable("Group"));
-		$grouptable->select("Group", "ID");
+		$grouptable->select("Group", "ID", "ID");
 		$grouptable->where("Name='".$group."'");
 		$grouptable->execute();
 		if(STCheck::is_error($grouptable->getErrorId(), "STUserSession::joinClusterGroup()", "group ".$group." for join to <b>CLUSTER</b> does not exist"))
@@ -1354,7 +1354,7 @@ class STUserSession extends STDbSession
 		{
 			$usertable= $this->database->getTable("User");
 			$usertable->clearSelects();
-			$usertable->select("ID");
+			$usertable->select("ID", "ID");
 			$usertable->where("UserName='".$user."'");
 			$selector= new STDbSelector($usertable);
 			$selector->execute();
@@ -1370,7 +1370,7 @@ class STUserSession extends STDbSession
 		{
 			$grouptable= $this->database->getTable("Group");
 			$grouptable->clearSelects();
-			$grouptable->select("ID");
+			$grouptable->select("ID", "ID");
 			$grouptable->where("Name='".$group."'");
 			$selector= new STDbSelector($grouptable);
 			$selector->execute();
@@ -1412,8 +1412,8 @@ class STUserSession extends STDbSession
 
 		$clusterGroup= $this->database->getTable($this->sClusterGroupTable);
 		$clusterGroup->clearSelects();
-		$clusterGroup->select("ID");
-		$clusterGroup->select("GroupID");
+		$clusterGroup->select("ID", "ID");
+		$clusterGroup->select("GroupID", "GroupID");
 		$clusterGroup->clearFks();
 		$clusterGroup->modifyForeignKey(false);
 		$clusterGroup->where($this->asClusterGroupTableColumns["ClusterID"]["column"]."='".$cluster."'");
