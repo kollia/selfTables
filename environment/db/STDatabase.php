@@ -1033,47 +1033,6 @@ abstract class STDatabase extends STObjectContainer
 		}
 		STObjectContainer::setInTableColumnNewFlags($tableName, $columnName, $flags);
 	}
-	function make_insertString($table, $post_vars= null)
-	{
-		Tag::deprecated("STDatabase::getInsertStatemant($table, $post_vars)", "STDatabase::make_insertString($table, $post_vars");
-		return $this->getInsertStatement($table, $post_vars);
-	}
-	function getInsertStatement($table, $values= null)
-	{
-		$key_string= "";
-		$value_string= "";
-		$result= $this->make_sql_values($table, $values);
-		$types= $this->read_inFields($table, "type");
-		$flags= $this->read_inFields($table, "flags");
-		if(typeof($table, "STDbTable"))
-			$table= $table->getName();
-
-		if(STCheck::isDebug("db.statement.modify"))
-		{
-		    $space= STCheck::echoDebug("db.statement.modify", "insert follow values into database table <b>$table</b>");
-	        st_print_r($result,3, $space);
-		}
-        foreach($result as $key => $value)
-		{
-		    if(STCheck::isDebug("db.statement.modify"))
-		    {
-		        STCheck::echoDebug("db.statement.modify", "field <b>$key</b>:");
-		        STCheck::echoDebug("db.statement.modify", "   from type '".$types[$key]."'");
-		        STCheck::echoDebug("db.statement.modify", "   with flag '".$flags[$key]."'");
-		        STCheck::echoDebug("db.statement.modify", "   and value '$value'");
-		        echo "<br />";
-		    }
-			if(!preg_match("/auto_increment/i", $flags[$key]))
-			{
-    	   		$key_string.= "$key,";
-			    $value_string.= $this->add_quotes($types[$key], $value).",";
-			}
-		}
-		$key_string= substr($key_string, 0, strlen($key_string)-1);
-		$value_string= substr($value_string, 0, strlen($value_string)-1);
-        $sql="INSERT INTO $table($key_string) VALUES($value_string)";
-		return $sql;
-	}
 	function list_tables($onError= onErrorStop)
 	{
 		if($this->dbType=="BLINDDB")

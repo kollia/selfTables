@@ -1918,28 +1918,23 @@ class STItemBox extends STBaseBox
             		$post[$this->password]= "password('".$post[$this->password]."')";
             	}
 
-
-				$statement= null;
             	if($this->action==STINSERT)
 				{
-				    $db_case= new STDbInserter($this->asDBTable);
-					if(isset($this->asDBTable))
+				    $db_case= null;
+					if(	isset($this->asDBTable->aAuto_increment["session"])	)
 					{
-						if(	!$bError
-							and
-							isset($this->asDBTable->aAuto_increment["session"])	)
-						{
-							$PK= $this->asDBTable->aAuto_increment["PK"];
-							$value= $post[$PK];
-							$where= new STDbWhere($this->db, $PK."=".$value);
-							$statement= $this->db->getUpdateStatement($table, $where, $post);
-						}
-					}
-					if(	!$bError
-						and
-						!$statement	)// no previouse Select made
+						$PK= $this->asDBTable->aAuto_increment["PK"];
+						$changedValues= $this->getChangedResult($post);
+						$db_case= new STDbUpdater($this->asDBTable);
+						foreach($changedValues as $column => $value)
+						    $db_case->update($column, $value);
+						$where= new STDbWhere($this->db, $PK."=".$post[$PK]);
+						$db_case->where($where);
+					}else
 					{
-            			$statement= $this->db->getInsertStatement($table, $post);
+					    $db_case= new STDbInserter($this->asDBTable);
+					    foreach($post as $column => $value)
+					        $db_case->fillColumn($column, $value);
 					}
             	}else
 				{

@@ -1,14 +1,20 @@
 <?php
 
+require_once($_stdbsqlcases);
 require_once($_stusersession);
 
-class STDbInserter
+class STDbInserter extends STDbSqlCases
 {
 	var	$db;
 	var	$table;
 	var $columns= array();
 	var $nAktRow= 0;
 	var $sAccessClusterColumn;
+	/**
+	 * last inserted primary key 
+	 * @var Integer|string
+	 */
+	private $lastInsertID= -1;
 	/**
 	 * exist sql statement
 	 * @var string array
@@ -31,9 +37,9 @@ class STDbInserter
 	}
 	function fillColumn(string $column, $value)
 	{
-		STCheck::param($column, 0, "string");
 		STCheck::param($value, 1, "string", "int");
 
+		
 		if(preg_match("/^[ ]*['\"](.*)['\"][ ]*$/", $value, $preg))
 			$value= $preg[1];
 		$this->columns[$this->nAktRow][$column]= $value;
@@ -47,9 +53,44 @@ class STDbInserter
 	    if(!isset($this->statements[$nr]))
 	    {
 	        $this->createCluster($this->columns[$nr]);
-	        $this->statement[$nr]= $this->table->db->getInsertStatement($this->table, $this->columns[$nr]);
+	        $this->statement[$nr]= $this->getInsertStatement($nr);
 	    }
 	    return $this->statement[$nr];
+	}
+	function getInsertStatement(int $nr) //$table, $values= null)
+	{
+	    $key_string= "";
+	    $value_string= "";
+	    $result= $this->make_sql_values($this->columns[$nr]);
+	    $types= $this->read_inFields("type");
+	    $flags= $this->read_inFields("flags");
+	    $table= $this->table->getName();
+	        
+        if(STCheck::isDebug("db.statement.modify"))
+        {
+            $space= STCheck::echoDebug("db.statement.modify", "insert follow values into database table <b>$table</b>");
+            st_print_r($result,3, $space);
+        }
+        foreach($result as $key => $value)
+        {
+            if(STCheck::isDebug("db.statement.modify"))
+            {
+                STCheck::echoDebug("db.statement.modify", "field <b>$key</b>:");
+                STCheck::echoDebug("db.statement.modify", "   from type '".$types[$key]."'");
+                STCheck::echoDebug("db.statement.modify", "   with flag '".$flags[$key]."'");
+                STCheck::echoDebug("db.statement.modify", "   and value '$value'");
+                echo "<br />";
+            }
+            if(!preg_match("/auto_increment/i", $flags[$key]))
+            {
+                $key_string.= "$key,";
+                $value_string.= $this->add_quotes($types[$key], $value).",";
+            }
+        }
+        $key_string= substr($key_string, 0, strlen($key_string)-1);
+        $value_string= substr($value_string, 0, strlen($value_string)-1);
+        $sql="INSERT INTO $table($key_string) VALUES($value_string)";
+        return $sql;
 	}
 	public function execute($onError= onErrorStop)
 	{
@@ -84,6 +125,7 @@ class STDbInserter
 	}
 	function getLastInsertID()
 	{
+	    showErrorTrace();
 		return $this->lastInsertID;
 	}
 	function createCluster(&$row)
