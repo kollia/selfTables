@@ -1850,13 +1850,13 @@ abstract class STDatabase extends STObjectContainer
 	        $nr= "t".$nr;
 	    return $this->aAliases;
 	}
-	function getStatement(STDbTable $oTable, bool $bFromIdentifications= false, bool $withAlias= null)
+	function getStatement(STDbTable $oTable, bool $bFromIdentifications= false, bool $bWithColumnAlias= null)
 	{
 	    if(STCheck::isDebug())
 	    {
     		STCheck::param($oTable, 0, "STDbTable");
     		STCheck::param($bFromIdentifications, 1, "bool");
-    		STCheck::param($withAlias, 2, "bool", "null");
+    		STCheck::param($bWithColumnAlias, 2, "bool", "null");
 
     		$msg= "create sql statement from table ";
     		$msg.= $oTable->toString();
@@ -1891,7 +1891,7 @@ abstract class STDatabase extends STObjectContainer
 									//					die Haupttabelle als dritter Parameter mitgegeben werden
 		$tableName= $oTable->getName();
 		$this->bFirstSelectStatement= true;
-		$statement= $oTable->getSelectStatement($aliasTables, $withAlias);
+		$statement= $oTable->getSelectStatement($aliasTables, $bFromIdentifications, $bWithColumnAlias);
 		// implement tables which are joined from user
 	    if(count($joinTables))
 	        $aliasTables= array_merge($aliasTables, $joinTables);
