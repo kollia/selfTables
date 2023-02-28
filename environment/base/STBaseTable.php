@@ -731,12 +731,6 @@ class STBaseTable
 		}
 		$this->limitRows= array("start"=>$start, "limit"=>$limit);
 	}
-	// deprecated new is clearIndexSelect
-	function clearMaxRowSelect()
-	{
-		Tag::deprecated("STBaseTable::clearIndexSelect()", "STBaseTable::clearMaxRowSelect()");
-		$this->nMaxRowSelect= null;
-	}
 	function getMaxRowSelect()
 	{
 		return $this->nMaxRowSelect;
