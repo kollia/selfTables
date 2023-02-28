@@ -96,15 +96,19 @@ class STUserClusterGroupManagement extends STObjectContainer
 	    
 	    
 	    $query= new STQueryString();
-	    $prjName= $query->getLimitation("MUProject")['Name'];
-	    $projectCenter= new CenterTag();
-    	    $projectHeadline= new H2Tag();
-    	        $projectHeadline->add("Project ");
-    	        $projectName= new SpanTag("projectname");
-    	            $projectName->add($prjName);
-    	            $projectHeadline->add($projectName);
-    	        $projectCenter->add($projectHeadline);
-	    $this->addBehindHeadLineButtons($projectCenter);
+	    $limitation= $query->getLimitation("MUProject");
+	    if(isset($limitation))
+	    {
+    	    $prjName= $limitation['Name'];
+    	    $projectCenter= new CenterTag();
+        	    $projectHeadline= new H2Tag();
+        	        $projectHeadline->add("Project ");
+        	        $projectName= new SpanTag("projectname");
+        	            $projectName->add($prjName);
+        	            $projectHeadline->add($projectName);
+        	        $projectCenter->add($projectHeadline);
+    	    $this->addBehindHeadLineButtons($projectCenter);
+	    }
 	    
 	    $domain= $this->getTable("AccessDomain");
 	    $domain->identifColumn("Name", "Domain");
