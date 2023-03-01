@@ -98,7 +98,7 @@ class STUserClusterGroupManagement extends STObjectContainer
 	    //echo "container:$container<br>";
 	    //echo "table:$currentTableName<br>";
 	    
-	    if($container != "STUserClusterGroupManagement")
+	    if($container != "UserClusterGroupManagement")
 	        return;
 	    $query= new STQueryString();
 	    $limitation= $query->getLimitation("MUProject");
