@@ -89,12 +89,17 @@ class STUserClusterGroupManagement extends STObjectContainer
 	}
 	function init()
 	{
-	    $action= $this->getAction();
+	    $container= $this->getContainerName();
 	    $currentTableName= $this->getTableName();
 	    $groupTableName= $this->getTableName("Group");
+	    $userTableName= $this->getTableName("User");
 	    $projectName= STUserSession::instance()->getProjectName();
+	    //echo __FILE__.__LINE__."<br>";	    
+	    //echo "container:$container<br>";
+	    //echo "table:$currentTableName<br>";
 	    
-	    
+	    if($container != "STUserClusterGroupManagement")
+	        return;
 	    $query= new STQueryString();
 	    $limitation= $query->getLimitation("MUProject");
 	    if(isset($limitation))
