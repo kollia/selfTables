@@ -112,7 +112,6 @@ class STDbUpdater extends STDbSqlCases
 		    return 0;
 		$db= &$this->table->db;
 		$this->nErrorRowNr= null;
-		//st_print_r($this->columns,2);
 		foreach($this->columns as $nr=>$columns)
 		{
 		    $statement= $this->getStatement($nr);
