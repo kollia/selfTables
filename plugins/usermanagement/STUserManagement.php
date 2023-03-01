@@ -24,7 +24,7 @@ function descriptionCallback(&$callbackObject, $columnName, $rownum)
         $cluster= new STDbSelector($clusterTable);
         $cluster->select("Project", "Name", "Name");
         $cluster->select("Cluster", "Description", "Description");
-        $cluster->where("ClusterGroup", "GroupID=".$callbackObject->sqlResult[$rownum]['access to CLUSTERs']);
+        $cluster->where("ClusterGroup", "GroupID=".$callbackObject->sqlResult[$rownum]['access descriptions']);
         $cluster->execute();
         $aResult= $cluster->getResult();
     }
@@ -119,8 +119,8 @@ class STUserManagement extends STObjectContainer
 		    $user->orderBy("user");
 		    $user->setMaxRowSelect(50);
 		    
-		    $groups->select("ID", "Description");
-		    $groups->listCallback("descriptionCallback", "Description");
+		    $groups->select("ID", "access descriptions");
+		    $groups->listCallback("descriptionCallback", "access descriptions");
 		    $groups->orderBy("domain");
 		    $groups->orderBy("Name");
 		    $groups->setMaxRowSelect(50);
