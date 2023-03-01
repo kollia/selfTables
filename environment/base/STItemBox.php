@@ -141,17 +141,15 @@ class STItemBox extends STBaseBox
 			global $HTTP_POST_VARS;
 
 	 		$aRv= array();
+	 		// toDo: use this time only from column names
+	 		//       but in the future should also use alias columns
+	 		//       when the join is over more tables
+	 		$bFromColumnAlias= true;
 			$oTable= $this->asDBTable;
-			if(!$oTable)
-			{
-				$sTableName= reset($this->asTable);
-				if($sTableName)
-					$oTable= &$this->tableContainer->getTable($sTableName);
-			}
 			Tag::echoDebug("form.join", "make joins for table ".$oTable->getName());
-			if($oTable && $oTable->aFks)
+			$fks= &$oTable->getForeignKeys();
+			if(count($fks))
 			{
-				$fks= &$oTable->getForeignKeys();
 				foreach($fks as $otherTableName=>$content)
 				{
 					foreach($content as $joinColumns)
@@ -161,8 +159,7 @@ class STItemBox extends STBaseBox
     			 		if(!isset($joinTable))
     						$joinTable= &$this->tableContainer->getTable($otherTableName);*/
 						$joinTable= $oTable->getFkTable($joinColumns["own"], false);
-						$joinTable->clearMaxRowSelect();
-    					$showColumns= $joinTable->getSelectedColumns();
+						$joinTable->clearIndexSelect();
 
     					// alex 09/05/2005:	boolean $bInside auf string $sPkInside ge�ndert
     					//					da wenn die Column schon im select war (bInside==true)
@@ -170,15 +167,17 @@ class STItemBox extends STBaseBox
     					//					gesucht. Jetzt steht dieser in $sPkInside
     					$sPkColumn= "unknown";
     					$sPkInside= "unknown";
-
+    					
     					foreach($joinTable->identification as $columns)
     					{
     						if($columns["column"]==$joinColumns["other"])
     						{
     						    $sPkColumn= $columns['column'];
-    							if(isset($columns['alias']))
+    						    if( $bFromColumnAlias &&
+    						        isset($columns['alias'])  )
+    						    {
     								$sPkInside= $columns['alias'];
-    							else
+    						    }else
     								$sPkInside= $sPkColumn;
     							break;
     						}
@@ -189,13 +188,13 @@ class STItemBox extends STBaseBox
     					//					auch den Column-Namen erh�lt, da er unten als Angabe
     					//					f�r den PK im rowResult ben�tigt wird
     					if(!$sPkInside)
-    					{// nur wenn die Spalte nicht schon bei den identifications ist, hinzuf�gen
+    					{// if the column not as identification column defined, add it
     						$joinTable->identifColumn($joinColumns["other"]);
     						$sPkInside= $joinColumns["other"];
     					}
 
     					STCheck::echoDebug("form.join", "make join select from table ".$joinTable->getName());
-    					$statement= $joinTable->getStatement(/*identification select*/true);
+    					$statement= $joinTable->getStatement(/*identification select*/true, $bFromColumnAlias);
     					$result= $joinTable->db->fetch_array($statement, MYSQL_ASSOC, $this->getOnError("SQL"));
     					$this->setSqlError($result, $joinTable->db);
     					if(!isset($aRv[$joinColumns["own"]]))
@@ -492,7 +491,7 @@ class STItemBox extends STBaseBox
      * return previos number for auto_increment column
      * which will be automaticly generated from database
      * 
-     * @return new next number for column content
+     * @return int new next number for column content
      */
 	function createPreviousSelection()
 	{
@@ -615,27 +614,17 @@ class STItemBox extends STBaseBox
         if($this->action==STUPDATE)// && $post["STBoxes_action"]!="workOn_Database")
         {// hole die Felder aus der Datenbank, f�r vorab-Anzeige
 		 //$aliasNames= array_flip($columns);
-
-        	if($this->asDBTable)
-        	{
-        	    STCheck::echoDebug("table", "clone table as <b>[secure]</b> into own table. (maybe table will change afterwards)");
-        		$oTable= clone $this->asDBTable;
-        		$oTable->container= $this->asDBTable->container;
-        		$oTable->clearFKs();// ich will die Spalten ohne verweiss auf eine N�chste Tabelle
-        		$oTable->clearSqlAliases();
-        		$oTable->clearAliases();// sowie alle orginal Spalten-Namen
-        		$oTable->andWhere($this->where);
-        		$where= $oTable->getWhere();
-        		$statement= $this->db->getStatement($oTable);
-        		Tag::alert(!($where && $where->isModified()), "STItemBox::makeBox()", "no where-clausel defined to display");
-        		$statement= $this->db->getStatement($oTable);
-        	}else
-        	{
-        		$statement= "select * from $tableName where ".$this->where;
-        		Tag::alert(!$this->where, "STItemBox::makeBox()", "no where-clausel is defined");
-        	}
-        	
-			STCheck::echoDebug("db.statement", "get actual database entrys");
+            //echo __FILE__." ".__FUNCTION__." line:".__LINE__."<br>";
+    	    STCheck::echoDebug("table", "clone table as <b>[secure]</b> into own table. (maybe table will change afterwards)");
+    		$oTable= clone $this->asDBTable;
+    		$oTable->container= $this->asDBTable->container;
+    		$oTable->clearFKs();// ich will die Spalten ohne verweiss auf eine N�chste Tabelle
+    		$oTable->clearSqlAliases();
+    		$oTable->clearAliases();// sowie alle orginal Spalten-Namen
+    		$oTable->andWhere($this->where);
+    		$where= $oTable->getWhere();
+    		Tag::alert(!($where && $where->isModified()), "STItemBox::makeBox()", "no where-clausel defined to display");
+    		$statement= $oTable->getStatement();
 			$this->db->query($statement, $this->getOnError("SQL"));
 			$result= $this->db->fetch_row(MYSQL_ASSOC, $this->getOnError("SQL"));
 			$tablePk= $this->asDBTable->getPkColumnName();
@@ -1711,23 +1700,6 @@ class STItemBox extends STBaseBox
 		///////////////////////////////////////////////////////////////
 		$table= $this->asDBTable->getName();
 
-		/*st_print_r($this->asDBTable->columns,5);
-		if($HTTP_POST_VARS)
-		{st_print_r($HTTP_POST_VARS);
-			foreach($this->asDBTable->columns as $field)
-			{
-				$aEnumns= $this->countingEnums($field["name"]);
-				if(	$aEnumns[0]==2
-					and
-					!$HTTP_POST_VARS[$field["name"]]	)
-				{
-					st_print_r($aEnumns);echo "<br />";
-					$HTTP_POST_VARS[$field["name"]]= $aEnumns[1];
-				}
-			}st_print_r($HTTP_POST_VARS);
-		}*/
-		
-		
 		// 19/06/2007 alex:	the post-vars must be the second parameter
 		//					from array_merge, because from the second
 		//					the first will be replaced
@@ -1814,7 +1786,7 @@ class STItemBox extends STBaseBox
 					Tag::alert(!($where && $where->isModified()), "STItemBox::box()",
 										"no where-clausel defined for update in database");
 			}else
-				$bError= true;
+			    $bError= true;
 
 		// alex 15/12/2005:	wieder entfernt!
 		//					keine ahnung was ich damit bezweckte
@@ -1836,10 +1808,8 @@ class STItemBox extends STBaseBox
 					unset($post[$name]);
 				}
 			}*/
-
-			if(	$this->action==STINSERT
-				and
-				isset($this->asDBTable)	)
+			    
+			if(	$this->action==STINSERT )
 			{
 				// if it is generate an STUserSession
 				// and in the STBaseTable are be set columns
@@ -1917,7 +1887,7 @@ class STItemBox extends STBaseBox
             		$name= array_search($this->password, $columns);
             		$post[$this->password]= "password('".$post[$this->password]."')";
             	}
-
+            	
             	if($this->action==STINSERT)
 				{
 				    $db_case= null;
@@ -1937,11 +1907,18 @@ class STItemBox extends STBaseBox
 					        $db_case->fillColumn($column, $value);
 					}
             	}else
-				{
+            	{
 				    $changedValues= $this->getChangedResult($post);
-				    $db_case= new STDbUpdater($this->asDBTable);
-				    foreach($changedValues as $column => $value)
-				        $db_case->update($column, $value);
+				    if(count($changedValues))
+				    {
+    				    $db_case= new STDbUpdater($this->asDBTable);
+    				    foreach($changedValues as $column => $value)
+    				        $db_case->update($column, $value);
+				    }else
+				    {
+				        $bError= true;
+				        $this->msg->setMessageId("NOUPDATEROW@", $this->asDBTable->getName());
+				    }
 				}
 
 				if(!$bError)
@@ -2149,8 +2126,8 @@ class STItemBox extends STBaseBox
 		}else
 		    $table= $table->getName();
         $columns= $this->createColumns($this->columns);// create array from column-Name und alias-Name
-        $fields= $this->getFieldArray();//hole Felder aus Datenbank
-        $aJoins= $this->getJoinArray(array(), $post);//erstelle alle Inhalte der PopUp-Menues
+        $fields= $this->getFieldArray();//take fields from database
+        $aJoins= $this->getJoinArray(array(), $post);//create all content from popup-menues
         if($this->action==STUPDATE)
         {// check only the changed fields
 			if($this->asDBTable)
@@ -2195,8 +2172,6 @@ class STItemBox extends STBaseBox
 			    echo "inncomming post variable: <b>(\$post)</b><br />" ;
 			    st_print_r($post, 5, 10);
 			}
-			echo __FILE__.__LINE__."<br>";
-			echo "set sql result<br>";
 			$this->sqlResult= $result;
 			$this->setSqlError($result);
 			$newFields= array();
