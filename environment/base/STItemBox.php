@@ -1678,7 +1678,7 @@ class STItemBox extends STBaseBox
 			    }
 			}
 		}
-
+		
 		// alex 07/06/2005: setAlso aus dem STBaseTable �bernehmen
 		if(is_array($aSetAlso))
 			foreach($aSetAlso as $column=>$content)
@@ -1820,8 +1820,6 @@ class STItemBox extends STBaseBox
 					and
 					count($this->asDBTable->sAcessClusterColumn))
 				{
-					echo __file__.__line__."<br>";
-					st_print_r($this->asDBTable->sAcessClusterColumn,2);
     				$_instance= &STUserSession::instance();
                     $identification= "";
                     foreach($this->asDBTable->identification as $identifColumn)
@@ -2172,7 +2170,14 @@ class STItemBox extends STBaseBox
 			    echo "inncomming post variable: <b>(\$post)</b><br />" ;
 			    st_print_r($post, 5, 10);
 			}
-			$this->sqlResult= $result;
+			$newResult= array();
+			// retype alias columns into columns from database
+			foreach($result as $column=>$value)
+			{
+			    $field= $selector->searchByAlias($column);
+			    $newResult[$field["column"]]= $value;
+			}
+			$this->sqlResult= $newResult;
 			$this->setSqlError($result);
 			$newFields= array();
 			// add fields which are defined inside database
