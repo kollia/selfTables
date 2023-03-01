@@ -1850,13 +1850,12 @@ abstract class STDatabase extends STObjectContainer
 	        $nr= "t".$nr;
 	    return $this->aAliases;
 	}
-	function getStatement(STDbTable $oTable, bool $bFromIdentifications= false, bool $bWithColumnAlias= null)
+	function getStatement(STDbTable $oTable, bool $bFromIdentifications= false)
 	{
 	    if(STCheck::isDebug())
 	    {
     		STCheck::param($oTable, 0, "STDbTable");
     		STCheck::param($bFromIdentifications, 1, "bool");
-    		STCheck::param($bWithColumnAlias, 2, "bool", "null");
 
     		$msg= "create sql statement from table ";
     		$msg.= $oTable->toString();
@@ -1891,7 +1890,9 @@ abstract class STDatabase extends STObjectContainer
 									//					die Haupttabelle als dritter Parameter mitgegeben werden
 		$tableName= $oTable->getName();
 		$this->bFirstSelectStatement= true;
-		$statement= $oTable->getSelectStatement($aliasTables, $bFromIdentifications, $bWithColumnAlias);
+		//echo __FILE__.__LINE__."<br>";
+		//echo "getSelectStatement from table '".$oTable.
+		$statement= $oTable->getSelectStatement($aliasTables, $bFromIdentifications);
 		// implement tables which are joined from user
 	    if(count($joinTables))
 	        $aliasTables= array_merge($aliasTables, $joinTables);
@@ -1902,8 +1903,8 @@ abstract class STDatabase extends STObjectContainer
 	    {
 	        $space= STCheck::echoDebug("db.statements", "need follow tables inside select-statement");
 	        st_print_r($aliasTables, 1, $space);
+	        STCheck::echoDebug("db.statements", "need follow <b>select</b> statement: $statement");
 	    }
-	    STCheck::echoDebug("db.statements", "need follow <b>select</b> statement: $statement");
 	    $oTable->newWhereCreation($aliasTables);
 		if(count($aliasTables)>1)
 		{

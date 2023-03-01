@@ -640,6 +640,7 @@ class STDbTable extends STBaseTable
     	        echo "<hr color='black'/>";
     	        STCheck::echoDebug("db.statement", "create $nr. statement for table ".$this->toString());
     	        echo "<hr />";
+    	        //STCheck::info(1, "STDbTable::getStatement()", "called STDbTable::<b>getStatement()</b> method from:", 1);
 	        }
 	    }
 		if(isset($this->aStatement['full']))
@@ -682,12 +683,12 @@ class STDbTable extends STBaseTable
     	    {
     	        if(strtolower(substr($clause, 0, 6)) == "select")
     	            $this->aStatement['select']= $clause;
-            elseif(strtolower(substr($clause, 0, 4)) == "from")
-                $this->aStatement['table']= $clause;
-            elseif(strtolower(substr($clause, 0, 5)) == "where")
-                $this->aStatement['where']= $clause;
-            elseif(strtolower(substr($clause, 0, 5)) == "order")
-                $this->aStatement['order']= $clause;
+                elseif(strtolower(substr($clause, 0, 4)) == "from")
+                    $this->aStatement['table']= $clause;
+                elseif(strtolower(substr($clause, 0, 5)) == "where")
+                    $this->aStatement['where']= $clause;
+                elseif(strtolower(substr($clause, 0, 5)) == "order")
+                    $this->aStatement['order']= $clause;
     	    }    
 	    }else
 	        STCheck::is_warning(1, "STDbTable::setStatement()", "cannot read correct statement:$statement");
@@ -724,16 +725,16 @@ class STDbTable extends STBaseTable
 	 * create part of sql select statement
 	 * 
 	 * @param array $aTableAlias array of all exist alias for tables exist, which gives back all alias which needed
-	 * @param bool $withAlias whether alias should set, by null the method decide it self
+	 * @param bool $bUseIdentifications whether should use for the first select only the identification columns
 	 */
-	/*private*/function getSelectStatement(array &$aTableAlias, bool $withAlias= null)
+	/*private*/function getSelectStatement(array &$aTableAlias, bool $bUseIdentifications)
 	{
 	    if(isset($this->aStatement['select']))
 	        return $this->aStatement['select'];
 	    $statement= "select ";
 	    if($this->isDistinct())
 	        $statement.= "distinct ";
-	    $statement.= $this->getSelectStatementA(/*first select*/true, $this, $aTableAlias, $withAlias);
+	    $statement.= $this->getSelectStatementA(!$bUseIdentifications, $this, $aTableAlias);
 	    $this->aStatement['select']= $statement;
 	    return $statement;
 	}
@@ -745,9 +746,8 @@ class STDbTable extends STBaseTable
 	 *                            because the own object/table can also be an foreignKey-table)
 	 * @param STDbTable $oMainTable object of the first table from which all other are drawn
 	 * @param array $aTableAlias array of all exist alias for tables exist, which gives back all alias which needed
-	 * @param bool $withAlias whether alias should set, by null the method decide it self
 	 */
-	private function getSelectStatementA(bool $bFirstSelect, STDbTable $oMainTable, array &$aTableAlias, bool $withAlias= null)
+	private function getSelectStatementA(bool $bFirstSelect, STDbTable $oMainTable, array &$aTableAlias)
 	{
 	    $aUseAliases= array();
 	    $singleStatement= "";
@@ -759,27 +759,6 @@ class STDbTable extends STBaseTable
         
         STCheck::flog("create select statement");
         $this->removeNoDbColumns($aNeededColumns, $aTableAlias);
-        if(!empty($aTableAlias))
-        {
-            if(!isset($withAlias))
-            {
-                $withAlias= false;
-                foreach($aNeededColumns as $columns)
-                {
-                    if(!in_array($columns['table'], $aUseAliases))
-                        $aUseAliases[$aTableAlias[$columns['table']]]= $columns['table'];
-                }
-                $joinOver= $this->getAlsoJoinOverTables();
-                foreach($joinOver as $newTableName)
-                {
-                    if(!in_array($newTableName, $aUseAliases))
-                        $aUseAliases[$aTableAlias[$newTableName]]= $newTableName;
-                }
-                if(count($aUseAliases) > 1)
-                    $withAlias= true;
-            }
-        }else
-            $withAlias= false;
         if(STCheck::isDebug())
         {
             $debugSess= "db.statements.aliases";
@@ -811,11 +790,6 @@ class STDbTable extends STBaseTable
             }
         }
         $aShowTypes= $this->showTypes;
-        /*if(typeof($this, "STDbSelector"))
-         $isSelector= true;					// alex 24/05/2005:	$isSelector eliminiert,
-         else									//					da sie ohnehin nur einmal gebraucht wird
-         $isSelector= false;*/				//					und jetzt sowieso �ber den 3. Parameter
-        //					abgefragt wird
         $aliasCount= count($aTableAlias);
         foreach($aNeededColumns as $column)
         {// durchlaufe das Array mit allen benoetigten Columns
@@ -843,11 +817,7 @@ class STDbTable extends STBaseTable
                     $sColumn= "<b>Undefined Column</b>";
                     $msg.= $sColumn;
                 }
-                $msg.= " as ";
-                if(isset($column["alias"]))
-                    $msg.= $column["alias"];
-                else
-                    $msg.= $sColumn;
+                $msg.= " as $columnAlias";
                 STCheck::echoDebug("db.statements.select", $msg);
             }
             
@@ -913,8 +883,7 @@ class STDbTable extends STBaseTable
                     //				in him can be deleted an column or identif-column
                     $oOther= $this->getTable($fkTableName, $containerName);
                     $allAliases= $aTableAlias;
-                    $withAlias= true;
-                    $fkStatement= $oOther->getSelectStatementA(/*firstSelect*/false, $oMainTable, $allAliases, $withAlias);
+                    $fkStatement= $oOther->getSelectStatementA(/*firstSelect*/false, $oMainTable, $allAliases);
                     //create new using alaises
                     foreach($allAliases as $tabName=>$a)
                         $aUseAliases[$aTableAlias[$tabName]]= $tabName;
@@ -973,8 +942,6 @@ class STDbTable extends STBaseTable
                     $aUseAliases[$aTableAlias[$tabName]]= $tabName;
                 }
             }
-            if(count($aUseAliases) > 1)
-                $withAlias= true;
         }
         foreach($aTableAlias as $tableName=>$alias)
         {
@@ -994,10 +961,15 @@ class STDbTable extends STBaseTable
                 st_print_r($whereClause,10, $space);
             }
         }
-        if($withAlias == false)
+        if(STCheck::isDebug("db.statements.aliases"))
+        {
+            $space= STCheck::echoDebug("db.statements.aliases", "need follow tables inside select-statement");
+            st_print_r($aTableAlias, 1, $space);
+        }
+        if(count($aTableAlias) <= 1)
             $statement= $singleStatement;
         $statement= substr($statement, 0, strlen($statement)-1);
-        Tag::echoDebug("db.statements.select", "createt String is \"".$statement."\"");
+        Tag::echoDebug("db.statements.select", "createt statement is \"".$statement."\"");
         return $statement;
 	}
 	public function getTableStatement(array &$aTableAlias)
