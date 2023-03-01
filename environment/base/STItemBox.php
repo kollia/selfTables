@@ -1673,7 +1673,18 @@ class STItemBox extends STBaseBox
 					{
 						if(!isset($aSetAlso[$column["own"]]))
 							$aSetAlso[$column["own"]]= array();
-						$aSetAlso[$column["own"]][STINSERT]= $get["stget"][$table][$column["other"]];
+						if(!isset($get["stget"]['limit'][$table][$column["other"]]))
+						{// own column not exist inside limitation, so select from database
+						    $oTable= $this->asDBTable->getTable($table);
+						    $selector= new STDbSelector($oTable);
+						    $selector->select($table, $column["other"]);
+						    foreach($get["stget"]['limit'][$table] as $key=>$value)
+						        $selector->andWhere($table, "$key='$value'");
+						    $selector->execute();
+						    $value= $selector->getSingleResult();
+						}else
+						    $value= $get["stget"]['limit'][$table][$column["other"]];
+						$aSetAlso[$column["own"]][STINSERT]= $value;
 					}
 			    }
 			}
