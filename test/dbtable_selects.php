@@ -11,7 +11,7 @@ STCheck::debug("db.statements");
 
 $db= new STDbMySql("simpleTest");
 $db->connect("10.21.170.61", "root", "mysql");
-$db->toDatabase("UserManagement");
+$db->database("UserManagement");
 
 
 $project= $db->getTable("MUProject");
