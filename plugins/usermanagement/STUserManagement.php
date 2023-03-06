@@ -45,9 +45,15 @@ function descriptionCallback(&$callbackObject, $columnName, $rownum)
     $source.=  "</table>";
     $callbackObject->setValue($source);
     
-    if( $callbackObject->sqlResult[$rownum]["Group"] == "ONLINE" ||
-        $callbackObject->sqlResult[$rownum]["Group"] == "LOGGED_IN" )
+    $session= STUSerSession::instance();
+    if( $callbackObject->sqlResult[$rownum]["Group"] == $session->onlineGroup ||
+        $callbackObject->sqlResult[$rownum]["Group"] == $session->loggedinGroup )
     {
+        if(STCheck::isDebug())
+        {
+            echo __FILE__.__LINE__."<br>";
+            echo "unlink update/delete for <b>".$callbackObject->sqlResult[$rownum]["Group"]."</b><br>";
+        }
         $callbackObject->noUnlinkData("delete");
     }
 }
@@ -103,6 +109,7 @@ class STUserManagement extends STObjectContainer
 		$groups->select("domain", "Domain");
 		$groups->preSelect("domain", $domain['Name']);
 		$groups->disabled("domain");
+		$groups->preSelect("DateCreation", "sysdate()");
 		$groups->select("Name", "Group");
 		
 		$project= &$this->needTable("Project");
