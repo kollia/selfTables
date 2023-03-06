@@ -15,7 +15,6 @@ class STClusterGroupManagement extends STObjectContainer
 	function create()
 	{
 	    $this->needNnTable("Group", "ClusterGroup", "Cluster");
-		//$clustergroup= &$this->needTable("ClusterGroup");
 	}
 	function init()
 	{

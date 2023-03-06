@@ -78,7 +78,7 @@ class STUserClusterGroupManagement extends STObjectContainer
 	    $this->setDisplayName("Cluster-User Management");
 	    
 	    $cluster= $this->needTable("Cluster");
-	    $cluster->setDisplayName("access CLUSTER Group");
+	    $cluster->setDisplayName("access CLUSTER");
 	    
 	    $group= $this->needNnTable("Group", "UserGroup", "User");
 	    $group->setDisplayName("User - Group assignment");
@@ -198,7 +198,12 @@ class STUserClusterGroupManagement extends STObjectContainer
     	    $group->andWhere($groupWhere);*/
 	    }
 	  
-		$cluster= $this->getTable("Cluster");
+	    $project= $this->getTable("Project");
+	    $project->identifColumn("Name", "Project");
+	    
+		$cluster= $this->needTable("Cluster");
+		$cluster->select("ProjectID", "Project");
+		$cluster->disabled("Project");
 		$cluster->select("ID", "Cluster");
 		$cluster->namedLink("Cluster", $this->clusterGroup);
 		$cluster->select("Description", "Description");
