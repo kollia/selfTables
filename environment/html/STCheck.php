@@ -565,8 +565,7 @@ class STCheck
 		 */
 		public static function increase(string $inClassFunction) : int
 		{
-		    global $HTML_CLASS_DEBUG_CONTENT,
-		           $__stdbtables_statement_count;
+		    global $__stdbtables_statement_count;
 		    
             if(!STCheck::warning(!isset($__stdbtables_statement_count[$inClassFunction]),
                     "STCheck::incfrease()", "cannot increase [$inClassFunction] debugging", 1))
@@ -575,6 +574,17 @@ class STCheck
                 return $__stdbtables_statement_count[$inClassFunction];
             }
             return 0;
+		}
+		public static function getIncreaseNr(string $inClassFunction) : int
+		{
+		    global $__stdbtables_statement_count;
+		    
+		    if(!STCheck::warning(!isset($__stdbtables_statement_count[$inClassFunction]),
+		        "STCheck::incfrease()", "debug string <b>$inClassFunction</b> is not defined for increasing", 1))
+		    {
+		        return $__stdbtables_statement_count[$inClassFunction];
+		    }
+		    return 0;
 		}
 		public static function isDebug($inClassFunction= null)
 		{
