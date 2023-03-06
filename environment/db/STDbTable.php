@@ -629,7 +629,7 @@ class STDbTable extends STBaseTable
 		$selector->execute($sqlType);
 		return $selector->getSingleResult();
 	}
-	public function getStatement(bool $bFromIdentifications= false, bool $withAlias= null)
+	public function getStatement(bool $bFromIdentifications= false)
 	{
 	    $nr= STCheck::increase("db.statement");
 	    if(STCheck::isDebug())
@@ -653,7 +653,7 @@ class STDbTable extends STBaseTable
 		    }
 		    return $this->aStatement['full'];
 		}
-	    $statement= $this->db->getStatement($this, $bFromIdentifications, $withAlias);
+	    $statement= $this->db->getStatement($this, $bFromIdentifications);
 	    $this->aStatement['full']= $statement;
 	    if(STCheck::isDebug("db.statements"))
 	    {
@@ -1448,7 +1448,9 @@ class STDbTable extends STBaseTable
 	{
 	    if(STCheck::isDebug())
 	    {
-	        STCheck::param($condition, 0, "check", $condition=="on"||$condition=="where", "'on' string", "'where' string");
+	        STCheck::param($condition, 0, "check", 
+	            $condition=="on"||$condition=="where"||$condition=="insert"||$condition=="update", 
+	            "'on', 'where', 'insert'", "'update' strings");
 	        if($condition == "on")
 	           STCheck::param($from, 1, "STDbTable");
 	           
@@ -1566,22 +1568,42 @@ class STDbTable extends STBaseTable
 	 */
 	public function allowQueryLimitation($bModify= true)
 	{
-        if(STCheck::isDebug("db.statements.where"))
-        {
-            if($bModify)
-                $do= "allow";
-            else
-                $do= "disable";
-            $do.= " query limitation inside ".$this->toString();
-            STCheck::echoDebug("db.statements.where", $do);
-            STCheck::info(1, "STDbTable::allowQueryLimitation()", $do, 2);
-        }
-        $this->bModifyFk= $bModify;
+        $this->allowFkQueryLimitation($bModify);
         $this->allowQueryLimitationByOwn($bModify);
 	}
 	public function allowFkQueryLimitation($bModify= true)
 	{
+	    if(STCheck::isDebug("db.statements.where"))
+	    {
+	        if($bModify)
+	            $do= "allow";
+	            else
+	                $do= "disable";
+	                $do.= " query limitation inside ".$this->toString();
+	                STCheck::echoDebug("db.statements.where", $do);
+	                STCheck::info(1, "STDbTable::allowQueryLimitation()", $do, 2);
+	    }
 	    $this->bModifyFk= $bModify;
+	    if($this->bModifiedByQuery)
+	        $this->resetQueryLimitation("fk", $bModify);
+	}
+	/**
+     * reset modification of query limitation
+     * 
+     * @param string $which can be 'fk' or 'own'
+     * @param bool whether can modify or not
+	 */
+	protected function resetQueryLimitation(string $which, bool $bModify)
+	{
+	    if(isset($this->oWhere))
+	    {
+	        $found= $this->oWhere->resetQueryLimitation($which, $bModify);
+	        if( $bModify &&
+	            !$found    )
+	        {
+	            $this->bModifiedByQuery= false;
+	        }
+	    }
 	}
 	public function modify()
 	{

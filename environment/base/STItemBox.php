@@ -13,9 +13,13 @@ class STItemBox extends STBaseBox
 		var $action;
 		var $startTag;
 		var $columns;
+		/**
+		 * sql result from main select
+		 * @var array
+		 */
+		private $aResult= array();
 		var $join= array();
 		var $ownName;
-		var	$aResult= null; // reult of inserting or update
 		var	$lastInsertID= null; // last inerted or updated ID
 		var $intersecBez;
 		var $intersecFld;
@@ -187,7 +191,7 @@ class STItemBox extends STBaseBox
     					//					nun kommt noch dazu, dass sPkInside welches ja "" ist
     					//					auch den Column-Namen erh�lt, da er unten als Angabe
     					//					f�r den PK im rowResult ben�tigt wird
-    					if(!$sPkInside)
+    					if($sPkInside == "unknown")
     					{// if the column not as identification column defined, add it
     						$joinTable->identifColumn($joinColumns["other"]);
     						$sPkInside= $joinColumns["other"];
@@ -618,7 +622,10 @@ class STItemBox extends STBaseBox
     	    STCheck::echoDebug("table", "clone table as <b>[secure]</b> into own table. (maybe table will change afterwards)");
     		$oTable= clone $this->asDBTable;
     		$oTable->container= $this->asDBTable->container;
-    		$oTable->clearFKs();// ich will die Spalten ohne verweiss auf eine N�chste Tabelle
+    		// 02/03/2023 alex:
+    		//            for any selection with where statement
+    		//            from other table, need foreign keys
+    		//$oTable->clearFKs();// ich will die Spalten ohne verweiss auf eine N�chste Tabelle
     		$oTable->clearSqlAliases();
     		$oTable->clearAliases();// sowie alle orginal Spalten-Namen
     		$oTable->andWhere($this->where);
@@ -626,6 +633,7 @@ class STItemBox extends STBaseBox
     		Tag::alert(!($where && $where->isModified()), "STItemBox::makeBox()", "no where-clausel defined to display");
     		$statement= $oTable->getStatement();
 			$this->db->query($statement, $this->getOnError("SQL"));
+			echo __FILE__.__LINE__."<br>";
 			$result= $this->db->fetch_row(MYSQL_ASSOC, $this->getOnError("SQL"));
 			$tablePk= $this->asDBTable->getPkColumnName();
 			if(isset($result[$tablePk]))
@@ -1897,6 +1905,8 @@ class STItemBox extends STBaseBox
             		$post[$this->password]= "password('".$post[$this->password]."')";
             	}
             	
+            	$this->asDBTable->allowQueryLimitationByOwn(true);
+            	$this->asDBTable->allowFkQueryLimitation(false);
             	if($this->action==STINSERT)
 				{
 				    $db_case= null;
@@ -2146,8 +2156,11 @@ class STItemBox extends STBaseBox
 			if($this->where)
 				$oTable->andWhere($this->where);
 			$selector= new STDbSelector($oTable);
-			$selector->clearFKs();
-			$statement= $this->db->getStatement($selector, false, false);
+			// 02/03/2023 alex:
+			//            for any selection with where statement
+			//            from other table, need foreign keys
+			//$selector->clearFKs();
+			$statement= $selector->getStatement();
 			$this->db->query($statement, $this->getOnError("SQL"));
         	$result= $this->db->fetch_row(MYSQL_ASSOC, $this->getOnError("SQL"));
         	if(STCheck::isDebug("db.statement"))
@@ -2257,13 +2270,35 @@ class STItemBox extends STBaseBox
             }
 			$fields= $newFields;
         }
+        if($bFieldDefineSelection)
+        {
+            echo "<hr>";
+            echo "<b>check for fields:</b><br />";
+        }
         foreach($fields as $field)
         {
             $name= $field["name"];
-            if(STCheck::isDebug("show.db.fields"))
+            if( STCheck::isDebug() &&
+                (   STCheck::isDebug("show.db.fields") ||
+                    $bFieldDefineSelection                  )   )
             {
-                $space= STCheck::echoDebug("show.db.fields", "  check field <b>$name</b>");
-                st_print_r($field, 2, $space+8);
+                $msg= "  check field <b>$name</b>";
+                if(STCheck::isDebug("show.db.fields"))
+                    $space= STCheck::echoDebug("show.db.fields", $msg);
+                else
+                    $space= STCheck::write($msg);
+                $space+= 40;
+                st_print_r($field, 2, $space);
+                STCheck::echoSpace($space);
+                echo "<b>content:</b> \"".$post[$name]."\"<br />";
+            }
+            $ch= 0;
+            $post[$name]= str_replace("'", "\\'", $post[$name], $ch);
+            if( $bFieldDefineSelection &&
+                $ch > 0                     )
+            {
+                STCheck::echoSpace($space);
+                echo "<b>changed to:</b>\"".$post[$name]."\"<br>";
             }
             if(isset($columns[$name]))
 				$columnName= $columns[$name];

@@ -1197,7 +1197,6 @@ class STObjectContainer extends STBaseContainer
 			{
 				$box->table($table);
 				$this->setAllMessagesContent(STUPDATE, $box);
-				$table->modifyQueryLimitation();
 				//st_print_r($table->oWhere);
 				//$whereStatement= $this->db->getWhereStatement($table, "t1");
 				//echo "statement ".$whereStatement."<br />";

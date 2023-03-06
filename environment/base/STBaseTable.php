@@ -86,14 +86,29 @@ class STBaseTable
 	var $nAktSelectedRow= 0;
 	var $bAlwaysIndex= true;
 	var	$bSetLinkByNull= false;
-	var	$bModifyFk= true;//ob die Tabelle anhand der ForeignKeys Modifiziert werden soll
 	var	$onlyRadioButtons= array(); // wenn nur zwei Enumns vorhanden sind, trotzdem radio Buttons verwenden
 	var $listArrangement= STHORIZONTAL;//bestimmt das Layout der STListBox
 	var $bListCaption= true;// Beschriftung (�berschrift) der Tabelle
 	var	$oSearchBox= null; // Suchen-Box bei Auflistung der Tabelle anzeigen
-
-	var $bLimitOwn= true;	// steht im URI eine Einschr�nkung der eigenen Tabelle
-                         	// soll diese Angewand werden und nur einen Eintrag zeigen
+	
+	/**
+	 * whether should limitate table selection
+	 * by a limitation defined inside the query string
+	 * @var boolean
+	 */
+	protected $bLimitOwn= true;
+	/**
+	 * whether should limitate table selection
+	 * also by foreign key limitations from query string
+	 * @var boolean
+	 */
+	protected	$bModifyFk= true;
+	// soll diese Angewand werden und nur einen Eintrag zeigen
+	/**
+	 * whether was query limitation modified
+	 * @var boolean
+	 */
+	protected $bModifiedByQuery= false;
     /**
      * wenn in einen Link von dieser Tabelle aus gesprungen wird,
      * wird eine Einschränkung von dieser Tabelle gesetzt.
@@ -197,20 +212,26 @@ class STBaseTable
                 STCheck::echoDebug("table", $msg);
             }
             
-            if( typeof($oTable, "STBaseTable") &&
-                STCheck::isDebug("db.table.fk")     )
+            if(typeof($oTable, "STBaseTable"))
             {
                 $check= "table";
                 if(STCheck::isDebug("db.table.fk"))
                     $check= "db.table.fk";
                 $space= STCheck::echoDebug($check, "create new ".get_class($this)."::<b>".$oTable->Name."</b> with ID:".$this->ID." from ".get_class($oTable)."::<b>".$oTable->Name."</b> with ID:".$oTable->ID);
+                STCheck::echoDebug($check, "with <b>FKs:</b>");
+                st_print_r($this->aFks,3,$space);
+                if(STCheck::isDebug("db.table.fk"))
+                {
+                    for($c= 0; $c < $space; $c++)
+                        echo " ";
+                    echo "old <b>BackJoins</b>:<br>";
+                    st_print_r($oTable->aBackJoin, 3, $space);
+                }
                 for($c= 0; $c < $space; $c++)
                     echo " ";
-                echo "old <b>FKs</b>:<br>";
-                st_print_r($oTable->aBackJoin, 3, $space);
-                for($c= 0; $c < $space; $c++)
-                    echo " ";
-                echo "new <b>FKs</b>:<br>";
+                if(STCheck::isDebug("db.table.fk"))
+                    echo "new ";
+                echo "<b>BackJoins</b>:<br>";
                 st_print_r($this->aBackJoin, 3, $space);
             }
         }
@@ -232,8 +253,18 @@ class STBaseTable
 	     */
 	    $this->doTableSorting= true;
 	    $this->bShowName= true;
-	    $this->bLimitOwn= true;
-	    $this->bModifyFk= true;
+	    if( $this->bModifiedByQuery &&
+	        (  !$this->bLimitOwn ||
+	           !$this->bModifyFk   )   )
+	    {
+	        $this->bLimitOwn= !$this->bLimitOwn;
+	        $this->bModifyFk= !$this->bModifyFk;
+	        $this->bModifiedByQuery= false;
+	    }else
+	    {
+	        $this->bLimitOwn= true;
+	        $this->bModifyFk= true;
+	    }
 	    // alex 08/06/2005:	nun koennen Werte auch Statisch in der
 	    //					STDbTable gesetzt werden
 	    $this->aSetAlso= array();
@@ -243,7 +274,6 @@ class STBaseTable
 	    $this->nMaxRowSelect= null;// null -> es werden alle Rows aufgelistet
 	    $this->nAktSelectedRow= 0;
 	    $this->bAlwaysIndex= true;
-	    $this->bModifyFk= true;//ob die Tabelle anhand der ForeignKeys Modifiziert werden soll
 	    $this->listArrangement= STHORIZONTAL;//bestimmt das Layout der STListBox
 	    $this->oSearchBox= null; // Suchen-Box bei Auflistung der Tabelle anzeigen
 	    
@@ -256,12 +286,27 @@ class STBaseTable
 	    $this->aBackJoin= &$main->aBackJoin;
 	    //---------------------------------------------------------------------------------
 	    STCheck::increase("table");
-	    if(STCheck::isDebug("table"))
+	    if( STCheck::isDebug() &&
+	        (   STCheck::isDebug("table") ||
+	            STCheck::isDebug("db.table.fk") )   )
 	    {
-    	    echo "<br /><br /><br /><br /><br />";
-    	    //showErrorTrace();
-    	    echo "<hr color='yellow' />";
-    	    STCheck::echoDebug("table", "clone STBaseTable::content from ID:[$oldID] to $this");
+	        if(STCheck::isDebug("table"))
+	        {
+	            echo "<br /><br /><br /><br /><br />";
+	            //showErrorTrace();
+	            echo "<hr color='lightblue' />";
+	            STCheck::echoDebug("table", "clone STBaseTable::content from ID:[$oldID] to $this");
+	        }
+	        
+            $check= "table";
+            if(STCheck::isDebug("db.table.fk"))
+                $check= "db.table.fk";
+            $space= STCheck::echoDebug($check, "with <b>FKs:</b>");
+            st_print_r($this->aFks,3,$space);
+            for($c= 0; $c < $space; $c++)
+                echo " ";
+            echo "<b>BackJoins</b>:<br>";
+            st_print_r($this->aBackJoin, 3, $space);
 	    }
 	}
 	public function __toString() : string
@@ -301,7 +346,20 @@ class STBaseTable
 		$this->bOrder= NULL;
      	$this->error= $Table->error;
     	$this->errorText= $Table->errorText;
-     	$this->Name= $Table->Name;
+    	$this->Name= $Table->Name;
+    	if( $Table->bModifiedByQuery &&
+    	    (  !$Table->bLimitOwn ||
+    	        !$Table->bModifyFk   )   )
+    	{   
+    	    $this->bLimitOwn= !$Table->bLimitOwn;
+    	    $this->bModifyFk= !$Table->bModifyFk;
+    	    $this->bModifiedByQuery= false;
+    	}else
+    	{
+        	$this->bLimitOwn= true;
+        	$this->bModifyFk= true;
+        	$this->bModifiedByQuery= $Table->bModifiedByQuery;
+    	}
      	//---------------------------------------------------------------------------------
      	// foreign keys and backjoins should always same like in first database table
      	// so make an direct link from copied table
@@ -647,6 +705,8 @@ class STBaseTable
 	        STCheck::echoDebug("db.statements.where", $msg);
 	    }
 	    $this->bLimitOwn= $bModify;
+	    if($this->bModifiedByQuery)
+	        $this->resetQueryLimitation("own", $bModify);
 	}
 	/**
 	 * use also limitation of table from an older container
@@ -2322,7 +2382,6 @@ class STBaseTable
 	 	            st_print_r($stwhere,10, $space);
 	 	        if($operator == "")
 	 	            STCheck::echoDebug("db.statements.where", "no operator for where method be set, so clear all old where clauses");
-	 	        showErrorTrace();
 		 	}
 		 	if(	!isset($stwhere) ||
 				$stwhere == null ||
@@ -2378,20 +2437,6 @@ class STBaseTable
 				return null;
 			return $this->oWhere;
 		}
-		/*function andWhere(&$stwhere)
-		{
-			if($this->oWhere)
-				$this->oWhere->andWhere($stwhere);
-			else
-				$this->oWhere= $stwhere;
-		}
-		function orWhere(&$stwhere)
-		{
-			if($this->oWhere)
-				$this->oWhere->orWhere($stwhere);
-			else
-				$this->oWhere= $stwhere;
-		}*/
 		function getName() : string
 		{
 			return $this->Name;
@@ -3067,6 +3112,17 @@ class STBaseTable
             $tableMsg.= " from container <b>".$this->container->getName()."</b>";
 	    }
 	    
+	    if($this->bModifiedByQuery)
+	    {
+	        if(STCheck::isDebug("db.statements.where"))
+	        {
+	            echo "<br />";
+	            $msg[]= "table $this was <b>modificate</b> before";
+	            $msg[]= "so do not again";
+	            STCheck::echoDebug("db.statements.where", $msg);
+	        }
+	        return;
+	    }
 	    $query= new STQueryString();
 	    $where= new STDbWhere();
 	    if($this->bModifyFk)
@@ -3109,8 +3165,10 @@ class STBaseTable
                             if(!is_numeric($value))
                                 $value= "'".$value."'";
                             $clausel.= $value;
-                            
-                            $where->andWhere($clausel);
+                            $iWhere= new STDbWhere($clausel);
+                            $iWhere->table($table);
+                            $iWhere->isFkModifyObj= true;
+                            $where->andWhere($iWhere);
                         }else
                         {
                             $clausel= $column."=";
@@ -3119,6 +3177,7 @@ class STBaseTable
                             $clausel.= $value;
                             $iWhere= new STDbWhere($clausel);
                             $iWhere->table($table);
+                            $iWhere->isFkModifyObj= true;
                             $where->andWhere($iWhere);
                         }
                         Tag::echoDebug("db.statements.where", "set where $clausel from FK");
@@ -3167,7 +3226,10 @@ class STBaseTable
                         if(!is_numeric($value))
                             $value= "'".$value."'";
                         Tag::echoDebug("db.statements.where", "set where $column=$value for own table");
-                        $where->andWhere($column."=".$value);
+                        $iWhere= new STDbWhere($column."=".$value);
+                        $iWhere->table($this);
+                        $iWhere->isOwnModifyObj= true;
+                        $where->andWhere($iWhere);
                     }
                 }
             }
@@ -3179,6 +3241,7 @@ class STBaseTable
                 $where->andWhere($iWhere);
             $this->where($where);
         }
+        $this->bModifiedByQuery= true;
 	}
 	function addJoinLimitationByQuery(array $aAliasTables)
 	{

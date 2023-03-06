@@ -34,6 +34,10 @@ class STDbWhere
 	 * database name for which where-caluse is
 	 */
     var $sDbName= "";
+    /**
+     * database object after set
+     * @var STDatabase
+     */
     private $oDb= null;
     /**
      * whether the statement should written into the 'on' statement if possible, 
@@ -47,6 +51,18 @@ class STDbWhere
      * @var boolean
      */
     var $bWritten= false;
+    /**
+     * object was an query modification
+     * from specific type
+     * @var boolean
+     */
+    var $isFkModifyObj= false;
+    /**
+     * object was an query modification
+     * from own table
+     * @var boolean
+     */
+    var $isOwnModifyObj= false;
 	/**
 	 * create instance of where clausel
 	 *
@@ -101,6 +117,35 @@ class STDbWhere
 			return true;
 		return false;
 	}
+	/**
+	 * reset modification of query limitation
+	 *
+	 * @param string $which can be 'fk' or 'own'
+	 * @param bool whether can modify or not
+	 */
+	public function resetQueryLimitation(string $which, bool $bModify)
+	{
+	    $bRv= false;
+	    if( (   $which == "fk" &&
+	            $this->isFkModifyObj ) ||
+	        (   $which == "own" &&
+	            $this->isOwnModifyObj    )   )
+	    {
+	        $bRv= true;
+	        $this->bWriteOn= !$bModify;
+	        $this->bWritten= !$bModify;
+	    }
+	    foreach($this->array as $obj)
+	    {
+	        if(typeof($obj, "STDbWhere"))
+	        {
+	            $found= $obj->resetQueryLimitation($which, $bModify);
+	            if(!$bRv= false)
+	                $bRv= $found;
+	        }
+	    }
+	    return $bRv;
+	}
 	function forTable($tableName= null, $overwrite= false)
 	{
 		STCheck::param($tableName, 0, "string", "STBaseTable", "null");
@@ -122,7 +167,7 @@ class STDbWhere
 		STCheck::param($table, 0, "string", "STBaseTable", "null");
 		STCheck::param($overwrite, 1, "boolean");		
 
-		if(!$table)
+		if(!isset($table))
 			return $this->sForTable;
 
 		if(is_string($table))
@@ -312,6 +357,7 @@ class STDbWhere
 			}
 			elseif(typeof($statement, "STDbWhere"))
 			{
+			    
 				if(count($statement->array)==0)
 					return false;
 				if($this->sForTable != "")
@@ -320,7 +366,7 @@ class STDbWhere
 					if( $statement->sDbName == "" &&
 					    $this->sDbName != ""           )
 					{
-					    $statement->setDatabase($this->sDbName);
+					    $statement->sDbName= $this->sDbName;
 					}
 				}
 				$this->addValues($statement->aValues);
