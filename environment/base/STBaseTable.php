@@ -24,7 +24,7 @@ class STBaseTable
 	var	$identification= array();
 	var	$bDisplayIdentifs= true;
 	/**
-	 * whether in a selected- or an identifier-columns
+	 * whether in a selected- or an identifier-columns (from foreign keys)
 	 * has made an new choice of columns ( key [select or identif] has the value 'false' )
 	 * otherwise ( key non exist or is 'true' for new choose)
 	 * the selection should takes the columns from table inside database (if first table)

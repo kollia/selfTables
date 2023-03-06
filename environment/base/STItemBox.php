@@ -2199,7 +2199,8 @@ class STItemBox extends STBaseBox
 			foreach($result as $column=>$value)
 			{
 			    $field= $selector->searchByAlias($column);
-			    $newResult[$field["column"]]= $value;
+			    if(isset($field))
+			        $newResult[$field["column"]]= $value;
 			}
 			$this->sqlResult= $newResult;
 			$this->setSqlError($result);

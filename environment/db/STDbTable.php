@@ -792,9 +792,10 @@ class STDbTable extends STBaseTable
         $aShowTypes= $this->showTypes;
         $aliasCount= count($aTableAlias);
         foreach($aNeededColumns as $column)
-        {// durchlaufe das Array mit allen benoetigten Columns
+        {// loop the array for all exist columns
             
             $columnName= $column["column"];
+            $preg= array();
             if(preg_match("/(.+)\\((.+)\\)/", $columnName, $preg))
             {
                 if($preg[2] != "*")
@@ -805,7 +806,7 @@ class STDbTable extends STBaseTable
                 $columnAlias= "'".$column["alias"]."'";
             else
                 $columnAlias= "'".$column["column"]."'";
-            if(STCheck::isDebug())
+            if(STCheck::isDebug("db.statements.select"))
             {
                 $msg= "select ";
                 if(isset($column["column"]))
@@ -818,16 +819,23 @@ class STDbTable extends STBaseTable
                     $msg.= $sColumn;
                 }
                 $msg.= " as $columnAlias";
-                STCheck::echoDebug("db.statements.select", $msg);
+                echo "\n<br />";
+                $space= STCheck::echoDebug("db.statements.select", $msg);
+                st_print_r($column, 1, $space);
             }
             
             if($aliasCount>1)
             {
+                $bCheckFk= false;
                 $fkTableName= null;
-                if( typeof($oMainTable, "STDbSelector") &&
-                    (   !isset($oMainTable->abNewChoice["select"]) ||
-                        $oMainTable->abNewChoice["select"] == "true"   )   )
+                if( (   !typeof($oMainTable, "STDbSelector") &&
+                        isset($column['type']) && // <- otherwise field is PK for update or delete inside STListBox
+                        $column['type'] == "select"             ) ||
+                    (   typeof($oMainTable, "STDbSelector") &&
+                        (   !isset($oMainTable->abNewChoice["select"]) ||
+                            $oMainTable->abNewChoice["select"] == "true"   )   )    )
                 {
+                    $bCheckFk= true;
                     // alex 24/05/2005:	if table is an existing foreign Key
                     //                  and the current/main table an STDbSelector,
                     //                  than check whether a table version exist in the selector.
@@ -838,8 +846,7 @@ class STDbTable extends STBaseTable
                     if(STCheck::isDebug() && $fkTableName)
                         STCheck::echoDebug("db.statements.select", "from ".get_class($this)." ".$this->getName()." for column ".$column["column"]." is Fk-Table \"".$fkTableName."\"");
                 }
-                if(	!$fkTableName ||// if no FK table exist, the column can only be from the current table
-                    isset($aShowTypes[$column["alias"]]))
+                if(	!$fkTableName ) // if no FK table exist, the column can only be from the current table
                 {
                     $aliasTable= $aTableAlias[$column["table"]];
                     if(	!$bFirstSelect &&
@@ -966,8 +973,11 @@ class STDbTable extends STBaseTable
             $space= STCheck::echoDebug("db.statements.aliases", "need follow tables inside select-statement");
             st_print_r($aTableAlias, 1, $space);
         }
-        if(count($aTableAlias) <= 1)
+        if( count($aTableAlias) <= 1 &&
+            $oMainTable == $this        )
+        {
             $statement= $singleStatement;
+        }
         $statement= substr($statement, 0, strlen($statement)-1);
         Tag::echoDebug("db.statements.select", "createt statement is \"".$statement."\"");
         return $statement;
