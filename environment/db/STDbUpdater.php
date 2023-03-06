@@ -72,7 +72,7 @@ class STDbUpdater extends STDbSqlCases
         $this->statement[$nr]= $this->getUpdateStatement($where, $this->columns[$nr]);
 	    return $this->statement[$nr];
 	}
-	private function getUpdateStatement(STDbWhere $where= null, $values= null)
+	private function getUpdateStatement(string|STDbWhere $where= null, $values= null)
 	{
 	    
 	    if(isset($where))
