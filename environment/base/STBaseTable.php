@@ -25,13 +25,13 @@ class STBaseTable
 	var	$bDisplayIdentifs= true;
 	/**
 	 * whether in a selected- or an identifier-columns (from foreign keys)
-	 * has made an new choice of columns ( key [select or identif] has the value 'false' )
+	 * has made an new choice of columns ( key [select, get or identifColumn] of original choice [abOrigChoice] has the value 'false' )
 	 * otherwise ( key non exist or is 'true' for new choose)
 	 * the selection should takes the columns from table inside database (if first table)
 	 * or should take the columns from parent table
 	 * @var array
 	 */
-	var	$abNewChoice= array();
+	var	$abOrigChoice= array();
 	var	$show= array();
 	/**
 	 * pre-defined value-property like an flag in database
@@ -560,11 +560,11 @@ class STBaseTable
 			//return;
 			// set to all extra actions also STADMIN
 		}
-		if(	!isset($this->abNewChoice["accessBy_".$action]) ||
-			$this->abNewChoice["accessBy_".$action]	== true		)
+		if(	!isset($this->abOrigChoice["accessBy_".$action]) ||
+			$this->abOrigChoice["accessBy_".$action]	== true		)
 		{
 			$this->asAccessIds[$action]= array();
-			$this->abNewChoice["accessBy_".$action]= false;
+			$this->abOrigChoice["accessBy_".$action]= false;
 		}
 		if(!is_array($this->asAccessIds[$action]))
 			$this->asAccessIds[$action]= array();
@@ -1148,11 +1148,11 @@ class STBaseTable
 	}
 	protected function orderByI(string $tableName, string $column, bool $bASC)
 	{
-	    if( !isset($this->abNewChoice["order"]) ||
-	        $this->abNewChoice["order"] == true    )
+	    if( !isset($this->abOrigChoice["order"]) ||
+	        $this->abOrigChoice["order"] == true    )
 	    {
 	        $this->asOrder= array();
-	        $this->abNewChoice["order"]= false;
+	        $this->abOrigChoice["order"]= false;
 	    }
 	    if($bASC)
 	        $sort= "ASC";
@@ -1603,8 +1603,8 @@ class STBaseTable
 			}
 
 			if(	!$add &&
-				(   !isset($this->abNewChoice["select"]) ||
-				    $this->abNewChoice["select"] == true   )   )
+				(   !isset($this->abOrigChoice["select"]) ||
+				    $this->abOrigChoice["select"] == true   )   )
 			{
 			    foreach($this->show as $key => $fields)
 			    {
@@ -1614,7 +1614,7 @@ class STBaseTable
 			            unset($this->show[$key]);
 			        }
 			    }
-				$this->abNewChoice["select"]= false;
+				$this->abOrigChoice["select"]= false;
 			}
 			if($alias===null)
 			    $alias= $column;
@@ -2224,7 +2224,7 @@ class STBaseTable
 	}
 		function clearSelects()
 		{
-		    $this->abNewChoice["select"]= true;
+		    $this->abOrigChoice["select"]= true;
 		    $this->show= array();
 		}
 		function clearNoFkSelects()
@@ -2322,11 +2322,11 @@ class STBaseTable
 			Tag::alert(!$this->validColumnContent($column), "STBaseTable::identifColumn()", "column '$column' not exist in table ".$this->Name, 1);
 
 			$column= $this->getDbColumnName($column);
-			if(	!isset($this->abNewChoice["identifColumn"]) ||
-				$this->abNewChoice["identifColumn"]	== true		)
+			if(	!isset($this->abOrigChoice["identifColumn"]) ||
+				$this->abOrigChoice["identifColumn"]	== true		)
 			{
 				$this->identification= array();
-				$this->abNewChoice["identifColumn"]= false;
+				$this->abOrigChoice["identifColumn"]= false;
 			}
 			$count= count($this->identification);
 			$this->identification[$count]= array();
@@ -2881,21 +2881,21 @@ class STBaseTable
 	 */
 	protected function getColumnA(string $tableName, array $column)
 	{
-		if(	!isset($this->abNewChoice["get"]) ||
-		    $this->abNewChoice["get"] == true   )   
+		if(	!isset($this->abOrigChoice["get"]) ||
+		    $this->abOrigChoice["get"] == true   )   
 		{
 		    foreach($this->show as $key => $fields)
 		    {
 		        if($fields['type'] == "get")
 		            unset($this->show[$key]);
 		    }
-		    $this->abNewChoice["get"]= false;
+		    $this->abOrigChoice["get"]= false;
 		}
 		$this->linkA("get", $tableName, $column, null, null);
 	}
 	function clearGetColumns()
 	{
-	    $this->abNewChoice['get']= true;
+	    $this->abOrigChoice['get']= true;
 	}
 	function clearRekursiveGetColumns($bFromIdentif= false)
 	{
@@ -3219,8 +3219,6 @@ class STBaseTable
             if(	isset($limitation) &&
                 is_array($limitation)	)
             {
-                echo __FILE__.__LINE__."<br>";
-                st_print_r($limitation);
                 $where->setDatabase($this->db);
                 $where->table($tableName);
                 foreach($limitation as $column=>$value)

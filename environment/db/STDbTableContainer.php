@@ -325,7 +325,7 @@ class STDbTableContainer
 			//					bei der funktion getTable aus der Datenbank,
 			//					alle Tabellen in die this->tables geladen werden
 			$table= $this->db->getTable($sTableName, false);
-			$table->abNewChoice= array();
+			$table->abOrigChoice= array();
 			$table->bSelect= false;
 			$table->bTypes= false;
 			$table->bIdentifColumns= false;

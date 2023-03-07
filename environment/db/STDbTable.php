@@ -29,7 +29,7 @@ class STDbTable extends STBaseTable
 		Tag::paramCheck($Table, 1, "string", "STBaseTable");
 		Tag::paramCheck($container, 2, "STObjectContainer", "string", "null");
 
-		$this->abNewChoice= array();
+		$this->abOrigChoice= array();
 
 		if(typeof($Table, "STBaseTable"))
 		{
@@ -832,8 +832,8 @@ class STDbTable extends STBaseTable
                         isset($column['type']) && // <- otherwise field is PK for update or delete inside STListBox
                         $column['type'] == "select"             ) ||
                     (   typeof($oMainTable, "STDbSelector") &&
-                        (   !isset($oMainTable->abNewChoice["select"]) ||
-                            $oMainTable->abNewChoice["select"] == "true"   )   )    )
+                        (   !isset($oMainTable->abOrigChoice["select"]) ||
+                            $oMainTable->abOrigChoice["select"] == "true"   )   )    )
                 {
                     $bCheckFk= true;
                     // alex 24/05/2005:	if table is an existing foreign Key

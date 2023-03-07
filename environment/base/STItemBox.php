@@ -633,7 +633,6 @@ class STItemBox extends STBaseBox
     		Tag::alert(!($where && $where->isModified()), "STItemBox::makeBox()", "no where-clausel defined to display");
     		$statement= $oTable->getStatement();
 			$this->db->query($statement, $this->getOnError("SQL"));
-			echo __FILE__.__LINE__."<br>";
 			$result= $this->db->fetch_row(MYSQL_ASSOC, $this->getOnError("SQL"));
 			$tablePk= $this->asDBTable->getPkColumnName();
 			if(isset($result[$tablePk]))
@@ -2177,7 +2176,7 @@ class STItemBox extends STBaseBox
 				$this->msg->setMessageId("NOUPDATEROW@", $table);
 				return false;
 			}
-			$bFieldDefineSelection= true;
+			$bFieldDefineSelection= false;
 			if($bFieldDefineSelection)
 			{
 			    echo "<b>begin definition</b> on line ".(__LINE__-3)."<br />";

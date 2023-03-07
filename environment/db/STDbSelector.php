@@ -845,7 +845,7 @@ class STDbSelector extends STDbTable implements STContainerTempl
     		{
     			if(	!$this->isIdentifColumn($content["column"])
 					or
-					!$this->abNewChoice["identifColumn"]		)
+					!$this->abOrigChoice["identifColumn"]		)
     			{
       					$fkTable= &$this->getFkTable($content["column"], true);
       					if($fkTable)
@@ -891,7 +891,7 @@ class STDbSelector extends STDbTable implements STContainerTempl
 				{
 					if(	!$this->isSelect($content["column"])
 						or
-						!$this->abNewChoice["select"]			)
+						!$this->abOrigChoice["select"]			)
 					{
     					$oTable= &$this->getFkTable($content["column"], true);
     					if($oTable)
