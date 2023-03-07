@@ -3157,8 +3157,6 @@ class STBaseTable
                 foreach($fields as $aColumnType)
                 {
                     $limitation= $query->getLimitation($table);
-                    echo __FILE__.__LINE__."<br>";
-                    st_print_r($limitation);
                     foreach($limitation as $column=>$value)
                     {
                         if($aColumnType["other"]==$column)
