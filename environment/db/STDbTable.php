@@ -730,12 +730,22 @@ class STDbTable extends STBaseTable
 	/*private*/function getSelectStatement(array &$aTableAlias, bool $bUseIdentifications)
 	{
 	    if(isset($this->aStatement['select']))
+	    {
+	        if(STCheck::isDebug("db.statements.select"))
+	        {
+	            $msg[]= "take predefined select statement";
+	            $msg[]= "\"".$this->aStatement['select']."\"";
+	            STCheck::echoDebug("db.statements.select", $msg);
+	        }
+	        $aTableAlias= $this->aStatement['selectAlias'];
 	        return $this->aStatement['select'];
+	    }
 	    $statement= "select ";
 	    if($this->isDistinct())
 	        $statement.= "distinct ";
 	    $statement.= $this->getSelectStatementA(!$bUseIdentifications, $this, $aTableAlias);
 	    $this->aStatement['select']= $statement;
+	    $this->aStatement['selectAlias']= $aTableAlias;
 	    return $statement;
 	}
 	/**
@@ -756,7 +766,6 @@ class STDbTable extends STBaseTable
 	        $aNeededColumns= $this->getSelectedColumns();
         else
             $aNeededColumns= $this->getIdentifColumns();
-        
         STCheck::flog("create select statement");
         $this->removeNoDbColumns($aNeededColumns, $aTableAlias);
         if(STCheck::isDebug())
@@ -985,12 +994,22 @@ class STDbTable extends STBaseTable
 	public function getTableStatement(array &$aTableAlias)
 	{
 	    if(isset($this->aStatement['table']))
+	    {
+	        if(STCheck::isDebug("db.statements.table"))
+	        {
+	            $msg[]= "take predefined select statement";
+	            $msg[]= "\"".$this->aStatement['table']."\"";
+	            STCheck::echoDebug("db.statements.table", $msg);
+	        }
+	        $aTableAlias= $this->aStatement['tableAlias'];
 	        return $this->aStatement['table'];
+	    }
 	    $maked= array();
 	    $maked[$this->Name]= "finished";
 	    $statement= "from ".$this->Name." as ".$aTableAlias[$this->Name]." ";
 	    $statement.= $this->getTableStatementA($this, $aTableAlias, $maked, /*first access*/true);
 	    $this->aStatement['table']= $statement;
+	    $this->aStatement['tableAlias']= $aTableAlias;
 	    return $statement;
 	}
 	private function getTableStatementA(STDbTable $oMainTable, array &$aTableAlias, array &$maked, bool $bFirstAccess= false)
@@ -1472,8 +1491,21 @@ class STDbTable extends STBaseTable
 	    }
 	    if(isset($this->aStatement[$condition]))
 	    {
+	        if(STCheck::isDebug("db.statements.where"))
+	        {
+	            $msg[]= "take predefined where statement";
+	            if($condition == "where")
+	                $msg[]= "\"".$this->aStatement['where']."\"";
+	            else
+	                $msg[]= "\"".$this->aStatement['where'][$table]."\"";
+	            STCheck::echoDebug("db.statements.where", $msg);
+	        }
 	        if($condition == "where")
 	        {
+	            if(typeof($from, "array"))
+	                $from= $this->aStatement['whereAlias'];
+	            else
+	                $aliases= $this->aStatement['whereAlias'];
 	            return $this->aStatement['where'];
 	        }
             $tabName= $from->getName();
@@ -1506,9 +1538,12 @@ class STDbTable extends STBaseTable
 	        if(!isset($aliases))
 	            echo "<br />";
 	    }
+	    $bSetFromAlias= false;
 	    if( !isset($from) ||
 	        typeof($from, "array") )
 	    {
+	        if(typeof($from, "array"))
+	            $bSetFromAlias= true;
 	        $aliases= $from;
 	        $from= $this;
 	    }
@@ -1566,8 +1601,13 @@ class STDbTable extends STBaseTable
             $amsg[]= $blanc;
             STCheck::echoDebug("db.statements.where", $amsg);
 	    }
-	    if($condition == "where")	        
+	    if($condition == "where")
+	    {
+	        $this->aStatement['whereAlias']= $aliases;
 	        $this->aStatement['where']= $statement;
+	    }
+	    if($bSetFromAlias)
+	        $from= $aliases;
 	    return $statement;
 	}
 	/**

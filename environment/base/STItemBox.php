@@ -2511,8 +2511,6 @@ class STItemBox extends STBaseBox
 					}
 				 	if(count($this->passwordNames) >= 2)
 				 	{
-				 	    echo __FILE__.__LINE__."<br>";
-				 	    st_print_r($post);
 				 	    if( isset($post["re_".$name]) && // if password repetition not be set, password also a null string
 						    $post[$name] != $post["re_".$name]    ) // and for STUPDATE no entry needed
 						{
@@ -2687,7 +2685,7 @@ class STItemBox extends STBaseBox
 				$this->where($where);
 			$statement= $this->db->getDeleteStatement($this->asDBTable, $this->where);
 			//echo $statement;
-			if(!$this->db->fetch($statement, $this->getOnError("SQL")))
+			if(!$this->db->query($statement, $this->getOnError("SQL")))
 				$this->setSqlError(null);
 			
 			$oCallbackClass->before= false;
