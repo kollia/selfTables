@@ -104,7 +104,6 @@ class STUserManagement extends STObjectContainer
 	    $user->select("FullName", "full qualified name");
 	    $user->select("email", "Email");
         $user->preSelect("DateCreation", "systemdate()");
-        //$user->displayWrappedStatement();
 		
 		$groups= &$this->needTable("Group");
 		$groups->select("domain", "Domain");
@@ -117,6 +116,7 @@ class STUserManagement extends STObjectContainer
 		$project->select("Name", "Project");
 		$project->select("Description", "Description");
 		$project->select("Path", "Position");
+		$project->preSelect("DateCreation", "systemdate()");
 		$project->orderBy("Name");
 		
 		if($action==STLIST)
