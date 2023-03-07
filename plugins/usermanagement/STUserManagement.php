@@ -103,7 +103,8 @@ class STUserManagement extends STObjectContainer
 	    $user->select("user", "User");
 	    $user->select("FullName", "full qualified name");
 	    $user->select("email", "Email");
-	    //$user->select("Description", "Description);
+        $user->preSelect("DateCreation", "systemdate()");
+        //$user->displayWrappedStatement();
 		
 		$groups= &$this->needTable("Group");
 		$groups->select("domain", "Domain");

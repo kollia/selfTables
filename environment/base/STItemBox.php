@@ -2147,6 +2147,7 @@ class STItemBox extends STBaseBox
         $columns= $this->createColumns($this->columns);// create array from column-Name und alias-Name
         $fields= $this->getFieldArray();//take fields from database
         $aJoins= $this->getJoinArray(array(), $post);//create all content from popup-menues
+        $bFieldDefineSelection= false;
         if($this->action==STUPDATE)
         {// check only the changed fields
 			if($this->asDBTable)
@@ -2176,10 +2177,10 @@ class STItemBox extends STBaseBox
 				$this->msg->setMessageId("NOUPDATEROW@", $table);
 				return false;
 			}
-			$bFieldDefineSelection= false;
+			$bFieldDefineSelection= true;
 			if($bFieldDefineSelection)
 			{
-			    echo "<b>begin definition</b> on line ".__LINE__."<br />";
+			    echo "<b>begin definition</b> on line ".(__LINE__-3)."<br />";
 			    echo "   by file ".__FILE__."<br />";
 			    echo "database select: <b>(\$result)</b><br />";
 			    st_print_r($result, 1, 10);
@@ -2280,6 +2281,7 @@ class STItemBox extends STBaseBox
         {
             $name= $field["name"];
             if( STCheck::isDebug() &&
+                isset($post[$name]) &&
                 (   STCheck::isDebug("show.db.fields") ||
                     $bFieldDefineSelection                  )   )
             {
@@ -2294,12 +2296,15 @@ class STItemBox extends STBaseBox
                 echo "<b>content:</b> \"".$post[$name]."\"<br />";
             }
             $ch= 0;
-            $post[$name]= str_replace("'", "\\'", $post[$name], $ch);
-            if( $bFieldDefineSelection &&
-                $ch > 0                     )
+            if(isset($post[$name]))
             {
-                STCheck::echoSpace($space);
-                echo "<b>changed to:</b>\"".$post[$name]."\"<br>";
+                $post[$name]= str_replace("'", "\\'", $post[$name], $ch);
+                if( $bFieldDefineSelection &&
+                    $ch > 0                     )
+                {
+                    STCheck::echoSpace($space);
+                    echo "<b>changed to:</b>\"".$post[$name]."\"<br>";
+                }
             }
             if(isset($columns[$name]))
 				$columnName= $columns[$name];

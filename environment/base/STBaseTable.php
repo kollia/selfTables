@@ -1773,14 +1773,14 @@ class STBaseTable
 		        $abCorrect['len']= strlen($content) - 2;
 		    }
 		    $field= $this->findColumnAlias($content, $bAlias, 2);
+		    if(is_array($abCorrect))
+		        $abCorrect['content']= $field;
 		    if( $field['type'] == "not found" ||
 		        (   $bAlias == false &&
 		            $field['type'] == "alias"  )   )
 		    {
 		        return false;
 		    }
-		    if(is_array($abCorrect))
-		        $abCorrect['content']= $field;
 		    return true;
 		}
 		public function columnExist(string $column, bool $bAlias= false) : bool
@@ -3157,11 +3157,13 @@ class STBaseTable
                 foreach($fields as $aColumnType)
                 {
                     $limitation= $query->getLimitation($table);
+                    echo __FILE__.__LINE__."<br>";
+                    st_print_r($limitation);
                     foreach($limitation as $column=>$value)
                     {
                         if($aColumnType["other"]==$column)
                         {
-                            $clausel= $aColumnType["own"]."=";
+                            $clausel= $aColumnType["other"]."=";
                             if(!is_numeric($value))
                                 $value= "'".$value."'";
                             $clausel.= $value;
@@ -3217,6 +3219,8 @@ class STBaseTable
             if(	isset($limitation) &&
                 is_array($limitation)	)
             {
+                echo __FILE__.__LINE__."<br>";
+                st_print_r($limitation);
                 $where->setDatabase($this->db);
                 $where->table($tableName);
                 foreach($limitation as $column=>$value)
