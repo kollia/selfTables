@@ -147,8 +147,11 @@ class STDbSelector extends STDbTable implements STContainerTempl
 			STDbTable::clearSelects();
 			foreach($this->aoToTables as $name=>$table)
 			{
-				if($table)
+				if( $table &&
+				    $name != $this->Name    )
+				{
 					$this->aoToTables[$name]->clearSelects();
+				}
 			}
 		}
 		public function clearIdentifColumns()
@@ -157,8 +160,11 @@ class STDbSelector extends STDbTable implements STContainerTempl
 		    STDbTable::clearIdentifColunns();
 		    foreach($this->aoToTables as $name=>$table)
 		    {
-		        if($table)
+		        if( $table &&
+		            $name != $this->Name    )
+		        {
 		            $this->aoToTables[$name]->identifColumns();
+		        }
 		    }
 		}
 		function isSelect($tableName, $columnName= null, $aliasName= null)
