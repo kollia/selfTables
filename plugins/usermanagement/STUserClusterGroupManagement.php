@@ -85,7 +85,9 @@ class STUserClusterGroupManagement extends STObjectContainer
 	    //$clusterGroup= $this->needTable("ClusterGroup");
 	    //$clusterGroup->setDisplayName("");
 	    $this->setFirstTable("Group");
-	    return;
+	       
+	    $project= $this->getTable("Project");
+	    $project->identifColumn("Name", "Project");
 	}
 	function init()
 	{
@@ -198,15 +200,13 @@ class STUserClusterGroupManagement extends STObjectContainer
     	    $group->andWhere($groupWhere);*/
 	    }
 	  
-	    $project= $this->getTable("Project");
-	    $project->identifColumn("Name", "Project");
-	    
 		$cluster= $this->needTable("Cluster");
 		$cluster->select("ProjectID", "Project");
 		$cluster->disabled("Project");
 		$cluster->select("ID", "Cluster");
 		$cluster->namedLink("Cluster", $this->clusterGroup);
 		$cluster->select("Description", "Description");
+		$cluster->preSelect("DateCreation", "sysdate()");
 		$cluster->joinOver("Project");
 /*		if( $currentTableName == $clusterTableName &&
 		    $action == STLIST)
