@@ -8,9 +8,10 @@
 	//     true		             -  only set to debug and check parameters in some method's (true is an boolean no string)
 	//     query                 -  show incomming query of GET /POST URL's or uploaded FILES
     //     query.limitation      -  show manipulation of query for new container or action set
-	//     performance           -  show needed performance of time from hole site
+    //     performance           -  show needed performance of time from hole site
+    //     db.descriptions       -  show which tables are described on database
 	//     db.statement          -  show created statements of self-Tables
-	//     db.descriptions       -  show which tables are described on database
+	//     db.statement.from     -  show also trace from were statement was called
 	//     db.statement.time     -  show how long statement need to fetch from database
 	//     db.statement.modify   -  show creation of insert/update statement
     //     db.statement.insert   -  same as db.statement.modify
@@ -29,6 +30,7 @@
 	//     access                -  show whether user has access to different objects
 	//     session               -  show all about a session
 	//     listbox.properties    -  show column properties for every row insede STListBox creation 
+    //     itembox.columns       -  show all column content for every row insede STItemBox creation
 	//     log                   -  tracing recursive function names passed to calling one or more before defined position 
 	//
 	//--------------------------------------------------------------------------

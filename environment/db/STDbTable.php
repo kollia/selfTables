@@ -638,10 +638,12 @@ class STDbTable extends STBaseTable
 	        {
     	        echo "<br /><br />";
     	        echo "<hr color='black'/>";
-    	        STCheck::echoDebug("db.statement", "create $nr. statement for table ".$this->toString());
+    	        STCheck::echoDebug("db.statement", "create $nr. statement for <b>select</b> inside table ".$this->toString());
     	        echo "<hr />";
     	        //STCheck::info(1, "STDbTable::getStatement()", "called STDbTable::<b>getStatement()</b> method from:", 1);
 	        }
+	        if(STCheck::isDebug("db.statement.from"))
+	            {showErrorTrace(1);echo "<br />";}
 	    }
 		if(isset($this->aStatement['full']))
 		{

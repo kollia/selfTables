@@ -20,8 +20,18 @@ class STDbSelector extends STDbTable implements STContainerTempl
 		var $count= 0;
 		var	$dbCount;
 		var	$defaultTyp;
-		var	$bClearSelects= false;	// for later getting table
-									// by true it should also cleared
+		/**
+		 * for later getting table
+		 * by true it should also cleared selections
+		 * @var boolean
+		 */
+		var	$bClearSelects= false;
+		/**
+		 * for later getting table
+		 * by true it should also cleared identif columns
+		 * @var boolean
+		 */
+		var $bClearIdendifColumns= false;
 		/**
 		 * whether the checkbox column
 		 * for an N to N table was selected if was declared as
@@ -94,7 +104,7 @@ class STDbSelector extends STDbTable implements STContainerTempl
 					$oTable= $this->getTable($sFromTableName);
 					$oTable->allowQueryLimitation($this->bModifyFk);
 					if($this->bClearSelects)
-						$oTable->clearIdentifColumns();
+						$oTable->clearSelects();
 					$this->aoToTables[$sFromTableName]= &$oTable;
 				}
 			}
@@ -131,15 +141,25 @@ class STDbSelector extends STDbTable implements STContainerTempl
 			$this->aoToTables= array();
 			$this->bAddedFKTables= true;
 		}
-		function clearSelects()
+		public function clearSelects()
 		{
 			$this->bClearSelects= true;
 			STDbTable::clearSelects();
 			foreach($this->aoToTables as $name=>$table)
 			{
 				if($table)
-					$this->aoToTables[$name]->clearIdentifColumns();
+					$this->aoToTables[$name]->clearSelects();
 			}
+		}
+		public function clearIdentifColumns()
+		{
+		    $this->bClearIdendifColumns= true;
+		    STDbTable::clearIdentifColunns();
+		    foreach($this->aoToTables as $name=>$table)
+		    {
+		        if($table)
+		            $this->aoToTables[$name]->identifColumns();
+		    }
 		}
 		function isSelect($tableName, $columnName= null, $aliasName= null)
 		{
@@ -845,7 +865,7 @@ class STDbSelector extends STDbTable implements STContainerTempl
     		{
     			if(	!$this->isIdentifColumn($content["column"])
 					or
-					!$this->abOrigChoice["identifColumn"]		)
+					!$this->abOrigChoice["identif"]		)
     			{
       					$fkTable= &$this->getFkTable($content["column"], true);
       					if($fkTable)

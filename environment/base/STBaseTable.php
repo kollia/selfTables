@@ -298,10 +298,14 @@ class STBaseTable
 	            STCheck::echoDebug("table", "clone STBaseTable::content from ID:[$oldID] to $this");
 	        }
 	        
+	        $space= STCheck::echoDebug("table", "with <b>selected</b> Columns:");
+	        st_print_r($this->show,3,$space);
+	        STCheck::echoDebug("table", "with <b>identif</b> Columns:");
+	        st_print_r($this->identification,3,$space);
             $check= "table";
             if(STCheck::isDebug("db.table.fk"))
                 $check= "db.table.fk";
-            $space= STCheck::echoDebug($check, "with <b>FKs:</b>");
+            STCheck::echoDebug($check, "with <b>FKs:</b>");
             st_print_r($this->aFks,3,$space);
             for($c= 0; $c < $space; $c++)
                 echo " ";
@@ -1986,11 +1990,13 @@ class STBaseTable
 			{
 				if($field["column"]==$columnName)
 				{
-					$fk= &$this->isForeignKey($columnName, /*bIsColumn*/true);
+				    // WARNING: if $bisColumn not defined as true, go endless into searchByColumn method
+				    $bIsColumn= true;
+					$fk= &$this->isForeignKey($columnName, $bIsColumn);
 					if($fk)
-					{// if the column have an foreign key to an other table
+					{// if the column have a foreign key to an other table
 					 // search for the alias name in the identif-columns from this table
-						$otherTable= $this->getFkTable($columnName, /*bIsColumn*/true);
+						$otherTable= $this->getFkTable($columnName, $bIsColumn);
 
 						$other= $otherTable->searchByIdentifColumn($fk["other"]);
 						if($other)
@@ -2295,8 +2301,9 @@ class STBaseTable
 			if(!$bExists)
 				$this->bDisplayIdentifs= false;
 		}
-		function clearIdentifColumns()
+		public function clearIdentifColumns()
 		{
+		    $this->abOrigChoice["identif"]= true;
 			$this->identification= array();
 		}
 		function clearFKs()
@@ -2322,11 +2329,10 @@ class STBaseTable
 			Tag::alert(!$this->validColumnContent($column), "STBaseTable::identifColumn()", "column '$column' not exist in table ".$this->Name, 1);
 
 			$column= $this->getDbColumnName($column);
-			if(	!isset($this->abOrigChoice["identifColumn"]) ||
-				$this->abOrigChoice["identifColumn"]	== true		)
+			if(	!isset($this->abOrigChoice["identif"]) ||
+				$this->abOrigChoice["identif"]	== true		)
 			{
 				$this->identification= array();
-				$this->abOrigChoice["identifColumn"]= false;
 			}
 			$count= count($this->identification);
 			$this->identification[$count]= array();
@@ -2334,6 +2340,7 @@ class STBaseTable
 			if($alias)
 				$this->identification[$count]["alias"]= $alias;
 			$this->identification[$count]["table"]= $this->getName();
+			$this->abOrigChoice["identif"]= false;
 		}
 		public function getIdentifColumns()
 		{
@@ -2623,15 +2630,26 @@ class STBaseTable
 		Tag::paramCheck($access, 2, "string", "null");
 
 		$field= $this->findAliasOrColumn($columnName);
-		$column= $field["column"];
+		$columnName= $field["column"];
 		$this->linkA("download", $this->Name, array("column"=>$columnName), null, $this->sPKColumn);
 	}
-	function disabled($columnName, $enum= null)
+	public function disabled($columnName, $enum= null)
 	{
 		Tag::paramCheck($columnName, 1, "string");
 		Tag::paramCheck($enum, 2, "string", "null");
 
 		$this->linkA("disabled", $this->Name, array("column"=>$columnName), null, $enum);
+	}
+	public function isDisabled(string $columnName)
+	{
+	    $field= $this->findAliasOrColumn($columnName);
+	    if($field === false)
+	        $aliasColumn= $columnName;
+	    else
+	        $aliasColumn= $field['alias'];
+	    if(isset($this->showTypes[$aliasColumn]["disabled"]))
+	        return true;
+	    return false;
 	}
 	function changeFormOptions($submitButton, $formName= "st_checkForm", $action= null)
 	{
@@ -3000,7 +3018,7 @@ class STBaseTable
 	{
 		$this->aCallbacks= array();
 	}
-	function &getFkTable($fromColumn, $bIsColumn= false)
+	public function &getFkTable($fromColumn, $bIsColumn= false)
 	{
 		STCheck::param($fromColumn, 0, "string");
 		STCheck::param($bIsColumn, 1, "bool");
@@ -3016,8 +3034,8 @@ class STBaseTable
 			{
 				if($fromColumn==$columns["own"])
 				{
-					$table= &$this->getTable($table);
-					return $table;
+					$oTable= &$this->getTable($table);
+					return $oTable;
 				}
 			}
 		}
