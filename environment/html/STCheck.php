@@ -403,11 +403,11 @@ class STCheck
 		/**
 		 * set debugging state
 		 * 
-		 * @param boolean|string general debugging state by (true), or by explicit string, see: st_pathdef.inc.php
+		 * @param boolean|string $dbg_str general debugging state by (true), or by explicit string, see: st_pathdef.inc.php
 		 * @param integer $from output string "db.statement" only since the statement creation growing to this number
 		 * @param integer $to do not output after this number occured
 		 */
-		public static function debug(bool|string $boolean= true, int $from= null, int $to= null)
+		public static function debug(bool|string $dbg_str= true, int $from= null, int $to= null)
 		{
 			global	$HTTP_POST_VARS,
 					$HTTP_POST_FILES,
@@ -423,8 +423,8 @@ class STCheck
 			
 			if( isset($from) )
 			{
-			    $filter= STCheck::array_key_filter($boolean);
-			    if( !is_string($boolean) ||
+			    $filter= STCheck::array_key_filter($dbg_str);
+			    if( !is_string($dbg_str) ||
 			        $filter == ""            )
     			{
     			    STCheck::debug(true);
@@ -441,8 +441,8 @@ class STCheck
         			    $__stdbtables_statement_count_to[$filter]= $to;
     			}
 			}
-			if( is_string($boolean) ||
-			    $boolean !== false       )
+			if( is_string($dbg_str) ||
+			    $dbg_str !== false       )
 			{
 			    global_debug_definition(true);
 			    if( $global_activeOutputBuffer == false &&
@@ -459,7 +459,7 @@ class STCheck
 			}
 			if(	!$HTML_CLASS_DEBUG_CONTENT
 				and
-				$boolean	)
+				$dbg_str	)
 			{
 				$param= new STQueryString();
 				$HTTP_GET_VARS= $param->getArrayVars();
@@ -470,19 +470,25 @@ class STCheck
 			STCheck::print_query_post();
 			if(	$HTML_CLASS_DEBUG_CONTENT
 				and
-				!$boolean	)
+				!$dbg_str	)
 			{
 				echo "\n</pre>\n";
 			}
-			if($boolean)
+			if($dbg_str)
 			{
 				$HTML_CLASS_DEBUG_CONTENT= true;
-				if(is_string($boolean))
+				if(is_string($dbg_str))
 				{
+				    if( $dbg_str == "db.statement.update" ||
+				        $dbg_str == "db.statement.insert"   )
+				    {
+				        $dbg_str.= "/db.statement.modify";
+				    }elseif($dbg_str == "db.statement.modify")
+				        $dbg_str.= "/db.statement.update/db.statement.insert";
 					if($HTML_CLASS_DEBUG_CONTENT_CLASS_FUNCTION)
-						$HTML_CLASS_DEBUG_CONTENT_CLASS_FUNCTION.= "/".$boolean;
+						$HTML_CLASS_DEBUG_CONTENT_CLASS_FUNCTION.= "/".$dbg_str;
 					else
-						$HTML_CLASS_DEBUG_CONTENT_CLASS_FUNCTION= $boolean;
+						$HTML_CLASS_DEBUG_CONTENT_CLASS_FUNCTION= $dbg_str;
 				}
 			}else
 			{
@@ -542,13 +548,13 @@ class STCheck
 				$HTML_CLASS_DEBUG_CONTENT_PRINT_QUERY= true;
 			}
 		}		
-		private static function array_key_filter(string $inClassFunction) : string
+		private static function array_key_filter(string $dbg_str) : string
 		{
 		    global $__stdbtables_statement_count;
 
 		    foreach($__stdbtables_statement_count as $type=>$nr)
 		    {
-		        if(preg_match("/^$type/", $inClassFunction))
+		        if(preg_match("/^$type/", $dbg_str))
 		            return $type;
 		    }
 		    return "";
@@ -560,33 +566,33 @@ class STCheck
          * (this will not always reach the increasing!!)<br />
          * (the inclassFunction string has also be defined inside $__stdbtables_statement_count)
          * 
-         * @param string $inClassFunction definition for all debugging strings which should output on screen
+         * @param string $dbg_str definition for all debugging strings which should output on screen
          * @return number of increasing
 		 */
-		public static function increase(string $inClassFunction) : int
+		public static function increase(string $dbg_str) : int
 		{
 		    global $__stdbtables_statement_count;
 		    
-            if(!STCheck::warning(!isset($__stdbtables_statement_count[$inClassFunction]),
-                    "STCheck::incfrease()", "cannot increase [$inClassFunction] debugging", 1))
+            if(!STCheck::warning(!isset($__stdbtables_statement_count[$dbg_str]),
+                    "STCheck::incfrease()", "cannot increase [$dbg_str] debugging", 1))
             {
-                $__stdbtables_statement_count[$inClassFunction]++;
-                return $__stdbtables_statement_count[$inClassFunction];
+                $__stdbtables_statement_count[$dbg_str]++;
+                return $__stdbtables_statement_count[$dbg_str];
             }
             return 0;
 		}
-		public static function getIncreaseNr(string $inClassFunction) : int
+		public static function getIncreaseNr(string $dbg_str) : int
 		{
 		    global $__stdbtables_statement_count;
 		    
-		    if(!STCheck::warning(!isset($__stdbtables_statement_count[$inClassFunction]),
-		        "STCheck::incfrease()", "debug string <b>$inClassFunction</b> is not defined for increasing", 1))
+		    if(!STCheck::warning(!isset($__stdbtables_statement_count[$dbg_str]),
+		        "STCheck::incfrease()", "debug string <b>$dbg_str</b> is not defined for increasing", 1))
 		    {
-		        return $__stdbtables_statement_count[$inClassFunction];
+		        return $__stdbtables_statement_count[$dbg_str];
 		    }
 		    return 0;
 		}
-		public static function isDebug($inClassFunction= null)
+		public static function isDebug($dbg_str= null)
 		{
 			global $HTML_CLASS_DEBUG_CONTENT,
 			       $HTML_CLASS_DEBUG_CONTENT_CLASS_FUNCTION,
@@ -596,25 +602,31 @@ class STCheck
 
 			if(!$HTML_CLASS_DEBUG_CONTENT)
 				return false;
-			if(is_string($inClassFunction))
+			if(is_string($dbg_str))
 			{
 			    if($HTML_CLASS_DEBUG_CONTENT_CLASS_FUNCTION != "")
 			    {
-			        $isType= STCheck::array_key_filter($inClassFunction);
+			        $isType= STCheck::array_key_filter($dbg_str);
+			        if(0) //$dbg_str == "db.statement.update" || $dbg_str == "db.statement.modify")
+			        {
+			            echo __FILE__.__LINE__."<br>";
+			            echo "debug  string:'$dbg_str'<br />";
+			            echo "allow strings:'$HTML_CLASS_DEBUG_CONTENT_CLASS_FUNCTION'<br />";
+			            echo "isType:";st_print_r($isType);
+			            echo "<br />preg_match('/(^|\/)".$dbg_str."/i', '".$HTML_CLASS_DEBUG_CONTENT_CLASS_FUNCTION."')<br />";
+			            echo "count ";st_print_r($__stdbtables_statement_count);
+			            echo " from:";st_print_r($__stdbtables_statement_count_from);
+			            echo " to:";st_print_r($__stdbtables_statement_count_to);echo "<br>";
+			        }
 			        if( $isType !== "" &&
 			            (   (   isset($__stdbtables_statement_count_from[$isType]) &&
 			                    $__stdbtables_statement_count[$isType] < $__stdbtables_statement_count_from[$isType]  ) ||
 			                (   isset($__stdbtables_statement_count_to[$isType]) &&
 			                    $__stdbtables_statement_count[$isType] > $__stdbtables_statement_count_to[$isType]   )    )   )
 			        {
-			            //echo "count ";st_print_r($__stdbtables_statement_count);
-			            //echo " from:";st_print_r($__stdbtables_statement_count_from);
-			            //echo " to:";st_print_r($__stdbtables_statement_count_to);echo "<br>";
 			            return false;
 			        }
-    				//echo "inClass ".$inClassFunction."=".$HTML_CLASS_DEBUG_CONTENT_CLASS_FUNCTION."<br />";;
-    				//echo "<br />preg_match('/(^|\/)".$inClassFunction."/i', '".$HTML_CLASS_DEBUG_CONTENT_CLASS_FUNCTION."')";
-    			    if(	preg_match("/(^|\/)".$inClassFunction."/i", $HTML_CLASS_DEBUG_CONTENT_CLASS_FUNCTION)   )
+    			    if(	preg_match("/(^|\/)".$dbg_str."/i", $HTML_CLASS_DEBUG_CONTENT_CLASS_FUNCTION)   )
     				{//echo " true<br />";
     					return true;
     				}
@@ -630,24 +642,24 @@ class STCheck
 		}
 		/**
 		 * Debug message whitch should be showen on screen.<br />
-		 * Only when debugging be set for defined <code>$inClassFunction</code>
+		 * Only when debugging be set for defined <code>$dbg_str</code>
 		 * 
-		 * @param string $inClassFunction for which debug output the string should be displayed
+		 * @param string $dbg_str for which debug output the string should be displayed
 		 * @param string $string the debug message
 		 * @param string $break whether should be made an carage return after the displayed string
 		 * @return number count of intented spaces
 		 */
-		public static function echoDebug($inClassFunction, $string= null, $break= true)
+		public static function echoDebug(string $dbg_str, $string= null, $break= true)
 		{
 			if(!STCheck::isDebug())
 				return 0;
 			STCheck::print_query_post();
-			if(STCheck::isDebug($inClassFunction))
+			if(STCheck::isDebug($dbg_str))
 			{
     			if($string===null)
     			{
     				//if($HTML_CLASS_DEBUG_CONTENT===true)
-    				//	echo $inClassFunction;
+    				//	echo $dbg_str;
     			//echo "&gt;&gt;";
     				echo "<br />";
     				return;
@@ -661,7 +673,7 @@ class STCheck
 					$line= $backtrace[0]["line"];
 					preg_match("/([^\\\\\/]+)$/", $backtrace[0]["file"], $ereg);
 					$file= $ereg[1];
-					$pref= "<b>[</b>$inClassFunction<b>]</b> ";
+					$pref= "<b>[</b>$dbg_str<b>]</b> ";
 					$pref.= "<b>file:</b>".$file." <b>line:</b>".$line." <b>:</b> ";
 					$space+= STCheck::countHtmlCode($pref);
 				}
