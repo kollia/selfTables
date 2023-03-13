@@ -171,7 +171,8 @@ class STItemBox extends STBaseBox
     					//					gesucht. Jetzt steht dieser in $sPkInside
     					$sPkColumn= "unknown";
     					$sPkInside= "unknown";
-    					
+
+    					//$fks= $this->asDBTable->getForeignKeyModification();
     					foreach($joinTable->identification as $columns)
     					{
     						if($columns["column"]==$joinColumns["other"])
@@ -193,7 +194,7 @@ class STItemBox extends STBaseBox
     					//					f�r den PK im rowResult ben�tigt wird
     					if($sPkInside == "unknown")
     					{// if the column not as identification column defined, add it
-    						$joinTable->identifColumn($joinColumns["other"]);
+    					    $joinTable->identifColumn($joinColumns["other"]);
     						$sPkInside= $joinColumns["other"];
     					}
 
@@ -703,8 +704,8 @@ class STItemBox extends STBaseBox
 			}
 			$post= $oCallbackClass->sqlResult;
 		}
-		
-   		$aJoins= $this->getJoinArray($join, $post);//erstelle alle Inhalte der PopUp-Menues
+
+   		$aJoins= $this->getJoinArray($join, $post);//create all content of popup-menues
    		
   		/**
   		 * increasing loop for field count
@@ -739,12 +740,19 @@ class STItemBox extends STBaseBox
 		 */
 		$hidden= new DivTag();
 		
+		if(STCheck::isDebug("itembox.columns"))
+		{
+		    STCheck::echoDebug("itembox.columns", "loop through all columns of database");
+		    $bShowColumns= true;
+		}else
+		    $bShowColumns= false;
 		reset($fields);
 		while($x<count($fields))
-		{// gehe alle Felder von der Datenbank durch
+		{// go throug all fields from database
 			
 			$field= $fields[$x];		
-        	$name= $field["name"];
+			$name= $field["name"];
+			if($bShowColumns)echo "row $x - $name<br />";
 		 	if(	isset($columns[$name]) ||
 				$field["type"]=="getColumn")
 			{//nur anzeigen wenn das Feld auch im angegebenen $statement enthalten ist
@@ -754,9 +762,10 @@ class STItemBox extends STBaseBox
 				{// if nextLine from column before is false,
 				 // create no new Row
 					$tr= new RowTag();
-					//echo "create column ".$this->asSelect[$x-1]["column"]." inside new row<br>";
-				}//else
-					//echo "create column ".$this->asSelect[$x-1]["column"]." inside same row<br>";
+					if($bShowColumns)echo "create column ".$this->asSelect[$x]["column"]." inside new row<br>";
+					
+				}elseif($bShowColumns)
+					echo "create column ".$this->asSelect[$x]["column"]." inside same row<br>";
 				$td= new ColumnTag(TD);
 
 				$td->add("&#160;&#160;&#160;");
@@ -766,73 +775,73 @@ class STItemBox extends STBaseBox
                     $field['type'] != "getColumn"   )
                 {   // if the field also exist in the join array
 					// show a PopUp-Menu
-						$joinAnz= count($aJoins[$name]);
-						for($n= $joinAnz-1; $n>=0; $n--)
-						{// f�r das Entsprechende Feld im $aJoins[$name]
-						 // k�nnen auch mehrere Tabellen f�rs PopUp-Men� sein
-						 // -> alle in verkehrter Reihenfolge und in einer Linie anzeigen
-						 	$td= new ColumnTag(TD);
+                    $joinAnz= count($aJoins[$name]);
+					for($n= $joinAnz-1; $n>=0; $n--)
+					{// f�r das Entsprechende Feld im $aJoins[$name]
+					 // k�nnen auch mehrere Tabellen f�rs PopUp-Men� sein
+					 // -> alle in verkehrter Reihenfolge und in einer Linie anzeigen
+					 	$td= new ColumnTag(TD);
 
-							$td->add(br());
-                        	$aRows= $aJoins[$name][$n];
-                        	$Bez= $columns[$name];
-							if($n>0)
-								$Bez= $columns[$aRows["Bez"]];
-							$selName= $name;
-							if($n>0)
-								$selName= $aRows["Bez"];
+						$td->add(br());
+                    	$aRows= $aJoins[$name][$n];
+                    	$Bez= $columns[$name];
+						if($n>0)
+							$Bez= $columns[$aRows["Bez"]];
+						$selName= $name;
+						if($n>0)
+							$selName= $aRows["Bez"];
 
-							// description output for PopUp-Menu
-							$td->add($Bez);
-							$td->add(":");
-							$td->add(br());
-							$tr->add($td);
+						// description output for PopUp-Menu
+						$td->add($Bez);
+						$td->add(":");
+						$td->add(br());
+						$tr->add($td);
 
-							$td= new ColumnTag(TD);
-							$td->add(br());
+						$td= new ColumnTag(TD);
+						$td->add(br());
 
-							$select= new SelectTag();
-							$select->name($selName);
-							$select->size(1);
-							if(isset($this->aDisabled[$field["name"]]))
-								$select->disabled();
-							if(	(	$joinAnz>1
-									and
-									($n+1)==$joinAnz	)
-								or
-								isset($this->asDBTable->aRefreshes[$field["name"]])	)
-							{// ist eine dritte Tabelle im Spiel,
-							 // wird nur die Ausgabe, bei �nderung
-							 // des PopUp-Men�s der dritten Tabelle,
-							 // aktualisiert.
-								$select->onChange("javascript:DB_changeBox('update')");
-								$needChangeBox= true;
-							}
-							$maxlen= 0;
-								$bNotNullField= false;
-							 	$option= new OptionTag();
-								if(count($aRows)>0)
+						$select= new SelectTag();
+						$select->name($selName);
+						$select->size(1);
+						if(isset($this->aDisabled[$field["name"]]))
+							$select->disabled();
+						if(	(	$joinAnz>1
+								and
+								($n+1)==$joinAnz	)
+							or
+							isset($this->asDBTable->aRefreshes[$field["name"]])	)
+						{// ist eine dritte Tabelle im Spiel,
+						 // wird nur die Ausgabe, bei �nderung
+						 // des PopUp-Men�s der dritten Tabelle,
+						 // aktualisiert.
+							$select->onChange("javascript:DB_changeBox('update')");
+							$needChangeBox= true;
+						}
+						$maxlen= 0;
+							$bNotNullField= false;
+						 	$option= new OptionTag();
+							if(count($aRows)>0)
+							{
+								if(preg_match("/not_null/", $field["flags"]))
 								{
-									if(preg_match("/not_null/", $field["flags"]))
-									{
-										$bNotNullField= true;
-										if($this->action==STINSERT)
-											$option->add($this->aSelectNames["select"]);
-									}else
-										$option->add($this->aSelectNames["null_entry"]);
+									$bNotNullField= true;
+									if($this->action==STINSERT)
+										$option->add($this->aSelectNames["select"]);
 								}else
-								{
-									if($joinAnz>1)
-										$option->add($this->aSelectNames["left_select"]);
-									else
-										$option->add($this->aSelectNames["no_entrys"]);
-								}
-								$option->value("");
-								$maxlen= -10;
-								$select->add($option);
+									$option->add($this->aSelectNames["null_entry"]);
+							}else
+							{
+								if($joinAnz>1)
+									$option->add($this->aSelectNames["left_select"]);
+								else
+									$option->add($this->aSelectNames["no_entrys"]);
+							}
+							$option->value("");
+							$maxlen= -10;
+							$select->add($option);
 						$bOneEntry= false;
 						if(count($aRows) == 1)
-							$bOneEntry= true;
+						    $bOneEntry= true;
                         foreach($aRows as $row)
                         {// Alle Auswahl-Optionen f�r den select-tag anzeigen
   							if(!is_array($row))
@@ -1654,15 +1663,23 @@ class STItemBox extends STBaseBox
 
 		$query= new STQueryString();
 		$get= $query->getArrayVars();
-
+		
+		/**
+		 * additional content for insert statement
+		 * from foreign keys
+		 * @var array $insert_content
+		 */
+		$insert_content= array();
 		$aSetAlso= $this->asDBTable->aSetAlso;
-		// alex 03/08/2005:	setze zus�tzlich alle Felder
-		//					welche von den Get-Parameter hereinkommen
-		//					und mit den Foreign Keys �bereinstimmen
-		//					aber noch nicht gesetzt sind,
-		//					sowie der Foreign Key muss ein inner Join sein
-		if($this->action==STINSERT)
+		if($this->action==STINSERT &&
+		    isset($HTTP_POST_VARS['STBoxes_action']) &&
+		    $HTTP_POST_VARS['STBoxes_action'] == "make"  )
 		{
+		    // alex 03/08/2005:	set additional all fields
+		    //					which incomming by query limitation
+		    //					and match with foreign keys
+		    //					but be not set actually
+		    //					also the foreign key have to be an "inner join"
 			if(!is_array($aSetAlso))
 				$aSetAlso= array();
 			$fks= $this->asDBTable->getForeignKeyModification();
@@ -1670,16 +1687,14 @@ class STItemBox extends STBaseBox
 			{
 			    foreach($fields as $column)
 			    {
-					if(	!isset($aSetAlso[$column["own"]][STINSERT])
-						and
-						!isset($aSetAlso[$column["own"]]["All"])
-						and
-						$column["join"]=="inner"
-						and
-						!$this->asDBTable->isSelect($column["own"])	)
+					if(	!isset($aSetAlso[$column["own"]][STINSERT]) &&
+						!isset($aSetAlso[$column["own"]]["All"]) &&
+						$column["join"]=="inner" &&
+						(   !$this->asDBTable->isSelect($column["own"]) ||
+						    $this->asDBTable->isDisabled($column["own"])  )     )
 					{
 						if(!isset($aSetAlso[$column["own"]]))
-							$aSetAlso[$column["own"]]= array();
+						    $aSetAlso[$column["own"]]= array();
 						if(!isset($get["stget"]['limit'][$table][$column["other"]]))
 						{// own column not exist inside limitation, so select from database
 						    $oTable= $this->asDBTable->getTable($table);
@@ -1687,17 +1702,17 @@ class STItemBox extends STBaseBox
 						    $selector->select($table, $column["other"]);
 						    foreach($get["stget"]['limit'][$table] as $key=>$value)
 						        $selector->andWhere($table, "$key='$value'");
-						    $selector->execute();
+					        $selector->execute();
 						    $value= $selector->getSingleResult();
 						}else
 						    $value= $get["stget"]['limit'][$table][$column["other"]];
-						$aSetAlso[$column["own"]][STINSERT]= $value;
+						$insert_content[$column["own"]]= $value;
 					}
 			    }
 			}
 		}
 		
-		// alex 07/06/2005: setAlso aus dem STBaseTable �bernehmen
+		// alex 07/06/2005: setAlso take over STBaseTable
 		if(is_array($aSetAlso))
 			foreach($aSetAlso as $column=>$content)
 			{
@@ -1741,9 +1756,8 @@ class STItemBox extends STBaseBox
         if( isset($post["STBoxes_action"]) &&
         	$post["STBoxes_action"]=="make" 	)
         {
-			// �berpr�fung bei nur 2 Enum's
+			// checking for two enums
   			$aEnums= $this->countingAllEnumns();
-  			$aEnumKeys= array_keys($aEnums);
 			$aShowen= array();
 			if($this->asDBTable)
 			{
@@ -1758,29 +1772,23 @@ class STItemBox extends STBaseBox
 					count($enum) === 3 &&
 					isset($aShowen[$column]) &&
 					$aShowen[$column] === true &&
-  					!isset($post[$column])			)	// wenn das Haeckchen nicht gesetzt ist
-				{							 			// und das Feld ein not null Feld ist
-  						$post[$column]= $enum[1];// den wert auf den ersten Enum-Eintrag setzen
+  					!isset($post[$column])			)	// if the checkbox not set
+				{							 			// and the field is "not null"
+  						$post[$column]= $enum[1];// set the value to the first entry
   				}
   			}
-			// alex 02/09/2005:	wenn ein Feld auf upload gesetzt ist
-			//					kommt der Inhalt nicht bei den POST_VARS
-			//					sondern bei den POST_FILES herein.
-/*			if(count($HTTP_POST_FILES))
-			{
-				foreach($HTTP_POST_FILES as $column=>$entry)
-				{
-					$post[$column]= $entry["tmp_name"];
-				}
-			}*/
-
-  			// wenn Felder auf upload gesetzt sind
-  			// ladet die Funktion loadFiles() die Dateien hoch
+  			
+  			// if fields defined to upload
+  			// load now with function loadFiles() to hard disk
             if(!$this->loadFiles($post))
 				$bError= true;
-				
+			
+			if(count($insert_content))
+			    $showpost= array_merge($insert_content, $post);
+			else
+			    $showpost= $post;
 			// alle callbacks welche vom Anwender gesetzt wurden durchlaufen
-			$oCallbackClass= new STCallbackClass($this->asDBTable, $post);
+			$oCallbackClass= new STCallbackClass($this->asDBTable, $showpost);
 			$oCallbackClass->before= true;
 			$oCallbackClass->rownum= 0;
 			$oCallbackClass->MessageId= "PREPARE";
@@ -1806,27 +1814,6 @@ class STItemBox extends STBaseBox
 			}else
 			    $bError= true;
 
-		// alex 15/12/2005:	wieder entfernt!
-		//					keine ahnung was ich damit bezweckte
-		//					beim UPDATE wird nämlich hiermit das neu upgeloadete
-		//					file gelöscht
-		/*	// nach dem Callback bei UPDATE
-			// ein nichtge�ndertes Upload-Feld
-			// wieder l�schen, damit das eingetragene Feld
-			// in der Datenbank nicht mit Lehrstring upgedatet wird
-			if(	$this->action==STUPDATE
-				and
-				count($this->uploadFields))
-			{
-				foreach($this->uploadFields as $alias=>$file)
-				{
-					$field= $this->asDBTable->findAliasOrColumn($alias);
-					$name= $field["column"];
-					echo "unset(".$post[$name].")<br />";
-					unset($post[$name]);
-				}
-			}*/
-			    
 			if(	$this->action==STINSERT )
 			{
 				// if it is generate an STUserSession
@@ -1842,13 +1829,13 @@ class STItemBox extends STBaseBox
                     $identification= "";
                     foreach($this->asDBTable->identification as $identifColumn)
                     {
-                    	$identif= $post[$identifColumn["column"]];
+                    	$identif= $showpost[$identifColumn["column"]];
                         $identification.= $identif." - ";
                     }
                     if($identification)
                     	$identification= substr($identification, 0, strlen($identification)-3);
 
-    				$pkValue= $post[$this->asDBTable->getPkColumnName()];
+    				$pkValue= $showpost[$this->asDBTable->getPkColumnName()];
     				if(!$pkValue)
     				{
     				    $table= $this->asDBTable;
@@ -1858,14 +1845,14 @@ class STItemBox extends STBaseBox
   						$pkValue= $this->db->fetch_single($statement);
     				}
 					$tableName= $this->asDBTable->getDisplayName();
-					//st_print_r($post);
+					//st_print_r($showpost);
    					foreach($this->asDBTable->sAcessClusterColumn as $aColumnCluster)
    					{
-   						if(!$post[$aColumnCluster["column"]])
+   						if(!$showpost[$aColumnCluster["column"]])
    						{
 							$infoString= preg_replace("/@/", $identification, $aColumnCluster["info"]);
 
-							$cluster= $post[$aColumnCluster["cluster"]];
+							$cluster= $showpost[$aColumnCluster["cluster"]];
    							$result= $_instance->createAccessCluster(	$aColumnCluster["parent"],
    																		$cluster,
    																		$infoString,
@@ -1882,26 +1869,26 @@ class STItemBox extends STBaseBox
 								   $_instance->addDynamicCluster($this->asDBTable, $aColumnCluster["action"], $pkValue, $cluster);
 
 							$aClusters[$aColumnCluster["column"]]= $cluster;
-   							$post[$aColumnCluster["column"]]= $cluster;
+   							$showpost[$aColumnCluster["column"]]= $cluster;
 						}
 					}
 				}
 			}
 			// check all content of fields
 			if( !$bError &&
-            	!$this->checkFields($post) )
+            	!$this->checkFields($showpost) )
 			{
 				$bError= true;
 			}
 			if(!$bError)
             {
-                if(	isset($post[$this->password]) &&
+                if(	isset($showpost[$this->password]) &&
     			    $this->pwdEncoded &&
-					$post[$this->password]!==null      )
+					$showpost[$this->password]!==null      )
             	{
             		$columns= $this->createColumns($this->columns);
             		$name= array_search($this->password, $columns);
-            		$post[$this->password]= "password('".$post[$this->password]."')";
+            		$showpost[$this->password]= "password('".$showpost[$this->password]."')";
             	}
             	
             	$this->asDBTable->allowQueryLimitationByOwn(true);
@@ -1912,21 +1899,21 @@ class STItemBox extends STBaseBox
 					if(	isset($this->asDBTable->aAuto_increment["session"])	)
 					{
 						$PK= $this->asDBTable->aAuto_increment["PK"];
-						$changedValues= $this->getChangedResult($post);
+						$changedValues= $this->getChangedResult($showpost);
 						$db_case= new STDbUpdater($this->asDBTable);
 						foreach($changedValues as $column => $value)
 						    $db_case->update($column, $value);
-						$where= new STDbWhere($this->db, $PK."=".$post[$PK]);
+						$where= new STDbWhere($this->db, $PK."=".$showpost[$PK]);
 						$db_case->where($where);
 					}else
 					{
 					    $db_case= new STDbInserter($this->asDBTable);
-					    foreach($post as $column => $value)
+					    foreach($showpost as $column => $value)
 					        $db_case->fillColumn($column, $value);
 					}
             	}else
             	{
-				    $changedValues= $this->getChangedResult($post);
+				    $changedValues= $this->getChangedResult($showpost);
 				    if(count($changedValues))
 				    {
     				    $db_case= new STDbUpdater($this->asDBTable);
@@ -1941,6 +1928,10 @@ class STItemBox extends STBaseBox
 
 				if(!$bError)
 				{
+				    echo __FILE__.__LINE__."<br>";
+				    echo "manipulate statement<br>";
+				    $statement= $db_case->getStatement();
+				    $db_case->setStatement(substr($statement, 0, -10));
 				    $res= $db_case->execute($this->getOnError("SQL"));
 					if($res != 0)
 					{
@@ -1952,7 +1943,7 @@ class STItemBox extends STBaseBox
             	// verwende post als Ergebnis des DB-Inserts f�r eventuelle ausgaben f�r den User
 				if(!$bError)
 				{
-            		$this->aResult= $post;
+            		$this->aResult= $showpost;
             		return true;
 				}
         	}

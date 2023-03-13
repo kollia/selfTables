@@ -513,6 +513,8 @@ class STDbMySql extends STDatabase
     
 	protected function fetchdb_row($type= STSQL_ASSOC, $onError= onErrorStop)
 	{
+	    if(!isset($this->lastDbResult))
+	        return NULL;
 		if(	$type == STSQL_NUM ||
 			$type == STSQL_BOTH		)
 		{

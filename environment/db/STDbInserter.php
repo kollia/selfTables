@@ -15,11 +15,6 @@ class STDbInserter extends STDbSqlCases
 	 * @var Integer|string
 	 */
 	private $lastInsertID= -1;
-	/**
-	 * exist sql statement
-	 * @var string array
-	 */
-	private $statements= array();
 
 	/**
 	 * Constructor
@@ -50,6 +45,20 @@ class STDbInserter extends STDbSqlCases
 	}
 	public function getStatement($nr= 0) : string
 	{
+	    $case= STCheck::increase("db.statement");
+	    if(STCheck::isDebug())
+	    {
+	        if(STCheck::isDebug("db.statement"))
+	        {
+	            echo "<br /><br />";
+	            echo "<hr color='black'/>";
+	            STCheck::echoDebug("db.statement", "create $case. statement for ".($nr+1).". <b>insert</b> inside table ".$this->table->toString());
+	            echo "<hr />";
+	            //STCheck::info(1, "STDbTable::getStatement()", "called STDbTable::<b>getStatement()</b> method from:", 1);
+	        }
+	        if(STCheck::isDebug("db.statement.from"))
+	            {showErrorTrace(1);echo "<br />";}
+	    }
 	    if(!isset($this->statements[$nr]))
 	    {
 	        $this->createCluster($this->columns[$nr]);
@@ -66,19 +75,19 @@ class STDbInserter extends STDbSqlCases
 	    $flags= $this->read_inFields("flags");
 	    $table= $this->table->getName();
 	        
-        if(STCheck::isDebug("db.statement.modify"))
+        if(STCheck::isDebug("db.statement.insert"))
         {
-            $space= STCheck::echoDebug("db.statement.modify", "insert follow values into database table <b>$table</b>");
+            $space= STCheck::echoDebug("db.statement.insert", "insert follow values into database table <b>$table</b>");
             st_print_r($result,3, $space);
         }
         foreach($result as $key => $value)
         {
-            if(STCheck::isDebug("db.statement.modify"))
+            if(STCheck::isDebug("db.statement.insert"))
             {
-                STCheck::echoDebug("db.statement.modify", "field <b>$key</b>:");
-                STCheck::echoDebug("db.statement.modify", "   from type '".$types[$key]."'");
-                STCheck::echoDebug("db.statement.modify", "   with flag '".$flags[$key]."'");
-                STCheck::echoDebug("db.statement.modify", "   and value '$value'");
+                STCheck::echoDebug("db.statement.insert", "field <b>$key</b>:");
+                STCheck::echoDebug("db.statement.insert", "   from type '".$types[$key]."'");
+                STCheck::echoDebug("db.statement.insert", "   with flag '".$flags[$key]."'");
+                STCheck::echoDebug("db.statement.insert", "   and value '$value'");
                 echo "<br />";
             }
             if(!preg_match("/auto_increment/i", $flags[$key]))

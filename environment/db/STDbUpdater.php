@@ -16,16 +16,6 @@ class STDbUpdater extends STDbSqlCases
 	 * @var integer
 	 */
 	var $nAktRow= 0;
-	/**
-	 * where statement for all rows
-	 * @var array
-	 */
-	//var $wheres= array();
-	/**
-	 * exist sql statement
-	 * @var string arraytableName
-	 */
-	private $statements= array();
 	
 	function update($column, $value)
 	{
@@ -50,10 +40,12 @@ class STDbUpdater extends STDbSqlCases
 	        {
 	            echo "<br /><br />";
 	            echo "<hr color='black'/>";
-	            STCheck::echoDebug("db.statement", "create $case. statement for ".($nr+1).". update to table ".$this->table->toString());
+ 	            STCheck::echoDebug("db.statement", "create $case. statement for ".($nr+1).". <b>update</b> inside table ".$this->table->toString());
 	            echo "<hr />";
 	            //STCheck::info(1, "STDbTable::getStatement()", "called STDbTable::<b>getStatement()</b> method from:", 1);
 	        }
+	        if(STCheck::isDebug("db.statement.from"))
+	            {showErrorTrace(1);echo "<br />";}
 	    }
 	    if(isset($this->statements[$nr]))
 	    {
@@ -105,20 +97,21 @@ class STDbUpdater extends STDbSqlCases
         $result= $this->make_sql_values($values);
         if(!count($result))
             return null;
-        if(STCheck::isDebug("db.statement.modify"))
+        if(STCheck::isDebug("db.statement.update"))
         {
-            $space= STCheck::echoDebug("db.statement.modify", "update follow values inside database table <b>".$this->table->getName()."</b>");
+            $space= STCheck::echoDebug("db.statement.update", "update follow values inside database table <b>".$this->table->getName()."</b>");
             st_print_r($result,3, $space);
         }
         $types= $this->read_inFields("type");
         foreach($result as $key => $value)
         {
-            if(STCheck::isDebug("db.statement.modify"))
+            if(STCheck::isDebug("db.statement.update"))
             {
-                STCheck::echoDebug("db.statement.modify", "field <b>$key</b>:");
-                STCheck::echoDebug("db.statement.modify", "   from type '".$types[$key]."'");
-                STCheck::echoDebug("db.statement.modify", "   with flag '".$flags[$key]."'");
-                STCheck::echoDebug("db.statement.modify", "   and value '$value'");
+                $flags= $this->read_inFields("flags");
+                STCheck::echoDebug("db.statement.update", "field <b>$key</b>:");
+                STCheck::echoDebug("db.statement.update", "   from type '".$types[$key]."'");
+                STCheck::echoDebug("db.statement.update", "   with flag '".$flags[$key]."'");
+                STCheck::echoDebug("db.statement.update", "   and value '$value'");
                 echo "<br />";
             }
             $update_string.= $key."=".$this->add_quotes($types[$key], $value).",";

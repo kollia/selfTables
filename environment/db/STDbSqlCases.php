@@ -9,11 +9,31 @@ class STDbSqlCases
      * @var STDbTable table
      */
     var	$table;
+    /**
+     * exist sql statement for all rows
+     * @var string array
+     */
+    protected $statements= array();
     
     public function __construct(&$oTable)
     {
         Tag::paramCheck($oTable, 1, "STDbTable");
         $this->table= &$oTable;
+    }public function setStatement(string $statement, int $nr= 0)
+    {
+        if(STCheck::isDebug("db.statement"))
+        {
+            echo "<br /><br />";
+            echo "<hr />";
+            $msg[]= "set ".($nr+1).". statement for <b>box display</b> inside table ".$this->table;
+            $msg[]= "\"".$statement."\"";
+            STCheck::echoDebug("db.statement", $msg);
+            if(STCheck::isDebug("db.statement.from"))
+            {showErrorTrace(1);echo "<br />";}
+            echo "<hr />";
+            //STCheck::info(1, "STDbTable::getStatement()", "called STDbTable::<b>getStatement()</b> method from:", 1);
+        }
+        $this->statements[$nr]= $statement;
     }
     protected function make_sql_values($post_vars)
     {
