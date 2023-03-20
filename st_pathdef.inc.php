@@ -148,15 +148,22 @@
 	define("STACCESS", 3);
 	define("STACCESS_ERROR", 4);
 	define("STDEBUG", 5);
+	
+	define("STINNERJOIN", "stinnerjoin");
+	define("STOUTERJOIN", "stouterjoin");
+	define("STLEFTJOIN", "stleftjoin");
+	define("STRIGHTJOIN", "strightjoin");
 
-	define("STHORIZONTAL", 0x1);// Horizontale Gliederung der Reihen
-	define("STVERTICAL", 0x2);// Vertikale Gliederung der Reihen
+	define("STHORIZONTAL", 0x1);// Horizontal divison of the rows
+	define("STVERTICAL", 0x2);// Vertikal divison of the rows
 
-	define("noErrorShow", 0);// Es wird kein Fehler aufgelistet, Methode rennt durch
-	//define("noDebugErrorShow", 4);// auch im Debug Modus wird kein Fehler aufgelistet
-	define("onErrorShow", 1);// Der Fehler wird angezeigt, aber Methode rennt durch
-	define("onErrorStop", 2);// Der Fehler wird angezeigt und das Programm beendet
-	define("onErrorMessage", 3);// Der erste Fehler wird mittels Message-Box angezeigt
+	define("noErrorShow", 0);// no error is listed, method runs through
+	define("onDebugErrorShow", 1);// an error is only listed in debug mode
+	define("onErrorMessage", 2);// the first error is only displayed using a message box,
+	                            // if the method has no posibility to show a message box,
+	                            // and also in the debug session, the display is: onDebugErrorShow
+	define("onErrorShow", 3);// the error is displayed but method runs through
+	define("onErrorStop", 4);// the error is displayed and the program will be terminated
 
 
 	//old defines
@@ -184,7 +191,7 @@
 	define("ASSOC_OSTfetchArray", -2);// erzeugt in der Datenbank ein Array zur Suche
   	define("BOTH_OSTfetchArray", -3);// erzeugt in der Datenbank ein Array zur Suche
 
-	// globaly varibles
+	// globaly variables
 	$global_first_objectContainer= null;
 	$global_boolean_install_objectContainer= false;
 	$global_array_exist_stobjectcontainer_with_classname= array();

@@ -9,7 +9,7 @@ class STBaseBox extends TableTag
 {
 		var	$db;
 		var $tableContainer;
-		var $msg; // klasse f�r STMessageHandling
+		var $msg; // class for STMessageHandling
 		var	$onError= onErrorMessage;
 		var	$nextOnError;
 		var $aHidden;
@@ -46,7 +46,7 @@ class STBaseBox extends TableTag
 			$this->tableContainer= &$container;
 			$table= $container->getTable();
 			$this->fieldArray[$table->getName()]= $table->columns;
-			$this->msg= new STMessageHandling($class);
+			$this->msg= new STMessageHandling($class, onErrorMessage);
 			STBaseBox::init();
 			$this->aktualScript= $HTTP_SERVER_VARS["SCRIPT_NAME"];
 			$this->Error= "NOERROR";

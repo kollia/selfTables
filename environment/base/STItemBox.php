@@ -65,7 +65,9 @@ class STItemBox extends STBaseBox
 				$this->aSelectNames["null_entry"]= "&#160;&#160; Eintrag kann NULL sein &#160;&#160;";
 				$this->aSelectNames["left_select"]= "&#160;&#160; bitte zuerst links w&auml;hlen &#160;&#160;";
 				$this->aSelectNames["no_entrys"]= "&#160;&#160; keine Eintr&auml;ge &#160;&#160;";
+				
 				$this->msg->setMessageContent("BOXDISPLAY", ""); // Box wird am Bildschirm angezeigt
+				$this->msg->setMessageContent("AND", "and");
 				$this->msg->setMessageContent("NODELETE_FK@", "Dieser Eintrag kann nicht geloescht werden, es verweist darauf ein Eintrag von @");
 				$this->msg->setMessageContent("NOROWTODELETE", ""); // es wurde kein Eintrag in der Datenbank zum löschen gefunden
 				$this->msg->setMessageContent("DELETEQUESTION", "Wollen sie diesen Eintrag wirklich loeschen?"); // Frage ob der User wirklich löschen will
@@ -86,6 +88,7 @@ class STItemBox extends STBaseBox
 	            $this->msg->setMessageContent("UPLOADERROR@@", "ERROR @: das File @ konnte nicht hochgeladen werden");
 				$this->msg->setMessageContent("NOUPDATE", "Es wurde kein Inhalt geaendert,\\nsomit kann auch kein Update durchgefuehrt werden");
 				$this->msg->setMessageContent("CALLBACKERROR@", "@");
+				$this->msg->setMessageContent("SQLERROR@", "@");
 				$this->msg->setMessageContent("NOUPDATEROW@", "in der Tabelle @ ist keine Zeile zum aendern vorhanden");
 				$this->msg->setMessageContent("NOCLUSTERCREATE@@", "cluster @ fuer '@', konnte nicht erstellt werden");
 				$this->msg->setMessageContent("NODELETE_FK@", "Dieser Eintrag kann nicht gelöscht werden, da noch Refferenze(n) von '@' auf diesen bestehen."); 
@@ -96,7 +99,9 @@ class STItemBox extends STBaseBox
 				$this->aSelectNames["null_entry"]= "&#160;&#160; entry can be null &#160;&#160;";
 				$this->aSelectNames["left_select"]= "&#160;&#160; select first on left side &#160;&#160;";
 				$this->aSelectNames["no_entrys"]= "&#160;&#160; no entrys exist &#160;&#160;";
+				
 				$this->msg->setMessageContent("BOXDISPLAY", ""); // Box wird am Bildschirm angezeigt
+				$this->msg->setMessageContent("AND", "und");
 				$this->msg->setMessageContent("NODELETE_FK@", "cannot remove this entry, because entry from @ points to them");
 				$this->msg->setMessageContent("NOROWTODELETE", ""); // es wurde kein Eintrag in der Datenbank zum löschen gefunden
 				$this->msg->setMessageContent("DELETEQUESTION", "do you want to delete this entry?"); // Frage ob der User wirklich löschen will
@@ -117,6 +122,7 @@ class STItemBox extends STBaseBox
 	            $this->msg->setMessageContent("UPLOADERROR@@", "ERROR @: the field @ can not be uploaded");
 				$this->msg->setMessageContent("NOUPDATE", "It wasn't change any content");
 				$this->msg->setMessageContent("CALLBACKERROR@", "@");
+				$this->msg->setMessageContent("SQLERROR@", "@");
 				$this->msg->setMessageContent("NOUPDATEROW@", "inside table @ wasn't an row to change");
 				$this->msg->setMessageContent("NOCLUSTERCREATE@@", "cannot create cluster @ for '@'");
 	
@@ -1928,10 +1934,15 @@ class STItemBox extends STBaseBox
 
 				if(!$bError)
 				{
-				    echo __FILE__.__LINE__."<br>";
-				    echo "manipulate statement<br>";
-				    $statement= $db_case->getStatement();
-				    $db_case->setStatement(substr($statement, 0, -10));
+				    if(0)
+				    {
+    				    $statement= $db_case->getStatement();
+    				    $statement= substr($statement, 0, -10);
+    				    echo __FILE__.__LINE__."<br>";
+    				    echo "manipulate statement<br>";
+    				    echo "new statement:$statement<br>";
+    				    $db_case->setStatement($statement);
+				    }
 				    $res= $db_case->execute($this->getOnError("SQL"));
 					if($res != 0)
 					{
@@ -2562,28 +2573,49 @@ class STItemBox extends STBaseBox
 				$script->add("self.location.href='".$url."';");
 			$this->OKScript= $script;
 		}*/
-		function delete($onError= onErrorMessage)
+	    function delete($onError= onErrorMessage)
 		{
 			$this->createMessages();
 			$this->defaultOnError($onError);
-			$table= &$this->asDBTable;
-			$table->where($this->where);
-			$table->clearSelects();
-			$table->clearFKs();
-			//$table->allowQueryLimitation(true);
-			//st_print_r($table->oWhere);
-			$table->modifyQueryLimitation();
-			$statement= $this->db->getStatement($table);
-			$this->db->query($statement, $this->getOnError("SQL"));
-			$result= $this->db->fetch_row(MYSQL_ASSOC, $this->getOnError("SQL"));
-			$oCallbackClass= new STCallbackClass($this->asDBTable, $result);
+			$this->asDBTable->modifyQueryLimitation();
+			$del= new STDbDeleter($this->asDBTable);
+			if( isset($this->where) &&
+			    (   !is_string($this->where) ||
+			        trim($this->where) !== "")           )
+			{
+			    $del->where($this->where);
+			}
+			
+			$oCallbackClass= new STCallbackClass($this->asDBTable, array());
 			$oCallbackClass->before= true;
 			$oCallbackClass->MessageId= "PREPARE";
-			$sErrorString= $this->makeCallback(STDELETE, $oCallbackClass, STDELETE, 0);
-			//echo "ErrorString:";st_print_r($sErrorString);
+			$error= $this->makeCallback(STDELETE, $oCallbackClass, STDELETE, 0);
+			//echo "ErrorString:";st_print_r($error);
 			//echo "callbackResult:";st_print_r($oCallbackClass->sqlResult);
-			if(!is_bool($sErrorString))
+			
+			if(!$error)
+			    $error= $del->execute();
+			if( !is_bool($error) ||
+			    !$error              )
 			{
+			    if($error == "NODELETE_FK")
+			    {
+			        $fks= $del->getFkLinkTables();
+			        $last= count($fks)-1;
+			        $str= "";
+			        foreach($fks as $nr=>$table)
+			        {
+			            if($nr>0 && $nr == $last)
+			                $str.= " ".$this->msg->getMessageContent("AND")." ";
+			            $str.= "'$table'";
+			            if($nr != $last)
+			                $str.= ", ";
+			        }
+			        $this->msg->setMessageId("NODELETE_FK@", $str);
+			    }else
+			        $this->msg->setMessageId("SQLERROR@", $del->getErrorString());
+			    
+			        
 				$tr= new RowTag();
 					$td= new ColumnTag(TD);
 						$td->add($this->msg->getMessageEndScript());
@@ -2591,71 +2623,11 @@ class STItemBox extends STBaseBox
             	$this->add($tr);
 				$oCallbackClass->before= false;
 				$oCallbackClass->MessageId= $this->msg->getAktualMessageId();
-				$sErrorString= $this->makeCallback(STDELETE, $oCallbackClass, STDELETE, 0);
+				$error= $this->makeCallback(STDELETE, $oCallbackClass, STDELETE, 0);
 				return $this->msg->getAktualMessageId();
 			}
-            $sTable= $this->db->isNoFkToTable($this->asDBTable, $this->where);
-            //echo "founded FK is ";st_print_r($sTable);echo "<br />";
-            if($sTable===false)
-            {
-            	$this->msg->setMessageId("NOROWTODELETE");
-				$tr= new RowTag();
-					$td= new ColumnTag(TD);
-						$td->add($this->msg->getMessageEndScript());
-					$tr->add($td);
-            	$this->add($tr);
-				$oCallbackClass->before= false;
-				$oCallbackClass->MessageId= $this->msg->getAktualMessageId();
-				$sErrorString= $this->makeCallback(STDELETE, $oCallbackClass, STDELETE, 0);
-            	return $this->msg->getAktualMessageId();
-            }
-            if($sTable!==true)
-            {
-            	$table= $this->db->getTable($sTable);
-            	$this->msg->setMessageId("NODELETE_FK@", $table->getDisplayName());
-				$tr= new RowTag();
-					$td= new ColumnTag(TD);
-						$td->add($this->msg->getMessageEndScript());
-					$tr->add($td);
-            	$this->add($tr);
-				$oCallbackClass->before= false;
-				$oCallbackClass->MessageId= $this->msg->getAktualMessageId();
-				$sErrorString= $this->makeCallback(STDELETE, $oCallbackClass, STDELETE, 0);
-            	return $this->msg->getAktualMessageId();
-            }
 
-/*				$get= new STQueryString();
-				$get->getParamString(STINSERT, "stget[box_delete]=OK");
-				$message= $this->msg->getMessageContent("DELETEQUESTION");
-				$nget= new STQueryString();
-				$nget->getParamString(STDELETE, "stget[link][l�schen]");
-				//echo message."<br />";
-				$script= new JavaScriptTag();
-					$script->add("if(confirm('".$message."'))");
-					$script->add("    location.href='".$get->getParamString()."';");
-				if(Tag::isDebug())
-				{
-					$tags= "document.write(\"";
-					$tags.=					"<center>";
-					$tags.=					"<h1>";
-					$tags.=						"<a href='".$nget->getParamString()."'>";
-					$tags.=							"User will be forward to clear stget[link][delete] param in URI";
-					$tags.=						"</a>";
-					$tags.= 				"</h1>";
-					$tags.=					"</center>";
-					$tags.=																										"\")";
-					$script->add($tags);
-				}else
-					$script->add("else location.href='".$nget->getParamString()."';");
-				$this->add($script);
-				$this->msg->setMessageId("DELETEQUESTION", "");
-
-				return $this->msg->getAktualMessageId();
-			}*/
-			// alle callbacks welche vom Anwender gesetzt wurden durchlaufen
-			//$sErrorString= $this->checkFields($post);
-
-			// l�sche alle upgeloadeten Files
+			// delete all uploadet Files, if exist
 			if(count($this->uploadFields))
 			{
 				foreach($this->uploadFields as $column=>$content)
@@ -2681,7 +2653,7 @@ class STItemBox extends STBaseBox
 			
 			$oCallbackClass->before= false;
 			$oCallbackClass->MessageId= $this->msg->getAktualMessageId();
-			$sErrorString= $this->makeCallback(STDELETE, $oCallbackClass, STDELETE, 0);
+			$error= $this->makeCallback(STDELETE, $oCallbackClass, STDELETE, 0);
 			
 			$tr= new RowTag();
 				$td= new ColumnTag(TD);

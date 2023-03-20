@@ -49,14 +49,14 @@ class STMessageHandling // implements STMessageHandlingInterface <- ab version 5
 		function getMessageContent($messageId= null)
 		{
 			if(!$messageId)
-				$messageId= $this->messageId;
+			    $messageId= $this->messageId;
 			return $this->aMessageStrings[$messageId];
 		}
 		function clearMessageId()
 		{
 			$this->messageId= "NOERROR";
 		}
-		/*protected*/function setMessageId(string $messageId, string $newString= null)
+		function setMessageId(string $messageId, string $newString= null)
 		{
 			if(Tag::isDebug())
 			{
@@ -88,7 +88,7 @@ class STMessageHandling // implements STMessageHandlingInterface <- ab version 5
 				$args= func_get_args();
 				$sNewMessageString= $split[0];
 				for($count=1; $count<$have; $count++)
-					$sNewMessageString.= $args[$count].$split[$count];
+				    $sNewMessageString.= $args[$count].$split[$count];
 				$this->aMessageStrings[$messageId]= $sNewMessageString;
 			}elseif($newString!==null)
 			{// wenn ein Fehler-String herein kommt,
@@ -98,22 +98,20 @@ class STMessageHandling // implements STMessageHandlingInterface <- ab version 5
 				$newString= preg_replace("/'/", "\\'", $newString);
 				$this->aMessageStrings[$messageId]= $newString;
 			}
-  		if(	$onError>noErrorShow
-			and
-			$onError!=onErrorMessage
-			and
-			$messageId!="NOERROR"
-			and
+  		if(	$onError>noErrorShow &&
+			$onError!=onErrorMessage &&
+			$messageId!="NOERROR" &&
 			$messageId!="BOXDISPLAY"	)
 			{
-  				echo "<br><b>Error ".$messageId.":</b>".$this->getMessageContent()."<br>";
+  				echo "<br><b>Error ".$messageId.":</b> ".$this->getMessageContent()."<br>";
 			}
-  		if(	$onError==onErrorStop
-			and
-			$messageId!="NOERROR"
-			and
+  		if(	$onError==onErrorStop &&
+			$messageId!="NOERROR" &&
 			$messageId!="BOXDISPLAY"	)
-  				exit;
+  		{
+  		    STCheck::echoDebug("STMessageHandling", "ERROR handling set to <b>onErrorStop</b> by message ID <b>'$messageId'</b>");
+  			exit;
+  		}
 	}
 		function getAktualMessageId()
 		{
@@ -147,16 +145,15 @@ class STMessageHandling // implements STMessageHandlingInterface <- ab version 5
 			/*
 			 * return value
 			 */
-			$oReturnScript= NULL;
-
-			Tag::echoDebug("STMessageHandling", "entering getMessageEndScript()");
+		    $oReturnScript= NULL;
+		    $javaScript= null;
+		    $scripts= array();
+			
 			$messageId= $this->messageId;
-			
-			$scripts= array();
-			$javaScript= null;
-			
-			// f�ge alle vom User gesetzten Scripts in das Array
-			// sowie erstelle die Url auf die gesprungen werden soll				
+			Tag::echoDebug("STMessageHandling", "entering getMessageEndScript() by message ID <b>$messageId</b>");
+						
+			// insert all from user set scripts into the array
+			// as also create the url for jump				
 			$this->addScripts($this->EndScripts, $scripts, $javaScript);
 			if($messageId=="NOERROR")
 			{
@@ -173,8 +170,32 @@ class STMessageHandling // implements STMessageHandlingInterface <- ab version 5
 			// f�ge alle Messages in das Array
 			$string= $this->getMessageContent();
 			if($string)
-			{
-				Tag::echoDebug("STMessageHandling", "display '".$messageId."' for given messageId");
+			{   
+			    if(STCheck::isDebug("STMessageHandling"))
+			    {
+			        switch($this->onError)
+			        {
+			            case noErrorShow:
+			                $handling= "noErrorShow";
+			                break;
+			            case onDebugErrorShow:
+			                $handling= "onDebugErrorShow";
+			                break;
+			            case onErrorMessage:
+			                $handling= "onErrorMessage";
+			                break;
+			            case onErrorShow:
+			                $handling= "onErrorShow";
+			                break;
+			            case onErrorStop:
+			                $handling= "onErrorStop";
+			                break;
+			            default:
+			                $handling= "UNKNOWN";
+			        }
+			        STCheck::echoDebug("STMessageHandling", "ERROR handling set to <b>$handling</b>");
+				    STCheck::echoDebug("STMessageHandling", "display '".$messageId."' for given messageId");
+			    }
 				if($messageId!="NOERROR")
 				{
 					if(	!Tag::isDebug()

@@ -297,6 +297,31 @@ class STDbMySql extends STDatabase
 		}
 		return $this->lastDbResult;
 	}
+	protected function getSglJoinName($join)
+	{
+	    $sRv= "";
+	    switch($join)
+	    {
+	        case "inner":
+	        case STINNERJOIN:
+	            $sRv= "inner";
+	            break;
+	        case "outer":
+	        case "left":
+	        case STLEFTJOIN:
+	        case STOUTERJOIN:
+	            $sRv= "left";
+	            break;
+	        case "right":
+	        case STRIGHTJOIN:
+	            $sRv= "right";
+	            break;
+	        default:
+	            $sRv= "inner";
+	            break;
+	    }
+	    return $sRv;
+	}
 	protected function list_dbtable_fields($TableName, $onError= onErrorStop)
 	{
 		if(isset($this->databaseTables[$TableName]))

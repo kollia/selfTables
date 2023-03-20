@@ -553,10 +553,22 @@ class STDbTable extends STBaseTable
 	 * {@inheritDoc}
 	 * @see STBaseTable::joinOver()
 	 */
-	public function joinOver(string $table)
+	public function joinOver($table, string $join= STINNERJOIN)
 	{
+	    // if parameter defined with string and it was given an STDbTable, __toString() will be given
+	    STCheck::param($table, 0, "string");
+	    STCheck::param($join, 1, "check", $join==STINNERJOIN||$join==STLEFTJOIN||$join==STRIGHTJOIN, "STINNERJOIN, STLEFTJOIN or STRIGHTJOIN");
+	    
 	    $table= $this->db->getTableName($table);
-	    STBaseTable::joinOver($table);
+	    STBaseTable::joinOver($table, $join);
+	}
+	public function noJoinOver($table)
+	{
+	    // if parameter defined with string and it was given an STDbTable, __toString() will be given
+	    STCheck::param($table, 0, "string");
+	    
+	    $table= $this->db->getTableName($table);
+	    STBaseTable::noJoinOver($table);
 	}
 	protected function fk($ownColumn, &$toTable, $otherColumn= null, $bInnerJoin= null, $where= null)
 	{
@@ -1110,10 +1122,11 @@ class STDbTable extends STBaseTable
     				and
     				isset($aTableAlias[$table])	)
     			{
-     				if($join["join"]=="outer")
-     					$statement.= " left";
-    				else
-    					$statement.= " ".$join["join"];
+    			    if(isset($this->aJoinOverTables[$table]))
+    			        $joinArt= $this->db->getSqlJoinStatementLinkName($this->aJoinOverTables[$table]);
+			        else
+			            $joinArt= $this->db->getSqlJoinStatementLinkName($join["join"]);
+			        $statement.= " $joinArt";
     
     				$database= null;
     				if(isset($aTableAlias["db.$table"]))
@@ -1138,9 +1151,6 @@ class STDbTable extends STBaseTable
     
     				if(Tag::isDebug())
     				{
-    					$joinArt= $join["join"];
-    					if($joinArt==="outer")
-    						$joinArt= "left";
     					Tag::echoDebug("db.statements.table", "make ".$joinArt." join to table ".$database.$table.
     												" with alias-name ".$sTableAlias);
     				}
@@ -1249,10 +1259,11 @@ class STDbTable extends STBaseTable
     			{
     			    $oBackTable= $oTable->getTable($sBackTableName);
     				if($dbName!==$ownDatabaseName)
-    					$database= $dbName.".";
-					$joinArt= $join["join"];
-					if($joinArt==="outer")
-						$joinArt= "left";
+    				    $database= $dbName.".";
+				    if(isset($this->aJoinOverTables[$sBackTableName]))
+				        $joinArt= $this->db->getSqlJoinStatementLinkName($this->aJoinOverTables[$sBackTableName]);
+			        else
+			            $joinArt= $this->db->getSqlJoinStatementLinkName($join["join"]);
                     $statement.= " ".$joinArt." join ".$database.$sBackTableName." as ".$sTableAlias;
                     $statement.= " on ".$ownTableAlias.".".$join["other"];
                     $statement.= "=".$sTableAlias.".".$join["own"];
@@ -1375,6 +1386,8 @@ class STDbTable extends STBaseTable
 		    }
 		    if(STCheck::isDebug())
 		    {
+		        echo __FILE__.__LINE__."<br>";
+		        echo "statement:$statement<br>";
 		        $bTableDebug= STCheck::isDebug("db.statements.table");
 		        STCheck::debug("db.statements.table");
 		        if(count($foundAccessOver) > 0)
@@ -1426,7 +1439,12 @@ class STDbTable extends STBaseTable
     		        }
 		        }
 		    }
-		    STCheck::alert(count($maked) < count($aTableAlias), "STDbTable::getTableStatementA()", "do not join to all alias tables see STCheck::debug('db.statements.table')");
+		    if(STCheck::isDebug())
+		    {
+		        $nr= STCheck::getIncreaseNr("db.statement");
+		        $msg= "do not join to all alias tables see STCheck::debug('db.statements.table', $nr)";
+		        STCheck::alert(count($maked) < count($aTableAlias), "STDbTable::getTableStatementA()", $msg, 2);
+		    }
 		}
 		STCheck::echoDebug("db.statements.table", "TableStatement - Result from table '".$oTable->getName()."'= '$statement'");
 		return $statement;
@@ -1781,7 +1799,7 @@ class STDbTable extends STBaseTable
         $field= $this->getDatabase()->keyword($content);
         if($field != false)
         {
-            foreach($field['columns'] as $column)
+            foreach($field['content'] as $column)
             {
                 if( $column != "*" &&
                     !STBaseTable::validColumnContent($column, $abCorrect, $bAlias) )

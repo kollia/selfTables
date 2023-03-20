@@ -132,13 +132,13 @@ class STDbTableDescriptions
 		$dbKeyword= $this->db->keyword($column);
 		if($dbKeyword)
 		{
-		    if( count($dbKeyword['columns']) == 1 &&
-		        trim($dbKeyword['columns'][0]) == "*"    )
+		    if( count($dbKeyword['content']) == 1 &&
+		        trim($dbKeyword['content'][0]) == "*"    )
 		    {// if column is a keyword with joker for all columns return incomming column
 		        return $column;
 		    }
 		    $sRv= $dbKeyword['keyword']."(";
-		    foreach($dbKeyword['columns'] as $column)
+		    foreach($dbKeyword['content'] as $column)
 		        $sRv.= $this->getColumnName($table, $column).",";
 		    $sRv= substr($sRv, 0, strlen($sRv)-1).")";
 		    return $sRv;

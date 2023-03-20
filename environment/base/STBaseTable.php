@@ -949,14 +949,14 @@ class STBaseTable
 		 * 
 		 * @param string $table name of table
 		 */
-		public function joinOver(string $table)
+		public function joinOver(string $table, string $join= "inner")
 		{
-		    if(!in_array($table, $this->aJoinOverTables))
-		        $this->aJoinOverTables[]= $table;
+		    STCheck::param($join, 1, "check", $join==STINNERJOIN||$join==STLEFTJOIN||$join==STRIGHTJOIN, "STINNERJOIN, STLEFTJOIN or STRIGHTJOIN");
+		    
+		    $this->aJoinOverTables[$table]= $join;
 		}
 		public function noJoinOver(string $table)
 		{
-		    $table= $this->db->getTableName($table);
 		    if(!in_array($table, $this->aNoJoinOverTables))
 		        $this->aNoJoinOverTables[]= $table;
 		}
@@ -964,9 +964,8 @@ class STBaseTable
 		{
 		    foreach($this->aNoJoinOverTables as $nojoin)
 		    {
-		        $key= array_search($nojoin, $this->aJoinOverTables);
-		        if($key !== false)
-		            unset($this->aJoinOverTables[$key]);
+		        if(isset($this->aJoinOverTables[$nojoin]))
+		            unset($this->aJoinOverTables[$nojoin]);
 		    }
 		    return $this->aJoinOverTables;
 		}

@@ -2,10 +2,17 @@
 
 class STDbDeleter
 {
-	var	$table;
-	var $aWhere= array();
-	var $bModify= true;
-	var	$nErrorRowNr;
+	private	$table;
+	private $oWhere= null;
+	private $bModify= true;
+	private $nErrno= 0;
+	/**
+	 * table names of foregn key tables
+	 * which have entrys to own main table
+	 * to delete
+	 * @var string
+	 */
+	private $aFkLinkTables= "";
 	
 	// do not take by reference
 	// because into table comming
@@ -15,79 +22,98 @@ class STDbDeleter
 	    Tag::paramCheck($oTable, 1, "STDbTable");
 		$this->table= &$oTable;
 	}
+	/**
+	 * make for every where 
+	 * @param unknown $stwhere
+	 */
 	public function where($stwhere)
 	{
 	    STCheck::param($stwhere, 0, "STDbWhere", "string");
 	    
 		if(is_string($stwhere))
-			$st_where= new STDbWhere($stwhere);
-		$this->aWhere[]= &$st_where;
+			$stwhere= new STDbWhere($stwhere);
+		$this->oWhere= &$stwhere;
 	}
-	function execute($onError= onErrorStop)
+	function execute($onError= onDebugErrorShow)
 	{
-	  if(!count($this->aWhere))
-		    return 0;
 		$db= &$this->table->db;
 		$this->nErrorRowNr= null;
 		$this->table->where(null);
 		$table= new STDbTable($this->table);
-		$table->clearWhere();
-		$table->modifyQueryLimitation();
-		$modifiedWhere= $table->getWhere();
-		foreach($this->aWhere as $nr=>$where)
-		{		 	
-			$table->clearWhere();
-			if($this->bModify)
-			{
-				$table->where($modifiedWhere);
-				$sTable= $db->isNoFkToTable($table, $where);
-				if(!is_bool($sTable))
-				{
-					$this->error= "cannot delete this entry. foreign key from table ".$sTable." be set";
-					$this->nErrorRowNr= $nr;
-					break;
-				}
-				// clear again the where-clausel
-				// because in isNoFkToTable sometimes
-				// will be add the where, and some times not
-				$table->clearWhere();
-			}
-			$table->where($modifiedWhere);
-			$table->andWhere($where);
-			//st_print_r($table->oWhere,20);
-			$statement= $db->getDeleteStatement($table);
-			$db->query($statement, $onError);
-			if($db->errno())
-			{
-				$this->nErrorRowNr= $nr;
-				break;
-			}
-		}
-		if($this->nErrorRowNr!==null)
+		$table->modifyQueryLimitation($this->bModify);
+		$fkTables= $db->hasFkEntriesToTable($table->getName(), $this->oWhere);
+		if($fkTables)
 		{
-			$newRows= array();
-			$oldCount= count($this->columns);
-			for($o= $this->nErrorRowNr; $o<$oldCount; $o++)
-				$newRows[]= $this->columns[$o];
-			$this->columns= $newRows;
-			if($this->error)
-				return "FKERROR";
+		    $this->nErrno= "NODELETE_FK";
+		    $this->aFkLinkTables= $fkTables;
+		    return "NODELETE_FK";
 		}
-		return $db->errno();
+		if(isset($this->oWhere))
+		    $table->andWhere($this->oWhere);
+	    $statement= $this->getDeleteStatement($table);
+	    $db->query($statement, $onError);
+	    return $db->errno();
 	}
-	public function getErrorId() : int
+	function getDeleteStatement($table)
 	{
+	    $nr= STCheck::increase("db.statement");
+	    if(STCheck::isDebug())
+	    {
+	        if(STCheck::isDebug("db.statement"))
+	        {
+	            echo "<br /><br />";
+	            echo "<hr color='black'/>";
+	            $msg= "create $nr. statement for <b>delete</b> inside table ".$table;
+	            STCheck::echoDebug("db.statement", $msg);
+	            echo "<hr />";
+	            //STCheck::info(1, "STDbTable::getStatement()", "called STDbTable::<b>getStatement()</b> method from:", 1);
+	        }
+	        if(STCheck::isDebug("db.statement.from"))
+	        {showErrorTrace(1);echo "<br />";}
+	    }
+        if(is_string($table))
+        {
+            $tableName= $table;
+            $container= &$this->getContainer();
+            $table= $container->getTable($table);
+        }else
+            $tableName= $table->getName();
+        //$whereStatement= $this->getWhereStatement($table, "");
+        $table->allowFkQueryLimitation(false);
+        $whereStatement= $table->getWhereStatement("where");
+        $statement= "delete from ".$tableName;
+        preg_match("/^(and|or)/i", $whereStatement, $ereg);
+        if(count($ereg) != 0)
+        {
+            if(	isset($ereg[1]) &&
+                $ereg[1] == "and"	)
+            {
+                $nOp= 4;
+            }else
+                $nOp= 3;
+                $whereStatement= substr($whereStatement, $nOp);
+        }
+        $statement.= " where $whereStatement";
+        return $statement;
+	}
+	public function getErrorId() : int|string
+	{
+	    if(is_string($this->nErrno))
+	        return $this->nErrno;
 	    return $this->table->db->errno();
 	}
 	public function getErrorString() : string
 	{
-		if($this->error)
-			return "by row ".$this->nErrorRowNr.": ".$this->error;
-		return "by row ".$this->nErrorRowNr.": ".$this->table->db->getError();
+		return $this->table->db->getError();
 	}
-	function modifyForeignKey($bModify)
+	public function getFkLinkTables() : array
 	{
-		$this->bModify= $bModify;
+	    return $this->aFkLinkTables;
+	}
+	function modifyForeignKey(bool $bModify= true)
+	{
+	    $this->bModify= $bModify;
+		$this->table->modifyForeignKey($bModify);
 	}
 }
 ?>

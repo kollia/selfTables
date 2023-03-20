@@ -506,7 +506,7 @@ abstract class STDatabase extends STObjectContainer
 		STCheck::deprecated("STDatabase::query()", "STDatabase::fetch()");
 		return $this->query($statement, $onError);
 	}
-	public function query($statement, $onError= onErrorStop)
+	public function query($statement, $onError= onDebugErrorShow)
   	{
 		global $HTML_CLASS_DEBUG_CONTENT;
 		global $g_first_scanDescribe;
@@ -585,16 +585,21 @@ abstract class STDatabase extends STObjectContainer
 				STCheck::isDebug("db.statement")	)	)
     	{
     	    $space= 55;
-    	    if(STCheck::isDebug("db.statement"))
-    	        $space= STCheck::echoDebug("db.statement", "database error:");
-    	    echo $this->getError(/*with tags*/true, $space);
-			if(phpVersionNeed("4.3.0", "debug_backtrace()"))
-			{
-			    echo "<br>";
-				showErrorTrace(1);
-			}
-			if( $onError==onErrorStop )
-			    exit();
+    	    if( $onError > onErrorMessage ||
+    	        STCheck::isDebug()             )
+    	    {
+        	    if(STCheck::isDebug("db.statement"))
+        	        $space= STCheck::echoDebug("db.statement", "database error:");    	    
+        	    echo $this->getError(/*with tags*/true, $space);
+    			if(phpVersionNeed("4.3.0", "debug_backtrace()"))
+    			{
+    			    echo "<br>";
+    				showErrorTrace(1);
+    				
+    			}
+    			if( $onError==onErrorStop )
+    			    exit();
+    	    }
     	}
   		return $res;
   	}
@@ -1872,7 +1877,7 @@ abstract class STDatabase extends STObjectContainer
 		$joins= $oTable->getAlsoJoinOverTables();
 		if(count($joins) > 0)
 		{
-		    foreach($joins as $table)
+		    foreach($joins as $table=>$join)
 		        $joinTables[$table]= $aliasTables[$table];
 		}
 		if(STCheck::isDebug("db.statements.alias"))
@@ -1989,99 +1994,64 @@ abstract class STDatabase extends STObjectContainer
 		}
 		return $statement;
 	}
-	function getDeleteStatement($table, $where= null)
+	/**
+	 * search for all tables who has an foreign key
+	 * to table of first parameter and has an exist entry
+	 * to this table
+	 * 
+	 * @param string $tableName name of table to whome other tables should refer
+	 * @param STDbWhere $where explicit where-clause to set in all joins
+	 * @return boolean|array an array of all tables who refer to first parameter table name or by none (false)
+	 */
+	function hasFkEntriesToTable($tableName, STDbWhere $where= null)
 	{
-		if(!$where)
-			$where= new STDbWhere();
-		if(is_string($table))
+	    STCheck::param($tableName, 0, "string");
+	    
+	    $aFkTables= array();
+		foreach($this->oGetTables as $fkTable)
 		{
-			$tableName= $table;
-			$container= &$this->getContainer();
-			$table= $container->getTable($table);
-		}else
-			$tableName= $table->getName();
-		if($where)
-			$table->andWhere($where);
-		//$whereStatement= $this->getWhereStatement($table, "");
-		$whereStatement= $table->getWhereStatement("where");
-		$statement= "delete from ".$tableName;
-		preg_match("/^(and|or)/i", $whereStatement, $ereg);
-		if(count($ereg) != 0)
-		{
-			if(	isset($ereg[1]) &&
-				$ereg[1] == "and"	)
-			{
-				$nOp= 4;
-			}else
-				$nOp= 3;
-			$whereStatement= substr($whereStatement, $nOp);
+		    $fks= $fkTable->getForeignKeys();
+		    foreach($fks as $toTable=>$columns)
+		    {
+		        if($tableName == $toTable)
+		            $aFkTables[$fkTable->getName()]= $columns;
+		    }
 		}
-		$statement.= " where $whereStatement";
-		return $statement;
+		if(empty($aFkTables))
+		    return false;
+		
+		// alex: 15/03/2023
+		// toDo:  check database whether same foreign keys set
+		//        and do it over sql Error
+		$aRv= array();
+		foreach($aFkTables as $fkTableName=>$fks)
+		{
+		    foreach($fks as $columns)
+	        {
+	            $table= $this->getTable($fkTableName);
+	            $fkSelector= new STDbSelector($table);
+	            $fkSelector->joinOver($tableName, STINNERJOIN);
+	            $fkSelector->count();
+	            if(isset($where))
+	                $fkSelector->where($where);
+                $fkSelector->execute();
+                $res= $fkSelector->getSingleResult();
+                if($res)
+                    $aRv[]= $fkTableName;
+	        }
+		}
+		if(empty($aFkTables))
+		    return false;
+		return $aRv;
 	}
-	// gibt true zur�ck wenn kein andere Tabelle auf diese verweist,
-	// false wenn kein Eintrag zum l�chen vorhanden ist
-	// und sonst den Tabellen-Namen
-	function isNoFkToTable($oTable, $where= null)
+	abstract protected function getSglJoinName($join);
+	public function getSqlJoinStatementLinkName($join)
 	{
-		Tag::alert(!typeof($oTable, "STBaseTable"), "STDatabase::isNoFkToTable()",
-									"first parameter must be an object from STBaseTable");
-		$oTable->clearSelects();
-		$oTable->clearGetColumns();
-		$oTable->clearFKs();
-		$oTable->bIsNnTable= false;
-		$tableName= $oTable->getName();
-		if($where)
-			$oTable->andWhere($where);
-
-		$selector= new STDbSelector($oTable, STSQL_ASSOC);
-		//$statement= $selector->getStatement();
-		//echo $statement."<br />";
-		$selector->execute();
-		$result= $selector->getRowResult();
-		if(!$result)
-			return false;
-
-		if(is_array($this->tables))
-    		foreach($this->tables as $table)
-    		{
-				$fkTable= $oTable->getTable($table->getName());
-				$fk= $fkTable->getForeignKeys();
-    			if(is_array($fk))
-				{
-        			foreach($fk as $inTable=>$to)
-        			{
-        				if($inTable==$tableName)
-        				{
-							foreach($to as $column)
-							{
-								$fkTable->clearSelects();
-								$fkTable->clearGetColumns();
-								$fkTable->count();
-								$is= $result[$column["other"]];
-								if(!is_numeric($is))
-									$is= "'".$is."'";
-								$fkTable->where($column["own"]."=".$is);
-								$selector= new STDbSelector($fkTable);
-								//$statement= $selector->getStatement();
-								//echo $statement."<br />";
-								$selector->execute();
-								$exists= $selector->getSingleResult();
-								//echo "found foreign keys from table ".$fkTable->getName()."<br />";
-								//echo "to table $inTable<br />";
-								//st_print_r($exists);echo "<br />";
-        						if($exists)
-								{
-									//echo "with exist entrys<br />";
-        							return $table->getName();
-								}//else
-								 //	echo "but it have no entrys to the table<br />";exit;
-							}
-        				}
-        			}
-				}
-    		}
-		return true;
+	    if(STCheck::isDebug())
+	        STCheck::param($join, 0, "check",
+	            $join==STINNERJOIN||$join==STOUTERJOIN||$join==STLEFTJOIN||$join==STRIGHTJOIN||$join=="inner"||$join=="outer"||$join=="left"||$join=="right", 
+	            "STINNERJOIN, STOUTERJOIN, STLEFTJOIN", "STRIGHTJOIN");
+        return $this->getSglJoinName($join);
 	}
 	function createStringForDb(&$string)
 	{
@@ -2241,10 +2211,10 @@ abstract class STDatabase extends STObjectContainer
 	        $preg= array();
 	        if(!preg_match("/^([^\(\)]+)\((.*)\)$/", trim($column), $preg))
 	            return false;
-	            $keyword= strtolower($preg[1]);
-	            if(!array_key_exists($keyword, $allowed))
-	                return false;
-	                $inherit= preg_split("/[ ,]/", $preg[2], PREG_SPLIT_NO_EMPTY);
+            $keyword= strtolower($preg[1]);
+            if(!array_key_exists($keyword, $allowed))
+                return false;
+            $inherit= preg_split("/[ ,]/", $preg[2], PREG_SPLIT_NO_EMPTY);
 	    }
 	    return array(  "keyword" => $keyword,
 	        "content" => $inherit,
