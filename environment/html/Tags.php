@@ -122,7 +122,13 @@ class Tag extends STCheck
 
             $displayString= "";
             
-			if($HTML_CLASS_DEBUG_CONTENT)
+            if( $HTML_CLASS_DEBUG_CONTENT &&
+                !typeof($this, "TextAreaTag")   )
+            {
+                $indention= true;
+            }else
+                $indention= false;
+			if($indention)
 			{
 			    $displayString.= $this->spaces($tag_spaces);
 				if(!$HTML_CLASS_DEBUG_CONTENT_SHOWN)
@@ -141,16 +147,16 @@ class Tag extends STCheck
 			$displayString.= $this->getBevorSubTagString();
 			foreach($this->inherit as $tag)
 			{
-        		if($HTML_CLASS_DEBUG_CONTENT)
+        		if($indention)
 					$tag_spaces++;
 				if(is_String($tag) or is_numeric($tag))
 				{
-            		if($HTML_CLASS_DEBUG_CONTENT)
+            		if($indention)
 						$displayString.= $this->spaces($tag_spaces);
 					$displayString.= $tag; //htmlspecialchars($tag);
 				}else
 				{
-					if($HTML_CLASS_DEBUG_CONTENT and !is_subclass_of($tag, "TAG") and !$this->isScript)
+					if($indention and !is_subclass_of($tag, "TAG") and !$this->isScript)
 					{
 					    echo $displayString;
 						echo "\n<br><b>ERROR:</b> bei den HTML-Tags d�rfen nur Strings und HTML-Tags hinzugef�gt werden<br>\n";
@@ -159,11 +165,11 @@ class Tag extends STCheck
 					}
 					$displayString.= $tag->getDisplayString();
 				}
-        		if($HTML_CLASS_DEBUG_CONTENT)
+        		if($indention)
 					$tag_spaces--;
 			}
 			$displayString.= $this->getBehindSubTagString();
-			if($HTML_CLASS_DEBUG_CONTENT)
+			if($indention)
 			    $displayString.= $this->spaces($tag_spaces);
 			$displayString.= $this->endTag();
 			return $displayString;
