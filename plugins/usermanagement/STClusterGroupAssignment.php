@@ -2,7 +2,7 @@
 
 require_once( $_stobjectcontainer );
 
-class STClusterGroupManagement extends STObjectContainer
+class STClusterGroupAssignment extends STObjectContainer
 {
 	function __construct($name, &$container)
 	{

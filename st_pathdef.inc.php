@@ -279,9 +279,8 @@
 		//$USERCLASS=               "STUser";
 		$_stusersession=                    $_stcmstools_path."/usermanagement/STUserSession.php";
 		$_stusermanagement=					$_stcmstools_path."/usermanagement/STUserManagement.php";
-		$_stuserclustergroupmanagement=     $_stcmstools_path."/usermanagement/STUserClusterGroupManagement.php";
-		
-		$_stclustergroupmanagement=			$_stcmstools_path."/usermanagement/STClusterGroupManagement.php";
+		$_stuserclustergroupmanagement=     $_stcmstools_path."/usermanagement/STUserClusterGroupManagement.php";		
+		$_stclustergroupassignment=			$_stcmstools_path."/usermanagement/STClusterGroupAssignment.php";
 		
 		$_stum_installcontainer=			$_stcmstools_path."/usermanagement/STUM_InstallContainer.php";
 		$_stusermanagement_install=			$_stcmstools_path."/usermanagement/stusermanagement_install.php";

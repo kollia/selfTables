@@ -67,7 +67,7 @@ class STItemBox extends STBaseBox
 				$this->aSelectNames["no_entrys"]= "&#160;&#160; keine Eintr&auml;ge &#160;&#160;";
 				
 				$this->msg->setMessageContent("BOXDISPLAY", ""); // Box wird am Bildschirm angezeigt
-				$this->msg->setMessageContent("AND", "and");
+				$this->msg->setMessageContent("AND", "und");
 				$this->msg->setMessageContent("NODELETE_FK@", "Dieser Eintrag kann nicht geloescht werden, es verweist darauf ein Eintrag von @");
 				$this->msg->setMessageContent("NOROWTODELETE", ""); // es wurde kein Eintrag in der Datenbank zum löschen gefunden
 				$this->msg->setMessageContent("DELETEQUESTION", "Wollen sie diesen Eintrag wirklich loeschen?"); // Frage ob der User wirklich löschen will
@@ -101,7 +101,7 @@ class STItemBox extends STBaseBox
 				$this->aSelectNames["no_entrys"]= "&#160;&#160; no entrys exist &#160;&#160;";
 				
 				$this->msg->setMessageContent("BOXDISPLAY", ""); // Box wird am Bildschirm angezeigt
-				$this->msg->setMessageContent("AND", "und");
+				$this->msg->setMessageContent("AND", "and");
 				$this->msg->setMessageContent("NODELETE_FK@", "cannot remove this entry, because entry from @ points to them");
 				$this->msg->setMessageContent("NOROWTODELETE", ""); // es wurde kein Eintrag in der Datenbank zum löschen gefunden
 				$this->msg->setMessageContent("DELETEQUESTION", "do you want to delete this entry?"); // Frage ob der User wirklich löschen will

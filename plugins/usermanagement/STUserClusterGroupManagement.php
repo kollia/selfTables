@@ -4,7 +4,7 @@ require_once( $_stpostarray );
 require_once( $_stobjectcontainer );
 require_once( $_stquerystring );
 require_once( $_stdbselector );
-require_once( $_stclustergroupmanagement );
+require_once( $_stclustergroupassignment );
 
 $__global_UserClusterGroup_CALLBACK= array();
 
@@ -71,7 +71,7 @@ class STUserClusterGroupManagement extends STObjectContainer
 		Tag::paramCheck($container, 2, "STObjectContainer");
 		
 		STObjectContainer::__construct($name, $container);
-		$this->clusterGroup= new STClusterGroupManagement("ClusterGroupAssignment", $this->getDatabase());	
+		$this->clusterGroup= new STClusterGroupAssignment("ClusterGroupAssignment", $this->getDatabase());	
 	}
 	function create()
 	{
