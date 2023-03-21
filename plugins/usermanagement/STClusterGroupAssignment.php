@@ -14,7 +14,7 @@ class STClusterGroupAssignment extends STObjectContainer
 	}
 	function create()
 	{
-	    $this->needNnTable("Group", "ClusterGroup", "Cluster");
+	    $table= $this->needNnTable("Group", "ClusterGroup", "Cluster");
 	}
 	function init()
 	{
@@ -37,7 +37,7 @@ class STClusterGroupAssignment extends STObjectContainer
 	    $buttonText= "Group assignment to Cluster ";
 	    if(isset($res['ID']))
 	        $buttonText.= $res['ID'];
-	    $nnTable= $this->needTable("Group");
+        $nnTable= $this->needTable("Group");
 	    $nnTable->setDisplayName($buttonText);
 	    $nnTable->select("Group", "domain", "domain");
 	    $nnTable->nnTableCheckboxColumn("Affilation");

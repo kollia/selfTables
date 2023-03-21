@@ -126,8 +126,8 @@ class STObjectContainer extends STBaseContainer
     	    $selector->setNnTable($nnTable, $fixTable);
     	    //$selector->joinOver($fixTable);
     	    //$selector->joinOver($nnTable);
-    	    
     	    $this->needTableObject($selector);
+    	    
 	    }else
 	    {
 	        $selector= $this->tables[$sTableName];
@@ -1331,7 +1331,7 @@ class STObjectContainer extends STBaseContainer
 			$table->getSelectedColumns();	//fals noch keine Spalte gesetzt ist
 										//vor dem setzen von "aktualisieren" und "l�schen"
 										//alle Spalten aus der Datenbank holen
-			
+
 			// create rows for dynamic-clustering
 			$checked= $table->createDynamicAccess();
 			if(count($checked))

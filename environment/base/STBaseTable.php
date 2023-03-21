@@ -25,10 +25,11 @@ class STBaseTable
 	var	$bDisplayIdentifs= true;
 	/**
 	 * whether in a selected- or an identifier-columns (from foreign keys)
-	 * has made an new choice of columns ( key [select, get or identifColumn] of original choice [abOrigChoice] has the value 'false' )
-	 * otherwise ( key non exist or is 'true' for new choose)
-	 * the selection should takes the columns from table inside database (if first table)
-	 * or should take the columns from parent table
+	 * selection is from parent table or first table from Database with all columns
+	 * ( key [select, get or identifColumn] is true or non exist )
+	 * or has made an new choice of columns 
+	 * ( key [select, get or identifColumn] of original choice 
+	 *   [abOrigChoice] has the value 'false' )
 	 * @var array
 	 */
 	var	$abOrigChoice= array();
@@ -1528,7 +1529,7 @@ class STBaseTable
     			$nParams= func_num_args();
     			STCheck::lastParam(5, $nParams);
 		    }
-			
+		    
 			if(STCheck::isDebug())
 			{
 				STCheck::alert(!$this->validColumnContent($column), "STBaseTable::selectA()",
@@ -1609,15 +1610,8 @@ class STBaseTable
 				(   !isset($this->abOrigChoice["select"]) ||
 				    $this->abOrigChoice["select"] == true   )   )
 			{
-			    foreach($this->show as $key => $fields)
-			    {
-			        if( isset($fields['type']) &&
-			            $fields['type'] == "select"  )
-			        {
-			            unset($this->show[$key]);
-			        }
-			    }
-				$this->abOrigChoice["select"]= false;
+			    $this->clearSelectColumns();
+			    $this->abOrigChoice["select"]= false;
 			}
 			if($alias===null)
 			    $alias= $column;
@@ -2227,10 +2221,19 @@ class STBaseTable
 	{
 		$this->bDisplaySelects= $bDisplay;
 	}
-		function clearSelects()
+		public function clearSelects()
+		{
+		    $this->clearSelectColumns();
+		    $this->clearGetColumns();
+		}
+		public function clearSelectColumns()
 		{
 		    $this->abOrigChoice["select"]= true;
-		    $this->show= array();
+		    foreach($this->show as $key=>$column)
+		    {
+		        if($column['type'] == "select")
+		            unset($this->show[$key]);
+		    }
 		}
 		function clearNoFkSelects()
 		{
@@ -2656,12 +2659,13 @@ class STBaseTable
 								"form"=>	$formName,
 								"action"=>	$action			);
 	}
-	function checkBox($columnName, $trueValue= false)
+	function checkBox(string $columnName, $trueValue= false, $notSet= null)
 	{
-		Tag::paramCheck($columnName, 1, "string");
+	    STCheck::param($trueValue, 1, "bool");
+	    STCheck::alert(isset($notSet), "STBaseTable::checkBox()", 
+	        "third parameter should be always NULL, only defined for extended class STDbSelector");
 
 		$field= $this->findAliasOrColumn($columnName);
-		$column= $field["alias"];
 		$this->linkA("check", $this->Name, array("column"=>$columnName), null, $this->sPKColumn);
 		$this->aCheckDef[$field["alias"]]= $trueValue;
 	}
@@ -2910,9 +2914,20 @@ class STBaseTable
 		}
 		$this->linkA("get", $tableName, $column, null, null);
 	}
-	function clearGetColumns()
+	public function clearGetColumns()
 	{
 	    $this->abOrigChoice['get']= true;
+	    foreach($this->show as $key=>$column)
+	    {
+	        if($column['type'] == "get")
+	        {
+	            if( !$this->bIsNnTable ||
+	                substr($column['alias'], 0, 5) != "join@"  )
+	            {
+	                unset($this->show[$key]);
+	            }
+	        }
+	    }
 	}
 	function clearRekursiveGetColumns($bFromIdentif= false)
 	{

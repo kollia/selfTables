@@ -486,15 +486,6 @@ class STDbSelector extends STDbTable implements STContainerTempl
 			}
 			$this->selectA($tableName, $orgColumn, $alias, $nextLine, $add);
 		}
-		function limit($start, $limit= null)
-		{
-			if(!$limit)
-			{
-				$limit= $start;
-				$start= 0;
-			}
-			$this->limitRows= array("start"=>$start, "limit"=>$limit);
-		}
 		public function setNnTable(string $nnTableName, string $fixTableName)
 		{
 		    $bfixFk=  false;
@@ -509,8 +500,9 @@ class STDbSelector extends STDbTable implements STContainerTempl
 		    $this->bIsNnTable= true;
 		    $this->aNnTableColumn= array( "table" => $nnTableName,
 		                                  "column" => $nnTable->sPKColumn    );
+		    //$pkColumnName= $this->getPkColumnName();
+		    //$this->getColumn($this->Name, $pkColumnName, "nnPK@".$this->Name."@$pkColumnName");
 		    
-		    //$this->getColumn($this->Name, $this->getPkColumnName(), "nnPK@".$this->Name.)
 			// search where the foreign keys are pointed
 			// to set it  all to left joins
 			// and also insert getColumns to foreign keys
@@ -578,14 +570,31 @@ class STDbSelector extends STDbTable implements STContainerTempl
 		 *
 		 * @param string $checkBoxColumnName headline name from checkboxes
 		 */
-		public function nnTableCheckboxColumn(string $checkBoxColumnName)
+		public function nnTableCheckboxColumn(string $checkBoxColumnAliasName)
 		{
 		    STCheck::alert(!$this->bIsNnTable, "STBaseTable::nnTableColumn()", "STDbSelector is not defined as N to N table");
 		    
 		    $this->bNnTableColumnSelected= true;
-		    $this->aNnTableColumn['alias']= $checkBoxColumnName;
-		    $this->select($this->aNnTableColumn['table'], $this->aNnTableColumn['column'], $checkBoxColumnName);
-		    $this->checkBox($checkBoxColumnName);
+		    $this->aNnTableColumn['alias']= $checkBoxColumnAliasName;
+		    $this->select($this->aNnTableColumn['table'], $this->aNnTableColumn['column'], $checkBoxColumnAliasName);
+		    STDbTable::checkBox($checkBoxColumnAliasName);
+		}
+		public function checkBox(string $table, $column= null, $trueValue= false)
+		{
+		    STCheck::param($column, 1, "string");
+		    STCheck::param($trueValue, 2, "bool");
+		    
+		    $table= $this->getTableName($table);
+		    if($table == $this->Name)
+		    {
+		        STDbTable::checkBox($column, $trueValue);
+		        return;
+		    }
+		    $oTable= $this->getTable($table);
+		    if(typeof($oTable, "STDbSelector"))
+		        $oTable->checkBox($table, $column, $trueValue);
+		    else
+		        $oTable->checkBox($column, $trueValue);
 		}
 		function newIdentifColumn($table, $column, $alias)
 		{

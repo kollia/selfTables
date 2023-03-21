@@ -382,7 +382,6 @@ class STListBox extends STBaseBox
 			// alex 28/06/2005:	kontrolliere ob eine fixe Einschr�nkung vorhanden ist
 			//					und gib diese dann in die Where-Clausl
 			// alex 03/08/2005: kontrolle der fixen Einschr�nkung nach STDatabase verschoben
-
 			
 			if(typeof($oTable, "STDBSelector"))
 			{
@@ -391,19 +390,14 @@ class STListBox extends STBaseBox
 			{
 			    $this->oSelector= new STDbSelector($oTable, MYSQL_ASSOC, $this->getOnError("SQL"));
 			}
-			if(	isset($firstRow)
-				or
-				isset($nMaxSelect)	)
+			if(	isset($firstRow) &&
+				isset($nMaxSelect)  )
 			{
 				if(!$firstRow)
 					$firstRow= 0;
 				$this->oSelector->limit($firstRow, $nMaxSelect);
 			}
 			
-			// toDo: DbSelector find not the right Statement / Alias-Table
-			//$statement= $tableDb->getStatement($oTable);
-			$statement= $oTable->getStatement();
-			$this->oSelector->setStatement($statement);
 			$this->statement= $this->oSelector->getStatement();
 			$aliases= array();
 			$aliases= $this->db->getAliasOrder();
@@ -1960,6 +1954,8 @@ class STListBox extends STBaseBox
 				{   // $box represent all checked values comming from gui
 				    // $checked all checked inside database
 					
+				    $bInsert= false;
+				    $bDelete= false;
 					if($this->asDBTable->bIsNnTable)
 					{
 					    $inserter= new STDbInserter($useTable);
@@ -1974,6 +1970,7 @@ class STListBox extends STBaseBox
 
     				foreach($aInsert as $countBox => $valueBox)
     				{
+    				    $bInsert= true;
 						$bOnDbChanged= true;
 						if($this->asDBTable->bIsNnTable)
 						{
@@ -2078,6 +2075,7 @@ class STListBox extends STBaseBox
 					    }
         				foreach($aDelete as $kChecked => $vChecked)
         				{
+        				    $bDelete= true;
 							$bOnDbChanged= true;
 							if($this->asDBTable->bIsNnTable)
 							{
@@ -2115,12 +2113,12 @@ class STListBox extends STBaseBox
 						}
 					}elseif(!$this->insertStatement)
 					{
-						if($inserter->execute())
+						if($bInsert && $inserter->execute())
 						{
 							$this->msg->setMessageId("SQL_ERROR", $inserter->getErrorString());
 							return;
 						}
-						if($deleter->execute())
+    					if($bDelete && $deleter->execute())
 						{
 							$this->msg->setMessageId("SQL_ERROR", $deleter->getErrorString());
 							return;

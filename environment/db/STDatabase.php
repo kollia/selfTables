@@ -1829,6 +1829,8 @@ abstract class STDatabase extends STObjectContainer
 			
 		}elseif(isset($oTable->limitRows))
 		{
+		    echo __FILE__.__LINE__."<br>";
+		    st_print_r($oTable->limitRows);
 			$from= $oTable->limitRows["start"];
 			$maxRows= $oTable->limitRows["limit"];
 		}else

@@ -101,7 +101,7 @@ class STDbInserter extends STDbSqlCases
         $sql="INSERT INTO $table($key_string) VALUES($value_string)";
         return $sql;
 	}
-	public function execute($onError= onErrorStop)
+	public function execute($onError= onDebugErrorShow)
 	{
 	  if(!count($this->columns))
 		    return 0;
