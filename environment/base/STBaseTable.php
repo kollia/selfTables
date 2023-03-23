@@ -8,6 +8,13 @@ class STBaseTable
 {
     var $ID= 0;
 	var $Name;
+	/**
+	 * define wheter the table
+	 * is an correct defined table object
+	 * or only an alias table
+	 * @var boolean
+	 */
+	private $bCorrect= false;
 	var $title= "";
 	var	$sPKColumn;
 	var $columns;

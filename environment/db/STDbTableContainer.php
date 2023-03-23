@@ -326,10 +326,6 @@ class STDbTableContainer
 			//					alle Tabellen in die this->tables geladen werden
 			$table= $this->db->getTable($sTableName, false);
 			$table->abOrigChoice= array();
-			$table->bSelect= false;
-			$table->bTypes= false;
-			$table->bIdentifColumns= false;
-			//$table->bIdentifColumns
 			$this->tables[$sTableName]= &$table;
 			// alex 04/06/2005:	wenn die Datenbank nicht mit ampersand "&" vor new erzeugt wurde
 			//					ist die Datenbank in der Variable $this->db nicht die gleiche

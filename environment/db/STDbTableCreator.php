@@ -3,8 +3,9 @@
 class STDbTableCreator
 {
     var $db;
-		var $sTable;
-		var $bCheck= false;
+	var $sTable;
+	var $bCheck= false;
+	var $asTableColumns= array();
 
     function __construct(&$database, $tableName)
 	{

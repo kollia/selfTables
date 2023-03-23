@@ -425,7 +425,8 @@ class STBaseContainer extends BodyTag implements STContainerTempl
 	}
     function create()
     {   
-        if(STCheck::isDebug())
+        if( STCheck::isDebug() &&
+            get_class($this) == "STBaseContainer"   )
         {
             STCheck::echoDebug("container", "create routine for container ".get_class($this)."(<b>$this->name</b>)");
             $currentObject= get_class($this);
@@ -437,11 +438,11 @@ class STBaseContainer extends BodyTag implements STContainerTempl
                 echo "  <b>WARNING</b> --------------------------------------------------------------------------------------- <b>WARNING</b><br />";
                 showErrorTrace();
             }
+            // this function is only a hook for this template-pattern
+            // and startig the creation in the initContainer/execute
+            // when this object is needed
+            // and also in some methodes where tables needed
         }
-        // this function is only a hook for this template-pattern
-        // and startig the creation in the initContainer/execute
-        // when this object is needed
-        // and also in some methodes where tables needed
     }
     protected function init()
     {//echo "initial container ".get_class($this)."(".$this->name.")<br />";
@@ -637,7 +638,8 @@ class STBaseContainer extends BodyTag implements STContainerTempl
 
 		if(isset($global_array_exist_stobjectcontainer_with_classname[$containerName]["source"]))
 		{
-			//echo $global_array_exist_stobjectcontainer_with_classname[$containerName]["source"]."<br/>\n";
+		    echo __FILE__.__LINE__."<br>";
+			echo $global_array_exist_stobjectcontainer_with_classname[$containerName]["source"]."<br/>\n";
 			require_once($global_array_exist_stobjectcontainer_with_classname[$containerName]["source"]);
 		}
 

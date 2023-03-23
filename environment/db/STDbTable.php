@@ -4,6 +4,7 @@ require_once($_stbasetable);
 
 class STDbTable extends STBaseTable
 {
+    private $onError;
     /**
      * current database from where table
      * @var object
@@ -73,7 +74,7 @@ class STDbTable extends STBaseTable
 			else
 				Tag::echoDebug("table", "make copy from table-object <b>".$Table->Name."</b> for an new one");
 		}
-		$this->created[$tableName]= true;
+		//$this->created[$tableName]= true;
 		if(typeof($Table, "STBaseTable"))
 		{
 		    $this->copy($Table);
@@ -616,7 +617,7 @@ class STDbTable extends STBaseTable
 			// weil keine Datenbank vorhanden ist
 			// in der die AliasTable aufgelistet sind
 			// (also w�re der FK einzige Referenz)
-			unset($this->FK[$toTableName]["table"]);
+		    unset($this->aFks[$toTableName]["table"]);
 		}
 	}
 	function &getDatabase()
@@ -878,7 +879,6 @@ class STDbTable extends STBaseTable
                         $aliasTable= "t".($aliasCount+1);
                         $aTableAlias["self.".$column["table"]]= $aliasTable;
                     }
-                    $this->sNeedAlias[$aliasTable]= "need";// Tabellen Alias wird gebraucht
                     $aUseAliases[$aTableAlias[$column['table']]]= $column['table'];
                     $singleStatement.= $columnName;
                     if($this->sqlKeyword($column["column"]) != false)
@@ -1801,6 +1801,8 @@ class STDbTable extends STBaseTable
         {
             foreach($field['content'] as $column)
             {
+                echo __FILE__.__LINE__."<br>";
+                st_print_r($field,2);
                 if( $column != "*" &&
                     !STBaseTable::validColumnContent($column, $abCorrect, $bAlias) )
                 {

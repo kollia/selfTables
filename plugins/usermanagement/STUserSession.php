@@ -12,7 +12,7 @@ class STUserSession extends STDbSession
 	 * registerd with this usermanagement
 	 * @var string
 	 */
-	private $mainDOMAIN= "CU";
+	private $mainDOMAIN= "custom";
 	private $accessDomains= array(   array(  "ID" => -1,
 	                                       "Name" => "xxx", // <- will be defined inside constructor
         	                               "Prefix" => "*",
@@ -1095,9 +1095,13 @@ class STUserSession extends STDbSession
 	{
 		$cluster= $this->database->getTable("Cluster");
 		$selector= new STDbSelector($cluster);
-		$selector->clearSelects();
+		//$selector->clearSelects();
 		$selector->count();
-		$selector->where($selector->getPkColumnName()."='$clusterName'");
+		
+		$whereObj= new STDbWhere();
+		$whereObj->where($selector->getPkColumnName()."='$clusterName'");
+		$whereObj->andWhere("ProjectID=".$this->getProjectID());
+		$selector->where($whereObj);
 		$selector->execute();
 		$exists= $selector->getSingleResult();
 		if($exists)
@@ -1217,7 +1221,11 @@ class STUserSession extends STDbSession
 	}
 	public function createCluster(string $clusterName, string $accessInfoString, bool $addGroup= true) : string
 	{
-	    if($this->doClusterExist($clusterName, $this->getProjectID()))
+	    if(isset($_SESSION))
+	    {
+    	    if($this->doClusterExist($clusterName, $this->getProjectID()))
+    	        return "NOCLUSTERCREATE";
+	    }elseif($this->existsDbCluster($clusterName))
 	        return "NOCLUSTERCREATE";
 		$this->setExistCluster($clusterName, $this->getProjectID());
 		//$partitionId= $this->getPartitionID($sIdentifString);

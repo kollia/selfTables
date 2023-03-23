@@ -175,63 +175,62 @@ class STUserManagement extends STObjectContainer
     		$instance->projectID= $userManagementID;
 		else
 			$instance->projectID= 1;
-	
-//		if($res<1)// result STPartition
-//		{
-			if(!isset($userManagementID))
+
+		if(!isset($userManagementID))
+		{
+		    $desc= STDbTableDescriptions::instance($this->getDatabase()->getDatabaseName());
+			// fill project-cluster per hand
+			// because no project is inserted
+			// and the system do not found what we want
+			$instance->projectCluster= array(	$desc->getColumnName("Project", "has_access")=>"STUM-Access_".$projectName,
+												$desc->getColumnName("Project", "can_insert")=>"STUM-Insert_".$projectName,
+												$desc->getColumnName("Project", "can_update")=>"STUM-Update_".$projectName,
+												$desc->getColumnName("Project", "can_delete")=>"STUM-Delete_".$projectName	);
+			$project->identifColumn("Name");
+    		$project->accessBy("STUM-Access", STLIST);
+    		$project->accessBy("STUM-Insert", STINSERT);
+    		$project->accessBy("STUM-Update", STUPDATE);
+    		$project->accessBy("STUM-Delete", STDELETE);
+/*   			$project->accessCluster("has_access", "Name", "Permission to see the project @");
+			$project->insertCluster("can_insert", "Name", "Permission to create a new project");
+			$project->updateCluster("can_update", "Name", "Changing-Permission at project @");
+			$project->deleteCluster("can_delete", "Name", "Deleting-Permission at project @");*/
+			$inserter= new STDbInserter($project);
+			$inserter->fillColumn("Name", $projectName);
+			$inserter->fillColumn("Path", $HTTP_SERVER_VARS["SCRIPT_NAME"]);
+			$inserter->fillColumn("description", "Listing and changing of all access permissions at project UserManagement");
+			$inserter->fillColumn("DateCreation", "sysdate()");
+			$inserter->execute();
+
+			$userManagementID= $inserter->getLastInsertID();
+			if($userManagementID!==1)
 			{
-			    $desc= STDbTableDescriptions::instance($this->getDatabase()->getDatabaseName());
-				// fill project-cluster per hand
-				// because no project is inserted
-				// and the system do not found what we want
-				$instance->projectCluster= array(	$desc->getColumnName("Project", "has_access")=>"STUM-Access_".$projectName,
-													$desc->getColumnName("Project", "can_insert")=>"STUM-Insert_".$projectName,
-													$desc->getColumnName("Project", "can_update")=>"STUM-Update_".$projectName,
-													$desc->getColumnName("Project", "can_delete")=>"STUM-Delete_".$projectName	);
-    			$project->identifColumn("Name");
-        		$project->accessBy("STUM-Access", STLIST);
-        		$project->accessBy("STUM-Insert", STINSERT);
-        		$project->accessBy("STUM-Update", STUPDATE);
-        		$project->accessBy("STUM-Delete", STDELETE);
- /*   			$project->accessCluster("has_access", "Name", "Permission to see the project @");
-    			$project->insertCluster("can_insert", "Name", "Permission to create a new project");
-    			$project->updateCluster("can_update", "Name", "Changing-Permission at project @");
-    			$project->deleteCluster("can_delete", "Name", "Deleting-Permission at project @");*/
-    			$inserter= new STDbInserter($project);
-    			$inserter->fillColumn("Name", $projectName);
-    			$inserter->fillColumn("Path", $HTTP_SERVER_VARS["SCRIPT_NAME"]);
-    			$inserter->fillColumn("description", "Listing and changing of all access permissions at project UserManagement");
-    			$inserter->fillColumn("DateCreation", "sysdate()");
-    			$inserter->execute();
+				$instance->projectID= $userManagementID;
 
-				$userManagementID= $inserter->getLastInsertID();
-				if($userManagementID!==1)
-				{
-					$instance->projectID= $userManagementID;
+				$partition= $this->getTable("Partition");
+				$updater= new STDbUpdater($partition);
+				$updater->update("ProjectID", $userManagementID);
+				$updater->execute();
 
-					$partition= $this->getTable("Partition");
-					$updater= new STDbUpdater($partition);
-					$updater->update("ProjectID", $userManagementID);
-					$updater->execute();
-
-					$cluster= $this->getTable("Cluster");
-					$updater= new STDbUpdater($cluster);
-					$updater->update("ProjectID", $userManagementID);
-					$where= new STDbWhere("ID like 'STUM-Access%'");
-					$where->orWhere("ID like 'STUM-Insert%'");
-					$where->orWhere("ID like 'STUM-Update%'");
-					$where->orWhere("ID like 'STUM-Delete%'");
-					$updater->where($where);
-					$updater->execute();
-				}
+				$cluster= $this->getTable("Cluster");
+				$updater= new STDbUpdater($cluster);
+				$updater->update("ProjectID", $userManagementID);
+				$where= new STDbWhere("ID like 'STUM-Access%'");
+				$where->orWhere("ID like 'STUM-Insert%'");
+				$where->orWhere("ID like 'STUM-Update%'");
+				$where->orWhere("ID like 'STUM-Delete%'");
+				$updater->where($where);
+				$updater->execute();
 			}
-			//		}
+		}
 		$this->createCluster($instance->usermanagementAccessCluster, "Permission to see all projects inside UserManagement", /*addGroup*/true);
 		$this->createCluster($instance->usermanagementChangeCluster, "Permission to create projects inside  UserManagement", /*addGroup*/true);			
 		
-		$this->createGroup($instance->usermanagementAdminGroup); 
-		$this->createGroup($instance->onlineGroup);
-		$this->createGroup($instance->loggedinGroup);
+		echo __FILE__.__LINE__."<br>";
+		st_print_r($domain);
+    	$this->createGroup($instance->usermanagementAdminGroup, $domain['Name']); 
+    	$this->createGroup($instance->onlineGroup, $domain['Name']);
+    	$this->createGroup($instance->loggedinGroup, $domain['Name']);
 		
 		echo __FILE__.__LINE__."<br>";
 		$this->joinClusterGroup($instance->usermanagementAccessCluster, $instance->usermanagementAdminGroup);

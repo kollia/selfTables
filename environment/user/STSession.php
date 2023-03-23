@@ -174,9 +174,11 @@ class STSession
 		    //          if third parameter of session_set_cookie_params() is value null, not a null String "",
 		    //          session_start() do not work
 		    //          and otherwise also when correct (set only 2 parameters) time changing not works ???
-		    session_set_cookie_params( 60*5, '/');
+		    session_set_cookie_params( 60*5, '/');		    
     		$bSetSession= session_start();
     		STCheck::end_outputBuffer();
+    		echo __FILE__.__LINE__."<br>";
+    		echo "session started<br>";
 		}
 		
 	    if( STCheck::isDebug("user") ||

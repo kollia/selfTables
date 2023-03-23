@@ -166,9 +166,6 @@ class STObjectContainer extends STBaseContainer
                 $this->tables[$sTableName]= $gettable;
                 $table= &$this->tables[$sTableName];
                 $table->abOrigChoice= array();
-                $table->bSelect= false;
-                $table->bTypes= false;
-                $table->bIdentifColumns= false;
                 //$this->table[$sTableName]= &$table;
             }
         }
@@ -267,9 +264,6 @@ class STObjectContainer extends STBaseContainer
 			STCheck::alert(!isset($table), "STObjectContainer::getTable()", "cannot clone $oldTable");
 			
 			$table->abOrigChoice= array();
-			$table->bSelect= false;
-			$table->bTypes= false;
-			$table->bIdentifColumns= false;
 			unset($table->container);
 			$table->container= $this;
 			$this->oGetTables[$tableName]= &$table;
