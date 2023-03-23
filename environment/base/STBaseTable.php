@@ -2417,14 +2417,14 @@ class STBaseTable
 	 		{
 	 			// 1. parameter is an string or STDbWhere object
  				if(	is_string($stwhere) &&
- 					$this->Name != $this->oWhere->forTable()	)
+ 					$this->Name != $this->oWhere->table()	)
  				{
  					$stwhere= new STDbWhere($stwhere, $this->Name);
  				}
  				if(	is_object($stwhere) &&
- 					$stwhere->forTable() == ""	)
+ 					$stwhere->table() == ""	)
  				{
- 					$stwhere->forTable($this->Name);
+ 					$stwhere->table($this->Name);
  				}
 	 			if($operator == "or")
 	 			{

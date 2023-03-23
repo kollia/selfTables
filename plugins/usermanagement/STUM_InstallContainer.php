@@ -4,32 +4,22 @@ class STUM_InstallContainer extends STObjectContainer
 {
 	function create()
 	{
-		STObjectContainer::create();
-
-		// search for custom in table GroupType
-		$groupType= &$this->getTable("GroupType");
-		$groupType->select("ID");
-		$selector= new OSTDbSelector($groupType);
-		$selector->execute();
-		$groupTypeId= $selector->getSingleResult();
-		if(!$groupTypeId)
-		{
-			$inserter= new STDbInserter($groupType);
-			$inserter->fillColumn("Label", "custom");
-			$inserter->fillColumn("DateCreation", "sysdate()");
-			$inserter->execute();
-			$groupTypeId= $this->db->getLastInsertID();
-		}
-
+	    $instance= &STSession::instance();
+	    $domain= $instance->getCustomDomain();
+	    
 		$this->setFirstTable("User", STINSERT);
 		$user= &$this->needTable("User");
-		$user->select("UserName", "Administrator");
+		$user->setDisplayName("Administrator");
+		$user->select("user", "Nickname");
+		$user->select("FullName", "Full name");
+		$user->select("email", "Email");
 		$user->select("Pwd");
-		$user->preSelect("UserName", "admin");
-		$user->preSelect("GroupType", $groupTypeId);
+		$user->preSelect("domain", $domain['ID']);
+		$user->preSelect("user", "admin");
+		$user->preSelect("FullName", "Administrator");
 		$user->preSelect("DateCreation", "sysdate()");
 		$user->password("Pwd", true);
-		$user->passwordNames("Passwort", "Passwort wiederholung");
+		$user->passwordNames("Password", "Repeat password");
 	}
 }
 ?>

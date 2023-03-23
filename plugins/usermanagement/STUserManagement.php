@@ -147,20 +147,9 @@ class STUserManagement extends STObjectContainer
 		
 		$instance= &STSession::instance();
 		
-		echo __FILE__.__LINE__."<br>";
-		st_print_r($instance, 0);
-/*		$partition= $this->getTable("Partition");
-		$partition->clearSelects();
-		$partition->clearGetColumns();
-		$partition->count();
-		$selector= new STDbSelector($partition);
-		$selector->execute();
-		$res= $selector->getSingleResult();*/
-
 		// create custom domain database entry
 		$domain= $instance->getCustomDomain();
 		
-		echo __FILE__.__LINE__."<br>";
     	$projectName= $instance->userManagementProjectName;
     	$project= $this->getTable("Project");
     	$project->clearSelects();
@@ -191,10 +180,6 @@ class STUserManagement extends STObjectContainer
     		$project->accessBy("STUM-Insert", STINSERT);
     		$project->accessBy("STUM-Update", STUPDATE);
     		$project->accessBy("STUM-Delete", STDELETE);
-/*   			$project->accessCluster("has_access", "Name", "Permission to see the project @");
-			$project->insertCluster("can_insert", "Name", "Permission to create a new project");
-			$project->updateCluster("can_update", "Name", "Changing-Permission at project @");
-			$project->deleteCluster("can_delete", "Name", "Deleting-Permission at project @");*/
 			$inserter= new STDbInserter($project);
 			$inserter->fillColumn("Name", $projectName);
 			$inserter->fillColumn("Path", $HTTP_SERVER_VARS["SCRIPT_NAME"]);
@@ -223,18 +208,16 @@ class STUserManagement extends STObjectContainer
 				$updater->execute();
 			}
 		}
-		$this->createCluster($instance->usermanagementAccessCluster, "Permission to see all projects inside UserManagement", /*addGroup*/true);
-		$this->createCluster($instance->usermanagementChangeCluster, "Permission to create projects inside  UserManagement", /*addGroup*/true);			
-		
-		echo __FILE__.__LINE__."<br>";
-		st_print_r($domain);
-    	$this->createGroup($instance->usermanagementAdminGroup, $domain['Name']); 
+		$this->createCluster($instance->usermanagementAccessCluster, "Permission to see all projects inside UserManagement", /*addGroup*/false);
+		$this->createCluster($instance->usermanagementChangeCluster, "Permission to create projects inside  UserManagement", /*addGroup*/false);			
+		 
     	$this->createGroup($instance->onlineGroup, $domain['Name']);
     	$this->createGroup($instance->loggedinGroup, $domain['Name']);
+    	$this->createGroup($instance->usermanagementAccessGroup, $domain['Name']);
+    	$this->createGroup($instance->usermanagementAdminGroup, $domain['Name']);
 		
-		echo __FILE__.__LINE__."<br>";
-		$this->joinClusterGroup($instance->usermanagementAccessCluster, $instance->usermanagementAdminGroup);
-		$this->joinClusterGroup($instance->usermanagementChangeCluster, $instance->usermanagementAdminGroup);
+    	$this->joinClusterGroup($instance->usermanagementAccessCluster, $instance->usermanagementAccessGroup);
+    	$this->joinClusterGroup($instance->usermanagementChangeCluster, $instance->usermanagementAdminGroup);
 		
 		
 		// select all needed tabels for an join
@@ -251,12 +234,8 @@ class STUserManagement extends STObjectContainer
 		$selector->joinOver("Group");
 		$where= new STDbWhere("ID='".$instance->allAdminCluster."'");
 		//$where->andWhere("domain=$defaultDomainKey");
-		$where->forTable("Cluster");
-		echo __FILE__.__LINE__."<br>";
+		$where->table("Cluster");
 		$selector->where($where);
-		$statement= $selector->getStatement();
-		echo __FILE__.__LINE__."<br>";
-		echo "statement:$statement<br>";
 		$selector->execute();
 		if(!$selector->getSingleResult())
 		{
@@ -275,6 +254,7 @@ class STUserManagement extends STObjectContainer
 				$pwd= $desc->getColumnName("User", "Pwd");
 				$sqlResult= $container->getResult();
 				$password= $sqlResult[$pwd];
+				$preg= array();
 				preg_match("/^password\('(.+)'\)$/", $password, $preg);
 				$password= $preg[1];
 				$userId= $this->db->getLastInsertID();

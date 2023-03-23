@@ -36,6 +36,12 @@ interface STContainerTempl
 class STBaseContainer extends BodyTag implements STContainerTempl
 {
     var $language= "en";
+    /**
+     * message handling for differnt languages
+     * @var STMessageHandling
+     */
+    protected $oMsg;
+    
 	var $bFirstContainer= false; // ob der Container der erste fuer STDbSiteCreator ist
 	var $nLevel= null; // auf welcher Ebene sich der Contiainer befindet
 	var $name;  // Name des Containers mit dem er als Objekt gehandelt wird
@@ -80,6 +86,7 @@ class STBaseContainer extends BodyTag implements STContainerTempl
 		Tag::echoDebug("container", "create new container-object ".get_class($this)."(<b>$name</b>)");
 
 		$this->name= $name;
+		$this->oMsg= new STMessageHandling(get_class($this)); // <-- not implemented jet by STObjectContainer
 		Tag::alert(isset($global_array_all_exist_stobjectcontainers[$name]),
 					"STBaseContainer::STBaseContainer(\"$name\"",
 					"container \"$name\" already exists");
@@ -638,8 +645,8 @@ class STBaseContainer extends BodyTag implements STContainerTempl
 
 		if(isset($global_array_exist_stobjectcontainer_with_classname[$containerName]["source"]))
 		{
-		    echo __FILE__.__LINE__."<br>";
-			echo $global_array_exist_stobjectcontainer_with_classname[$containerName]["source"]."<br/>\n";
+		    //echo __FILE__.__LINE__."<br>";
+			//echo $global_array_exist_stobjectcontainer_with_classname[$containerName]["source"]."<br/>\n";
 			require_once($global_array_exist_stobjectcontainer_with_classname[$containerName]["source"]);
 		}
 
@@ -960,7 +967,7 @@ class STBaseContainer extends BodyTag implements STContainerTempl
 			}else // if($bNeedNavis)
 				$this->appendObj($createdTags);
 		}
-		function deleteContainerToLevel(&$oGetParam, $nAktLevel)
+		function deleteQueryContainerToLevel(&$oGetParam, $nAktLevel)
 		{
 			if($nAktLevel===null)
 				return;
@@ -977,7 +984,7 @@ class STBaseContainer extends BodyTag implements STContainerTempl
 						$nAktLevel<=$nCountLevel	)
 					{
 						Tag::echoDebug("containerChoiceDelete", "delete container ".$container->getName());
-    					$this->deleteContainer($oGetParam);
+    					$this->deleteQueryContainer($oGetParam);
 					}
 				}
 			}while(	$container
@@ -986,7 +993,7 @@ class STBaseContainer extends BodyTag implements STContainerTempl
 						or
 						$nAktLevel<=$nCountLevel	)	);
 		}
-		function deleteContainer(&$oGetParam)
+		function deleteQueryContainer(&$oGetParam)
 		{
 			$params= $oGetParam->getArrayVars();
 			if( !isset($params["stget"]["container"]) ||
@@ -1166,7 +1173,7 @@ class STBaseContainer extends BodyTag implements STContainerTempl
 							}
 							if(isset($get_vars["table"]))
 							    $get->delete("stget[firstrow][".$get_vars["table"]."]");
-							$this->bBackButton= $this->deleteContainer($get);
+							$this->bBackButton= $this->deleteQueryContainer($get);
 							if(!$this->bBackButton)
 							{
 								Tag::echoDebug("containerChoice", "the actual container is the first,");
@@ -1190,7 +1197,7 @@ class STBaseContainer extends BodyTag implements STContainerTempl
 									echo "      nothing is to do?";
 									exit;
 								}*/
-								$this->bBackButton= $this->deleteContainer($get);
+								$this->bBackButton= $this->deleteQueryContainer($get);
 							}else
 							{
 								$get->update("stget[action]=".STLIST);
@@ -1358,7 +1365,7 @@ class STBaseContainer extends BodyTag implements STContainerTempl
 												$get->delete("stget[".$tableName."][".$column."]");
 										}
 									}
-									$this->bBackButton= $this->deleteContainer($get);/*("stget[link][from]");
+									$this->bBackButton= $this->deleteQueryContainer($get);/*("stget[link][from]");
 									$get->delete("stget[table]");
     								$get->delete("stget[action]");
     								$get->delete("stget[container]");*/
@@ -1384,7 +1391,7 @@ class STBaseContainer extends BodyTag implements STContainerTempl
 										//					in an extendee class from STSubGalleryContainer
 										//					php does not found the method
 										//					so I sayed -> search in STBaseContainer
-										STBaseContainer::deleteContainerToLevel($get, $nLevel);
+										STBaseContainer::deleteQueryContainerToLevel($get, $nLevel);
 									    //$make= STUPDATE;
 										//$get->deleteOlderByCase($this->getContainerLevel());
 

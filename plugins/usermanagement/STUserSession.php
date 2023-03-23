@@ -39,7 +39,8 @@ class STUserSession extends STDbSession
 	 * defined for UserManagement
 	 * @var string
 	 */
-	var $usermanagementAdminGroup= "UM_ADMIN";
+	var $usermanagementAdminGroup= "UserManagementAdmin";
+	var $usermanagementAccessGroup= "UserManagementAccess";
 	/**
 	 * user linked with this cluster
 	 * is administrator and has
@@ -208,8 +209,8 @@ class STUserSession extends STDbSession
         $dbTableDescription->foreignKey("User", "domain", "AccessDomain");
         $dbTableDescription->column("User", "user", "varchar(50)", /*null*/false);
         $dbTableDescription->uniqueKey("User", "user", 1);
-        $dbTableDescription->column("User", "FullName", "varchar(100)", /*null*/false);
-        $dbTableDescription->column("User", "image", "varchar(255)", /*null*/false);
+        $dbTableDescription->column("User", "FullName", "varchar(100)", /*null*/true);
+        $dbTableDescription->column("User", "image", "varchar(255)", /*null*/true);
         $dbTableDescription->column("User", "email", "varchar(100)", /*null*/false);
         $dbTableDescription->column("User", "Pwd", "char(16) binary", /*null*/false);
         $dbTableDescription->column("User", "NrLogin", "INT UNSIGNED");
@@ -1112,10 +1113,10 @@ class STUserSession extends STDbSession
 	{
 	    $clusterWhere= new STDbWhere();
 	    $clusterWhere->table("Cluster");
-	    $clusterWhere->where("ID=$clusterName", "Cluster");
+	    $clusterWhere->where("ID='$clusterName'");
 	    $groupWhere= new STDbWhere();
 	    $groupWhere->table("Group");
-	    $groupWhere->orWhere("Name=$groupName", "Group");
+	    $groupWhere->orWhere("Name='$groupName'");
 	    
 	    $clustergroup= new STDbSelector($this->database->getTable("ClusterGroup"));
 	    $clustergroup->count();
@@ -1139,7 +1140,7 @@ class STUserSession extends STDbSession
 	    $oWhere= new STDbWhere();
 	    $oWhere->where("Name='$groupName'");
 	    $oWhere->andWhere("domain='$domain'");
-	    $oWhere->forTable("Group");
+	    $oWhere->table("Group");
 	    
 	    $selector->where($oWhere);
 	    $selector->execute();
@@ -1348,31 +1349,26 @@ class STUserSession extends STDbSession
 		$groupID= $this->database->getLastInsertedPk();
 		return $groupID;
 	}
-	public function joinClusterGroup(string $clusterName, string $group)
+	public function joinClusterGroup(string $clusterName, string $groupName)
 	{
-	    echo __FILE__.__LINE__."<br>";
-	    echo "create join between $clusterName and $group<br>";
+	    // select only whether exist
 	    $cluster= new STDbSelector($this->database->getTable("Cluster"));
 		$cluster->select("Cluster", "ID", "ID");
 		$cluster->where("ID='".$clusterName."'");
 		$cluster->execute();
-		if(STCheck::is_error(!$cluster->getErrorId(), "STUserSession::joinClusterGroup()", "group ".$group." for join to <b>CLUSTER</b> does not exist"))
+		if(STCheck::is_error($cluster->getErrorId(), "STUserSession::joinClusterGroup()", "cluster ".$clusterName." for join to <b>GROUP</b> does not exist", 2))
 		    return -1;
-	    $clusterId= $cluster->getSingleResult();
-	    echo __FILE__.__LINE__."<br>";
-		
-		$grouptable= new STDbSelector($this->database->getTable("Group"));
-		$grouptable->select("Group", "ID", "ID");
-		$grouptable->where("Name='".$group."'");
+		    
+	    $grouptable= new STDbSelector($this->database->getTable("Group"));
+	    $grouptable->select("Group", "ID", "ID");
+		$grouptable->where("Name='".$groupName."'");
 		$grouptable->execute();
-		if(STCheck::is_error($grouptable->getErrorId(), "STUserSession::joinClusterGroup()", "group ".$group." for join to <b>CLUSTER</b> does not exist"))
+		if(STCheck::is_error($grouptable->getErrorId(), "STUserSession::joinClusterGroup()", "group ".$groupName." for join to <b>CLUSTER</b> does not exist", 2))
 		    return -1;
 	    $groupId= $grouptable->getSingleResult();
-	    echo __FILE__.__LINE__."<br>";
 		
-		if($this->existsDbClusterGroupJoin($clusterName, $group))
+		if($this->existsDbClusterGroupJoin($clusterName, $groupName))
 		    return -1;
-	    echo __FILE__.__LINE__."<br>";
 
 		$clusterGroup= $this->database->getTable("ClusterGroup");
 		$inserter= new STDbInserter($clusterGroup);
@@ -1386,8 +1382,8 @@ class STUserSession extends STDbSession
 	}
 	function joinUserGroup($user, $group)
 	{
-		STCheck::paramCheck($user, 1, "int", "string");
-		STCheck::paramCheck($group, 2, "int", "string");
+		STCheck::param($user, 0, "int", "string");
+		STCheck::param($group, 1, "int", "string");
 
 		if(is_string($user))
 		{

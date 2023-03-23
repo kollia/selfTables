@@ -57,9 +57,9 @@ class STObjectContainer extends STBaseContainer
 		$this->db= &$container->getDatabase();
 		STBaseContainer::__construct($name);
 	}
-	function createMessages()
+	protected function createMessages(string $language)
 	{
-		if($this->language == "de")
+		if($language == "de")
 		{
 			$this->sInsertAction= "einfuegen";
 			$this->sUpdateAction= "aktualisieren";
@@ -664,11 +664,12 @@ class STObjectContainer extends STBaseContainer
     		return $oGet->getArrayVars;
     	return $oGet->getStringVars;
     }
-	function deleteContainer(&$oGetParam)
+	function deleteQueryContainer(&$oGetParam)
 	{
-		Tag::paramCheck($oGetParam, 1, "STQueryString");
-		Tag::echoDebug("containerChoice", "delete container ".$this->getName()." in object STObjectContainer");
+		STCheck::param($oGetParam, 0, "STQueryString");
+		STCheck::echoDebug("containerChoice", "delete container ".$this->getName()." in object STObjectContainer");
 		$params= $oGetParam->getArrayVars();
+		
 		if(isset($params["stget"]["container"]))
 			$container= $params["stget"]["container"];
 		else
@@ -679,7 +680,7 @@ class STObjectContainer extends STBaseContainer
 		 	return false;
 		}
 
-		STBaseContainer::deleteContainer($oGetParam);
+		STBaseContainer::deleteQueryContainer($oGetParam);
 		$params= $oGetParam->getArrayVars();
 		if(isset($params["stget"]["container"]))
 			$container= $params["stget"]["container"];
@@ -694,7 +695,7 @@ class STObjectContainer extends STBaseContainer
 		$result= $container->hasDynamicAccessToOneEntry();
 		if($result)
 		{
-			return $container->deleteContainer($oGetParam);
+			return $container->deleteQueryContainer($oGetParam);
 		}
 		return true;
 
@@ -806,7 +807,7 @@ class STObjectContainer extends STBaseContainer
 	{
 		Tag::paramCheck($externSideCreator, 1, "STSiteCreator");
 		
-		$this->createMessages();
+		$this->createMessages($this->language);
 		$this->initContainer();
 		$this->oExternSideCreator= &$externSideCreator;
 		$params= new STQueryString();
@@ -1172,7 +1173,7 @@ class STObjectContainer extends STBaseContainer
 					exit;
 				}
 				 */
-			 	$this->deleteContainer($get);
+			 	$this->deleteQueryContainer($query);
 			}else
 			{
 				$query->update("stget[action]=".STLIST);

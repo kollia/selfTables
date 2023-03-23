@@ -295,7 +295,7 @@ class STDbSelector extends STDbTable implements STContainerTempl
 		        if( typeof($where, "STDbWhere") &&
 		            $where->sDbName == ""         )
 		        {
-		            $where->setDatabase($this->db->getDatabaseName());
+		            $where->setDatabase($this->db);
 		        }		        
 		    }
 		    STDbTable::where($where, "and");
@@ -315,7 +315,7 @@ class STDbSelector extends STDbTable implements STContainerTempl
 		            if( typeof($where, "STDbWhere") &&
 		                $where->sDbName == ""         )
 		            {
-		                $where->setDatabase($this->db->getDatabaseName());
+		                $where->setDatabase($this->db);
 		            }
 		    }
 		    STDbTable::where($where, "or");

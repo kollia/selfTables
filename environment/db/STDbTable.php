@@ -1801,8 +1801,6 @@ class STDbTable extends STBaseTable
         {
             foreach($field['content'] as $column)
             {
-                echo __FILE__.__LINE__."<br>";
-                st_print_r($field,2);
                 if( $column != "*" &&
                     !STBaseTable::validColumnContent($column, $abCorrect, $bAlias) )
                 {
