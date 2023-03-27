@@ -1595,7 +1595,7 @@ class STItemBox extends STBaseBox
 			$tr->add($td);
 		$this->add($tr);
 				
-		$message= $this->msg->getAktualMessageId();
+		$message= $this->msg->getMessageId();
 
 		$oCallbackClass= new STCallbackClass($this->asDBTable, $this->aResult);
 		$oCallbackClass->before= false;
@@ -2622,9 +2622,9 @@ class STItemBox extends STBaseBox
 					$tr->add($td);
             	$this->add($tr);
 				$oCallbackClass->before= false;
-				$oCallbackClass->MessageId= $this->msg->getAktualMessageId();
+				$oCallbackClass->MessageId= $this->msg->getMessageId();
 				$error= $this->makeCallback(STDELETE, $oCallbackClass, STDELETE, 0);
-				return $this->msg->getAktualMessageId();
+				return $this->msg->getMessageId();
 			}
 
 			// delete all uploadet Files, if exist
@@ -2652,7 +2652,7 @@ class STItemBox extends STBaseBox
 				$this->setSqlError(null);
 			
 			$oCallbackClass->before= false;
-			$oCallbackClass->MessageId= $this->msg->getAktualMessageId();
+			$oCallbackClass->MessageId= $this->msg->getMessageId();
 			$error= $this->makeCallback(STDELETE, $oCallbackClass, STDELETE, 0);
 			
 			$tr= new RowTag();
@@ -2660,7 +2660,7 @@ class STItemBox extends STBaseBox
 					$td->add($this->msg->getMessageEndScript());
 				$tr->add($td);
            	$this->add($tr);
-			return $this->msg->getAktualMessageId();
+			return $this->msg->getMessageId();
 		}
 }
 

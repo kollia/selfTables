@@ -411,7 +411,7 @@ class STSiteCreator extends HtmlTag
 			}
 			
 			$msgHandling= $this->createMessages($onError);
-			$result= $msgHandling->getAktualMessageId();
+			$result= $msgHandling->getMessageId();
 			if($result=="NOERROR")
 			{
 			    $result= $this->tableContainer->execute($this, $onError);

@@ -80,9 +80,9 @@ class STBaseBox extends TableTag
 		{
 			$this->msg->onOKGotoUrl($url);
 		}
-		function getAktualMessageId()
+		function getMessageId()
 		{
-			return $this->msg->getAktualMessageId();
+			return $this->msg->getMessageId();
 		}
 		function setMessageContent($messageId, $messageString)
 		{

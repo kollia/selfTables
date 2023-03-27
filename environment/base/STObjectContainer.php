@@ -36,11 +36,6 @@ class STObjectContainer extends STBaseContainer
 	var $oCurrentListTable;
 	var $bDisblayedTable= false;
 
-		var	$sInsertAction;
-		var	$sUpdateAction;
-		var	$sDeleteAction;
-		var $sNewEntry;
-		
 	/**
 	 * array with STSearchBox objects
 	 * to search inside database
@@ -61,21 +56,21 @@ class STObjectContainer extends STBaseContainer
 	{
 		if($language == "de")
 		{
-			$this->sInsertAction= "einfuegen";
-			$this->sUpdateAction= "aktualisieren";
-			$this->sDeleteAction= "loeschen";
-			$this->sNewEntry= " neuer Eintrag ";
-			//$this->msg->setMessageContent("DELETE_QUESTION", "wollen Sie diesen Eintrag wirklich löschen?");
-			$this->sDeleteQuestion= "wollen Sie diesen Eintrag wirklich löschen?";
+		    $this->oMsg->setMessageContent("INSERT", "einfuegen");
+		    $this->oMsg->setMessageContent("UPDATE", "aktualisierten");
+		    $this->oMsg->setMessageContent("DELETE", "loeschen");
+		    $this->oMsg->setMessageContent("newENTRY", " neuer Eintrag");
+		    $this->oMsg->setMessageContent("DELETE_QUESTION", "wollen Sie diesen Eintrag wirklich löschen?");		    
+		    $this->oMsg->setMessageContent("NOPERMISSION", "Sie haben keine Berechtigung um ein '+action+' durchzuführen!");
 			
 		}else // otherwise language have to be english "en"
 		{
-			$this->sInsertAction= "insert";
-			$this->sUpdateAction= "update";
-			$this->sDeleteAction= "delete";
-			$this->sNewEntry= " new Entry ";
-			//$this->msg->setMessageContent("DELETE_QUESTION", "do you want to delete this entry?");
-			$this->sDeleteQuestion= "do you want to delete this entry?";
+			$this->oMsg->setMessageContent("INSERT", "insert");
+			$this->oMsg->setMessageContent("UPDATE", "update");
+			$this->oMsg->setMessageContent("DELETE", "delete");
+			$this->oMsg->setMessageContent("newENTRY", " new Entry");
+			$this->oMsg->setMessageContent("DELETE_QUESTION", "do you want to delete this entry?");
+			$this->oMsg->setMessageContent("NOPERMISSION", "you have no permission to '+action+' this entry!");
 		}
 	}
 	function describeTables($description)
@@ -1040,7 +1035,7 @@ class STObjectContainer extends STBaseContainer
     						$function->add("if(action=='delete')");
 						if($bDelete)
 						{
-							$function->add("    bOk= confirm('".$this->sDeleteQuestion."');");							
+							$function->add("    bOk= confirm('".$this->oMsg->getMessageContent("DELETE_QUESTION")."');");							
 						}
 						if(!$bUpdate)
 						    $function->add("else if(action=='update')");
@@ -1049,7 +1044,7 @@ class STObjectContainer extends STBaseContainer
 						{
 						    $function->add("{");
 						    $function->add("bOk= false;");
-						    $function->add("alert('you have no permission to '+action+' this entry!');");
+						    $function->add("alert('".$this->oMsg->getMessageContent("NOPERMISSION")."');");
 						    $function->add("}");
 						}
 							$function->add("if(bOk)");
@@ -1067,19 +1062,17 @@ class STObjectContainer extends STBaseContainer
 					and
 					$updateAccess		)
 				{
-					$list->select($PK, $this->sUpdateAction);
-					$list->link($this->sUpdateAction, "javascript:selftable_updateDelete('update',$value);");
-					//$list->setAsLinkParam($this->sUpdateAction, "id");
-					//$list->setParamOnActivate(STUPDATE, "stget[action]=update", $this->sUpdateAction);
+				    $sUpdateLink= $this->oMsg->getMessageContent("UPDATE");
+					$list->select($PK, $sUpdateLink);
+					$list->link($sUpdateLink, "javascript:selftable_updateDelete('update',$value);");
 				}
 				if(	$table->canDelete()
 					and
 					$deleteAccess		)
 				{
-					$list->select($PK, $this->sDeleteAction);
-					$list->link($this->sDeleteAction, "javascript:selftable_updateDelete('delete',$value);");
-					//$list->setAsLinkParam($this->sDeleteAction, "id");
-					//$list->setParamOnActivate(UPDATE, "stget[action]=delete", $this->sDeleteAction);
+				    $sDeleteLink= $this->oMsg->getMessageContent("DELETE");
+					$list->select($PK, $sDeleteLink);
+					$list->link($sDeleteLink, "javascript:selftable_updateDelete('delete',$value);");
 				}
 			}
 			$this->setAllMessagesContent(STLIST, $list);
@@ -1099,7 +1092,7 @@ class STObjectContainer extends STBaseContainer
 
 				$center= new CenterTag();
 					$button= new ButtonTag("newEntry");
-						$button->add($this->sNewEntry);
+						$button->add($this->oMsg->getMessageContent("newENTRY"));
 						$button->onClick("javascript:location='".$this->oExternSideCreator->getStartPage().$params."'");
 					$center->addObj($button);
 					$center->add(br());
@@ -1186,7 +1179,7 @@ class STObjectContainer extends STBaseContainer
 			{
 				$box->table($table);
 				$this->setAllMessagesContent(STINSERT, $box);
-				$head= &$this->getHead($this->sNewEntry." in ".$table->getDisplayName());
+				$head= &$this->getHead($this->oMsg->getMessageContent("newENTRY")." in ".$table->getDisplayName());
 				$result= $box->insert();
 			}else
 			{
@@ -1335,8 +1328,8 @@ class STObjectContainer extends STBaseContainer
   				{
   				    if($checked[STADMIN])
   					{
-  					    $this->oCurrentListTable->callback($this->sUpdateAction, "st_list_table_changing_access", STLIST);
-  					    $this->oCurrentListTable->callback($this->sDeleteAction, "st_list_table_changing_access", STLIST);
+  					    $this->oCurrentListTable->callback($this->oMsg->getMessageContent("UPDATE"), "st_list_table_changing_access", STLIST);
+  					    $this->oCurrentListTable->callback($this->oMsg->getMessageContent("DELETE"), "st_list_table_changing_access", STLIST);
   					}else
   					{
   					    $table->doUpdate(false);
@@ -1345,14 +1338,14 @@ class STObjectContainer extends STBaseContainer
   				}elseif(isset($table->sAcessClusterColumn[STUPDATE]))
   				{
   				    if($checked[STUPDATE])
-  					    $this->oCurrentListTable->callback($this->sUpdateAction, "st_list_table_changing_access", STLIST);
+  					    $this->oCurrentListTable->callback($this->oMsg->getMessageContent("UPDATE"), "st_list_table_changing_access", STLIST);
   					else
   					    $table->doUpdate(false);
 
   				}elseif(isset($table->sAcessClusterColumn[STDELETE]))
   				{
   				    if($checked[STDELETE])
-  					    $this->oCurrentListTable->callback($this->sDeleteAction, "st_list_table_changing_access", STLIST);
+  					    $this->oCurrentListTable->callback($this->oMsg->getMessageContent("DELETE"), "st_list_table_changing_access", STLIST);
   					else
   					    $table->doDelete(false);
   				}

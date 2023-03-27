@@ -4,7 +4,7 @@
 interface STMessagHandlingInterface
 {
 		public function onOKGotoUrl();
-		public function getAktualMessageId()
+		public function getMessageId()
 		public function setMessageContent($messageId, $messageString)
 }*/
 
@@ -113,9 +113,9 @@ class STMessageHandling // implements STMessageHandlingInterface <- ab version 5
   			exit;
   		}
 	}
-		function getAktualMessageId()
+		function getMessageId()
 		{
-			Tag::echoDebug("STMessageHandling", "getAktualMessageId: ".$this->messageId);
+			Tag::echoDebug("STMessageHandling", "getMessageId: ".$this->messageId);
 			return $this->messageId;
 		}
 		/*protected*/function addScripts($mixedScripts, &$scriptArray, &$javaScript)

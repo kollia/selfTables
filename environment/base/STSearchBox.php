@@ -154,7 +154,7 @@ class STSearchBox extends STCategoryGroup
 						$tr->add($td);
 					$this->add($tr);
 				$this->aSearched[$table->getName()]= $value;
-//					return $this->oMsg->getAktualMessageId();
+//					return $this->oMsg->getMessageId();
 			}
 			
 			if(!$this->bDoneDisplay)
@@ -172,7 +172,7 @@ class STSearchBox extends STCategoryGroup
 					$this->add($this->oMsg->getMessageEndScript());
 				}				
 			}	
-			$messageID= $this->oMsg->getAktualMessageId();
+			$messageID= $this->oMsg->getMessageId();
 			if($messageID=="EMPTY_RESULT@")
 				$this->oWhere= null;		
 			return $messageID;
@@ -224,7 +224,7 @@ class STSearchBox extends STCategoryGroup
 				{
 					$this->oMsg->clearMessageId();
 					$this->search($table, $inColumns, $value, $key+1);
-					if($this->oMsg->getAktualMessageId()!="NOERROR")
+					if($this->oMsg->getMessageId()!="NOERROR")
 						return true;// mindestens eine Tabelle wurde bearbeitet
 				}
 			}else

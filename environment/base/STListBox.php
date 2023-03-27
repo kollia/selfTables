@@ -1821,7 +1821,7 @@ class STListBox extends STBaseBox
 		{
 			global $HTTP_POST_VARS;
 
-			$error= $this->msg->getAktualMessageId();
+			$error= $this->msg->getMessageId();
 			if(	isset($HTTP_POST_VARS["stlisttable_make"])
 				and
 				$error==="NOERROR"						)
@@ -2176,7 +2176,7 @@ class STListBox extends STBaseBox
 							exit;
 						}
 					}
-					//return $this->msg->getAktualMessageId();
+					//return $this->msg->getMessageId();
 				}
 			}
 		}
@@ -2290,7 +2290,7 @@ class STListBox extends STBaseBox
 						$indexTd->addObj($this->msg->getMessageEndScript());
 					$indexTr->addObj($indexTd);
 				$this->addObj($indexTr);
-				return $this->msg->getAktualMessageId();
+				return $this->msg->getMessageId();
 			}
 			$obj= $this->SqlResult;
 			//$defaultAddress= $this->address;
@@ -2307,7 +2307,7 @@ class STListBox extends STBaseBox
 				// inerhalb der execute() Methode erledigt
 				//$this->msg->setMessageId("EMPTY_RESULT");
 				//$this->add($this->msg->getMessageEndScript());
-				return $this->msg->getAktualMessageId();
+				return $this->msg->getMessageId();
 			}
 
 			/******************************************************
@@ -2346,7 +2346,7 @@ class STListBox extends STBaseBox
 			$this->add($tr);
 			//STCheck::warning(1,"","");
 			
-			return $this->msg->getAktualMessageId();
+			return $this->msg->getMessageId();
   	}
 		function form($buttonText, $formName, $action= null)
 		{

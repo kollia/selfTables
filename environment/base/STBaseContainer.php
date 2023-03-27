@@ -1153,15 +1153,6 @@ class STBaseContainer extends BodyTag implements STContainerTempl
 									$get_vars["action"] == STCHOOSE	)	) ||
 							typeof($this, "STFrameContainer")	)
 						{
-							// alex 16/06/2005: wenn der action-Parameter auf list steht
-							//					kann es auch noch ein Update sein
-							//					und der Backbutton soll nicht auf Die Hauptauswahl verweisen
-							/*if(isset($get_vars["link"][$this->sUpdateAction]))
-							{
-								$get->getParamString(STDELETE, "stget[link][".$this->sUpdateAction."]");
-								$sBackButtonName= $this->sBackButton;
-							}else
-							{*/
 							if(STCheck::isDebug())
 							{
 								Tag::echoDebug("containerChoice", "action is STLIST/STCHOOSE or container is an STFrameContainer,");
