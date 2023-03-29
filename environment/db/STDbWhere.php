@@ -19,6 +19,12 @@ class STDbWhere
      * table object
      */
     private $oTable= null;
+    /**
+     * whether was checked for correct
+     * table names
+     * @var boolean
+     */
+    private $bTableNamesChecked= false;
 	/**
 	 * if the clausel will be add to an other table,
 	 * use this operator
@@ -94,22 +100,31 @@ class STDbWhere
 			$this->table($tableName);
 		}
 	}
-	public function setDatabase($db)
+	public function setDatabase($db, bool $bOverwrite= false)
 	{
 	    STCheck::param($db, 0, "STDatabase", "STDbTable");
 	    
-	    if(typeof($db, "STDatabase"))
+	    if( !isset($this->oDb) ||
+	        $bOverwrite            )
 	    {
-	        $this->oDb= $db;
-	        $this->sDbName= $db->getDatabaseName();
-	    }else if(typeof($db, "STDbTable"))
+    	    if(typeof($db, "STDatabase"))
+    	    {
+    	        $this->oDb= $db;
+    	        $this->sDbName= $db->getDatabaseName();
+    	    }else if(typeof($db, "STDbTable"))
+    	    {
+    	        $this->oDb= $db->getDatabase();
+    	        $this->table($db);
+    	        $this->sDbName= $this->oDb->getDatabaseName();
+    	    }else
+    	        STCheck::alert(1, "STDbWhere::setDatabase()", "parameter is no Database or Table");
+    	    STCheck::echoDebug("db.statements.where", "set database '".$this->sDbName."' for where clause");
+	    }
+	    foreach($this->array as $key=>$content)
 	    {
-	        $this->oDb= $db->getDatabase();
-	        $this->table($db);
-	        $this->sDbName= $this->oDb->getDatabaseName();
-	    }else
-	        STCheck::alert(1, "STDbWhere::setDatabase()", "parameter is no Database or Table");
-	    STCheck::echoDebug("db.statements.where", "set database '".$this->sDbName."' for where clause");
+	        if(typeof($content, "STDbWhere"))
+	            $this->array[$key]->setDatabase($db, $bOverwrite);
+	    }
 	}
 	function isModified()
 	{
@@ -277,6 +292,7 @@ class STDbWhere
 				return false;
 			}
 			unset($this->array);
+			$this->bTableNamesChecked= false;
 		   	$this->array[]= $statement;
 			return true;
 		}
@@ -298,6 +314,7 @@ class STDbWhere
 			}
 			if(count($this->array))
 				$this->array[]= " and ";
+			$this->bTableNamesChecked= false;
 		   	$this->array[]= $statement;
 			return true;
 		}
@@ -312,6 +329,7 @@ class STDbWhere
 			}
 			if(count($this->array))
 				$this->array[]= " or ";
+			$this->bTableNamesChecked= false;
 		   	$this->array[]= $statement;
 			return true;
 		}
@@ -326,8 +344,6 @@ class STDbWhere
 		public function writeWhereCondition()
 		{
 		    $this->bWriteOn= false;
-		    echo __FILE__.__LINE__."<br>";
-		    st_print_r($this,20);
 		}
 		private function addValues($array)
 		{
@@ -446,11 +462,50 @@ class STDbWhere
 			}
 			return true;
 		}
-		function getSettingValue($column, $table= "") : array
+		public function getSettingValue(string $column, string $table= "") : array
 		{
+		    if($table == "")
+		        $table= $this->sForTable;
+		    if(isset($this->oDb))
+		    {
+		        $table= $this->oDb->getTableName($table);
+		        $this->checkNewTableNames();
+		    }
 		    if(isset($this->aValues[$table][$column]))
 			    return $this->aValues[$table][$column];
 		    return array();
+		}
+		/**
+		 * check whether defined the original
+		 * table names
+		 * 
+		 * @return bool whether was an table name changed
+		 */
+		private function checkNewTableNames() : bool
+		{
+		    if($this->bTableNamesChecked)
+		        return false;
+		    if(!isset($this->oDb))
+		        return false;// cannot check, no DB set
+	        $bNew= false;
+	        $aNewArray= array();
+	        $aNewName= $this->oDb->getTableName($this->sForTable);
+	        if($this->sForTable != $aNewName)
+	        {
+	            $this->sForTable= $aNewName;
+	            $bNew= true;
+	        }
+	        foreach($this->aValues as $tabName=>$columnContent)
+	        {
+	            $newName= $this->oDb->getTableName($tabName);
+	            $aNewArray[$newName]= $columnContent;
+	            if($tabName != $newName)
+	                $bNew= true;
+	        }
+	        $this->bTableNamesChecked= true;
+	        if($bNew)
+	            $this->aValues= $aNewArray;
+		    return $bNew;
 		}
 		private function createStringContent(string $content, string $aliasName) : string
 		{

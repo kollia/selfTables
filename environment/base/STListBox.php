@@ -1865,6 +1865,7 @@ class STListBox extends STBaseBox
 					$this->asDBTable->bIsNnTable &&
 					count($aInsert)		    )
 				{
+				    STCheck::echoDebug("db.statemens.insert", "read where clause to fill columns with values");
 				    // check whether user want to insert also some value with STBaseTable::preSelect()
 				    // and also have to be exist some values from where statement
 				    $joinTableName= $this->asDBTable->aNnTableColumn['fks']['join']['table'];
@@ -1878,12 +1879,18 @@ class STListBox extends STBaseBox
 				    $fixTable->modifyQueryLimitation();
 				    $fixWhere= $fixTable->getWhere();
 				    $fks= $useTable->getForeignKeys();
+				    // search for all columns
+				    // wheter exist inside where clause
+				    // any value
 					foreach($useTable->columns as $columnContent)
 					{
 						if(!preg_match("/auto_increment/", $columnContent["flags"]))
 						{
 							if(isset($this->asDBTable->aSetAlso[$columnContent["name"]][STINSERT]))
-							{
+							{// use pre-selection
+							    STCheck::echoDebug("db.statemens.insert", "fill column ".
+							        $columnContent["name"]." with pre-defined value (".
+							        $this->asDBTable->aSetAlso[$columnContent["name"]][STINSERT].")");
 								$nnTableInsert[$columnContent["name"]]= $this->asDBTable->aSetAlso[$columnContent["name"]][STINSERT];
 							}else
 							{
@@ -1893,36 +1900,48 @@ class STListBox extends STBaseBox
 						            {// use joinTable
 						                $whereObj= $joinWhere;
 						                $tableName= $joinTableName;
+						                //echo "use where clause from join table $tableName";
 						                $bDone= 1;
 						            }elseif($bDone == 1)
 						            {// use nnTable
 						                $whereObj= $nnWhere;
 						                $tableName= $nnTableName;
+						                //echo "use where clause from N to N table $tableName";
 						                $bDone= 2;
 						            }else //$bDone == 2
 						            {// use fixTable
 						                $whereObj= $fixWhere;
 						                $tableName= $fixTableName;
+						                //echo "use where clause from fix table $tableName";
 						                $bDone= true;
 						            }
 							        if(isset($whereObj))
 							        {
+							            $fkTableName= "";
 							            $value= array();
-							            if($tableName == $nnTableName)
-							                $value= $whereObj->getSettingValue($columnContent["name"], $tableName);
-							            elseif(isset($fks[$tableName]))
-							            {
-							                foreach($fks[$tableName] as $fields)
+							            // first search whether current column
+							            // exist directly inside where-clause
+							            $value= $whereObj->getSettingValue($columnContent["name"], $nnTableName);
+							            if(empty($value))
+							            {// if not, search for foreign keys
+							                foreach ($fks as $table=>$content)
 							                {
-							                    if($fields['own'] == $columnContent["name"])
-							                    {
-							                        $value= $whereObj->getSettingValue($fields['other'], $tableName);
-							                        break;
-							                    }
+    							                foreach($content as $fields)
+    							                {
+    							                    if($fields['own'] == $columnContent["name"])
+    							                    {
+    							                        $value= $whereObj->getSettingValue($fields['other'], $table);
+    							                        if(!empty($value))
+    							                        {
+    							                            $fkTableName= $table;
+    							                            break 2;
+    							                        }
+    							                    }
+    							                }
 							                }
 							            }
 							             
-        								if(count($value))
+        								if(!empty($value))
         								{
         									$bSetValue= false;
         									foreach($value as $content)
@@ -1935,13 +1954,24 @@ class STListBox extends STBaseBox
         											{
         												$this->msg->setMessageId("NNTABLEINSERT_MUCH@", $columnContent["name"]);
         												return;
-        											}else
-        												$nnTableInsert[$columnContent["name"]]= $content["value"];
+        											}
+        											$nnTableInsert[$columnContent["name"]]= $content["value"];
+        											if(STCheck::isDebug("db.statements.insert"))
+        											{
+            											$msg= "fill column ".$columnContent["name"];
+            											$msg.= " with value (".$content['value'].") from ";
+            											if($fkTableName == "")
+            											    $msg.= "table $nnTableName";
+            											else
+            											    $msg.= "foreign key table $fkTableName";
+            											STCheck::echoDebug("db.statemens.insert", $msg);
+        											}
+        											break 2;
         										}
         									}
         								}
         								
-							        }
+							        }else echo "<br>";
 							    }while($bDone !== true);
 							}
 						}
@@ -1950,6 +1980,7 @@ class STListBox extends STBaseBox
 
 				// if count from $aInsert or $aDelete given
 				// user check or uncheck an box
+				$bOnDbChanged= false;
 				if(count($aInsert) || count($aDelete))
 				{   // $box represent all checked values comming from gui
 				    // $checked all checked inside database
@@ -2003,7 +2034,7 @@ class STListBox extends STBaseBox
 										    if(isset($fks[$joinTableName]))
 										    {
 										        foreach($fks[$joinTableName] as $field)
-    										    {
+										        {
     										        if($field['own'] == $columnContent['name'])
     										            $foreignColumn= $field['other'];
     										    }

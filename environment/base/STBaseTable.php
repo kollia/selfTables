@@ -2382,7 +2382,7 @@ class STBaseTable
 		 	
 			return $this->where($stwhere, "or");
 		}
-		public function where($stwhere, $operator= "")
+		public function where($stwhere, string $operator= "")
 		{
 		 	STCheck::parameter($stwhere, 1, "STDbWhere", "string", "empty(string)", "null");
 		 	STCheck::parameter($operator, 2, "check", $operator === "", $operator == "and", $operator == "or");

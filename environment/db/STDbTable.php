@@ -1684,7 +1684,7 @@ class STDbTable extends STBaseTable
 	    }
 	    return false;
 	}
-	public function where($stwhere, $operator= "")
+	public function where($stwhere, string $operator= "")
 	{
 	    STCheck::param($stwhere, 0, "STDbWhere", "string", "empty(string)", "null");
 	    STCheck::param($operator, 1, "check", 
@@ -1692,12 +1692,8 @@ class STDbTable extends STBaseTable
 	        $operator == "and" ||
 	        $operator == "or", "null string", "and", "or" );
 	    
-	    if( typeof($stwhere, "STDbWhere") &&
-	        $stwhere->sDbName == ""            )
-	    {
-	        $stwhere->setDatabase($this->db);
-	    }
 	    STBaseTable::where($stwhere, $operator);
+	    $this->oWhere->setDatabase($this->db, /*overwrite*/false);
 	}
 	/**
 	 * remove columns if they are not in the database table
