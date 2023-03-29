@@ -2116,7 +2116,7 @@ class STListBox extends STBaseBox
 								}else
 								{
 								    $value= $this->SqlResult[$kChecked][$tableAlias];
-								    $deleter->where("$tableColumn=$value");
+								    $deleter->orWhere("$tableColumn=$value");
 								}
 							}else
 							{

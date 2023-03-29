@@ -34,6 +34,24 @@ class STDbDeleter
 			$stwhere= new STDbWhere($stwhere);
 		$this->oWhere= &$stwhere;
 	}
+	public function orWhere($stwhere)
+	{
+	    STCheck::param($stwhere, 0, "STDbWhere", "string");
+	    
+	    if(isset($this->oWhere))
+	        $this->oWhere->orWhere($stwhere);
+	    else
+	        $this->where($stwhere);
+	}
+	public function andWhere($stwhere)
+	{
+	    STCheck::param($stwhere, 0, "STDbWhere", "string");
+	    
+	    if(isset($this->oWhere))
+	        $this->oWhere->andWhere($stwhere);
+        else
+            $this->where($stwhere);
+	}
 	function execute($onError= onDebugErrorShow)
 	{
 		$db= &$this->table->db;
