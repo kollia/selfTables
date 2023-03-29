@@ -43,7 +43,7 @@ class STClusterGroupAssignment extends STObjectContainer
 	    $nnTable->nnTableCheckboxColumn("Affilation");
 	    $nnTable->select("Group", "Name", "Group");
 	    $nnTable->select("ClusterGroup", "DateCreation", "membership since");
-	    $nnTable->preSelect("DateCreation", "sysdate()");
+	    $nnTable->preSelect("ClusterGroup", "DateCreation", "sysdate()");
 	    $nnTable->setMaxRowSelect(40);
 	    $nnTable->orderBy("Group", "domain");
 	    $nnTable->orderBy("Group", "Name");

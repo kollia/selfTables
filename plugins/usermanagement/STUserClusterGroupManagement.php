@@ -82,8 +82,6 @@ class STUserClusterGroupManagement extends STObjectContainer
 	    
 	    $group= $this->needNnTable("Group", "UserGroup", "User");
 	    $group->setDisplayName("User - Group assignment");
-	    //$clusterGroup= $this->needTable("ClusterGroup");
-	    //$clusterGroup->setDisplayName("");
 	    $this->setFirstTable("Group");
 	       
 	    $project= $this->getTable("Project");
@@ -129,6 +127,7 @@ class STUserClusterGroupManagement extends STObjectContainer
 	    $group->select("Group", "ID", "Permissions");
 	    $group->listCallback("permissionCallback", "Permissions");
 	    $group->select("UserGroup", "DateCreation", "member since");
+	    $group->preselect("UserGroup", "DateCreation", "sysdate()");
 	    $group->orderBy("AccessDomain", "Name");
 	    $group->orderBy("Group", "Name");
 	    $group->setMaxRowSelect(20);

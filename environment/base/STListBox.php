@@ -1748,7 +1748,7 @@ class STListBox extends STBaseBox
 			    }else
 			        $columnName= $isCheck= $this->asDBTable->aNnTableColumn['alias'];
 			        
-		        
+		        $box= array();
 				$checked= array();
 				if(isset($HTTP_POST_VARS[$isCheck]))
 				{
@@ -1840,7 +1840,9 @@ class STListBox extends STBaseBox
 				$showTypes= array_flip($this->showTypes);
 				$isCheck= $showTypes["check"];
 				
-				if(isset($isCheck))
+				$box= array();
+				if( isset($isCheck) &&
+				    isset($HTTP_POST_VARS[$isCheck])    )
 				{
 					$box= $HTTP_POST_VARS[$isCheck];
 					//take checked directly from database
@@ -1886,12 +1888,12 @@ class STListBox extends STBaseBox
 					{
 						if(!preg_match("/auto_increment/", $columnContent["flags"]))
 						{
-							if(isset($this->asDBTable->aSetAlso[$columnContent["name"]][STINSERT]))
+						    if(isset($useTable->aSetAlso[$columnContent["name"]][STINSERT]))
 							{// use pre-selection
 							    STCheck::echoDebug("db.statemens.insert", "fill column ".
 							        $columnContent["name"]." with pre-defined value (".
-							        $this->asDBTable->aSetAlso[$columnContent["name"]][STINSERT].")");
-								$nnTableInsert[$columnContent["name"]]= $this->asDBTable->aSetAlso[$columnContent["name"]][STINSERT];
+							        $useTable->aSetAlso[$columnContent["name"]][STINSERT].")");
+							    $nnTableInsert[$columnContent["name"]]= $useTable->aSetAlso[$columnContent["name"]][STINSERT];
 							}else
 							{
 							    $bDone= false;

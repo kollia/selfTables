@@ -177,8 +177,6 @@ class STSession
 		    session_set_cookie_params( 60*5, '/');		    
     		$bSetSession= session_start();
     		STCheck::end_outputBuffer();
-    		echo __FILE__.__LINE__."<br>";
-    		echo "session started<br>";
 		}
 		
 	    if( STCheck::isDebug("user") ||

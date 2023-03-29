@@ -185,8 +185,6 @@ class STDbSelector extends STDbTable implements STContainerTempl
 		}
 		public function getTableName(string $tableName= null)
 		{
-		    echo __FILE__.__LINE__."<br>";
-		    echo "need table name from ".$this->toString()." but get from ".$this->container->toString()."<br>";
 		    return $this->container->getTableName($tableName);
 		}
 		/**
@@ -485,6 +483,23 @@ class STDbSelector extends STDbTable implements STContainerTempl
 				$this->bClearedByFirstSelect= true;
 			}
 			$this->selectA($tableName, $orgColumn, $alias, $nextLine, $add);
+		}
+		public function preSelect(string $tableName, $columnName, $value= null, $action= null)
+		{
+		    if(!isset($action))
+		        $action= STINSERT;
+		    $tabName= $this->getTableName($tableName);
+		    if($this->Name == $tabName)
+		    {
+		        STDbTable::preSelect($columnName, $value, $action);
+		        return;
+		    }
+		    $table= $this->getTable($tabName);
+		    STCheck::is_error(!isset($table), "first parameter table $tableName does not exist", 2);
+		    if(typeof($table, "STDbSelector"))
+		        $table->preSelect($tabName, $columnName, $value, $action);
+		    else
+		        $table->preSelect($columnName, $value, $action);
 		}
 		public function setNnTable(string $nnTableName, string $fixTableName)
 		{

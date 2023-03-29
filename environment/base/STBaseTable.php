@@ -3344,10 +3344,13 @@ class STBaseTable
 	 * 
 	 * @param string $columnName name of column
 	 * @param string|int $value column content for preselect
-	 * @param string $action for which action (STINSERT or STUPDATE) should used
+	 * @param string $action for which action (STINSERT or STUPDATE) should used (default:STINSERT)
+	 * @param null $unknown not used parameter (for compatibility STDbSelector)
 	 */
-	public function preSelect($columnName, $value, $action= STINSERT)
+	public function preSelect(string $columnName, $value, $action= null, $unknown= null)
 	{
+	    if(!isset($action))
+	        $action= STINSERT;
 	    if(STCheck::isDebug())
 	    {
 	        STCheck::param($columnName, 0, "string");
