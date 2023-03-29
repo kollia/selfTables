@@ -1693,7 +1693,8 @@ class STDbTable extends STBaseTable
 	        $operator == "or", "null string", "and", "or" );
 	    
 	    STBaseTable::where($stwhere, $operator);
-	    $this->oWhere->setDatabase($this->db, /*overwrite*/false);
+	    if(isset($this->oWhere))
+	        $this->oWhere->setDatabase($this->db, /*overwrite*/false);
 	}
 	/**
 	 * remove columns if they are not in the database table
