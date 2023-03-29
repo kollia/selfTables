@@ -1749,17 +1749,11 @@ class STListBox extends STBaseBox
 			        $columnName= $isCheck= $this->asDBTable->aNnTableColumn['alias'];
 			        
 		        $box= array();
-				$checked= array();
-				if(isset($HTTP_POST_VARS[$isCheck]))
+		        $checked= array();
+				foreach($this->SqlResult as $key=>$value)
 				{
-				    $box= $HTTP_POST_VARS[$isCheck];
-					//take checked directly from database
-    				//$checked= $HTTP_POST_VARS["checked_".$isCheck];
-					foreach($this->SqlResult as $key=>$value)
-					{
-						if($value[$isCheck])
-							$checked[$key]= "on";
-					}
+					if(isset($value[$isCheck]))
+						$checked[$key]= "on";
 				}
 				
 				if(count($box) || count($checked))
@@ -1817,7 +1811,7 @@ class STListBox extends STBaseBox
 			}
 			return $checked;
 		}
-		function makeDbChanges($checked)
+		function makeDbChanges($checkedBefore)
 		{
 			global $HTTP_POST_VARS;
 
@@ -1839,37 +1833,38 @@ class STListBox extends STBaseBox
 				}
 				$showTypes= array_flip($this->showTypes);
 				$isCheck= $showTypes["check"];
-				
-				$box= array();
+								
+				$incommingPost= array();
 				if( isset($isCheck) &&
 				    isset($HTTP_POST_VARS[$isCheck])    )
 				{
-					$box= $HTTP_POST_VARS[$isCheck];
+					$incommingPost= $HTTP_POST_VARS[$isCheck];
 					//take checked directly from database
 					//(incomming parameter)
     				//$checked= $HTTP_POST_VARS["checked_".$isCheck];
 				}
 				$aInsert= array();
 				$aDelete= array();
-				// $box represent all checked values comming from gui
-				// $checked all checked inside database
-				foreach($box as $key=>$value)
+				// $incommingPost represent all checked values comming from gui
+				// $checkedBefore all checked inside database
+				foreach($incommingPost as $key=>$value)
 				{
-				    if(!isset($checked[$key]))
+				    if(!isset($checkedBefore[$key]))
 				        $aInsert[$key]= $value;
 				}
-				foreach($checked as $key=>$value)
+				foreach($checkedBefore as $key=>$value)
 				{
-				    if(!isset($box[$key]))
+				    if(!isset($incommingPost[$key]))
 				        $aDelete[$key]= $value;
 				}
 				if(	!is_string($this->insertStatement) &&
 					$this->asDBTable->bIsNnTable &&
 					count($aInsert)		    )
 				{
-				    STCheck::echoDebug("db.statemens.insert", "read where clause to fill columns with values");
 				    // check whether user want to insert also some value with STBaseTable::preSelect()
 				    // and also have to be exist some values from where statement
+				    STCheck::echoDebug("db.statemens.insert", "read where clause to fill columns with values");
+				    
 				    $joinTableName= $this->asDBTable->aNnTableColumn['fks']['join']['table'];
 				    $this->asDBTable->modifyQueryLimitation();
 				    $joinWhere= $this->asDBTable->getWhere();
@@ -1984,9 +1979,7 @@ class STListBox extends STBaseBox
 				// user check or uncheck an box
 				$bOnDbChanged= false;
 				if(count($aInsert) || count($aDelete))
-				{   // $box represent all checked values comming from gui
-				    // $checked all checked inside database
-					
+				{
 				    $bInsert= false;
 				    $bDelete= false;
 					if($this->asDBTable->bIsNnTable)
@@ -2160,9 +2153,9 @@ class STListBox extends STBaseBox
 				}
 
 				//st_print_r($this->SqlResult,2);
-				if(!$bOnDbChanged)
-					$this->msg->setMessageId("NO_CHANGING");
-				else
+				if($bOnDbChanged)
+	//				$this->msg->setMessageId("NO_CHANGING");
+	//			else
 				{
 					if($this->msg->isDefOKUrl())
 						$this->add($this->msg->getMessageEndScript());
