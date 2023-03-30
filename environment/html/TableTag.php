@@ -54,6 +54,10 @@ class ColumnTag extends Tag
 		{
 		    $this->insertAttribute("nowrap", "nowrap");
 		}
+		public function showLine(int $count= 1)
+		{
+		    Tag::showLine($count);
+		}
 }
 
 class RowTag extends Tag
@@ -92,6 +96,17 @@ class RowTag extends Tag
 		function bgcolor($value)
 		{
 			$this->insertAttribute("bgcolor", $value);
+		}
+		public function showLine(int $count= 1)
+		{
+		    $lines= stTools::getErrorTrace(1, $count);
+		    $str= "";
+		    foreach ($lines as $line)
+		        $str.= "$line<br />";
+	        $str= substr($str, 0, -6);
+		    $deb_col= new ColumnTag();
+		    $deb_col->add($str);
+		    $this->add($deb_col);
 		}
 }
 
@@ -139,6 +154,19 @@ class TableTag extends Tag
 		function cellpadding($value)
 		{
 			$this->insertAttribute("cellpadding", $value);
+		}
+		public function showLine(int $count= 1)
+		{
+		    $lines= stTools::getErrorTrace(1, $count);
+		    $str= "";
+		    foreach ($lines as $line)
+		        $str.= "$line<br />";
+		    $str= substr($str, 0, -6);
+		    $deb_row= new RowTag();
+		    $deb_col= new ColumnTag();
+		    $deb_col->add($str);
+		    $deb_row->add($deb_col);
+		    $this->add($deb_row);
 		}
 }
 ?>

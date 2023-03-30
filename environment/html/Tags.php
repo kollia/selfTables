@@ -249,7 +249,16 @@ class Tag extends STCheck
 			}
 			$this->inherit= &$inherit;
 		}
-		function add($tag)
+		public function showLine()
+		{
+		    $lines= stTools::getErrorTrace(1, $count);
+		    $str= "";
+		    foreach ($lines as $line)
+		        $str.= "$line<br />";
+	        $str= substr($str, 0, -6);
+	        $this->add($line[0]);
+		}
+		public function add($tag)
 		{//echo get_class($tag)."<br />";
 			$showWarning= false;
 			if(1)
@@ -260,20 +269,20 @@ class Tag extends STCheck
 						and
 						!typeof($tag, "FormTag", "null")	)	)
 				{
-					STCheck::is_warning(1, "Tag::add()", "in TableTag should be only insert an RowTag");
+					STCheck::is_warning(1, "Tag::add()", "in TableTag should be only insert an RowTag", 1);
 					$showWarning= true;
 				}
 				if(	typeof($this, "RowTag")
 					and
 					!typeof($tag, "ColumnTag", "null")	)
 				{
-					STCheck::is_warning(1, "Tag::add()", "in RowTag should be only insert an ColumnTag");
+					STCheck::is_warning(1, "Tag::add()", "in RowTag should be only insert an ColumnTag", 1);
 					$showWarning= true;
 				}
 			}
 			$this->addObj($tag, $showWarning);
-		}
-		function addObj(&$tag, $showWarning= false)
+		}		
+		public function addObj(&$tag, $showWarning= false)
 		{
 			if(	Tag::isDebug()
 				and

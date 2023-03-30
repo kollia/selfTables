@@ -78,12 +78,20 @@ function st_print_r($value, $deep=1, $space= 0, $bFirst= true)
 	else
 		echo $value;
 }
+function showLine(int $count= 1)
+{
+    $lines= stTools::getErrorTrace(1, $count);
+    foreach ($lines as $line)
+        echo $line."<br />";
+}
 function showErrorTrace($from= 0, $much= -3)
 {
 	if(!phpVersionNeed("4.3.0"))
 		return;
-	$from++; // damit der n�chste Aufruf  nicht angezeigt wird
-	stTools::showErrorTrace($from, $much);
+	$from++; // do not show first call of next method
+	$backtrace= stTools::getErrorTrace($from, $much);
+	foreach($backtrace as $line)
+	    echo "$line<br />";
 }
 function printPassword($password, $placeholder= "*")
 {
@@ -343,14 +351,19 @@ function phpVersionNeed($needVersion, $functionName= null)
 
 class stTools
 {
-	public static function showErrorTrace($from= 0, $much= -3)
+	public static function getErrorTrace($from= 0, $much= -3) : array
     {
+        global $_dbselftable_root;
+        
+        $aRv= array();
+		$split= preg_split("|[/\\\\]|", $_dbselftable_root);
+		$nopath_len= strlen($_dbselftable_root) - strlen($split[count($split)-1]);
 		$backTrace= debug_backtrace();
-
         foreach($backTrace as $function)
         {
 			if($from<1)
 			{
+			    $line= "";
 				$sFunc= "function";
     			if(	isset($function["function"]) &&
     				isset($function["class"]) &&
@@ -360,14 +373,14 @@ class stTools
 					$function["class"]= "";
 					$function["type"]= "";
 				}
-                echo "<b>$sFunc</b> ";
+                $line.= "<b>$sFunc</b> ";
                 if(isset($function["class"]))
-                	echo $function["class"];
+                	$line.= $function["class"];
                 if(isset($function["type"]))
-                	echo $function["type"];
+                	$line.= $function["type"];
                 if(isset($function["function"]))
-                	echo $function["function"];
-                echo "<b>(</b>";
+                	$line.= $function["function"];
+                $line.= "<b>(</b>";
                 $params= "";
                 foreach($function["args"] as $param)
                 {
@@ -380,25 +393,28 @@ class stTools
                     elseif(is_array($param))
                             $params.= "array(), ";
                 }
-                echo substr($params, 0, strlen($params)-2)."<b>)</b>";
-                echo " <b>file</b> ";
+                $line.= substr($params, 0, strlen($params)-2)."<b>)</b>";
+                $line.= " <b>file</b> ";
                 if(isset($function["file"]))
-                    echo $function["file"];
-                else
-                    echo "no file";
+                {
+                    $file= substr($function["file"], $nopath_len);
+                    $line.= ".../$file";
+                }else
+                    $line.= "no file";
                 
-                echo " <b>line:</b>";
+                $line.= " <b>line:</b>";
                 if(isset($function["line"]))
-                    echo $function["line"];
+                    $line.= $function["line"];
                 else
-                    echo "no line";
-                echo "<br />";
+                    $line.= "no line";
+                $aRv[]= $line;
 				--$much;
 				if($much==0)
 					break;
 			}
 			--$from;
         }
+        return $aRv;
     }
 
     static function getPlaceholdPassword($password, $placeholder= "*", $showPWD= false)

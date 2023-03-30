@@ -211,6 +211,7 @@
 	////////////////////////////////////////////
 		//$client_root=				$_SERVER['DOCUMENT_ROOT'];
 		$client_root=				"/";
+		$_dbselftable_root=         __DIR__;
 		$_stenvironmenttools_path=	__DIR__."/environment";
 		$_stcmstools_path=			__DIR__."/plugins";
 		$_defaultScripts=			$client_root."/defaultScripts/";
