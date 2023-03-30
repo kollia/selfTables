@@ -99,7 +99,7 @@ class RowTag extends Tag
 		}
 		public function showLine(int $count= 1)
 		{
-		    $lines= stTools::getErrorTrace(1, $count);
+		    $lines= stTools::getErrorTrace(2, $count);
 		    $str= "";
 		    foreach ($lines as $line)
 		        $str.= "$line<br />";
@@ -157,7 +157,7 @@ class TableTag extends Tag
 		}
 		public function showLine(int $count= 1)
 		{
-		    $lines= stTools::getErrorTrace(1, $count);
+		    $lines= stTools::getErrorTrace(2, $count);
 		    $str= "";
 		    foreach ($lines as $line)
 		        $str.= "$line<br />";

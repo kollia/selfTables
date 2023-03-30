@@ -80,7 +80,7 @@ function st_print_r($value, $deep=1, $space= 0, $bFirst= true)
 }
 function showLine(int $count= 1)
 {
-    $lines= stTools::getErrorTrace(1, $count);
+    $lines= stTools::getErrorTrace(2, $count);
     foreach ($lines as $line)
         echo $line."<br />";
 }
@@ -351,7 +351,7 @@ function phpVersionNeed($needVersion, $functionName= null)
 
 class stTools
 {
-	public static function getErrorTrace($from= 0, $much= -3) : array
+	public static function getErrorTrace(int $from= 0, int $much= -3) : array
     {
         global $_dbselftable_root;
         
@@ -359,6 +359,9 @@ class stTools
 		$split= preg_split("|[/\\\\]|", $_dbselftable_root);
 		$nopath_len= strlen($_dbselftable_root) - strlen($split[count($split)-1]);
 		$backTrace= debug_backtrace();
+		$nTrace= count($backTrace);
+		if($nTrace <= $from)
+		    $from= $nTrace-1;
         foreach($backTrace as $function)
         {
 			if($from<1)
