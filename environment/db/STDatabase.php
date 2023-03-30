@@ -548,7 +548,7 @@ abstract class STDatabase extends STObjectContainer
 				            {
         				        $bExecuteDb= false;
         				        $inClassFunction= "db.test";
-        				        //showErrorTrace();
+        				        //showBackTrace();
 				            }
 				        }
 				    }
@@ -594,7 +594,7 @@ abstract class STDatabase extends STObjectContainer
     			if(phpVersionNeed("4.3.0", "debug_backtrace()"))
     			{
     			    echo "<br>";
-    				showErrorTrace(1);
+    				showBackTrace(1);
     				
     			}
     			if( $onError==onErrorStop )
@@ -1301,7 +1301,7 @@ abstract class STDatabase extends STObjectContainer
 				echo "<b>[</b>db.statements.aliases<b>]</b> need tables:<br /><pre>";
 				//print_r($aliasTables,3,24);
 				if($oTable->getName()=="MUCluster")
-				    showErrorTrace();
+				    showBackTrace();
 				echo "</pre><b>[</b>db.statements.aliases<b>]</b>";
 				echo " end of function <b>getAliases()</b><br /><br />";
 			}
@@ -1595,7 +1595,7 @@ abstract class STDatabase extends STObjectContainer
 		$aFlipNeeded= array_flip($aNeededTables);
 		$structure= $this->getTableStructure($container);
 		echo __FILE__.__LINE__."<br>";st_print_r($aNeededTables);
-		showErrorTrace();
+		showBackTrace();
 		$sFirstStructTable= key($structure);
 
 		$before= false;

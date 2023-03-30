@@ -301,7 +301,7 @@ class STBaseTable
 	        if(STCheck::isDebug("table"))
 	        {
 	            echo "<br /><br /><br /><br /><br />";
-	            //showErrorTrace();
+	            //showBackTrace();
 	            echo "<hr color='lightblue' />";
 	            STCheck::echoDebug("table", "clone STBaseTable::content from ID:[$oldID] to $this");
 	        }
@@ -755,7 +755,7 @@ class STBaseTable
 	    }
 	    echo "use limitation link set before<br>";
 		echo "depricated method never testet<br>";
-	    showErrorTrace();
+	    showBackTrace();
 		$this->sDeleteLimitation= "older";
 	}
 	public function getDeleteLimitationOrder()
@@ -1060,7 +1060,7 @@ class STBaseTable
 				{
 					echo "###Error: in table $toTableName is no primary key set<br />";
 					echo "          pleas fill in the 3 parameter (\$otherColumn) in method foreignKey()";
-					showErrorTrace();
+					showBackTrace();
 					exit;
 				}
 			}

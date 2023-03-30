@@ -443,7 +443,7 @@ class STBaseContainer extends BodyTag implements STContainerTempl
                 echo __FILE__.__LINE__."<br>";
                 echo "method STBaseContainer::create() shouldn't called from $currentObject<br />";
                 echo "  <b>WARNING</b> --------------------------------------------------------------------------------------- <b>WARNING</b><br />";
-                showErrorTrace();
+                showBackTrace();
             }
             // this function is only a hook for this template-pattern
             // and startig the creation in the initContainer/execute
@@ -669,7 +669,7 @@ class STBaseContainer extends BodyTag implements STContainerTempl
     		echo "              or immediately in index file<br>";
     		STCheck::echoSpace($space);
     		echo "<b>WARNING</b> --------------------------------------------------------------------------------------- <b>WARNING</b><br />";
-    		showErrorTrace();
+    		showBackTrace();
 		}
 		$containerObj= new $className($containerName, $fromContainer);
 		return $containerObj;

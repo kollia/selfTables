@@ -694,7 +694,7 @@ class STSession
 	        if(STCheck::isDebug("user"))
 	        {
     	        STCheck::echoDebug("user", "cannot write null cluster into SESSION");
-    	        showErrorTrace();
+    	        showBackTrace();
 	        }
 	        return;
 	    }

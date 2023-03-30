@@ -49,7 +49,7 @@ class STCheck
 			echo "<br />";
 			if(phpVersionNeed("4.3.0"))
 				echo "in ";
-			showErrorTrace($outFunc+1, $countFunc);
+			showBackTrace($outFunc+1, $countFunc);
 			return true;
 		}
 		return false;
@@ -91,7 +91,7 @@ class STCheck
 		if($g__STCheck_exit_entry[$fileString] > $count)
 		{
 			echo "<br /><br />an overflow occured by '$fileString'<br />";
-			showErrorTrace($fromFile);
+			showBackTrace($fromFile);
 			exit();
 		}
 		++$g__STCheck_exit_entry[$fileString];
@@ -292,7 +292,7 @@ class STCheck
 		    global $member_tag_def;
 			if(!STCheck::isDebug())
 				return;
-			//showErrorTrace();echo "<br><br>";
+			//showBackTrace();echo "<br><br>";
 			if(!is_numeric($paramNr))
 			{
 				STCheck::error_message("Error in parameter", true, "STCheck::param()",

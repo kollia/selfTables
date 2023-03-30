@@ -59,7 +59,7 @@ class STChooseBox extends TableTag
 				}*/
 				if(!$this->startPage)
 				{
-					showErrorTrace();
+					showBackTrace();
 					if(STCheck::isDebug())
 						STCheck::echoDebug("", "for object STChooseBox is no start site defined");
 					else

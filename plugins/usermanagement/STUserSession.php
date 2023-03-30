@@ -573,7 +573,7 @@ class STUserSession extends STDbSession
 	{
 		// take tables from database
 		echo "makeTableMeans()<br>";
-		showErrorTrace();
+		showBackTrace();
 		$Project= &$this->database->needTable($this->sProjectTable);
 		$Cluster= &$this->database->needTable($this->sClusterTable);
 		$ClusterGroup= &$this->database->needTable($this->sClusterGroupTable);
@@ -946,7 +946,7 @@ class STUserSession extends STDbSession
         $inserter->fillColumn("post", $post);
         $inserter->fillColumn("DateCreation", "sysdate()");
         $inserter->execute();
-        //showErrorTrace();
+        //showBackTrace();
         //$statement=  "insert into ".$this->sLogTable."(UserID,ProjectID,Type,CustomID,Description,DateCreation) ";
         //$statement.= "values(".$user.",".$project.",".$Type.",".$customID.",'".$logText."',sysdate())";
         //$this->database->fetch($statement);

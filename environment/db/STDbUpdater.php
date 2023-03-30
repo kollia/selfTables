@@ -45,7 +45,7 @@ class STDbUpdater extends STDbSqlCases
 	            //STCheck::info(1, "STDbTable::getStatement()", "called STDbTable::<b>getStatement()</b> method from:", 1);
 	        }
 	        if(STCheck::isDebug("db.statement.from"))
-	            {showErrorTrace(1);echo "<br />";}
+	            {showBackTrace(1);echo "<br />";}
 	    }
 	    if(isset($this->statements[$nr]))
 	    {

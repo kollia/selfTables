@@ -244,7 +244,7 @@ class STDbMySql extends STDatabase
 		    STCheck::echoDebug("db.statements", $statement);
 		    STCheck::echoDebug("db.statement.time", date("H:i:s")." ".(time()-$_st_page_starttime_));
 		    if($statement == "SHOW COLUMNS FROM ID")
-		        showErrorTrace();
+		        showBackTrace();
 		}
 		try{
 		    $this->lastDbResult = $this->conn->query($statement);

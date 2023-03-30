@@ -50,7 +50,7 @@ class STDbTableDescriptions
 		    return $global_sttabledescriptions_class_instance[$dbName];
 		
 		if(STCheck::isDebug())
-		    showErrorTrace();
+		    showBackTrace();
 		STCheck::alert(true, "STDbTableDescription::instance()", "no instance of <b>$dbName</b> STDbTableDescription be created");
 		return null;
 	}

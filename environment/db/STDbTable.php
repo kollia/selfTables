@@ -656,7 +656,7 @@ class STDbTable extends STBaseTable
     	        //STCheck::info(1, "STDbTable::getStatement()", "called STDbTable::<b>getStatement()</b> method from:", 1);
 	        }
 	        if(STCheck::isDebug("db.statement.from"))
-	            {showErrorTrace(1);echo "<br />";}
+	            {showBackTrace(1);echo "<br />";}
 	    }
 		if(isset($this->aStatement['full']))
 		{
@@ -1433,7 +1433,7 @@ class STDbTable extends STBaseTable
             		    echo "$statement<br>";
             		    echo "---------------------------------------------------------------------------------------------------------";
             		    echo "---------------------------------------------------------------------------------------------------------<br />";
-            		    showErrorTrace();
+            		    showBackTrace();
             		    echo "<br /><br /><br />";
             		    exit;
     		        }

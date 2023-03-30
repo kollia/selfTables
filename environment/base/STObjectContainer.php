@@ -237,7 +237,7 @@ class STObjectContainer extends STBaseContainer
 		    {
     		    $space= STCheck::echoDebug("table", "get in <b>evidence</b> holded table <b>$tableName</b> from container <b>".$this->getName()."</b>");
     		    //st_print_r($this->oGetTables, 1, $space);
-    		    //showErrorTrace();
+    		    //showBackTrace();
 		    }
 		    $table= &$this->oGetTables[$tableName];
 		    
@@ -276,7 +276,7 @@ class STObjectContainer extends STBaseContainer
 		    $table= &$this->createTable($orgTableName);
 		    $this->oGetTables[$tableName]= &$table;
 		}
-		//showErrorTrace();
+		//showBackTrace();
 		return $table;
 	}
 	/**
@@ -1195,18 +1195,15 @@ class STObjectContainer extends STBaseContainer
 				$head= &$this->getHead("Eintrag aktualisieren in ".$table->getDisplayName());
 				$result= $box->update();
 			}
-
-
 			$this->oMainTable= &$box;
-			//$this->addObj($head);
-			//$body= new BodyTag();
-    			$headline= &$this->getHeadline($get_vars);
-				$this->addObj($headline);
-				$center= new CenterTag();
-					$h2= new H2Tag();
-						$h2->add($table->getDisplayName());
-					$center->addObj($h2);
-					$center->add(br());
+			
+			$headline= &$this->getHeadline($get_vars);
+			$this->addObj($headline);
+			$center= new CenterTag();
+				$h2= new H2Tag();
+					$h2->add($table->getDisplayName());
+				$center->addObj($h2);
+				$center->add(br());
 
 			if($table->sFirstAction!==STLIST)
 			{

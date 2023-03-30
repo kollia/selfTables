@@ -29,7 +29,7 @@ class STDbSqlCases
             $msg[]= "\"".$statement."\"";
             STCheck::echoDebug("db.statement", $msg);
             if(STCheck::isDebug("db.statement.from"))
-            {showErrorTrace(1);echo "<br />";}
+            {showBackTrace(1);echo "<br />";}
             echo "<hr />";
             //STCheck::info(1, "STDbTable::getStatement()", "called STDbTable::<b>getStatement()</b> method from:", 1);
         }

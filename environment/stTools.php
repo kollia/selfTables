@@ -80,16 +80,16 @@ function st_print_r($value, $deep=1, $space= 0, $bFirst= true)
 }
 function showLine(int $count= 1)
 {
-    $lines= stTools::getErrorTrace(1, $count);
+    $lines= stTools::getBackTrace(1, $count);
     foreach ($lines as $line)
         echo $line."<br />";
 }
-function showErrorTrace($from= 0, $much= -3)
+function showBackTrace($from= 0, $much= -3)
 {
 	if(!phpVersionNeed("4.3.0"))
 		return;
 	$from++; // do not show first call of next method
-	$backtrace= stTools::getErrorTrace($from, $much);
+	$backtrace= stTools::getBackTrace($from, $much);
 	foreach($backtrace as $line)
 	    echo "$line<br />";
 }
@@ -351,7 +351,7 @@ function phpVersionNeed($needVersion, $functionName= null)
 
 class stTools
 {
-	public static function getErrorTrace(int $from= 0, int $much= -3) : array
+	public static function getBackTrace(int $from= 0, int $much= -3) : array
     {
         global $_dbselftable_root;
         
@@ -366,16 +366,19 @@ class stTools
         {
 			if($from<1)
 			{
-			    $line= "";
-				$sFunc= "function";
+			    $line= "";				
     			if(	isset($function["function"]) &&
     				isset($function["class"]) &&
-					$function["class"]==$function["function"]	)
+					$function["function"]=="__construct"	)
 				{
 					$sFunc= "constructor";
 					$function["class"]= "";
 					$function["type"]= "";
-				}
+					
+				}elseif(isset($function["class"]))
+				    $sFunc= "     method";
+				else
+				    $sFunc= "   function";
                 $line.= "<b>$sFunc</b> ";
                 if(isset($function["class"]))
                 	$line.= $function["class"];

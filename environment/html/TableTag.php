@@ -99,11 +99,10 @@ class RowTag extends Tag
 		}
 		public function showLine(int $count= 1)
 		{
-		    $lines= stTools::getErrorTrace(1, $count);
+		    $lines= stTools::getBackTrace(1, $count);
 		    $str= "";
 		    foreach ($lines as $line)
 		        $str.= "$line<br />";
-	        $str= substr($str, 0, -6);
 		    $deb_col= new ColumnTag();
 		    $deb_col->add($str);
 		    $this->add($deb_col);
@@ -157,11 +156,10 @@ class TableTag extends Tag
 		}
 		public function showLine(int $count= 1)
 		{
-		    $lines= stTools::getErrorTrace(1, $count);
+		    $lines= stTools::getBackTrace(1, $count);
 		    $str= "";
 		    foreach ($lines as $line)
 		        $str.= "$line<br />";
-		    $str= substr($str, 0, -6);
 		    $deb_row= new RowTag();
 		    $deb_col= new ColumnTag();
 		    $deb_col->add($str);

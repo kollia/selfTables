@@ -249,14 +249,13 @@ class Tag extends STCheck
 			}
 			$this->inherit= &$inherit;
 		}
-		public function showLine()
+		public function showLine(int $count= 1)
 		{
-		    $lines= stTools::getErrorTrace(1, $count);
+		    $lines= stTools::getBackTrace(1, $count);
 		    $str= "";
 		    foreach ($lines as $line)
 		        $str.= "$line<br />";
-	        $str= substr($str, 0, -6);
-	        $this->add($line[0]);
+	        $this->add($str);
 		}
 		public function add($tag)
 		{//echo get_class($tag)."<br />";

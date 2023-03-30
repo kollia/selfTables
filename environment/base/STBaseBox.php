@@ -115,7 +115,7 @@ class STBaseBox extends TableTag
 			{
 				echo "\n<b>ERROR:</b> user defined function <b>$callbackFunction</b> does not exist<br />\n";
 				if(phpVersionNeed("4.3.0", "debug_backtrace()"))
-					showErrorTrace(debug_backtrace());
+					showBackTrace(debug_backtrace());
 				exit;
 			}
 			if(!isset($this->aCallbacks[$columnName]))
@@ -380,7 +380,7 @@ class STBaseBox extends TableTag
 		}
 		public function getCssLink()
 		{
-			showErrorTrace();
+			showBackTrace();
 			if(!isset($this->css_link["css"]))
 				return null;
 			$css= $this->css_link["css"];
