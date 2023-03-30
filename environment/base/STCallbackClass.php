@@ -14,6 +14,8 @@ class STCallbackClass
 		var $action;
 		var $rownum;
 		var $before;
+		var $MessageId;
+		var $joinResult;
 		var	$aUnlink= array(); 	// wenn die Upgelodete Datei nicht gel�scht werden soll
 							// ist hier der Alias-Name der Spalte eingetragen
 		var	$nDisplayColumn= null; 	// wenn die ListTable in mehreren Columns dargestellt wird

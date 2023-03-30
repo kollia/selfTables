@@ -11,11 +11,17 @@ class STBaseBox extends TableTag
 		var $tableContainer;
 		var $msg; // class for STMessageHandling
 		var	$onError= onErrorMessage;
+		var $error= null;
 		var	$nextOnError;
 		var $aHidden;
 		var	$newFields= array();
+		var	$aErrorString= null;
+		var	$OKUrl= null;
+		var	$ahidden= array();
+		var $aktualScript= "";
 		var	$asSelect;
 		var	$asTable;
+		var $tableName;
 		var	$asDBTable;
 		var	$oWhere;
 		var	$asOrder;
@@ -49,7 +55,7 @@ class STBaseBox extends TableTag
 			$this->msg= new STMessageHandling($class, onErrorMessage);
 			STBaseBox::init();
 			$this->aktualScript= $HTTP_SERVER_VARS["SCRIPT_NAME"];
-			$this->Error= "NOERROR";
+			$this->error= "NOERROR";
 			if($container==null)
 				$this->msg->setMessageId("NO_DATABASE");
 		}

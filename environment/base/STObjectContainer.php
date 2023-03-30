@@ -42,6 +42,12 @@ class STObjectContainer extends STBaseContainer
 	 * @var array
 	 */
 	private $asSearchBox= array();
+	/**
+	 * displayed box
+	 * to get result
+	 * @var STBaseBox
+	 */
+	protected $oMainTable;
 
 	function __construct($name, &$container)
 	{
