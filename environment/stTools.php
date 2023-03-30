@@ -80,7 +80,7 @@ function st_print_r($value, $deep=1, $space= 0, $bFirst= true)
 }
 function showLine(int $count= 1)
 {
-    $lines= stTools::getErrorTrace(2, $count);
+    $lines= stTools::getErrorTrace(1, $count);
     foreach ($lines as $line)
         echo $line."<br />";
 }
