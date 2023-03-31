@@ -69,6 +69,17 @@ class STBaseContainer extends BodyTag implements STContainerTempl
 						// false - container will be initialize
 						// true - container is initialized
 	var	$aAccessClusters= array(); // access cluster to this container
+	/**
+	 * whether backbutton
+	 * should be set
+	 * @var bool
+	 */
+	protected $bBackButton= null;
+	/**
+	 * name of backbutton container
+	 * @var string
+	 */
+	protected $sBackContainer= "unknown";
 	var $backButtonAddress= null;
 	var $sBackButton= null;
 	var $starterPage= "";
