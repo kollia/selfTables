@@ -1915,7 +1915,8 @@ class STItemBox extends STBaseBox
 					{
 					    $db_case= new STDbInserter($this->asDBTable);
 					    foreach($showpost as $column => $value)
-					        $db_case->fillColumn($column, $value);
+					        if(isset($value))
+					            $db_case->fillColumn($column, $value);
 					}
             	}else
             	{
