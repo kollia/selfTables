@@ -816,8 +816,7 @@ class STQueryString
     		    $this->param_vars['stget']['link']['from'][$containerNr][$tableName]= $columnName;
             }else
 		    {
-		        if($limitOrder != STINSERT)
-		            $this->param_vars['stget']['link']['from'][$limitOrder]= $tableName;
+		        $this->param_vars['stget']['link']['from'][$limitOrder]= $tableName;
 		        $this->param_vars['stget']['container']= $containerName; 
 		        $this->param_vars['stget']['action']= $limitOrder;
 		        $this->param_vars['stget']['table']= $tableName;
@@ -889,8 +888,11 @@ class STQueryString
 		        }else
 		            unset($this->param_vars['stget']['limit'][$tableName]);
     		    
-    	        if(count($this->param_vars['stget']['limit']) == 0)
+		        if( isset($this->param_vars['stget']['limit']) &&
+    	            count($this->param_vars['stget']['limit']) == 0    )
+    	        {
     	            unset($this->param_vars['stget']['limit']);
+    	        }
 		    }
 		    $space= STCheck::echoDebug("query.limitation", "result of removing:");
 		    if(STCheck::isDebug("query.limitation"))
