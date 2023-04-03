@@ -716,7 +716,7 @@ class STDbTable extends STBaseTable
         if(isset($this->aStatement['table']))
             $statement.= $this->aStatement['table'];
         if(isset($this->aStatement['where']))
-            $statement.= " ".$this->aStatement['where'];
+            $statement.= " where ".$this->aStatement['where'];
         return $statement;
 	}
 	public function displayWrappedStatement()
@@ -1018,9 +1018,15 @@ class STDbTable extends STBaseTable
 	        $aTableAlias= $this->aStatement['tableAlias'];
 	        return $this->aStatement['table'];
 	    }
+	    $statement= "from ".$this->Name;
+	    if(count($aTableAlias) <= 1)
+	    {
+	        $this->aStatement['table']= $statement;
+	        return $statement;
+	    }
 	    $maked= array();
 	    $maked[$this->Name]= "finished";
-	    $statement= "from ".$this->Name." as ".$aTableAlias[$this->Name]." ";
+	    $statement.= " as ".$aTableAlias[$this->Name]." ";
 	    $statement.= $this->getTableStatementA($this, $aTableAlias, $maked, /*first access*/true);
 	    $this->aStatement['table']= $statement;
 	    $this->aStatement['tableAlias']= $aTableAlias;
@@ -1624,7 +1630,8 @@ class STDbTable extends STBaseTable
 	    if($condition == "where")
 	    {
 	        $this->aStatement['whereAlias']= $aliases;
-	        $this->aStatement['where']= $statement;
+	        if(trim($statement) !== "")
+	            $this->aStatement['where']= $statement;
 	    }
 	    if($bSetFromAlias)
 	        $from= $aliases;

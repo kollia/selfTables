@@ -1911,13 +1911,10 @@ abstract class STDatabase extends STObjectContainer
 	        STCheck::echoDebug("db.statements", "need follow <b>select</b> statement: $statement");
 	    }
 	    $oTable->newWhereCreation($aliasTables);
-		if(count($aliasTables)>1)
-		{
-			$tableStatement= $oTable->getTableStatement($aliasTables);
-			STCheck::echoDebug("db.statements", "need follow aditional <b>table</b> statement: $tableStatement");
-			$statement.= " $tableStatement";
-		}else
-		    $statement.= " from ".$tableName;
+		
+	    $tableStatement= $oTable->getTableStatement($aliasTables);
+		STCheck::echoDebug("db.statements", "need follow aditional <b>table</b> statement: $tableStatement");
+		$statement.= " $tableStatement";
 		
 		// create $bufferWhere to copy the original
 		// behind the function getWhereStatement()
