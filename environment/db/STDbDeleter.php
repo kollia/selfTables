@@ -111,7 +111,7 @@ class STDbDeleter
                 $nOp= 3;
                 $whereStatement= substr($whereStatement, $nOp);
         }
-        $statement.= " where $whereStatement";
+        $statement.= " $whereStatement";
         return $statement;
 	}
 	public function getErrorId() : int|string

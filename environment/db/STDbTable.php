@@ -5,6 +5,7 @@ require_once($_stbasetable);
 class STDbTable extends STBaseTable
 {
     private $onError;
+    private $aOtherTableWhere= array();
     /**
      * current database from where table
      * @var object
@@ -668,7 +669,7 @@ class STDbTable extends STBaseTable
 		    }
 		    return $this->aStatement['full'];
 		}
-	    $statement= $this->db->getStatement($this, $bFromIdentifications);
+	    $statement= $this->getStatementA($bFromIdentifications);
 	    $this->aStatement['full']= $statement;
 	    if(STCheck::isDebug("db.statements"))
 	    {
@@ -694,6 +695,8 @@ class STDbTable extends STBaseTable
 	    {
 	        $this->aStatement= array();
     	    $this->aStatement['full']= $statement;
+    	    $bwhere= false;
+    	    $border= false;
     	    foreach($arr as $clause)
     	    {
     	        if(strtolower(substr($clause, 0, 6)) == "select")
@@ -701,10 +704,19 @@ class STDbTable extends STBaseTable
                 elseif(strtolower(substr($clause, 0, 4)) == "from")
                     $this->aStatement['table']= $clause;
                 elseif(strtolower(substr($clause, 0, 5)) == "where")
+                {
                     $this->aStatement['where']= $clause;
-                elseif(strtolower(substr($clause, 0, 5)) == "order")
+                    $bwhere= true;
+                }elseif(strtolower(substr($clause, 0, 5)) == "order")
+                {
                     $this->aStatement['order']= $clause;
-    	    }    
+                    $border= true;
+                }
+    	    }
+    	    if(!$bwhere)
+    	        $this->aStatement['where']= false;
+    	    if(!$border)
+    	        $this->aStatement['order']= false;
 	    }else
 	        STCheck::is_warning(1, "STDbTable::setStatement()", "cannot read correct statement:$statement");
 	}
@@ -716,7 +728,7 @@ class STDbTable extends STBaseTable
         if(isset($this->aStatement['table']))
             $statement.= $this->aStatement['table'];
         if(isset($this->aStatement['where']))
-            $statement.= " where ".$this->aStatement['where'];
+            $statement.= $this->aStatement['where'];
         return $statement;
 	}
 	public function displayWrappedStatement()
@@ -732,6 +744,138 @@ class STDbTable extends STBaseTable
             	        "where", "having", "order", "limit"                  );
 	            
 	    return stTools::getWrappedStatement($stats, $this->getStatement());
+	}
+	function getStatementA(bool $bFromIdentifications= false)
+	{
+	    if(STCheck::isDebug())
+	    {
+	        STCheck::param($bFromIdentifications, 0, "bool");
+	        
+	        $msg= "create sql statement from table ";
+	        $msg.= $this->toString();
+	        $msg.= " inside container <b>".$this->container->getName()."</b>";
+	        STCheck::echoDebug("db.statements", $msg);
+	    }
+	    
+	    $this->modifyQueryLimitation();
+	    $aliasTables= array();
+	    //STCheck::write("search for aliases");
+	    $aliasTables= $this->getAliasOrder();
+	    // search for tables which should also joined
+	    $joinTables= array();
+	    $joins= $this->getAlsoJoinOverTables();
+	    if(count($joins) > 0)
+	    {
+	        foreach($joins as $table=>$join)
+	            $joinTables[$table]= $aliasTables[$table];
+	    }
+	    if(STCheck::isDebug("db.statements.alias"))
+	    {
+	        $space= STCheck::echoDebug("db.statements.alias", "follow alias tables can be used:");
+	        st_print_r($aliasTables, 1, $space);
+	    }
+	    // create statement
+	    $bMainTable= !$bFromIdentifications;// wenn der erste ->getSlectStatement() Aufruf nicht für
+	    // die Haupttabelle getätigt wird, werden nur die Tabellen Identificatoren genommen
+	    $mainTable= $bMainTable;
+	    if($mainTable)
+	        $mainTable= $this;	// alex 24/05/2005:	nur wenn der erste Aufruf für Haupttabelle getätigt wird
+                    	        //					muss zur kontrolle bei einem STDbSelector
+                    	        //					die Haupttabelle als dritter Parameter mitgegeben werden
+                    	        
+        $statement= $this->getSelectStatement($aliasTables, $bFromIdentifications);
+        // implement tables which are joined from user
+        if(count($joinTables))
+            $aliasTables= array_merge($aliasTables, $joinTables);
+        $whereAliases= $this->getWhereAliases();
+        if(count($whereAliases))
+            $aliasTables= array_merge($aliasTables, $whereAliases);
+        if(STCheck::isDebug("db.statements"))
+        {
+            $space= STCheck::echoDebug("db.statements", "need follow tables inside select-statement");
+            st_print_r($aliasTables, 1, $space);
+            STCheck::echoDebug("db.statements", "need follow <b>select</b> statement: $statement");
+        }
+        $this->newWhereCreation($aliasTables);        
+        $tableStatement= $this->getTableStatement($aliasTables);
+        STCheck::echoDebug("db.statements", "need follow aditional <b>table</b> statement: $tableStatement");
+        $statement.= " $tableStatement";
+        
+        // create $bufferWhere to copy the original
+        // behind the function getWhereStatement()
+        // back into the table
+        // problems by php version 4.0.6:
+        // first parameter in function is no reference
+        // but it comes back the changed values
+        $bufferWhere= $this->oWhere;
+        $whereStatement= $this->getWhereStatement("where", $aliasTables);
+        if(STCheck::isDebug("db.statements"))
+        {
+            if(trim($whereStatement) == "")
+                $msg= "do not need a <b>where</b> statement";
+                else
+                    $msg= "need follow <b>where</b> statement: $whereStatement";
+                    STCheck::echoDebug("db.statements", $msg);
+        }
+        $this->oWhere= $bufferWhere;
+        if($whereStatement)
+        {
+            $ereg= array();
+            preg_match("/^(and|or)/i", $whereStatement, $ereg);
+            if(isset($ereg[1]))
+            {
+                if($ereg[1] == "and")
+                    $nOp= 4;
+                else
+                    $nOp= 3;
+                $whereStatement= substr($whereStatement, $nOp);
+            }
+            $statement.= " $whereStatement";
+        }
+        
+        // Order Statement hinzufügen wenn vorhanden
+        if(	!isset($this->bOrder) ||
+            $this->bOrder == true		)
+        {
+            $orderStat= $this->getOrderStatement($aliasTables);
+            $orderStat= trim($orderStat);
+            if(	$orderStat !== "" &&
+                $orderStat != "ASC" &&
+                $orderStat != "DESC"		)
+            {
+                $statement.= " order by $orderStat";
+                STCheck::echoDebug("db.statements", "need follow <b>order</b> statement: order by $orderStat");
+            }else
+                STCheck::echoDebug("db.statements", "do not need an <b>order</b> statement");
+        }
+        $limitStat= $this->getLimitStatement(false);
+        if($limitStat)
+        {
+            $statement.= $limitStat;
+            STCheck::echoDebug("db.statements", "<b>limit</b> result with: $limitStat");
+        }else
+            STCheck::echoDebug("db.statements", "do not need a <b>limit</b> statement");
+        if(count($this->aOtherTableWhere))
+        {
+            STCheck::is_warning(1, "STDatabase::getStatement()", "does not reach all where-statements:");
+            if(Tag::isDebug())
+            {
+                echo "<b>do not make the follow where-clausels:</b>";
+                st_print_r($this->aOtherTableWhere);
+                echo "-------------------------------------------------------<br />\n";
+            }
+            $this->aOtherTableWhere= array();
+        }
+        if(STCheck::isDebug())
+        {
+            $stats= array(  "show", "select", "update", "delete", "from",
+                array( "inner join", "left join", "right join" ),
+                "where", "having", "order", "limit"                  );
+            STCheck::echoDebug("db.statements", "<b>finisched <i>select</i> statement</b>:");
+            $aStatement= stTools::getWrappedStatement($stats, $statement);
+            STCheck::echoDebug("db.statements", $aStatement);
+        }
+        return $statement;
 	}
 	// alex 24/05/2005:	boolean bMainTable auf die Haupttabelle ge�ndert
 	//					da dort wenn sie ein Selector ist noch �berpr�fungen
@@ -752,7 +896,10 @@ class STDbTable extends STBaseTable
 	            $msg[]= "\"".$this->aStatement['select']."\"";
 	            STCheck::echoDebug("db.statements.select", $msg);
 	        }
-	        $aTableAlias= $this->aStatement['selectAlias'];
+	        if(isset($this->aStatement['selectAlias']))
+	            $aTableAlias= $this->aStatement['selectAlias'];
+	        else
+	            $aTableAlias= array();
 	        return $this->aStatement['select'];
 	    }
 	    $statement= "select ";
@@ -1015,13 +1162,17 @@ class STDbTable extends STBaseTable
 	            $msg[]= "\"".$this->aStatement['table']."\"";
 	            STCheck::echoDebug("db.statements.table", $msg);
 	        }
-	        $aTableAlias= $this->aStatement['tableAlias'];
+	        if(isset($this->aStatement['tableAlias']))
+	            $aTableAlias= $this->aStatement['tableAlias'];
+	        else
+	            $aTableAlias= array();
 	        return $this->aStatement['table'];
 	    }
 	    $statement= "from ".$this->Name;
 	    if(count($aTableAlias) <= 1)
 	    {
 	        $this->aStatement['table']= $statement;
+	        $this->aStatement['tableAlias']= $aTableAlias;
 	        return $statement;
 	    }
 	    $maked= array();
@@ -1527,18 +1678,10 @@ class STDbTable extends STBaseTable
 	            STCheck::echoDebug("db.statements.where", $msg);
 	        }
 	        if($condition == "where")
-	        {
-	            if(typeof($from, "array"))
-	                $from= $this->aStatement['whereAlias'];
-	            else
-	                $aliases= $this->aStatement['whereAlias'];
 	            return $this->aStatement['where'];
-	        }
             $tabName= $from->getName();
 	        if(isset($this->aStatement[$condition][$tabName]))
-	        {
 	            return $this->aStatement[$condition][$tabName];
-	        }
 	    }
 	    
 	    if( STCheck::isDebug("db.statements.where") )
@@ -1627,15 +1770,130 @@ class STDbTable extends STBaseTable
             $amsg[]= $blanc;
             STCheck::echoDebug("db.statements.where", $amsg);
 	    }
-	    if($condition == "where")
+	    if( $condition == "where" &&
+	        trim($statement) !== ""    )
 	    {
+	        $statement= "where $statement";
+	        $this->aStatement['where']= $statement;
 	        $this->aStatement['whereAlias']= $aliases;
-	        if(trim($statement) !== "")
-	            $this->aStatement['where']= $statement;
 	    }
 	    if($bSetFromAlias)
 	        $from= $aliases;
 	    return $statement;
+	}
+	/*public*/function getOrderStatement(&$aTableAlias, $tableName= null, $bIsOrdered= false)
+	{
+	    if(isset($this->aStatement['order']))
+	    {
+	        if(STCheck::isDebug("db.statements.order"))
+	        {
+	            $msg[]= "take predefined order statement";
+	            $msg[]= "\"".$this->aStatement['order']."\"";
+	            STCheck::echoDebug("db.statements.order", $msg);
+	        }
+	        if(isset($this->aStatement['orderAlias']))
+	            $aTableAlias= array_merge($aTableAlias, $this->aStatement['orderAlias']);
+	        return $this->aStatement['order'];
+	    }
+	    $statement= "";
+	    if(	$tableName===null
+	        or
+	        $this->Name===$tableName	)
+	    {
+	        
+	        $oTable= &$this;
+	        $aNeededColumns= $oTable->getSelectedColumns();
+	        //if tableName is null
+	        $tableName= $this->Name;
+	    }else
+	    {
+	        $oTable= &$this->getTable($tableName);
+	        $aNeededColumns= $oTable->getIdentifColumns();
+	    }
+	    if(!$oTable->asOrder)
+	    {
+	        return "";
+	    }
+	    $bAlias= false;
+	    if(count($aTableAlias)>1)
+	        $bAlias= true;
+        foreach($oTable->asOrder as $sortArray)
+        {
+            $alias= "";
+            if($bAlias)
+            {
+                $alias= $aTableAlias[$sortArray['table']];
+                $alias.= ".";
+            }
+            $statement.= $alias.$sortArray['column']." ".$sortArray['sort'];
+            $statement.= ",";
+            if($bIsOrdered)
+            {
+                return $statement;
+            }
+        }
+        foreach($aNeededColumns as $columnContent)
+        {
+            $fkTableName= $oTable->getFkTableName($columnContent["column"]);
+            if(	isset($fkTableName) &&
+                $this->Name != $fkTableName	)
+            {
+                //echo __FILE__.__LINE__."<br>";
+                //echo "getOrderStatement($aTableAlias, $fkTableName, $bIsOrdered)<br>";
+                $order= $this->getOrderStatement($aTableAlias, $fkTableName, $bIsOrdered);
+                if($order)
+                {
+                    if($bIsOrdered)
+                        return $order;
+                        $statement.= $order.",";
+                }
+            }
+        }
+        $statement= substr($statement, 0, strlen($statement)-1);
+        $tableName= $this->getName();
+        $query= new STQueryString();
+        $queryArr= $query->getArrayVars();
+        if(isset($queryArr["stget"]["sort"][$tableName]))
+        {
+            $query_statement= "";
+            foreach($queryArr["stget"]["sort"][$tableName] as $column)
+            {
+                //preg_match("/^([^_]+)_(ASC|DESC)$/i", $column, $inherit);
+                preg_match("/^(.+)_(ASC|DESC)$/i", $column, $inherit);
+                $field= $this->searchByAlias($inherit[1]);
+                if( isset($field["column"]) )
+                {
+                    $aliasTable= "";
+                    if(count($aTableAlias) > 1)
+                        $aliasTable= $aTableAlias[$field['table']].".";
+                        $query_statement.= $aliasTable.$field["column"]." ".$inherit[2].",";
+                }elseif(STCheck::isDebug())
+                {
+                    if( isset($queryArr["stget"]["action"]) &&
+                        $queryArr["stget"]["action"] != STINSERT &&
+                        $queryArr["stget"]["action"] != STUPDATE &&
+                        $queryArr["stget"]["action"] != STDELETE    )
+                    {
+                        $message= "column alias('".$inherit[1]."') from query string not found inside table '$tableName'";
+                        STCheck::write($message, 1);
+                        $message= "maybe not reach table definition for current container or action";
+                        STCheck::write($message, 1);
+                    }
+                }
+            }
+            if(strlen($query_statement) > 0)
+                $query_statement= substr($query_statement, 0, strlen($query_statement)-1);
+            if($statement != "")
+                $statement= $query_statement.",".$statement;
+            else
+                $statement= $query_statement;
+        }
+        if(trim($statement) != "")
+        {
+            $this->aStatement['order']= $statement;
+            $this->aStatement['orderAlias']= $aTableAlias;
+        }
+        return $statement;
 	}
 	function getLimitStatement($bInWhere)
 	{

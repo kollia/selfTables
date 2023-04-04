@@ -156,7 +156,6 @@ abstract class STDatabase extends STObjectContainer
 * @var array string
 */
 	protected	$asExistTableNames= array();
-	var $aOtherTableWhere= array();
 	var $lastStatement;
 	var $foreignKey= false;
 	var	$aFieldArrays= array();
@@ -169,9 +168,6 @@ abstract class STDatabase extends STObjectContainer
 	var $pregTimeFormat;
 	var	$bOrderDates= true; // shoud be order the date in the sqlResult?
 	var $inFields= array();
-	var	$bFirstSelectStatement;	// f�r funktion getSelectStatement()
-								// ob sie von getStatement aufgerufen wurde,
-								// oder in einer rekursiven Schleife l�uft
 	var	$bFKsave= null; // make foreign Keys in DB,
 						// for MySql it define no innoDB
 	var	$sNeedAlias= array(); // hier wird eingetragen welches Alias ben�tigt wurde
@@ -1776,142 +1772,6 @@ abstract class STDatabase extends STObjectContainer
 	    foreach ($this->aAliases as &$nr)
 	        $nr= "t".$nr;
 	    return $this->aAliases;
-	}
-	function getStatement(STDbTable $oTable, bool $bFromIdentifications= false)
-	{
-	    if(STCheck::isDebug())
-	    {
-    		STCheck::param($oTable, 0, "STDbTable");
-    		STCheck::param($bFromIdentifications, 1, "bool");
-
-    		$msg= "create sql statement from table ";
-    		$msg.= $oTable->toString();
-    		$msg.= " inside container <b>".$oTable->container->getName()."</b>";
-    		STCheck::echoDebug("db.statements", $msg);
-	    }
-    
-		$oTable->modifyQueryLimitation();
-		$aliasTables= array();
-		//STCheck::write("search for aliases");
-		$aliasTables= $this->getAliasOrder();
-		// search for tables which should also joined
-		$joinTables= array();
-		$joins= $oTable->getAlsoJoinOverTables();
-		if(count($joins) > 0)
-		{
-		    foreach($joins as $table=>$join)
-		        $joinTables[$table]= $aliasTables[$table];
-		}
-		if(STCheck::isDebug("db.statements.alias"))
-		{
-		      $space= STCheck::echoDebug("db.statements.alias", "follow alias tables can be used:");
-		      st_print_r($aliasTables, 1, $space);
-		}
-		// create statement
-		$bMainTable= !$bFromIdentifications;// wenn der erste ->getSlectStatement() Aufruf nicht für
-											// die Haupttabelle getätigt wird, werden nur die Tabellen Identificatoren genommen
-		$mainTable= $bMainTable;
-		if($mainTable)
-			$mainTable= $oTable;	// alex 24/05/2005:	nur wenn der erste Aufruf für Haupttabelle getätigt wird
-									//					muss zur kontrolle bei einem STDbSelector
-									//					die Haupttabelle als dritter Parameter mitgegeben werden
-		$tableName= $oTable->getName();
-		$this->bFirstSelectStatement= true;
-		//echo __FILE__.__LINE__."<br>";
-		//echo "getSelectStatement from table '".$oTable.
-		$statement= $oTable->getSelectStatement($aliasTables, $bFromIdentifications);
-		// implement tables which are joined from user
-	    if(count($joinTables))
-	        $aliasTables= array_merge($aliasTables, $joinTables);
-        $whereAliases= $oTable->getWhereAliases();
-        if(count($whereAliases))
-            $aliasTables= array_merge($aliasTables, $whereAliases);
-	    if(STCheck::isDebug("db.statements"))
-	    {
-	        $space= STCheck::echoDebug("db.statements", "need follow tables inside select-statement");
-	        st_print_r($aliasTables, 1, $space);
-	        STCheck::echoDebug("db.statements", "need follow <b>select</b> statement: $statement");
-	    }
-	    $oTable->newWhereCreation($aliasTables);
-		
-	    $tableStatement= $oTable->getTableStatement($aliasTables);
-		STCheck::echoDebug("db.statements", "need follow aditional <b>table</b> statement: $tableStatement");
-		$statement.= " $tableStatement";
-		
-		// create $bufferWhere to copy the original
-		// behind the function getWhereStatement()
-		// back into the table
-		// problems by php version 4.0.6:
-		// first parameter in function is no reference
-		// but it comes back the changed values
-		$bufferWhere= $oTable->oWhere;
-		$whereStatement= $oTable->getWhereStatement("where", $aliasTables);
-		if(STCheck::isDebug("db.statements"))
-		{	
-		    if(trim($whereStatement) == "")
-		        $msg= "do not need a <b>where</b> statement";
-		    else
-		        $msg= "need follow <b>where</b> statement: $whereStatement";
-		    STCheck::echoDebug("db.statements", $msg);
-		}
-		$oTable->oWhere= $bufferWhere;
-		if($whereStatement)
-		{
-			preg_match("/^(and|or)/i", $whereStatement, $ereg);
-			if(isset($ereg[1]))
-			{
-				if($ereg[1] == "and")
-					$nOp= 4;
-				else
-					$nOp= 3;
-				$whereStatement= substr($whereStatement, $nOp);
-			}
-			$statement.= " where $whereStatement";
-		}
-		
-		// Order Statement hinzufügen wenn vorhanden
-		if(	!isset($oTable->bOrder) ||
-			$oTable->bOrder == true		)
-		{
-			$orderStat= $oTable->getOrderStatement($aliasTables);
-			$orderStat= trim($orderStat);
-			if(	$orderStat !== "" &&
-				$orderStat != "ASC" &&
-				$orderStat != "DESC"		)
-			{
-				$statement.= " order by $orderStat";
-				STCheck::echoDebug("db.statements", "need follow <b>order</b> statement: order by $orderStat");
-			}else
-			    STCheck::echoDebug("db.statements", "do not need an <b>order</b> statement");
-		}
-		$limitStat= $oTable->getLimitStatement(false);
-		if($limitStat)
-		{
-			$statement.= $limitStat;
-			STCheck::echoDebug("db.statements", "<b>limit</b> result with: $limitStat");
-		}else
-		    STCheck::echoDebug("db.statements", "do not need a <b>limit</b> statement");
-		if(count($this->aOtherTableWhere))
-		{
-			STCheck::is_warning(1, "STDatabase::getStatement()", "does not reach all where-statements:");
-			if(Tag::isDebug())
-			{
-				echo "<b>do not make the follow where-clausels:</b>";
-				st_print_r($this->aOtherTableWhere);
-				echo "-------------------------------------------------------<br />\n";
-			}
-			$this->aOtherTableWhere= array();
-		}
-		if(STCheck::isDebug())
-		{
-		    $stats= array(  "show", "select", "update", "delete", "from",
-            		        array( "inner join", "left join", "right join" ),
-            		        "where", "having", "order", "limit"                  );
-		    STCheck::echoDebug("db.statements", "<b>finisched <i>select</i> statement</b>:");
-		    $aStatement= stTools::getWrappedStatement($stats, $statement); 
-		    STCheck::echoDebug("db.statements", $aStatement);
-		}
-		return $statement;
 	}
 	/**
 	 * search for all tables who has an foreign key

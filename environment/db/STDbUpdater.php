@@ -90,7 +90,7 @@ class STDbUpdater extends STDbSqlCases
                 else
                    $whereStatement= substr($where, 3);
 	        }
-	        $whereStatement= " where $whereStatement";
+	        $whereStatement= " $whereStatement";
 	    }
 	    
 	    $update_string= "";
