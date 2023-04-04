@@ -382,6 +382,8 @@ class STBaseTable
     	$this->identification= $Table->identification;
     	$this->showTypes= $Table->showTypes;
 		$this->aActiveLink= $Table->aActiveLink;
+		$this->nFirstRowSelect= $Table->nFirstRowSelect;
+		$this->nMaxRowSelect= $Table->nMaxRowSelect;
     	$this->oWhere= &$Table->oWhere;
     	$this->asOrder= $Table->asOrder;
     	$this->sPKColumn= $Table->sPKColumn;
