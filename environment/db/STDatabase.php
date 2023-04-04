@@ -562,6 +562,8 @@ abstract class STDatabase extends STObjectContainer
             				        "where", "having", "order", "limit"                  );
 				    $aStatement= stTools::getWrappedStatement($stats, $statement);
 				    STCheck::echoDebug("db.statement", $aStatement);
+				    if(STcheck::isDebug("db.statements.from"))
+				        showBackTrace(1);
 				}
 				STCheck::flog("fetch statement on db with command querydb");
 			}

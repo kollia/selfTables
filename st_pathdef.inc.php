@@ -12,6 +12,7 @@
     //     db.descriptions       -  show which tables are described on database
 	//     db.statement          -  show created statements of self-Tables
 	//     db.statement.from     -  show also trace from were statement was called
+    //     db.statements.from    -  show trace also from where statement was fired to database
 	//     db.statement.time     -  show how long statement need to fetch from database
 	//     db.statement.modify   -  show creation of insert/update statement
     //     db.statement.insert   -  same as db.statement.modify
