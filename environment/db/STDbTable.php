@@ -1637,6 +1637,34 @@ class STDbTable extends STBaseTable
 	        $from= $aliases;
 	    return $statement;
 	}
+	function getLimitStatement($bInWhere)
+	{
+	    if($bInWhere)
+	    {
+	        STCheck::echoDebug("db.statements.limit", "do not use limit statement if where statement exist");
+	        return "";
+	    }
+	    $maxRows= $this->getMaxRowSelect();
+	    if($maxRows)
+	    {
+	        $tableName= $this->getName();
+	        $from= $this->getFirstRowSelect();
+	        if(!$from)
+	            $from= 0;
+            STCheck::echoDebug("db.statements.limit", "first row for selection in table '$tableName' is set to $from");
+            STCheck::echoDebug("db.statements.limit", "$maxRows maximal rows be set in table '$tableName'");
+	            
+	    }elseif(isset($this->limitRows))
+	    {
+	        $from= $this->limitRows["start"];
+	        $maxRows= $this->limitRows["limit"];
+	    }else
+	        return "";
+	        
+        $where= " limit ".$from.", ".$maxRows;
+        STCheck::echoDebug("db.statements.limit", "add limit statement '$where'");
+        return $where;
+	}
 	/**
      * allow modification by every table has an limit in the query string
      * or an foreign key table limit points to own table with also limitation from query

@@ -1758,86 +1758,6 @@ abstract class STDatabase extends STObjectContainer
 		}
 		return;
 	}
-	/*function getNewTables($where, $aliasTables)
-	{
-		$newAliases= array();
-		if(typeof($where, "STDbWhere"))
-		{
-			$tableName= $where->array["sForTable"];
-			if(	$tableName
-				and
-				!isset($aliasTables[$tableName])	)
-			{
-				$newAliases[]= $tableName;
-			}
-			$new= $this->getNewTables($where->array, $aliasTables);
-			if($new)
-				$newAliases= array_merge($newAliases, $new);
-		}elseif(is_array($where))
-		{
-			foreach($where as $content)
-			{
-				$new= $this->getNewTables($content, $aliasTables);
-				if($new)
-					$newAliases= array_merge($newAliases, $new);
-			}
-		}
-		return $newAliases;
-	}*/
-	// alex 25/05/2005:	funktion nach STDbTable verschoben
-	//					und in getFKTableName($fromColumn) umbenannt
-	//					geh�rt ja auch dort hin
-	/*function getTableFromFK($columnName, $aFK)
-	{
-		foreach($aFK as $table=>$columns)
-		{
-			if($columnName==$columns["own"])
-				return $table;
-		}
-		return null;
-	}*/
-	function getLimitStatement($oTable, $bInWhere)
-	{
-		if($bInWhere)
-		{
-			STCheck::echoDebug("db.statements.limit", "do not use limit statement if where statement exist");
-			return "";
-		}
-		$maxRows= $oTable->getMaxRowSelect();
-		if($maxRows)
-		{
-			$params= new STQueryString();
-			$HTTP_GET_VARS= $params->getArrayVars();
-			$tableName= $oTable->getName();
-			$from= $oTable->getFirstRowSelect();
-			
-/*			alex 07/04/2021
- *			set selection first row from url parameter
- *			into OSTTable->execute()
- 			
-  			if(	$from==0
-				and
-				isset($HTTP_GET_VARS["stget"]["firstrow"][$tableName])	)
-			{
-				$from= $HTTP_GET_VARS["stget"]["firstrow"][$tableName];
-				$oTable->limit($from, $maxRows);
-			}*/
-			if(!$from)
-				$from= 0;
-			STCheck::echoDebug("db.statements.limit", "first row for selection in table '$tableName' is set to $from");
-			STCheck::echoDebug("db.statements.limit", "$maxRows maximal rows be set in table '$tableName'");
-			
-		}elseif(isset($oTable->limitRows))
-		{
-			$from= $oTable->limitRows["start"];
-			$maxRows= $oTable->limitRows["limit"];
-		}else
-			return "";
-		
-		$where= " limit ".$from.", ".$maxRows;
-		STCheck::echoDebug("db.statements.limit", "add limit statement '$where'");
-		return $where;
-	}
 	/**
 	 * create aliases order for all tables inside database
 	 *
@@ -1962,7 +1882,7 @@ abstract class STDatabase extends STObjectContainer
 			}else
 			    STCheck::echoDebug("db.statements", "do not need an <b>order</b> statement");
 		}
-		$limitStat= $this->getLimitStatement($oTable, false);
+		$limitStat= $oTable->getLimitStatement(false);
 		if($limitStat)
 		{
 			$statement.= $limitStat;
