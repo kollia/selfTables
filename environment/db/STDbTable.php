@@ -687,14 +687,14 @@ class STDbTable extends STBaseTable
 	        $msg[]= $statement;
 	        STCheck::echoDebug("db.statement", $msg);
 	    }
-	    $stats= array(  "select", "from", "where", "order" );	    
+	    $stats= array(  "select", "from", "where", "order" );
 	    $arr= stTools::getWrappedStatement($stats, $statement);
 	    if( isset($arr) &&
 	        is_array($arr) &&
 	        count($arr)        )
 	    {
 	        $this->aStatement= array();
-    	    $this->aStatement['full']= $statement;
+	        $this->aStatement['full']= $statement;
     	    $bwhere= false;
     	    $border= false;
     	    foreach($arr as $clause)
@@ -728,7 +728,7 @@ class STDbTable extends STBaseTable
         if(isset($this->aStatement['table']))
             $statement.= $this->aStatement['table'];
         if(isset($this->aStatement['where']))
-            $statement.= $this->aStatement['where'];
+            $statement.= " ".$this->aStatement['where'];
         return $statement;
 	}
 	public function displayWrappedStatement()
