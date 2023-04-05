@@ -8,11 +8,11 @@ require_once($_stuserclustergroupmanagement);
 function groupListCallback(&$callbackObject, $columnName, $rownum)
 {
 }
-
 function descriptionCallback(&$callbackObject, $columnName, $rownum)
 {//print_r($callbackObject->sqlResult[$rownum]);
     //$callbackObject->echoResult();
     //echo "file:".__file__." line:".__line__."<br />";
+    
     if($callbackObject->getValue() == 1)
     {
         $aResult=	array(	"Name"=>"",
@@ -45,16 +45,18 @@ function descriptionCallback(&$callbackObject, $columnName, $rownum)
     $source.=  "</table>";
     $callbackObject->setValue($source);
     
+}
+
+function actionCallback(&$callbackObject, $columnName, $rownum)
+{
     $session= STUSerSession::instance();
+    $domain= $session->getCustomDomain();
     if( $callbackObject->sqlResult[$rownum]["Group"] == $session->onlineGroup ||
-        $callbackObject->sqlResult[$rownum]["Group"] == $session->loggedinGroup )
+        $callbackObject->sqlResult[$rownum]["Group"] == $session->loggedinGroup ||
+        $callbackObject->sqlResult[$rownum]["Domain"] != $domain['ID']              )
     {
-        if(STCheck::isDebug())
-        {
-            echo __FILE__.__LINE__."<br>";
-            echo "unlink update/delete for <b>".$callbackObject->sqlResult[$rownum]["Group"]."</b><br>";
-        }
-        $callbackObject->noUnlinkData("delete");
+        $callbackObject->noUpdate();
+        $callbackObject->noDelete();
     }
 }
 
@@ -89,6 +91,13 @@ class STUserManagement extends STObjectContainer
 		$project= &$this->needTable("Project");
 		$project->setDisplayName("existing Projects");
 		$this->setFirstTable("Project");
+		
+		
+		$session= &STUserSession::instance();
+		showLine();
+		echo "access by <b>".$session->usermanagementAccessCluster."</b></br>";
+		$this->accessBy($session->usermanagementAccessCluster);
+		//$this->accessBy($session->usermanagementChangeCluster);
 	}
 	function init()
 	{
@@ -129,6 +138,8 @@ class STUserManagement extends STObjectContainer
 		    
 		    $groups->select("ID", "access descriptions");
 		    $groups->listCallback("descriptionCallback", "access descriptions");
+		    //$groups->listCallback("actionCallback", "update");
+		    $groups->listCallback("actionCallback", "delete");
 		    $groups->orderBy("domain");
 		    $groups->orderBy("Name");
 		    $groups->setMaxRowSelect(50);

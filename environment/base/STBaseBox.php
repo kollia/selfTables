@@ -31,6 +31,11 @@ class STBaseBox extends TableTag
 		var $where= "";
 		var $language= "en";
 		/**
+		 * defined names for update and delete columns
+		 * @var array
+		 */
+		private $aAlias= array();
+		/**
 		 * css stylshet link
 		 */
 		protected string $css_link= "";
@@ -234,6 +239,20 @@ class STBaseBox extends TableTag
 			}
 			return $bOk;
 		}
+		public function updateLine(string $column, string $alias= null)
+		{
+		    if(!isset($alias))
+		        $alias= $column;
+		    $this->aAction['update']= $alias;
+		    $this->select($column, $alias);
+		}
+		public function deleteLine(string $column, string $alias= null)
+		{
+		    if(!isset($alias))
+		        $alias= $column;
+	        $this->aAction['delete']= $alias;
+	        $this->select($column, $alias);
+		}
 		function select($column, $alias= null)
 		{
 			$column= trim($column);
@@ -253,7 +272,7 @@ class STBaseBox extends TableTag
 			$this->asSelect[$n]["column"]= $column;
 			$this->asSelect[$n]["alias"]= $alias;
 			if(isset($table))
-				$this->asSelect[$n]["table"]= $table;
+			    $this->asSelect[$n]["table"]= $table;
 		}
 		function unSelect($column)
 		{

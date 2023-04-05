@@ -269,17 +269,14 @@
 		$_stsession=				$_stenvironmenttools_path."/session/STSession.php";
 		$_stdbsession=              $_stenvironmenttools_path."/session/STDbSession.php";
 		$_stdbsessionhandler=       $_stenvironmenttools_path."/session/STDbSessionHandler.php";
+		$_stusersession=            $_stenvironmenttools_path."/session/STUserSession.php";
 		$_stsessionsitecreator=		$_stenvironmenttools_path."/session/STSessionSiteCreator.php";
 		$_stusersitecreator=		$_stenvironmenttools_path."/session/STUserSiteCreator.php";
-		$_stusersession=            $_stenvironmenttools_path."/session/STUserSession.php";
 
 
 		/**********************************************************************\
 		|**         selfTables - CMS System                                  **|
 		\**********************************************************************/
-		//$DBin_UserDatabase=       "UserManagement";
-		// UserManagement Login
-		//$USERCLASS=               "STUser";
 		$_stusermanagement=					$_stenvironmenttools_path."/session/management/STUserManagement.php";
 		$_stuserclustergroupmanagement=     $_stenvironmenttools_path."/session/management/STUserClusterGroupManagement.php";		
 		$_stclustergroupassignment=			$_stenvironmenttools_path."/session/management/STClusterGroupAssignment.php";		

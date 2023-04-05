@@ -289,6 +289,7 @@ class STListBox extends STBaseBox
 			    $callbackClass= new STCallbackClass($this->asDBTable, $this->sqlResult);
 				$callbackClass->indexTable= &$this->oIndexTable;
 				$callbackClass->before= true;
+				$callbackClass->aAction= $this->aAction;
 				$anTable= &$this->getTable();
 				//modify forign key to see in the callback-function
 				// and also to can set the hole where clausel after in the table
@@ -1059,6 +1060,7 @@ class STListBox extends STBaseBox
 			$CallbackClass->before= false;
 			$CallbackClass->nDisplayColumns= $this->asDBTable->nDisplayColumns;
 			$CallbackClass->arrangement= $this->arrangement;
+			$CallbackClass->aAction= $this->aAction;
 
 			/*****************************************************************
 			 **        wenn mehrere Spalten sein sollen,    			    **
@@ -2286,7 +2288,7 @@ class STListBox extends STBaseBox
 			Tag::alert(!typeof($this->getTable(), "STDbTable") && !$this->statement,
 						get_class($this)."::execute()",
 						"no table or statement exist, take before methode ::table() or ::solution() for statement");
-						
+			
 			$this->createMessages();
 			$this->defaultOnError($onError);
 			$this->createStatement();
@@ -2337,7 +2339,7 @@ class STListBox extends STBaseBox
 			}
 
 			/******************************************************
-			 **        Umschlichtung wenn Layout VERTICAL        **
+			 **        re-sort if layout VERTICAL        **
 			 ******************************************************/
 			if($this->arrangement==STVERTICAL)
 			{//Columns werden in Rows geschlichtet und umgekehrt

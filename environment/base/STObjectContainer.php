@@ -1069,7 +1069,7 @@ class STObjectContainer extends STBaseContainer
 					$updateAccess		)
 				{
 				    $sUpdateLink= $this->oMsg->getMessageContent("UPDATE");
-					$list->select($PK, $sUpdateLink);
+					$list->updateLine($PK, $sUpdateLink);
 					$list->link($sUpdateLink, "javascript:selftable_updateDelete('update',$value);");
 				}
 				if(	$table->canDelete()
@@ -1077,7 +1077,7 @@ class STObjectContainer extends STBaseContainer
 					$deleteAccess		)
 				{
 				    $sDeleteLink= $this->oMsg->getMessageContent("DELETE");
-					$list->select($PK, $sDeleteLink);
+					$list->deleteLine($PK, $sDeleteLink);
 					$list->link($sDeleteLink, "javascript:selftable_updateDelete('delete',$value);");
 				}
 			}
@@ -1389,8 +1389,8 @@ class STObjectContainer extends STBaseContainer
 		{		    
 		    STCheck::paramCheck($oBox, 2, "STBaseBox");
 		    
-			$oBox->setLanguage($this->language);
-			$table= &$oBox->getTable();
+		    $oBox->setLanguage($this->language);
+		    $table= &$oBox->getTable();
 			$tableName= $table->getName();
 			if(isset($this->asError[$action][$tableName]))
 				$aError= $this->asError[$action][$tableName];

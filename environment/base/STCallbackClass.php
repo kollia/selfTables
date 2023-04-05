@@ -165,7 +165,15 @@ class STCallbackClass
 			}
 			return false;
 		}
-		function setValue($value, $column= null, $rownum= null)
+		public function noUpdate($rownum= null)
+		{
+		    $this->setValue(null, $this->aAction['update'], $rownum);
+		}
+		public function noDelete($rownum= null)
+		{
+		    $this->setValue(null, $this->aAction['delete'], $rownum);
+		}
+		public function setValue($value, $column= null, $rownum= null)
 		{
 			if($column===null)
 				$column= $this->column;
