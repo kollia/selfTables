@@ -279,20 +279,20 @@
 		//$DBin_UserDatabase=       "UserManagement";
 		// UserManagement Login
 		//$USERCLASS=               "STUser";
-		$_stusersession=                    $_stcmstools_path."/usermanagement/STUserSession.php";
-		$_stusermanagement=					$_stcmstools_path."/usermanagement/STUserManagement.php";
-		$_stuserclustergroupmanagement=     $_stcmstools_path."/usermanagement/STUserClusterGroupManagement.php";		
-		$_stclustergroupassignment=			$_stcmstools_path."/usermanagement/STClusterGroupAssignment.php";
+		$_stusersession=                    $_stenvironmenttools_path."/session/management/STUserSession.php";
+		$_stusermanagement=					$_stenvironmenttools_path."/session/management/STUserManagement.php";
+		$_stuserclustergroupmanagement=     $_stenvironmenttools_path."/session/management/STUserClusterGroupManagement.php";		
+		$_stclustergroupassignment=			$_stenvironmenttools_path."/session/management/STClusterGroupAssignment.php";		
+		$_stum_installcontainer=			$_stenvironmenttools_path."/session/management/STUM_InstallContainer.php";
+		$_stusermanagement_install=			$_stenvironmenttools_path."/session/management/stusermanagement_install.php";
+		$_stuserprofilecontainer=           $_stenvironmenttools_path."/session/management/STUserProfileContainer.php";		
+		$_stusermanagementsession=			$_stenvironmenttools_path."/session/management/STUserManagementSession.php";
+		$_stuserprojectmanagement=	        $_stenvironmenttools_path."/session/management/STUserProjectManagement.php";
+		$_stprojectmanagement=				$_stenvironmenttools_path."/session/management/STProjectManagement.php";
+		$_stpartitionmanagement=			$_stenvironmenttools_path."/session/management/STPartitionManagement.php";
+		$_stusergroupmanagement=			$_stenvironmenttools_path."/session/management/STUserGroupManagement.php";
+		$_stgroupgroupmanagement=			$_stenvironmenttools_path."/session/management/STGroupGroupManagement.php";
 		
-		$_stum_installcontainer=			$_stcmstools_path."/usermanagement/STUM_InstallContainer.php";
-		$_stusermanagement_install=			$_stcmstools_path."/usermanagement/stusermanagement_install.php";
-		$_stuserprofilecontainer=           $_stcmstools_path."/usermanagement/STUserProfileContainer.php";
-		$_stusermanagementsession=			$_stcmstools_path."/usermanagement/STUserManagementSession.php";
-		$_stuserprojectmanagement=	        $_stcmstools_path."/usermanagement/STUserProjectManagement.php";
-		$_stprojectmanagement=				$_stcmstools_path."/usermanagement/STProjectManagement.php";
-		$_stpartitionmanagement=			$_stcmstools_path."/usermanagement/STPartitionManagement.php";
-		$_stusergroupmanagement=			$_stcmstools_path."/usermanagement/STUserGroupManagement.php";
-		$_stgroupgroupmanagement=			$_stcmstools_path."/usermanagement/STGroupGroupManagement.php";
 		$_stgallerycontainer_install=		$_stcmstools_path."/gallery/STGalleryContainer_install.php";
 		$_stgallerycontainer=				$_stcmstools_path."/gallery/STGalleryContainer.php";
 		$_stsubgallerycontainer=			$_stcmstools_path."/gallery/STSubGalleryContainer.php";
