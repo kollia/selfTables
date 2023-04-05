@@ -265,12 +265,12 @@
 		$_stdbtabledescriptions=	$_stenvironmenttools_path."/db/STDbTableDescriptions.php";
 		$_stdbsitecreator=          $_stenvironmenttools_path."/db/STDbSiteCreator.php";
 		
-		$_stuser=					$_stenvironmenttools_path."/user/STUser.php";
-		$_stsession=				$_stenvironmenttools_path."/user/STSession.php";
-		$_stdbsession=              $_stenvironmenttools_path."/user/STDbSession.php";
-		$_stdbsessionhandler=       $_stenvironmenttools_path."/user/STDbSessionHandler.php";
-		$_stsessionsitecreator=		$_stenvironmenttools_path."/user/STSessionSiteCreator.php";
-		$_stusersitecreator=		$_stenvironmenttools_path."/user/STUserSiteCreator.php";
+		$_stuser=					$_stenvironmenttools_path."/session/STUser.php";
+		$_stsession=				$_stenvironmenttools_path."/session/STSession.php";
+		$_stdbsession=              $_stenvironmenttools_path."/session/STDbSession.php";
+		$_stdbsessionhandler=       $_stenvironmenttools_path."/session/STDbSessionHandler.php";
+		$_stsessionsitecreator=		$_stenvironmenttools_path."/session/STSessionSiteCreator.php";
+		$_stusersitecreator=		$_stenvironmenttools_path."/session/STUserSiteCreator.php";
 
 
 		/**********************************************************************\
