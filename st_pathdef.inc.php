@@ -271,6 +271,7 @@
 		$_stdbsessionhandler=       $_stenvironmenttools_path."/session/STDbSessionHandler.php";
 		$_stsessionsitecreator=		$_stenvironmenttools_path."/session/STSessionSiteCreator.php";
 		$_stusersitecreator=		$_stenvironmenttools_path."/session/STUserSiteCreator.php";
+		$_stusersession=            $_stenvironmenttools_path."/session/STUserSession.php";
 
 
 		/**********************************************************************\
@@ -279,7 +280,6 @@
 		//$DBin_UserDatabase=       "UserManagement";
 		// UserManagement Login
 		//$USERCLASS=               "STUser";
-		$_stusersession=                    $_stenvironmenttools_path."/session/management/STUserSession.php";
 		$_stusermanagement=					$_stenvironmenttools_path."/session/management/STUserManagement.php";
 		$_stuserclustergroupmanagement=     $_stenvironmenttools_path."/session/management/STUserClusterGroupManagement.php";		
 		$_stclustergroupassignment=			$_stenvironmenttools_path."/session/management/STClusterGroupAssignment.php";		
