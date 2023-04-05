@@ -745,7 +745,7 @@ class STDbTable extends STBaseTable
 	            
 	    return stTools::getWrappedStatement($stats, $this->getStatement());
 	}
-	function getStatementA(bool $bFromIdentifications= false)
+	private function getStatementA(bool $bFromIdentifications= false)
 	{
 	    if(STCheck::isDebug())
 	    {
@@ -886,7 +886,7 @@ class STDbTable extends STBaseTable
 	 * @param array $aTableAlias array of all exist alias for tables exist, which gives back all alias which needed
 	 * @param bool $bUseIdentifications whether should use for the first select only the identification columns
 	 */
-	/*private*/function getSelectStatement(array &$aTableAlias, bool $bUseIdentifications)
+	private function getSelectStatement(array &$aTableAlias, bool $bUseIdentifications)
 	{
 	    if(isset($this->aStatement['select']))
 	    {
@@ -1152,7 +1152,7 @@ class STDbTable extends STBaseTable
         Tag::echoDebug("db.statements.select", "createt statement is \"".$statement."\"");
         return $statement;
 	}
-	public function getTableStatement(array &$aTableAlias)
+	private function getTableStatement(array &$aTableAlias)
 	{
 	    if(isset($this->aStatement['table']))
 	    {
@@ -1606,7 +1606,7 @@ class STDbTable extends STBaseTable
 		STCheck::echoDebug("db.statements.table", "TableStatement - Result from table '".$oTable->getName()."'= '$statement'");
 		return $statement;
 	}
-	/*private*/function getWhereAliases() : array
+	private function getWhereAliases() : array
 	{
 	    $aRv= array();
 	    $aliasTables= $this->db->getAliasOrder();
@@ -1650,7 +1650,15 @@ class STDbTable extends STBaseTable
     	    }
 	    }
 	}
-	/*private*/function getWhereStatement(string $condition, STDbTable|array $from= null, array $aliases= null)
+	/**
+	 * create where statement
+	 * (also called from some other worker objects (like STDbUpdater)
+	 * 
+	 * @param string $condition for which clause ('where' or 'on')
+	 * @param STDbTable|array $from if set codition as 'on' this parameter have to be set
+	 * @param array $aliases array of alias names
+	 */
+	public function getWhereStatement(string $condition, STDbTable|array $from= null, array $aliases= null)
 	{
 	    if(STCheck::isDebug())
 	    {
@@ -1674,7 +1682,7 @@ class STDbTable extends STBaseTable
 	            if($condition == "where")
 	                $msg[]= "\"".$this->aStatement['where']."\"";
 	            else
-	                $msg[]= "\"".$this->aStatement['where'][$table]."\"";
+	                $msg[]= "\"".$this->aStatement['where'][$from->getName()]."\"";
 	            STCheck::echoDebug("db.statements.where", $msg);
 	        }
 	        if($condition == "where")
@@ -1781,7 +1789,7 @@ class STDbTable extends STBaseTable
 	        $from= $aliases;
 	    return $statement;
 	}
-	/*public*/function getOrderStatement(&$aTableAlias, $tableName= null, $bIsOrdered= false)
+	protected function getOrderStatement(&$aTableAlias, $tableName= null, $bIsOrdered= false)
 	{
 	    if(isset($this->aStatement['order']))
 	    {
@@ -1895,7 +1903,7 @@ class STDbTable extends STBaseTable
         }
         return $statement;
 	}
-	function getLimitStatement($bInWhere)
+	private function getLimitStatement($bInWhere)
 	{
 	    if($bInWhere)
 	    {
