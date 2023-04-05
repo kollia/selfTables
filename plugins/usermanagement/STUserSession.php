@@ -1456,11 +1456,12 @@ class STUserSession extends STDbSession
 		$clusterGroupResult= $this->database->fetch($statement, noErrorShow);
 		if(count($clusterGroupResult))
 		{
-			$statement= $this->database->getDeleteStatement($clusterGroup);//, $this->asClusterGroupTableColumns["ClusterID"]["column"]."='".$cluster."'");
-			$this->database->fetch($statement, noErrorShow);
+		    $deleter= new STDbDeleter($clusterGroup);
+		    $deleter->execute(noErrorShow);
 		}
-		$statement= $this->database->getDeleteStatement($this->sClusterTable, $this->asClusterTableColumns["ID"]["column"]."='".$cluster."'");
-		if(!$this->database->fetch($statement, noErrorShow))
+		$deleter= new STDbDeleter($this->sClusterTable);
+		$deleter->where($this->asClusterTableColumns["ID"]["column"]."='".$cluster."'");
+		if($deleter->execute(noErrorShow) !== 0)
 			return "NOCLUSTERDELETE";
 		return "NOERROR";
 	}

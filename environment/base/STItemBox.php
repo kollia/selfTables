@@ -2595,10 +2595,29 @@ class STItemBox extends STBaseBox
 			//echo "callbackResult:";st_print_r($oCallbackClass->sqlResult);
 			
 			if(!$error)
-			    $error= $del->execute();
-			if( !is_bool($error) ||
-			    !$error              )
 			{
+			    $where= $oCallbackClass->getWhere();
+			    if(isset($where))
+			        $this->where($where);
+			    $error= $del->execute();
+			}
+			if($error !== 0)
+			{
+			    // delete all uploadet Files, if exist
+			    if(count($this->uploadFields))
+			    {
+			        foreach($this->uploadFields as $column=>$content)
+			        {
+			            if(	$result[0][$column]
+			                and
+			                file_exists($result[0][$column])
+			                and
+			                !isset($oCallbackClass->aUnlink[$column])	)
+			            {
+			                unlink($result[0][$column]);
+			            }
+			        }
+			    }
 			    if($error == "NODELETE_FK")
 			    {
 			        $fks= $del->getFkLinkTables();
@@ -2628,30 +2647,6 @@ class STItemBox extends STBaseBox
 				return $this->msg->getMessageId();
 			}
 
-			// delete all uploadet Files, if exist
-			if(count($this->uploadFields))
-			{
-				foreach($this->uploadFields as $column=>$content)
-				{
-					if(	$result[0][$column]
-						and
-						file_exists($result[0][$column])
-						and
-						!isset($oCallbackClass->aUnlink[$column])	)
-					{
-						unlink($result[0][$column]);
-					}
-				}
-			}
-			//Tag::debug(true);
-			$where= $oCallbackClass->getWhere();
-			if(isset($where))
-				$this->where($where);
-			$statement= $this->db->getDeleteStatement($this->asDBTable, $this->where);
-			//echo $statement;
-			if(!$this->db->query($statement, $this->getOnError("SQL")))
-				$this->setSqlError(null);
-			
 			$oCallbackClass->before= false;
 			$oCallbackClass->MessageId= $this->msg->getMessageId();
 			$error= $this->makeCallback(STDELETE, $oCallbackClass, STDELETE, 0);

@@ -13,6 +13,7 @@ class STDbDeleter
 	 * @var string
 	 */
 	private $aFkLinkTables= "";
+	private $aStatement= array();
 	
 	// do not take by reference
 	// because into table comming
@@ -52,14 +53,14 @@ class STDbDeleter
         else
             $this->where($stwhere);
 	}
-	function execute($onError= onDebugErrorShow)
+	public function execute($onError= onDebugErrorShow)
 	{
 		$db= &$this->table->db;
 		$this->nErrorRowNr= null;
 		$this->table->where(null);
-		$table= new STDbTable($this->table);
-		$table->modifyQueryLimitation($this->bModify);
-		$fkTables= $db->hasFkEntriesToTable($table->getName(), $this->oWhere);
+		//$table= new STDbTable($this->table);
+		$this->table->modifyQueryLimitation($this->bModify);
+		$fkTables= $db->hasFkEntriesToTable($this->table->getName(), $this->oWhere);
 		if($fkTables)
 		{
 		    $this->nErrno= "NODELETE_FK";
@@ -67,12 +68,12 @@ class STDbDeleter
 		    return "NODELETE_FK";
 		}
 		if(isset($this->oWhere))
-		    $table->andWhere($this->oWhere);
-	    $statement= $this->getDeleteStatement($table);
+		    $this->table->andWhere($this->oWhere);
+	    $statement= $this->getStatement();
 	    $db->query($statement, $onError);
 	    return $db->errno();
 	}
-	function getDeleteStatement($table)
+	function getStatement()
 	{
 	    $nr= STCheck::increase("db.statement");
 	    if(STCheck::isDebug())
@@ -81,7 +82,7 @@ class STDbDeleter
 	        {
 	            echo "<br /><br />";
 	            echo "<hr color='black'/>";
-	            $msg= "create $nr. statement for <b>delete</b> inside table ".$table;
+	            $msg= "create $nr. statement for <b>delete</b> inside table ".$this->table;
 	            STCheck::echoDebug("db.statement", $msg);
 	            echo "<hr />";
 	            //STCheck::info(1, "STDbTable::getStatement()", "called STDbTable::<b>getStatement()</b> method from:", 1);
@@ -89,17 +90,15 @@ class STDbDeleter
 	        if(STCheck::isDebug("db.statement.from"))
 	        {showBackTrace(1);echo "<br />";}
 	    }
-        if(is_string($table))
-        {
-            $tableName= $table;
-            $container= &$this->getContainer();
-            $table= $container->getTable($table);
-        }else
-            $tableName= $table->getName();
-        //$whereStatement= $this->getWhereStatement($table, "");
-        $table->allowFkQueryLimitation(false);
-        $whereStatement= $table->getWhereStatement("where");
+	    if(isset($this->aStatement['full']))
+	        return $this->aStatement['full'];
+	    
+	    $tableName= $this->table->getName();
+	    $this->table->allowFkQueryLimitation(false);
+	    $whereStatement= $this->table->getWhereStatement("where");
         $statement= "delete from ".$tableName;
+        $this->aStatement['from']= $statement;
+        $ereg= array();
         preg_match("/^(and|or)/i", $whereStatement, $ereg);
         if(count($ereg) != 0)
         {
@@ -109,9 +108,11 @@ class STDbDeleter
                 $nOp= 4;
             }else
                 $nOp= 3;
-                $whereStatement= substr($whereStatement, $nOp);
+            $whereStatement= substr($whereStatement, $nOp);
         }
+        $this->aStatement['where']= $whereStatement;
         $statement.= " $whereStatement";
+        $this->aStatement['full']= $statement;
         return $statement;
 	}
 	public function getErrorId() : int|string

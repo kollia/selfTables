@@ -504,9 +504,6 @@ abstract class STDatabase extends STObjectContainer
 	}
 	public function query($statement, $onError= onDebugErrorShow)
   	{
-		global $HTML_CLASS_DEBUG_CONTENT;
-		global $g_first_scanDescribe;
-		
 		if($this->dbType=="BLINDDB")
 			return;
 		
@@ -558,8 +555,6 @@ abstract class STDatabase extends STObjectContainer
             				        "where", "having", "order", "limit"                  );
 				    $aStatement= stTools::getWrappedStatement($stats, $statement);
 				    STCheck::echoDebug("db.statement", $aStatement);
-				    if(STcheck::isDebug("db.statements.from"))
-				        showBackTrace(1);
 				}
 				STCheck::flog("fetch statement on db with command querydb");
 			}
@@ -568,6 +563,8 @@ abstract class STDatabase extends STObjectContainer
 			    $this->errno= null;
 			    $this->error= null;
 			    $res= $this->querydb($statement);
+			    if(STcheck::isDebug("db.statements.from"))
+			        showBackTrace(1);
 			}else
 			    $res= array();
 		}else// wenn statement schon ein Array, wird dieses sogleich
