@@ -139,7 +139,7 @@ class STUserManagement extends STObjectContainer
 		$project= &$this->needTable("Project");
 		$project->select("Name", "Project");
 		$project->select("Description", "Description");
-		$project->select("Path", "Position");
+		$project->select("Path", "URL");
 		$project->preSelect("DateCreation", "systemdate()");
 		$project->orderBy("Name");
 		
