@@ -553,8 +553,10 @@ abstract class STDatabase extends STObjectContainer
 				    $stats= array(  "show", "select", "update", "delete", "from",
             				        array( "inner join", "left join", "right join" ),
             				        "where", "having", "order", "limit"                  );
-				    $aStatement= stTools::getWrappedStatement($stats, $statement);
-				    STCheck::echoDebug("db.statement", $aStatement);
+				    $aStatement= stTools::getWrappedStatement($stats, $statement);				    
+				    $space= STCheck::echoDebug("db.statement", $aStatement);
+				    if(STcheck::isDebug("db.statements.from"))
+				        showBackTrace(1);
 				}
 				STCheck::flog("fetch statement on db with command querydb");
 			}
