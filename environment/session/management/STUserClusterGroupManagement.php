@@ -67,7 +67,7 @@ function disableCallback(&$callbackObject, $columnName, $rownum)
     $domain= $session->getCustomDomain();
     if( $callbackObject->sqlResult[$rownum]["domain"] != $domain['ID']              )
     {
-        $callbackObject->disabled();
+        $callbackObject->disabled($columnName);
     }
 }
 
