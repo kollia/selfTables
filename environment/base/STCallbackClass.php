@@ -6,11 +6,16 @@ class STCallbackClass
 		var $container;
 		var	$db;
 		var	$sqlResult;
+		/**
+		 * struct of all boolean behavior arguments
+		 * (this time only 
+		 * @var array
+		 */
+		private $aBehavior= array();
 		var $showType;
 		var $bNoShowType;
 		var	$bSkip;
 		var $where;
-		var	$aDisabled;
 		var $action;
 		var $rownum;
 		var $before;
@@ -105,9 +110,50 @@ class STCallbackClass
 			else
 				$this->where->orWhere($where);
 		}
-		function disabled()
+		public function argument(string $argument, string $column, int $rownum)
 		{
-			$this->aDisabled= "true";
+		    if(STCheck::isDebug())
+		    {
+		        STCheck::param($argument, 0, "check", $argument=="enabled"||$argument=="disabled", 
+		            "enabled", "disabled");
+		    }
+		    $bRv= false;
+		    if($argument == "disabled")
+		    {
+		        $defArgument= "enabled";
+		        $bRv= true;//default
+		    }else
+		        $defArgument= $argument;
+	        if(isset($this->aBehavior[$column][$rownum][$defArgument]))
+	            $bRv= $this->aBehavior[$column][$rownum][$defArgument];
+	        if($argument == "disabled")
+	            $bRv= !$bRv;
+		    return $bRv;
+		}
+		private function setBehavior(string $argument, string $column= null, int $rownum= null)
+		{
+		    if(!isset($column))
+		        $column= $this->column;
+		    $field= $this->table->findAliasOrColumn($column);
+		    $column= $field['alias'];
+		    if(!isset($rownum))
+		        $rownum= $this->rownum;
+		    $bSet= true;
+		    $argument= strtolower($argument);
+		    if($argument == "disabled")
+		    {
+		        $argument= "enabled";
+		        $bSet= false;
+		    }
+		    $this->aBehavior[$column][$rownum][$argument]= $bSet;
+		}
+		public function enabled(string $column, int $rownum= null)
+		{
+		    $this->setBehavior("enabled", $column, $rownum);
+		}
+		public function disabled(string $column, int $rownum= null)
+		{
+		    $this->setBehavior("disabled", $column, $rownum);
 		}
 		function &getWhere()
 		{
@@ -338,10 +384,17 @@ class STCallbackClass
 		{
 			return $this->db;
 		}
-		public function getTable($tableName)
+		/**
+		 * get table from current container,
+		 * if no name given, current table from selection will be returned
+		 * 
+		 * @param string $tableName name of table
+		 * @return STDbTable table object
+		 */
+		public function getTable(string $tableName= null)
 		{
-		    STCheck::param($tableName, 0, "string");
-		    
+		    if(!isset($tableName))
+		        return $this->table;
 		    return $this->db->getTable($tableName);
 		}
 }

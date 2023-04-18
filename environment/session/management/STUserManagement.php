@@ -5,8 +5,21 @@ require_once($_stdbinserter);
 require_once($_stsitecreator);
 require_once($_stuserclustergroupmanagement);
 
-function groupListCallback(&$callbackObject, $columnName, $rownum)
+function pwdCallback(STCallbackClass &$callbackObject, $columnName, $rownum)
 {
+    if(!$callbackObject->before)
+        return;
+        
+    //$callbackObject->echoResult();
+    $session= STUSerSession::instance();
+    $domain= $session->getCustomDomain();
+    $table= $callbackObject->getTable();
+    $domainField= $table->findAliasOrColumn("domain");
+    $domainColumn= $domainField['alias'];
+    $domainValue= $callbackObject->getValue($domainColumn);
+    
+    if($domainValue != $domain['Name'])
+        $callbackObject->disabled($columnName);
 }
 function descriptionCallback(&$callbackObject, $columnName, $rownum)
 {//print_r($callbackObject->sqlResult[$rownum]);
@@ -94,8 +107,6 @@ class STUserManagement extends STObjectContainer
 		
 		
 		$session= &STUserSession::instance();
-		showLine();
-		echo "access by <b>".$session->usermanagementAccessCluster."</b></br>";
 		$this->accessBy($session->usermanagementAccessCluster);
 		//$this->accessBy($session->usermanagementChangeCluster);
 	}
@@ -104,6 +115,10 @@ class STUserManagement extends STObjectContainer
 	    $action= $this->getAction();
 	    $session= &STUserSession::instance();
 	    $domain= $session->getCustomDomain();
+	    
+	    $username= "User";
+	    $newpass= "new Password";
+	    $reppass= "Password repetition";
 	    
 	    $user= &$this->needTable("User");
 	    $user->select("domain", "Domain");
@@ -149,7 +164,10 @@ class STUserManagement extends STObjectContainer
 		{
 			$user->select("Pwd", "Pwd");
 			$user->password("Pwd", true);
-		    $user->passwordNames("new Passwort", "Password repetition");
+		    $user->passwordNames($newpass, $reppass);
+		    $user->updateCallback("pwdCallback", $newpass);
+		    $user->updateCallback("pwdCallback", $reppass);
+		    $user->updateCallback("pwdCallback", $username);
 		}
 	}
 	function installContainer()

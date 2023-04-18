@@ -55,7 +55,17 @@ function permissionCallback(&$callbackObject, $columnName, $rownum)
     $source.=  "</table>";
     $callbackObject->setValue($source);
     
-    if( $callbackObject->sqlResult[$rownum]["domain"] != $__global_UserClusterGroup_CALLBACK['domain'] )
+/*    if( $callbackObject->sqlResult[$rownum]["domain"] != $__global_UserClusterGroup_CALLBACK['domain'] )
+    {
+        $callbackObject->disabled();
+    }*/
+}
+
+function disableCallback(&$callbackObject, $columnName, $rownum)
+{
+    $session= STUSerSession::instance();
+    $domain= $session->getCustomDomain();
+    if( $callbackObject->sqlResult[$rownum]["domain"] != $domain['ID']              )
     {
         $callbackObject->disabled();
     }
@@ -124,6 +134,7 @@ class STUserClusterGroupManagement extends STObjectContainer
 	    $group->select("AccessDomain", "Name", "domain");
 	    $group->select("Group", "Name", "group");
 	    $group->nnTableCheckboxColumn("Affilation");
+	    $group->listCallback("disableCallback", "Affilation", STLIST);
 	    $group->select("Group", "ID", "Permissions");
 	    $group->listCallback("permissionCallback", "Permissions");
 	    $group->select("UserGroup", "DateCreation", "member since");

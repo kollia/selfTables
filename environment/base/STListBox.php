@@ -1186,6 +1186,7 @@ class STListBox extends STBaseBox
 			    }
 				// hier wird gesetzt ob ein Zugriff vorhanden ist
 				$bHasAccess= true;
+				$bDisabled= false;
 				if(isset($this->bLinkAccess[$createdColumn]))
 					$bHasAccess= $this->bLinkAccess[$createdColumn];
 				if($this->makeCallback(STLIST, $CallbackClass, $createdColumn, $createdRow))
@@ -1196,6 +1197,7 @@ class STListBox extends STBaseBox
 						$extraField= $CallbackClass->showType;
 					if($CallbackClass->bNoShowType)
 						$extraField= null;
+					$bDisabled= $CallbackClass->argument("disabled", $columnKey, $rowKey);
 					// aktuelles Feld wird in $columnValue nicht aktualisiert
 					$columnValue= $CallbackClass->sqlResult[$rowKey][$columnKey];
 				}
@@ -1467,6 +1469,8 @@ class STListBox extends STBaseBox
 							{
 								$input->checked();
 							}
+							if($bDisabled)
+							    $input->disabled();
 							if(	isset($this->address["All"]) ||
 								isset($this->address[$columnKey])	)
 							{

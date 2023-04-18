@@ -2552,7 +2552,8 @@ class STBaseTable
 		Tag::paramCheck($columnName, 1, "string");
 		Tag::paramCheck($enum, 2, "string", "null");
 
-		$this->linkA("disabled", $this->Name, array("column"=>$columnName), null, $enum);
+		$field= $this->findAliasOrColumn($columnName);
+		$this->linkA("disabled", $this->Name, array( "alias"=>$field['alias']), null, $enum);
 	}
 	public function isDisabled(string $columnName)
 	{
@@ -2888,14 +2889,8 @@ class STBaseTable
 	    }
 	    $this->callbackA($struct);
 	}
-	public function insertCallback($callbackFunction, $alias= null)
+	public function insertCallback(string $callbackFunction, string $alias= null)
 	{
-	    if(STCheck::isDebug())
-	    {
-	        STCheck::param($callbackFunction, 0, "string");
-	        STCheck::param($alias, 1, "string", "empty(string)", "null");
-	    }
-	    
 	    $struct['action']= STINSERT;
 	    $struct['function']= $callbackFunction;
 	    if( isset($alias) &&
@@ -2905,32 +2900,46 @@ class STBaseTable
 	    }
 	    $this->callbackA($struct);
 	}
-	public function updateCallback($callbackFunction, $alias= null)
+	public function updateCallback(string $callbackFunction, string $alias= null)
 	{
-		$this->callbackA(STUPDATE, $columnName, $callbackFunction);
+	    $struct['action']= STUPDATE;
+	    $struct['function']= $callbackFunction;
+	    if( isset($alias) &&
+	        trim($alias) != ""   )
+	    {
+	        $struct['column']= $alias;
+	    }
+	    $this->callbackA($struct);
 	}
-	public function indexCallback($callbackFunction)
+	public function indexCallback(string $callbackFunction)
 	{
-		$this->callbackA(STLIST, null, $callbackFunction);
-		//$this->aCallbacks["index"][]= $callbackFunction;
+	    $struct['action']= STLIST;
+	    $struct['function']= $callbackFunction;
+	    $this->callbackA($struct);
 	}
-	public function deleteCallback($callbackFunction)
+	public function deleteCallback(string $callbackFunction)
 	{
-		$this->callbackA(STDELETE, null, $callbackFunction);
+	    $struct['action']= STDELETE;
+	    $struct['function']= $callbackFunction;
+	    $this->callbackA($struct);
 	}
 	public function joinCallback($callbackFunction, $alias= null)
 	{
-		$this->callbackA("join", $columnName, $callbackFunction);
+	    $struct['action']= "join";
+	    $struct['function']= $callbackFunction;
+	    if( isset($alias) &&
+	        trim($alias) != ""   )
+	    {
+	        $struct['column']= $alias;
+	    }
+	    $this->callbackA($struct);
 	}
     protected function callbackA(array $struct)//$action, $columnName, $callbackFunction)
     {
 		if(isset($struct['column']))
 		{
 		    $field= $this->findAliasOrColumn($struct['column']);
-		    if($struct['action']==STLIST)
-			    $column= $field["alias"];
-			else
-			    $column= $field["column"];
+		    $column= $field["alias"];
 		    $struct['column']= $column;
 		}else
 		    $column= $struct['action'];
