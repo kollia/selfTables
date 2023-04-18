@@ -356,18 +356,23 @@ class STItemBox extends STBaseBox
 			foreach($joinArray as $name=>$join)
 			{
 			    $oCallbackClass= new STCallbackClass($this->asDBTable, $join);
+			    $oCallbackClass->action= $this->action;
 				$oCallbackClass->sqlResult= $post;
 				$oCallbackClass->joinResult= $joinArray[$name];
 				//echo $name;st_print_r($this->aDisabled);echo "<br />";
 				$oCallbackClass->aDisabled= array();
-				if(isset($this->aDisabled[$name]))
-					$oCallbackClass->aDisabled= $this->aDisabled[$name];
+				if( isset($this->aDisabled[$name]) &&
+				    $this->aDisabled[$name] == true     )
+				{
+					$oCallbackClass->disabled($name);
+				}else
+				    $oCallbackClass->enabled($name);
 				$oCallbackClass->before= true;
 				$oCallbackClass->MessageId= "MAKEJOIN";
 				$result= $this->makeCallback("join", $oCallbackClass, $name, $this->action);
 				if($result===true)
 				{
-					$this->aDisabled[$name]= $oCallbackClass->aDisabled;
+					$this->aDisabled[$name]= $oCallbackClass->argument("disabled", $name);
 					$joinArray[$name]= $oCallbackClass->joinResult;
 				}
 			}
@@ -588,7 +593,7 @@ class STItemBox extends STBaseBox
 		
 		Tag::echoDebug("show.db.fields", "get file:".__file__." line:".__line__);
   		$fields= $this->getFieldArray();// took fields from database
-        $columns= $this->createColumns();// make array from column-name und alias-name inside $statement
+        $columns= $this->createColumns();// make array from column-name and alias-name inside $statement
         $fields= $this->orderByColumns($fields, $columns);//order the field-namen from database, after the $statement
         
 		//create objects of HTML-Tags
@@ -612,6 +617,7 @@ class STItemBox extends STBaseBox
 
 		}
 		$oCallbackClass= new STCallbackClass($this->asDBTable, $post);
+		$oCallbackClass->action= $this->action;
 		$oCallbackClass->before= true;
 		$oCallbackClass->rownum= 0;
 		$oCallbackClass->sqlResult= $post;
@@ -633,8 +639,8 @@ class STItemBox extends STBaseBox
     		//            for any selection with where statement
     		//            from other table, need foreign keys
     		//$oTable->clearFKs();// ich will die Spalten ohne verweiss auf eine N�chste Tabelle
-    		$oTable->clearSqlAliases();
-    		$oTable->clearAliases();// sowie alle orginal Spalten-Namen
+    		//$oTable->clearSqlAliases();
+    		//$oTable->clearAliases();// sowie alle orginal Spalten-Namen
     		$oTable->andWhere($this->where);
     		$where= $oTable->getWhere();
     		Tag::alert(!($where && $where->isModified()), "STItemBox::makeBox()", "no where-clausel defined to display");
@@ -650,12 +656,15 @@ class STItemBox extends STBaseBox
 			{
 				if($HTTP_POST_VARS)
 				{
+				    $aJoins= $this->getJoinArray($join, $result);
 					// 11/09/2008 alex:	if an value from database not exists in POST_VARS,
 					//					define it with null
 					foreach($result as $column=>$value)
 					{
 						if(!isset($post[$column]))
-							$post[$column]= null;
+						{
+						    $post[$column]= null;
+						}
 					}
 					// 19/06/2007 alex:	the post-values must be the second parameter
         			//					from array_merge, because from the second
@@ -673,9 +682,8 @@ class STItemBox extends STBaseBox
 						STCheck::echoDebug("db.main.statement", "exist result from db");
 						if(isset($post["STBoxes_action"]))
 						{
-							STCheck::echoDebug("db.main.statement", "is new result:");
-							echo "<b>[</b>db.main.statement<b>]</b> ";
-							st_print_r($post,2, 20);
+							$space= STCheck::echoDebug("db.main.statement", "is new result:");
+							st_print_r($post,2, $space);
 							echo "<br />";
 						}
 
@@ -697,19 +705,6 @@ class STItemBox extends STBaseBox
 				
 				
         }
-		if(!isset($post["STBoxes_action"]))
-		{
-			$this->msg->setMessageId("BOXDISPLAY");
-			$oCallbackClass->MessageId= "BOXDISPLAY";
-			foreach($fields as $content)
-			{
-				//echo "makeCallback for content:".$content["name"]." file:".__file__." line:".__line__."<br />";
-				$this->makeCallback($this->action, $oCallbackClass, $content["name"], 0);
-				//echo "ErrorString:";st_print_r($sErrorString);
-				//echo "callbackResult:";st_print_r($oCallbackClass->sqlResult);
-			}
-			$post= $oCallbackClass->sqlResult;
-		}
 
    		$aJoins= $this->getJoinArray($join, $post);//create all content of popup-menues
    		
@@ -753,22 +748,69 @@ class STItemBox extends STBaseBox
 		}else
 		    $bShowColumns= false;
 		reset($fields);
+		if($bShowColumns)
+		{
+		    echo "database result:";
+		    st_print_r($this->aResult);
+		}
 		while($x<count($fields))
 		{// go throug all fields from database
 			
 			$field= $fields[$x];		
 			$name= $field["name"];
-			if($bShowColumns)echo "row $x - $name<br />";
+			$column= $columns[$name];
+			$postColumn= preg_replace("/[ \t]/", "_", $column);
+			if( (   !isset($HTTP_POST_VARS) ||
+			        empty($HTTP_POST_VARS)       ) &&
+			    isset($post[$column])                    )
+			{
+			    $columnValue= $post[$column];
+			    
+			}elseif( isset($HTTP_POST_VARS) &&
+			         !empty($HTTP_POST_VARS) &&
+			         isset($post[$postColumn])    )
+			{
+			    $columnValue= $post[$postColumn];
+			}else
+			    $columnValue= null;
+			$searchColumn= $column;
+			if($searchColumn == $this->password)
+			    $searchColumn= reset($this->passwordNames);
+			$bDisabled= false;
+			if(isset($this->aDisabled[$searchColumn]))
+			{
+			    foreach ($this->aDisabled[$searchColumn] as $action=>$bSet)
+			    {
+			        if( $action == 0 || // 0 means action is STINSERT and STUPDATE but no STLIST
+			            $action == $this->action     )
+			        {
+			            $bDisabled= $bSet;
+			            break;
+			        }
+			    }
+			}
+			if($bShowColumns){
+			    echo "<br /><br />row $x - ";
+			    if(isset($columns[$name]))
+			        echo $columns[$name]. " <b>[show]</b><br />";
+			    else
+			        echo "$name<br />";
+			    echo "value:$columnValue<br>";
+			    echo "field type:".$field['type']."<br />";
+			    echo "disabled:";st_print_r($bDisabled);
+			    st_print_r($field, 2);
+			}
 		 	if(	isset($columns[$name]) ||
 				$field["type"]=="getColumn")
-			{//nur anzeigen wenn das Feld auch im angegebenen $statement enthalten ist
+			{//show only if the field exist inside the statement
 
 				if(	!isset($this->asSelect[$x-1]["nextLine"]) ||
 					$this->asSelect[$x-1]["nextLine"] !== false	)
 				{// if nextLine from column before is false,
 				 // create no new Row
 					$tr= new RowTag();
-					if($bShowColumns)echo "create column ".$this->asSelect[$x]["column"]." inside new row<br>";
+					if($bShowColumns)
+					    echo "create column ".$columns[$this->asSelect[$x]["column"]]." inside new row<br>";
 					
 				}elseif($bShowColumns)
 					echo "create column ".$this->asSelect[$x]["column"]." inside same row<br>";
@@ -780,7 +822,7 @@ class STItemBox extends STBaseBox
                 if( isset($aJoins[$name]) &&
                     $field['type'] != "getColumn"   )
                 {   // if the field also exist in the join array
-					// show a PopUp-Menu
+                    // show a PopUp-Menu
                     $joinAnz= count($aJoins[$name]);
 					for($n= $joinAnz-1; $n>=0; $n--)
 					{// f�r das Entsprechende Feld im $aJoins[$name]
@@ -807,9 +849,9 @@ class STItemBox extends STBaseBox
 						$td->add(br());
 
 						$select= new SelectTag();
-						$select->name($selName);
+						$select->name($postColumn);
 						$select->size(1);
-						if(isset($this->aDisabled[$field["name"]]))
+						if($bDisabled)
 							$select->disabled();
 						if(	(	$joinAnz>1
 								and
@@ -849,13 +891,13 @@ class STItemBox extends STBaseBox
 						if(count($aRows) == 1)
 						    $bOneEntry= true;
                         foreach($aRows as $row)
-                        {// Alle Auswahl-Optionen f�r den select-tag anzeigen
+                        {// show all options for the select-tag
   							if(!is_array($row))
   								break;
 							$option= new OptionTag();
 							$option->value($row["PK"]);
-            				if( isset($post[$selName]) &&
-            					$post[$selName]==$row["PK"] ||
+            				if( isset($columnValue) &&
+            					$columnValue==$row["PK"] ||
             					(	$bOneEntry &&
             						$bNotNullField	)			)
             				{
@@ -873,20 +915,6 @@ class STItemBox extends STBaseBox
 								$select->add($option);
                         }
 
-                        $bDisabled= false;
-                        if(isset($this->aDisabled[$field["name"]]))
-                        {
-                            foreach ($this->aDisabled[$field["name"]] as $action)
-                            {
-                                if( $action === null || // null means action is STINSERT and STUPDATE but no STLIST
-                                    $action == STINSERT ||
-                                    $action == STUPDATE     )
-                                {
-                                    $bDisabled= true;
-                                    break;
-                                }
-                            }
-                        }
                         if(	$bNotNullField &&
                             $bDisabled == false &&
                         	!isset($this->aSetAlso[$field["name"]]) &&
@@ -895,13 +923,22 @@ class STItemBox extends STBaseBox
 	                        $td->add("*");
 	                    }else 
 	                        $td->add("&#160;&#160;");
-						$td->add($select);
+	                    
+	                    $td->add($select);
+	                    if($bDisabled)
+	                    {// if select box is disabled value not set inside POST
+	                        $hinput= new InputTag();
+	                           $hinput->name($postColumn);
+	                           $hinput->type("hidden");
+	                           $hinput->value($columnValue);
+	                        $td->add($hinput);
+	                    }	                       
 						if($this->intersecFld)
 							$td->colspan(round($maxlen/$this->intersecFld));
 						$tr->add($td);
 					}
                 }else // no PopUp-Menue end of if( $aJoins[$name] )
-				{
+                {
 						$bSingleEnum= false;
 						// Bezeichnungs-Angabe f�r Felder
 						$td= new ColumnTag(TD);
@@ -981,9 +1018,9 @@ class STItemBox extends STBaseBox
 					if($field["type"]==="getColumn")
 					{
 						$input= new InputTag();
-							$input->name($field["name"]);
+							$input->name($postColumn);
 							$input->type("hidden");
-							$input->value($post[$field["name"]]);
+							$input->value($columnValue);
 						$td->add($input);
   					}elseif( preg_match("/auto_increment/", $field["flags"]) )
     				{// wenn das Feld einen auto_increment besitzt,
@@ -995,16 +1032,16 @@ class STItemBox extends STBaseBox
 							$previousSelectionDone= true;
   						}else
   						{
-  							if(isset($post[$field["name"]]))
-  								$zahl= $post[$field["name"]];
+  							if(isset($columnValue))
+  								$zahl= $columnValue;
   						}
   						$td->add($zahl);
 						$input= new InputTag();
-							$input->name($field["name"]);
+							$input->name($postColumn);
 							$input->type("hidden");
 							$input->value($zahl);
 						$td->add($input);
-    				}else // -> Aenderung moeglich
+    				}else // -> changing allowed
   				 	{
   				 		if(isset($field["name"]))
   				 		{
@@ -1019,17 +1056,17 @@ class STItemBox extends STBaseBox
 								$input= new TextareaTag();
 							}else
 								$input= new InputTag();
-							if(isset($this->aDisabled[$field["name"]]))
+							if($bDisabled)
 								$input->disabled();
 							if(preg_match("/enum/", $field["flags"]))
 							{//wenn Feld einen Enumbesitzt checkbox od. toDo: radiobutton erzeugen
-								$input->name($field["name"]);
+								$input->name($postColumn);
 								$aEnums= $this->countingEnums($field["name"]);
 								if(	isset($this->enumField[$field["name"]]) &&
 									$this->enumField[$field["name"]] == "pull_down"	)
 								{
 									$input= new SelectTag();
-									$input->name($field["name"]);
+									$input->name($postColumn);
 									$input->size(1);
 									if(!isset($this->aSetAlso[$field["name"]]))
 									{
@@ -1038,7 +1075,7 @@ class STItemBox extends STBaseBox
 										{
 											$option->add($this->aSelectNames["null_entry"]);
 											if(	$this->action == STUPDATE &&
-												$post[$field["name"]] == null	)
+												$columnValue == null	)
 											{
 												$option->selected();
 											}
@@ -1055,8 +1092,8 @@ class STItemBox extends STBaseBox
 												isset($this->aSetAlso[$field["name"]]) &&
 												$this->aSetAlso[$field["name"]] == $aEnums[$n]	) ||
 											(	$this->action == STUPDATE &&
-												isset($post[$field["name"]]) &&
-												$post[$field["name"]] == $aEnums[$n]	)			)
+												isset($columnValue) &&
+												$columnValue == $aEnums[$n]	)			)
 										{
 											$option->selected();
 										} 
@@ -1070,24 +1107,20 @@ class STItemBox extends STBaseBox
 									$input= new DivTag("radiobuttons");
 									$enumCount= count($aEnums)-1;// hierbei darf nicht das Feld aEnums[0] gew�hlt werden,
 																 // da das NOT NULL Feld wenn vorhanden mitgerechnet wird
-									if(isset($this->aDisabled[$field["name"]]))
-										$aDisabled= $this->aDisabled[$field["name"]];
-									$aDisabled= false;
-									if(is_array($aDisabled))
-										$aDisabled= array_flip($aDisabled);
+									$aDisabled= $bDisabled;
 									for($n= 1; $n<=$enumCount; $n++)
 									{
 										$radio= new InputTag();
 											$radio->type("radio");
-											$radio->name($field["name"]);
+											$radio->name($postColumn);
 											$radio->value($aEnums[$n]);
 											if(isset($this->asDBTable->aRefreshes[$field["name"]]))
                 							{
                 								$radio->onClick("javascript:DB_changeBox('update')");
                 								$needChangeBox= true;
                 							}
-											if(	isset($post[$field["name"]]) &&
-												$post[$field["name"]] == $aEnums[$n]	)
+											if(	isset($columnValue) &&
+												$columnValue == $aEnums[$n]	)
 											{
 												$radio->checked();
 											}
@@ -1111,7 +1144,7 @@ class STItemBox extends STBaseBox
 									echo __FILE__.__LINE__."<br>";
 									st_print_r($aEnums);
 									$input->value($aEnums[2]);
-									if($post[$field["name"]]==$aEnums[2])
+									if($columnValue==$aEnums[2])
 										$input->checked();
 									if(isset($this->asDBTable->aRefreshes[$field["name"]]))
                 					{
@@ -1147,54 +1180,54 @@ class STItemBox extends STBaseBox
   								$input->type("password");
   							}elseif(isset($this->uploadFields[$columns[$field["name"]]]))
 							{// Feld f�r Upload
-									if(isset($post[$field["name"]]))
+									if(isset($columnValue))
 									{
 											$input->name("old_upload_file_".$field["name"]);
 											$input->type("hidden");
-											$input->value($post[$field["name"]]);
+											$input->value($columnValue);
 										$td->add($input);
 										$input= new InputTag();
 									}
-									$input->name($field["name"]);
+									$input->name($postColumn);
 									$input->type("file");
 									$input->accept($this->uploadFields[$field["name"]]["type"]);
 							}elseif($field["type"]=="date")
 							{// Datums-Feld
-									$input->name($field["name"]);
-									$input->type("text");
-									$value= $this->db->makeUserDateFormat($post[$field["name"]]);
+									$input->name($postColumn);
+									$input->type("date");
+									$value= $this->db->makeUserDateFormat($columnValue);
 									if(!$value)
-										$value= $post[$field["name"]];
+										$value= $columnValue;
 									if(!$value)
 										$value= $this->db->getNullDate();
 									$input->value($value);
 							}elseif($field["type"]=="time")
 							{// Datums-Feld
-									$input->name($field["name"]);
-									$input->type("text");
-									$value= $this->db->makeUserTimeFormat($post[$field["name"]]);
+									$input->name($postColumn);
+									$input->type("time");
+									$value= $this->db->makeUserTimeFormat($columnValue);
 									if(!$value)
-										$value= $post[$field["name"]];
+										$value= $columnValue;
 									if(!$value)
 										$value= $this->db->getNullTime();
 									$input->value($value);
 							}else
   							{// normales Eingabe-Feld
-  								$input->name($field["name"]);
+  								$input->name($postColumn);
 								if(	$field["len"]<3000
 									and
 									!isset($mce)		)
 								{
   									$input->type("text");
-  									if(isset($post[$field["name"]]))
-  										$input->value($post[$field["name"]]);
+  									if(isset($columnValue))
+  										$input->value($columnValue);
 								}else
 								{
-									if(isset($post[$field["name"]]))
+									if(isset($columnValue))
 									{
-										$value= trim($post[$field["name"]]);
-										$firstChar= substr($post[$field["name"]], 0, 1);
-										$lastChar= substr($post[$field["name"]], strlen($post[$field["name"]])-1);
+										$value= trim($columnValue);
+										$firstChar= substr($columnValue, 0, 1);
+										$lastChar= substr($columnValue, strlen($columnValue)-1);
 										if($firstChar==" " || $firstChar=="\t")
 											$value= " ".$value;
 										if($lastChar==" " || $lastChar=="\t")
@@ -1648,7 +1681,7 @@ class STItemBox extends STBaseBox
 						}
 						if($extra=="disabled")
 						{
-							$this->disabled($columnName, $value);
+							$this->disabled($columnName, true);
 						}
 					}
 				}
@@ -1892,8 +1925,6 @@ class STItemBox extends STBaseBox
     			    $this->pwdEncoded &&
 					$showpost[$this->password]!==null      )
             	{
-            		$columns= $this->createColumns($this->columns);
-            		$name= array_search($this->password, $columns);
             		$showpost[$this->password]= "password('".$showpost[$this->password]."')";
             	}
             	
@@ -1920,7 +1951,7 @@ class STItemBox extends STBaseBox
 					}
             	}else
             	{
-				    $changedValues= $this->getChangedResult($showpost);
+            	    $changedValues= $this->getChangedResult($showpost);
 				    if(count($changedValues))
 				    {
     				    $db_case= new STDbUpdater($this->asDBTable);
@@ -1989,17 +2020,19 @@ class STItemBox extends STBaseBox
         return !$bError;
 
 	}
-		function getChangedResult(array $post_vars) : array
+		private function getChangedResult(array $post_vars) : array
 		{
+		    $columns= $this->createColumns();
 		    $result= array();
 			if(isset($this->sqlResult))
 			{
 			    foreach ($this->sqlResult as $column => $content)
 			    {
-			        if( array_key_exists($column, $post_vars) &&
-			            $post_vars[$column] !== $content         )
+			        $alias= preg_replace("/ /", "_", $columns[$column]);
+			        if( isset($post_vars[$alias]) &&
+			            $post_vars[$alias] !== $content    )
 			        {
-			            $result[$column]= $post_vars[$column];
+			            $result[$column]= $post_vars[$alias];
 			        }
 			    }
 			}
@@ -2214,12 +2247,13 @@ class STItemBox extends STBaseBox
         	foreach($fields as $key => $field)
             {
                 $f= $this->asDBTable->findColumnOrAlias($field['name']);
+                $alias= preg_replace("/[ \t]/", "_", $f['alias']);
                 if($bFieldDefineSelection)
                 {
-                    $space= STCheck::write("field: ".$field["name"]);
+                    $space= STCheck::write("field: ".$field["name"].":$alias");
             	    st_print_r($f, 1, $space);
                 }
-				if(	isset($post[$f['column']]))
+				if(	isset($post[$alias]))
 				{
 				    if($bFieldDefineSelection)
 				        STCheck::write("exist by incomming POST variable");
@@ -2227,11 +2261,11 @@ class STItemBox extends STBaseBox
 					{
 					    if($bFieldDefineSelection)
 					        STCheck::write("and also inside database select");
-						if(	(	$post[$f['column']]!=$result[$f['alias']] &&
+						if(	(	$post[$alias]!=$result[$f['alias']] &&
 								$f['column']!=$this->password					    )
 							or
 							(	$f['alias']==$this->password &&
-								$post[$f['column']]							)	)
+								isset($post[$alias])							)	)
 						{
 							$newFields[]= $field;
 						}
@@ -2261,8 +2295,8 @@ class STItemBox extends STBaseBox
 					    }else
 					    {   
 					        if($bFieldDefineSelection)
-					            STCheck::write("field is disabled, so field should be deleted inside database");
-    					    $post[$f['column']]= "";
+					            STCheck::write("field is disabled, so make no changes inside database");
+    					    //$post[$f['column']]= "";
 					    }
     					$newFields[]= $field;
 					}else if($bFieldDefineSelection)
@@ -2353,6 +2387,8 @@ class STItemBox extends STBaseBox
                 if( (   !isset($post[$name]) ||
     					$post[$name]===null ||
                         $post[$name]===""	      ) &&
+                    (   !isset($this->aDisabled[$columns[$field['name']]]) ||
+                        $this->aDisabled[$columns[$field['name']]][/*rownr*/0] == false ) &&
                     (   $this->action == STINSERT ||  // if action is STUPDATE and it be a password field
                         $this->action == STDELETE ||  // field can be an null string for no update
                         $this->password != $name  ||  // elsewhere password repetition be defined
@@ -2541,21 +2577,21 @@ class STItemBox extends STBaseBox
 		}
 		function disabled($columnName, $aEnums= null)
 		{
-			if($this->asDBTable)
-				$field= $this->asDBTable->findAliasOrColumn($columnName);
+			$field= $this->asDBTable->findAliasOrColumn($columnName);
 			if($aEnums)
 			{
 				if(!is_array($aEnums))
 					$aEnums= array($aEnums);
-					if( isset($this->aDisabled[$field["column"]]) &&
-					    count($this->aDisabled[$field["column"]])      )
+					if( isset($this->aDisabled[$field["alias"]]) &&
+					    count($this->aDisabled[$field["alias"]])      )
 				{
-					$this->aDisabled[$field["column"]]= array_merge($this->aDisabled[$field["column"]], $aEnums);
+				    showLine();
+					$this->aDisabled[$field["alias"]]= array_merge($this->aDisabled[$field["alias"]], $aEnums);
 					return;
 				}
 			}else
 				$aEnums= true;
-			$this->aDisabled[$field["column"]]= $aEnums;
+			$this->aDisabled[$field["alias"]]= $aEnums;
 		}
 /*		function onOKMakeScript($script)
 		{

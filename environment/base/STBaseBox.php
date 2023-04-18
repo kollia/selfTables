@@ -34,7 +34,7 @@ class STBaseBox extends TableTag
 		 * defined names for update and delete columns
 		 * @var array
 		 */
-		private $aAlias= array();
+		protected $aAction= array();
 		/**
 		 * css stylshet link
 		 */
@@ -136,12 +136,15 @@ class STBaseBox extends TableTag
 		}
 		protected function makeCallback($action, &$oCallbackClass, $columnName, $rownum)
 		{//STCheck::is_warning(1,"","makeCallback");
-			Tag::echoDebug("callback", "makeCallback(ACTION:'$action', CALLBACKCLASS("
-									.get_class($oCallbackClass)."), COLUMN:'$columnName', ROWNUM:$rownum)");
-			Tag::paramCheck($action, 1, "string");
-			Tag::paramCheck($oCallbackClass, 2, "STCallbackClass");
-			Tag::paramCheck($columnName, 3, "string");
-			Tag::paramCheck($rownum, 4, "int", "string");
+		    if(STCheck::isDebug())
+		    {
+		        STCheck::echoDebug("callback", "makeCallback(ACTION:'$action', CALLBACKCLASS("
+    									.get_class($oCallbackClass)."), COLUMN:'$columnName', ROWNUM:$rownum)");
+		        STCheck::param($action, 0, "string");
+		        STCheck::param($oCallbackClass, 1, "STCallbackClass");
+		        STCheck::param($columnName, 2, "string");
+		        STCheck::param($rownum, 3, "int", "string");
+		    }
 
 			if(!count($this->aCallbacks))
 				return false;
@@ -154,26 +157,25 @@ class STBaseBox extends TableTag
 				$oCallbackClass->aTables= $aliases;
 			}
 			$errorString= "";
-			$bForm= false;
-			if(	$action==STINSERT
-				or
-				$action==STUPDATE
-				or
-				$action==STDELETE	)
+			$oCallbackClass->setWhere($this->where);
+			$oCallbackClass->column= $columnName;
+			$oCallbackClass->action= $action;
+			$oCallbackClass->aUnlink= $this->asDBTable->aUnlink;
+			if( (    isset($this->aDisabled[$columnName][0]) &&
+			         $this->aDisabled[$columnName][0] == true    ) ||
+			    (    isset($this->aDisabled[$columnName][$action]) &&
+			         $this->aDisabled[$columnName][$action] == true                 )   )
 			{
-				$bForm= true;
-			}
+			    $oCallbackClass->disabled($columnName);
+			}else
+			    $oCallbackClass->enabled($columnName);
+			
 			// look first wether callbacks exist
 			// for the current column
 			if(	isset($this->aCallbacks[$columnName]) )
 			{
-				Tag::echoDebug("callback", "make callback for existing column $columnName");
-				$oCallbackClass->setWhere($this->where);
-				$oCallbackClass->column= $columnName;
-				$oCallbackClass->action= $action;
-				$oCallbackClass->rownum= $rownum;
-				//$oCallbackClass->before= true;
-				$oCallbackClass->aUnlink= $this->asDBTable->aUnlink;
+			    Tag::echoDebug("callback", "make callback for existing column $columnName");
+			    $oCallbackClass->rownum= $rownum;
 				$callbacks= $this->aCallbacks[$columnName];
 				foreach($callbacks as $functionArray)
 				{
@@ -189,16 +191,13 @@ class STBaseBox extends TableTag
     					}
 					}
 				}
+				$this->aDisabled[$columnName][$rownum]= $oCallbackClass->argument("disabled", $columnName, 0);
 				return true;
 			}else
 			{// elsewhere search in loop all callbacks for STLIST, STINSERT, ...
 			 // wether columnName the same as action
 			 	Tag::echoDebug("callback", "loop callbacks for STLIST, STINSERT, ... -> wether columnName has the same action");
 				$incomming= $columnName;
-				$oCallbackClass->setWhere($this->where);
-				$oCallbackClass->column= $columnName;
-				$oCallbackClass->action= $action;
-				$oCallbackClass->aUnlink= $this->asDBTable->aUnlink;
 				$bOk= false;
 				//echo "action:$action<br />";
 				//echo "columnName:$columnName<br />";
@@ -208,6 +207,17 @@ class STBaseBox extends TableTag
 					$columnName= $incomming;
 					if($action==$columnName)
 						$columnName= $column;
+				    if(!isset($oCallbackClass->aDisabled[$columnName]))
+				    {
+				        if( (   isset($this->aDisabled[$columnName][0]) &&
+				                $this->aDisabled[$columnName][0] == true    ) ||
+				            (   isset($this->aDisabled[$columnName][$action]) &&
+				                $this->aDisabled[$columnName][$action] == true                 )   )
+				        {
+					        $oCallbackClass->disabled($columnName);
+					    }else
+					        $oCallbackClass->enabled($columnName);
+					}
 					foreach($content as $functionArray)
     				{
     					if(	$action==$functionArray["action"]
@@ -233,8 +243,10 @@ class STBaseBox extends TableTag
         						return $errorString;
         					}
 							$bOk= true;
+							break;
     					}
     				}
+    				$this->aDisabled[$columnName][$rownum]= $oCallbackClass->argument("disabled", $columnName, 0);
 				}
 			}
 			return $bOk;
@@ -582,61 +594,15 @@ class STBaseBox extends TableTag
 		}
 		function searchByAlias($aliasName)
 		{
-			foreach($this->asSelect as $field)
-			{
-				if($field["alias"]==$aliasName)
-				{
-					$aRv= $field;
-					$aRv["type"]= "alias";
-					return $aRv;
-				}
-			}
-			return null;
+		    return $this->asDBTable->searchByColumn($aliasName);
 		}
 		function searchByColumn($columnName)
 		{
-			foreach($this->show as $field)
-			{
-				if($field["asSelect"]==$columnName)
-				{
-					$aRv= $field;
-					$aRv["type"]= "column";
-					return $aRv;
-				}
-			}
-			foreach($this->columns as $field)
-			{
-				if($field["name"]==$columnName)
-				{
-					$aRv= array();
-					$aRv["table"]= $this->name;
-					$aRv["column"]= $columnName;
-					$aRv["alias"]= $columnName;//"unknown";
-					$aRv["type"]= "column";
-					return $aRv;
-				}
-			}
-			return null;
+		    return $this->asDBTable->searchByColumn($columnName);
 		}
 		function findAliasOrColumn($name, $firstAlias= false)
 		{
-			$field= null;
-			if($firstAlias)
-				$field= $this->searchByAlias($name);
-			if(!$field)
-				$field= $this->searchByColumn($name);
-			if(!$field && !$firstAlias)
-				$field= $this->searchByAlias($name);
-			STCheck::is_warning(!$field, "STBaseBox::findAliasOrColumn()", "column ".$name." is not declared in table ".$this->Name);
-			if(!$field)
-			{
-				$field= array();
-				$field["table"]= "unknown";
-				$field["column"]= $name;
-				$field["alias"]= $name;
-				$field["type"]= "unknown";
-			}
-			return $field;
+		    return $this->asDBTable->findAliasOrColumn($name);
 		}
 		public function doContainerManagement($bManagement)
 		{
