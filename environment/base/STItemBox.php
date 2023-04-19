@@ -576,13 +576,15 @@ class STItemBox extends STBaseBox
 		st_print_r($post,5);
 		st_print_r($changedPost,5);
 		st_print_r($HTTP_POST_VARS,5);*/
+		if(isset($changedPost))
+		{
+		    $post= $changedPost;
+		}else
+		    $post= $HTTP_POST_VARS;
+		        
 		// 19/06/2007 alex:	the post-vars must be the second parameter
 		//					from array_merge, because from the second
 		//					the first will be replaced
-		if($changedPost === NULL)
-			$post= $HTTP_POST_VARS;
-		else
-			$post= $changedPost;
 		$post= array_merge($this->aSetAlso, $post);
         /*$post= $HTTP_POST_VARS;
 		foreach($this->aSetAlso as $key=>$value)
@@ -604,17 +606,22 @@ class STItemBox extends STBaseBox
 		{// wenn ein UploadFeld enthalten ist
 			$form->enctype("multipart/form-data");
 		}
-
+		
 		if(!isset($post["STBoxes_action"]))
 		{
+		    // change field names into column names
+		    $newPost= array();
+		    foreach($post as $key=>$value)
+		    {
+		        if(isset($columns[$key]))
+		            $newPost[$columns[$key]]= $value;
+		    }
+		    $post= $newPost;
 			// write content without values for every column row
 			// into post variable
 			foreach($fields as $content)
-				if(!isset($post[$content["name"]]))
-					$post[$content["name"]]= "";
-
-			//$post["STBoxes_action"]= "before";
-
+			    if(!isset($post[$columns[$content["name"]]]))
+			        $post[$columns[$content["name"]]]= "";
 		}
 		$oCallbackClass= new STCallbackClass($this->asDBTable, $post);
 		$oCallbackClass->action= $this->action;
@@ -1710,7 +1717,7 @@ class STItemBox extends STBaseBox
 		 */
 		$insert_content= array();
 		$aSetAlso= $this->asDBTable->aSetAlso;
-		if($this->action==STINSERT &&
+		if( $this->action==STINSERT &&
 		    isset($HTTP_POST_VARS['STBoxes_action']) &&
 		    $HTTP_POST_VARS['STBoxes_action'] == "make"  )
 		{
@@ -1944,10 +1951,28 @@ class STItemBox extends STBaseBox
 						$db_case->where($where);
 					}else
 					{
+					    $columns= $this->createColumns();
 					    $db_case= new STDbInserter($this->asDBTable);
 					    foreach($showpost as $column => $value)
+					    {
 					        if(isset($value))
-					            $db_case->fillColumn($column, $value);
+					        {
+					            $field= $this->asDBTable->findAliasOrColumn($column);
+					            if( $field['type'] == "not found" )
+					            {
+					                foreach($columns as $fieldName=>$columnName)
+					                {
+					                    $preC= preg_replace("/ /", "_", $columnName);
+					                    if($preC == $column)
+					                    {
+					                        $field['column']= $fieldName;
+					                        break;
+					                    }
+					                }
+					            }
+					            $db_case->fillColumn($field['column'], $value);
+					        }
+					    }
 					}
             	}else
             	{
@@ -2164,7 +2189,7 @@ class STItemBox extends STBaseBox
                 		$this->msg->setMessageId("UPLOADERROR@@", $HTTP_POST_FILES[$name]["error"], $upload_file["name"]);
                 		return false;
                 	}
-					$post[$name]= $insert_fileName;
+					$post[$columns[$name]]= $insert_fileName;
 				}
 			}
 			return true;
@@ -2316,8 +2341,12 @@ class STItemBox extends STBaseBox
         foreach($fields as $field)
         {
             $name= $field["name"];
+            if(isset($columns[$name]))
+                $columnName= $columns[$name];
+            else
+                $columnName= $name;
             if( STCheck::isDebug() &&
-                isset($post[$name]) &&
+                isset($post[$columnName]) &&
                 (   STCheck::isDebug("show.db.fields") ||
                     $bFieldDefineSelection                  )   )
             {
@@ -2329,23 +2358,19 @@ class STItemBox extends STBaseBox
                 $space+= 40;
                 st_print_r($field, 2, $space);
                 STCheck::echoSpace($space);
-                echo "<b>content:</b> \"".$post[$name]."\"<br />";
+                echo "<b>content:</b> \"".$post[$columnName]."\"<br />";
             }
             $ch= 0;
-            if(isset($post[$name]))
+            if(isset($post[$columnName]))
             {
-                $post[$name]= str_replace("'", "\\'", $post[$name], $ch);
+                $post[$columnName]= str_replace("'", "\\'", $post[$columnName], $ch);
                 if( $bFieldDefineSelection &&
                     $ch > 0                     )
                 {
                     STCheck::echoSpace($space);
-                    echo "<b>changed to:</b>\"".$post[$name]."\"<br>";
+                    echo "<b>changed to:</b>\"".$post[$columnName]."\"<br>";
                 }
             }
-            if(isset($columns[$name]))
-				$columnName= $columns[$name];
-			else
-				$columnName= $name;
 			$enum= 0;
 			if(preg_match("/enum/", $field["flags"]))
 			{
@@ -2354,23 +2379,23 @@ class STItemBox extends STBaseBox
 			}
 			if(	$field["type"]=="date"
 				and
-				isset($post[$name])		)
+				isset($post[$columnName])		)
 			{
-				if($post[$name]==$this->db->getNullDate())
-					$post[$name]= null;
+				if($post[$columnName]==$this->db->getNullDate())
+					$post[$columnName]= null;
 				else
 				{
-					if(	$post[$name]!="now()"
+					if(	$post[$columnName]!="now()"
 						and
-						$post[$name]!="sysdate()"	)
+						$post[$columnName]!="sysdate()"	)
 					{
-    					$result= $this->db->makeSqlDateFormat(trim($post[$name]));
+    					$result= $this->db->makeSqlDateFormat(trim($post[$columnName]));
     					if(!$result)
     					{
     					    $this->msg->setMessageId("WRONGDATEFORMAT@@", $columnName, $this->db->getDateFormat());
     						return false;
     					}
-    					$post[$name]= $result;
+    					$post[$columnName]= $result;
 					}
 				}
 			}
@@ -2384,9 +2409,9 @@ class STItemBox extends STBaseBox
 				// alex 08/06/2005:	the compairson to null or "" (null string)
 				//					have to be checkd with 3 equal to signs
 				//					because the zero number should be allowed
-                if( (   !isset($post[$name]) ||
-    					$post[$name]===null ||
-                        $post[$name]===""	      ) &&
+                if( (   !isset($post[$columnName]) ||
+    					$post[$columnName]===null ||
+                        $post[$columnName]===""	      ) &&
                     (   !isset($this->aDisabled[$columns[$field['name']]]) ||
                         $this->aDisabled[$columns[$field['name']]][/*rownr*/0] == false ) &&
                     (   $this->action == STINSERT ||  // if action is STUPDATE and it be a password field
@@ -2398,39 +2423,39 @@ class STItemBox extends STBaseBox
                     return false;
                 }
             }
-            if(	isset($post[$name])
+            if(	isset($post[$columnName])
             	&&
-            	$post[$name] !== ""
+            	$post[$columnName] !== ""
             	&&
             	$field["type"] == "int"
 				&&
 				!preg_match("/auto_increment/", $field["flags"])	)
 			{
-				if(	!is_numeric(trim($post[$name]))
+				if(	!is_numeric(trim($post[$columnName]))
 					||
-					preg_match("/[.]/", $post[$name])	)
+					preg_match("/[.]/", $post[$columnName])	)
 				{
 					$this->msg->setMessageId("NOINTEGER@", $columnName);
 					return false;
 				}
-			}elseif(isset($post[$name])
+			}elseif(isset($post[$columnName])
 	            	&&
-	            	$post[$name] !== ""
+	            	$post[$columnName] !== ""
 	            	&&
 	            	$field["type"] == "real")
 			{
-				if(!is_numeric(trim($post[$name])))
+				if(!is_numeric(trim($post[$columnName])))
 				{
 					$this->msg->setMessageId("NOFLOAT@", $columnName);
 					return false;
 				}
-			}elseif(isset($post[$name])
+			}elseif(isset($post[$columnName])
 	            	&&
-	            	$post[$name] !== ""
+	            	$post[$columnName] !== ""
 	            	&&
 	            	$field["type"] == "string")
 			{
-				if(strlen($post[$name]) > $field["len"])
+				if(strlen($post[$columnName]) > $field["len"])
 				{
 					$this->msg->setMessageId("TOLONGSTRING@@", $columnName, $field["len"]);
 					return false;
@@ -2442,7 +2467,7 @@ class STItemBox extends STBaseBox
 				and
 				!preg_match("/auto_increment/", $field["flags"])		)
 			{
-				$value= $post[$name];
+				$value= $post[$columnName];
 				if(is_string($value))
 					$value= "'$value'";
 				$statement= "select $name from $table where $name=$value";
@@ -2551,15 +2576,15 @@ class STItemBox extends STBaseBox
 				 	if(count($this->passwordNames) >= 2)
 				 	{
 				 	    if( isset($post["re_".$name]) && // if password repetition not be set, password also a null string
-						    $post[$name] != $post["re_".$name]    ) // and for STUPDATE no entry needed
+						    $post[$columnName] != $post["re_".$name]    ) // and for STUPDATE no entry needed
 						{
 							$this->msg->setMessageId("PASSWORDNOTSAME");
 							return false;
 						}
 					}
 				}
-				if(isset($post[$name]))
-					$newPost[$name]= $post[$name];
+				if(isset($post[$columnName]))
+					$newPost[$name]= $post[$columnName];
         }
         //$post= $newPost;
 		//echo __file__.__line__."<br>";

@@ -122,7 +122,7 @@ class STUserManagement extends STObjectContainer
 	    
 	    $user= &$this->needTable("User");
 	    $user->select("domain", "Domain");
-	    $user->preSelect("domain", $domain['Name']);
+	    $user->preSelect("domain", $domain['ID']);
 	    $user->disabled("domain");
 	    $user->select("user", "User");
 	    $user->select("FullName", "full qualified name");
