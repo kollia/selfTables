@@ -832,8 +832,10 @@ class STUserSession extends STDbSession
 		    $this->userID != -1        )
 		{//$this->$loggedinGroup;
 			$groupWhere= new STDbWhere("Name='".$this->onlineGroup."'", "Group", "or");
+			$groupWhere->writeWhereCondition();
 			$groupWhere->orWhere("Name='".$this->loggedinGroup."'");
 			$usergroupWhere= new STDbWhere("UserID=".$this->userID, "UserGroup");
+			$usergroupWhere->writeWhereCondition();
 			$groupWhere->orWhere($usergroupWhere);
 		}else		    
 		    $groupWhere= new STDbWhere("Name='".$this->onlineGroup."'", "Group", "and");
