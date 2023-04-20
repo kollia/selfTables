@@ -730,18 +730,13 @@ class STSession
             // Error  4: Unknown error in LDAP authentication!
 			return 1;
 	}
-	function verifyLogin($Project= 1)
+	public function verifyLogin(string $projectName, $loginMask) : bool
 	{
-		global	$HTTP_POST_VARS,
-				$HTTP_COOKIE_VARS,
-				$HTTP_SERVER_VARS;
-
-		STCheck::paramCheck($Project, 1, "string", "int");
-
-		//$sessionName = $this->sessionName;
-		$result = $this->private_verifyLogin( $Project);
-
-		return $result;
+	    STCheck::param($loginMask, 1, "string", "Tag");
+	    
+	    $this->UserLoginMask= $loginMask;
+	    $loggedIn= $this->verifyProject($projectName);
+	    return $loggedIn;
 	}
 	/**
 	 * return error number by fault login, or elsewher 0.<br />
@@ -803,7 +798,7 @@ class STSession
 	{
 	    return $this->loginError;
 	}
-	private function private_verifyLogin($Project)
+	public function verifyProject(string $Project)
 	{
 		global	$HTTP_SERVER_VARS,
 				$HTTP_GET_VARS,
@@ -881,9 +876,9 @@ class STSession
 				$selector->execute();
 				$last= $selector->getSingleResult();*/
 				$updater= new STDbUpdater($userTable);
-				$updater->update("LastLogin", "currentLogin");
-				$updater->update("currentLogin", "sysdate()");
+				$updater->update("LastLogin", "sysdate()");
 				$updater->update("NrLogin", "NrLogin+1");
+				$updater->where("ID=".$this->userID);
 				$updater->execute();
 				/*$statement=  "update ".$this->sUserTable." set LastLogin=sysdate(), NrLogin= NrLogin+1 ";
 				$statement.= "where ID=".$this->userID;
@@ -1044,7 +1039,6 @@ class STSession
 	}
 	function &getLoginMask($error)
 	{
-		global $st_user_login_mask;
 		global $HTTP_SERVER_VARS;
 
 		STCheck::paramCheck($error, 1, "int");
@@ -1058,20 +1052,14 @@ class STSession
 			$html->addObj($head);
 			$body= new BodyTag();
 
-		if(	is_string($this->UserLoginMask)
-			||
-			is_string($st_user_login_mask)	)
+		if(	is_string($this->UserLoginMask) ) // should be an URL to the login-page
 		{
-			$get= new STQueryString();
-			$get->delete("doLogout");
-			$get->insert("ERROR=".$error);
-			$get->insert("from=".$url);
-			$get->noSth("ERROR");
-			$get->noSth("from");
-			$Address= $st_user_login_mask;
-			if(is_string($this->UserLoginMask))
-				$Address= $this->UserLoginMask;
-			$Address.= $get->getStringVars();
+			$query= new STQueryString();
+			$query->delete("doLogout");
+			$query->update("ERROR=".$error);
+			$query->update("from=".$url);
+			$Address= $this->UserLoginMask;
+			$Address.= $query->getStringVars();
 			if(Tag::isDebug() )
 			{
 				$body->add(br());
@@ -1105,7 +1093,7 @@ class STSession
 			return $html;
 		}
 		if(!typeof($this->UserLoginMask, "HtmlTag"))
-		{
+ 		{
 				$form = new FormTag();
 					$form->action("");
 					$form->method("post");
@@ -1146,7 +1134,7 @@ class STSession
 							$logTable->addObj($hiddenInput);
 			if(typeof($this, "STUserSession"))
 			{
-				$typeT= $this->database->getTable("GroupType");
+				$typeT= $this->database->getTable("AccessDomain");
 				$typeT->select("Label");
 				$typeT->distinct();
 				$selector= new STDbSelector($typeT);
@@ -1211,14 +1199,14 @@ class STSession
         global $HTTP_SERVER_VARS;
         global $st_user_login_mask;
 
-        $get= new STQueryString();
-        $get->delete("show");
-        $get->delete("ProjectID");
-        $get->update("doLogout");
+        $query= new STQueryString();
+        $query->delete("show");
+        $query->delete("ProjectID");
+        $query->update("doLogout");
         if($this->isLoggedIn())
-            $get->update("user=".$this->getUserName());
+            $query->update("user=".$this->getUserName());
             
-        $curUrl= $this->startPage.$get->getStringVars();
+        $curUrl= $this->startPage.$query->getStringVars();
         STCheck::echoDebug("user", "set url for logout button to '$curUrl'");
 
 		$button= new ButtonTag($class);

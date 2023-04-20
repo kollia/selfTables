@@ -215,7 +215,6 @@ class STUserSession extends STDbSession
         $dbTableDescription->column("User", "Pwd", "char(16) binary", /*null*/false);
         $dbTableDescription->column("User", "NrLogin", "INT UNSIGNED");
         $dbTableDescription->column("User", "LastLogin", "DATETIME");
-        $dbTableDescription->column("User", "currentLogin", "DATETIME");
         $dbTableDescription->column("User", "DateCreation", "DATETIME", /*null*/false);
         
         $dbTableDescription->table("Cluster");
@@ -308,12 +307,6 @@ class STUserSession extends STDbSession
 
 		$desc= &STDbTableDescriptions::instance($this->database->getDatabaseName());
 		$desc->setPrefixToTables($prefix);
-	}
-	function verifyLogin($Project= 1)
-	{// method only to check param -> must be set
-		Tag::paramCheck($Project, 1, "int", "string");
-
-		STSession::verifyLogin($Project);
 	}
 	function projectTable($name)
 	{
@@ -982,20 +975,20 @@ class STUserSession extends STDbSession
     	    }
 		}
 		$userTable= $this->database->getTable("User");
-		$userTable->clearSelects();
-		$userTable->clearGetColumns();
-		$userTable->select("ID");
-		$userTable->select("UserName");
-		$userTable->getColumn("GroupType");
+		$selector= new STDbSelector($userTable);
+		$selector->clearSelects();
+		$selector->clearGetColumns();
+		$selector->select("User", "ID", "ID");
+		$selector->select("User", "UserName", "UserName");
+		$selector->select("AccessDomain", "Name", "Domain");
 		if(is_string($user))
-			$userTable->where("UserName='".$user."'");
+			$selector->where("UserName='".$user."'");
 		else
-			$userTable->where("ID=".$user);
+			$selector->where("ID=".$user);
 		if($domain != "")
 		{
-		    $userTable->andWhere("GroupType='$domain'");
+		    $selector->andWhere("GroupType='$domain'");
 		}
-		$selector= new STDbSelector($userTable);
 		$selector->execute();
 		$row= $selector->getResult();
 
@@ -1023,7 +1016,7 @@ class STUserSession extends STDbSession
 		    }
     	  	$ID= $row[$rownr]['ID'];
     	  	$user= $row[$rownr]['UserName'];
-    	  	$groupType= $row[$rownr]['GroupType'];
+    	  	$groupType= $row[$rownr]['Domain'];
     		
 		}
 		if( STCheck::isDebug("user") )
@@ -1074,7 +1067,7 @@ class STUserSession extends STDbSession
 		
 		//$oUserTable= $this->database->getTable("User");
 		$userSelector= new STDbSelector($userTable);
-		$userSelector->select("User", "ID");
+		$userSelector->select("User", "ID", "ID");
 		$userSelector->where($oWhere);
 		$userSelector->execute();
 		$corrID= $userSelector->getSingleResult();

@@ -74,7 +74,9 @@ class STDbSqlCases
     protected function add_quotes(string $type, $value)
     {
         if(	$type=="int" ||
-            $type=="real"   )
+            $type=="real" ||
+            $type=="datetime" ||
+            $type=="time"           )
         {
             if( !isset($value) ||
                 $value === null ||

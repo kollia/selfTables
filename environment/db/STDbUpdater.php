@@ -17,11 +17,12 @@ class STDbUpdater extends STDbSqlCases
 	 */
 	var $nAktRow= 0;
 	
-	function update($column, $value)
+	public function update(string $column, $value)
 	{
-		Tag::paramCheck($column, 1, "string");
-		
-		$this->columns[$this->nAktRow][$column]= $value;
+	    $field= $this->table->findColumnOrAlias($column);
+	    STCheck::alert(($field["type"]=="no found"), "STDbUpdater::update()",
+	        "column '$column' do not exist inside table ".$this->table->getName());
+		$this->columns[$this->nAktRow][$field['column']]= $value;
 	}
 	function where($where)
 	{
@@ -78,7 +79,7 @@ class STDbUpdater extends STDbSqlCases
 	    }
 	    $this->table->modifyQueryLimitation();
 	    $oWhere= $this->table->getWhere();
-	    STCheck::alert(!isset($oWhere), "STCheck::getUpdateStratement()", "no where usage for update exist");
+	    STCheck::alert(!isset($oWhere), "STCheck::getUpdateStatement()", "no where usage for update exist");
 	    //$whereAliases= $this->table->getWhereAliases();
 	    $whereStatement= $this->table->getWhereStatement("where");//, $whereAliases);
 	    if($whereStatement!="")
@@ -120,7 +121,8 @@ class STDbUpdater extends STDbSqlCases
         $sql="UPDATE ".$this->table->Name." set $update_string";
         $sql.= $whereStatement;
         
-        STCheck::echoDebug("db.main.statement", $sql);
+        STCheck::echoDebug("db.main.statement", $sql);        
+        STCheck::alert(!preg_match("/where/i", $sql), "STCheck::getUpdateStatement()", "no where usage for update exist");
         return $sql;
 	}
 	public function execute($onError= onErrorStop)
