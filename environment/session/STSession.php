@@ -1057,7 +1057,7 @@ class STSession
 			$query= new STQueryString();
 			$query->delete("doLogout");
 			$query->update("ERROR=".$error);
-			$query->update("from=".$url);
+			$query->update("ProjectID=".$this->projectID);
 			$Address= $this->UserLoginMask;
 			$Address.= $query->getStringVars();
 			if(Tag::isDebug() )

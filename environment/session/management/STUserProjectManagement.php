@@ -187,30 +187,54 @@ class STUserProjectManagement extends STBaseContainer
     {
         $this->addedContent[]= $tag;
     }
+    protected function getProjectLink(int $projectID) : string
+    {
+        $get= new STQueryString();
+        $debug= $get->getUrlParamValue("debug");
+        $preg= preg_split("/\?/", $this->accessableProjects[$projectID]['Path']);
+        $projectAddress= $preg[0];
+        $projectQueryString= null;
+        if(isset($preg[1]))
+            $projectQueryString= $preg[1];
+        $projectQuery= new STQueryString($projectQueryString);
+        if(isset($debug))
+            $projectQuery->update("debug=$debug");
+        $projectQuery->delete("ProjectID");
+        $projectAddress.= $projectQuery->getUrlParamString();
+        return $projectAddress;
+    }
     public function execute(&$externSideCreator, $onError)
     {
         STBaseContainer::execute($externSideCreator, $onError);  
         $available= $this->showAvailableSite();
         
-        //st_print_r($available);
+        if( STCheck::isDebug() &&
+            $available['show'] == "frame"   )
+        {
+            $msg[]= "by output some text before FRAME, HTML FRAME does not work!";
+            $msg[]= "so show available navigation not frame";
+            STCheck::write($msg[0]);
+            $space= STCheck::write($msg[1]) +86;
+            echo "<br>";
+            st_print_r($available, 1, $space);
+            $div= new DivTag();
+                $h1= new H1Tag();
+                    $h1->add("Project: ");
+                    $a= new ATag();
+                        $projectAdr= $this->getProjectLink($available['project']);
+                        $a->href($projectAdr);
+                        $a->add($projectAdr);
+                    $h1->add($a);
+                $div->add($h1);
+            $div->display();
+            $available['show']= "navigation";
+        }
         if($available['show'] == "frame")
         {
-            $get= new STQueryString();
-            $debug= $get->getUrlParamValue("debug");
-            $preg= preg_split("/\?/", $this->accessableProjects[$available['project']]['Path']);
-            $projectAddress= $preg[0];
-            $projectQueryString= null;
-            if(isset($preg[1]))
-                $projectQueryString= $preg[1];
-            $projectQuery= new STQueryString($projectQueryString);
-            if(isset($debug))
-                $projectQuery->update("debug=$debug");
-            $projectQuery->delete("ProjectID");
-            $projectAddress.= $projectQuery->getUrlParamString();
             $frame= new STFrameContainer();
             $frame->framesetRows("70,*");
             $frame->setFramePath("?show=navigation&ProjectID=".$available['project']);
-            $frame->setFramePath($projectAddress);
+            $frame->setFramePath($this->getProjectLink($available['project']));
             $result= $frame->execute($externSideCreator, $onError);
             
             $this->tag= "frameset";
@@ -226,6 +250,11 @@ class STUserProjectManagement extends STBaseContainer
         //st_print_r($available);
         $get= new STQueryString();
         $user= STSession::instance();
+        if( $available['show'] == "project" &&
+            !isset($this->accessableProjects[$available['project']])    )
+        {// user has no access to project, so show login
+            $available['show']= "list";
+        }
         if($available['show'] == "list")
         {
             if( isset($this->homepageLogo) ||
@@ -264,7 +293,7 @@ class STUserProjectManagement extends STBaseContainer
                         //$table->width("100%");
                         $table->columnAlign("right");
                     }
-                $this->append($table);    
+                $this->append($table); 
             }
         }elseif($available['show'] == "navigation")
         {  
@@ -359,7 +388,9 @@ class STUserProjectManagement extends STBaseContainer
             $this->appendObj($tag);
         }
         if( $available['show'] != "navigation" &&
-            !$available['LoggedIn']                 )
+            (   !$available['LoggedIn'] ||
+                (   $available['project'] != 0 &&
+                    !isset($this->accessableProjects[$available['project']])    )   )   )
         {
             $this->getLoginMask();  
             $this->appendObj($this->loginMask);
@@ -387,9 +418,15 @@ class STUserProjectManagement extends STBaseContainer
             $onloadTerm.= ".focus()";
             $this->insertAttribute("onload", $onloadTerm);
        
+        $query= new STQueryString();
         $errorString= "";
         $session= STSession::instance();
         $error= $session->getLoginError();
+        if( $error == 0 &&
+            $query->defined("ERROR")    )
+        {
+            $error= $query->getUrlParamValue("ERROR");
+        }
         switch ($error)
         {
             case 0:
@@ -411,7 +448,7 @@ class STUserProjectManagement extends STBaseContainer
                 $errorString= "Sie haben keinen Zugriff auf diese Daten!";
                 break;
             default:
-                $errorString= "<b>UNKNOWN</b> Error type (".$_GET["ERROR"].") found!";
+                $errorString= "<b>UNKNOWN</b> Error type ($error) found!";
                 break;
         }
             
