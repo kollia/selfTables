@@ -62,9 +62,9 @@ class STDbInserter extends STDbSqlCases
 	    if(!isset($this->statements[$nr]))
 	    {
 	        $this->createCluster($this->columns[$nr]);
-	        $this->statement[$nr]= $this->getInsertStatement($nr);
+	        $this->statements[$nr]= $this->getInsertStatement($nr);
 	    }
-	    return $this->statement[$nr];
+	    return $this->statements[$nr];
 	}
 	function getInsertStatement(int $nr) //$table, $values= null)
 	{

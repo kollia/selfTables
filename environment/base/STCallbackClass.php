@@ -12,6 +12,13 @@ class STCallbackClass
 		 * @var array
 		 */
 		private $aBehavior= array();
+		/**
+		 * filled array with all columns
+		 * in which state (STList/STInsert/STUpdate)
+		 * should be disabled by displaying on Browser
+		 * @var array
+		 */
+		var $aDisabled= array();
 		var $showType;
 		var $bNoShowType;
 		var	$bSkip;

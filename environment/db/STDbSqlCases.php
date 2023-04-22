@@ -14,6 +14,12 @@ class STDbSqlCases
      * @var string array
      */
     protected $statements= array();
+    /**
+     * if one statement produce an error,
+     * value stored in this array
+     * @var array
+     */
+    protected $nErrorRowNr= null;
     
     public function __construct(&$oTable)
     {
