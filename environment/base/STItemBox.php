@@ -2003,7 +2003,7 @@ class STItemBox extends STBaseBox
 				    $res= $db_case->execute($this->getOnError("SQL"));
 					if($res != 0)
 					{
-					    $this->msg->setMessageId("NOUPDATE");
+					    $this->msg->setMessageId("SQLERROR@", $db_case->getErrorString());
             			$this->setSqlError($res);
             			$bError= true;
 					}
