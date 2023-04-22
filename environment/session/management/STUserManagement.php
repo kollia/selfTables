@@ -22,20 +22,17 @@ function pwdCallback(STCallbackClass &$callbackObject, $columnName, $rownum)
         $callbackObject->disabled($columnName);
 }
 function descriptionCallback(&$callbackObject, $columnName, $rownum)
-{//print_r($callbackObject->sqlResult[$rownum]);
-    //$callbackObject->echoResult();
-    //echo "file:".__file__." line:".__line__."<br />";
+{
+    //$bFirstCall= $callbackObject->echoResult();
+    global	$global_selftable_session_class_instance;
     
-    if($callbackObject->getValue() == 1)
-    {
-        $aResult=	array(	"Name"=>"",
-            "Description"=>"Zugriff auf alle Projekte und Untergruppen "	);
-        $aResult= array($aResult);// es wird eine Zeile vorget�uscht
-    }else
+    $instance= $global_selftable_session_class_instance[0];
+    
     {
         $clusterTable= $callbackObject->getTable("Cluster");
         $cluster= new STDbSelector($clusterTable);
         $cluster->select("Project", "Name", "Name");
+        $cluster->select("Cluster", "ID", "cluster");
         $cluster->select("Cluster", "Description", "Description");
         $cluster->where("ClusterGroup", "GroupID=".$callbackObject->sqlResult[$rownum]['access descriptions']);
         $cluster->execute();
@@ -47,7 +44,10 @@ function descriptionCallback(&$callbackObject, $columnName, $rownum)
         $source.=  "	<tr>";
         $source.=  "		<td>";
         $source.=  "			<b>";
-        $source.=  "				[".$row["Name"]."]";
+        $source.=  "				[";
+        if($row['cluster'] != $instance->allAdminCluster)
+            $source.= $row["Name"];
+        $source.= "]";
         $source.=  "			</b>";
         $source.=  "		</td>";
         $source.=  "		<td>";
@@ -212,7 +212,7 @@ class STUserManagement extends STObjectContainer
 			$inserter= new STDbInserter($project);
 			$inserter->fillColumn("Name", $projectName);
 			$inserter->fillColumn("Path", $HTTP_SERVER_VARS["SCRIPT_NAME"]);
-			$inserter->fillColumn("description", "Listing and changing of all access permissions at project UserManagement");
+			$inserter->fillColumn("Description", "Listing and changing of all access permissions at project UserManagement");
 			$inserter->fillColumn("DateCreation", "sysdate()");
 			$inserter->execute();
 
@@ -299,11 +299,11 @@ class STUserManagement extends STObjectContainer
 		}
 
 
-		$created= $this->createCluster("STUM-UserAccess", "Berechtigung zum editieren des eigenen User-Accounts");
+		$created= $this->createCluster("STUM-UserAccess", "Permission to edit own User-Accounts");
 		if($created==="NOERROR")// if Cluster is created, make an join to the LOGGED_IN group.
 			$this->joinClusterGroup("STUM-UserAccess", "LOGGED_IN");// otherwise maybe the admin has changed this
-		$this->createCluster("STUM-UserListAccess", "Berechtigung zum ansehen aller Benutzer");
-		$this->createCluster("STUM-UserListAdmin", "Berechtigung zum �ndern, l�schen und erstellen der Benutzer");
+		$this->createCluster("STUM-UserListAccess", "Permission to see all user");
+		$this->createCluster("STUM-UserListAdmin", "Permission to create, change and delete users");
 	}
 }
 
