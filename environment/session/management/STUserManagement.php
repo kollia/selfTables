@@ -244,6 +244,7 @@ class STUserManagement extends STObjectContainer
     	$this->createGroup($instance->loggedinGroup, $domain['Name']);
     	$this->createGroup($instance->usermanagementAccessGroup, $domain['Name']);
     	$this->createGroup($instance->usermanagementAdminGroup, $domain['Name']);
+    	$this->createGroup($instance->allAdminGroup, $domain['Name']);
 		
     	$this->joinClusterGroup($instance->usermanagementAccessCluster, $instance->usermanagementAccessGroup);
     	$this->joinClusterGroup($instance->usermanagementChangeCluster, $instance->usermanagementAdminGroup);
@@ -268,7 +269,8 @@ class STUserManagement extends STObjectContainer
 		$selector->execute();
 		if(!$selector->getSingleResult())
 		{
-			$this->createCluster($instance->allAdminCluster, "access to all exist CLUSTERs in every project");
+		    $this->createCluster($instance->allAdminCluster, "access to all exist CLUSTERs in every project");
+		    $this->joinClusterGroup($instance->allAdminCluster, $instance->allAdminGroup);
 
 			$db= &$instance->getUserDb();
 			$creator= new STSiteCreator($db);
@@ -279,7 +281,7 @@ class STUserManagement extends STObjectContainer
 			if($result=="NOERROR")
 			{
 				$desc= &STDbTableDescriptions::instance($this->getDatabase()->getDatabaseName());
-				$userName= $desc->getColumnName("User", "UserName");
+				$userName= $desc->getColumnName("User", "user");
 				$pwd= $desc->getColumnName("User", "Pwd");
 				$sqlResult= $container->getResult();
 				$password= $sqlResult[$pwd];
@@ -287,7 +289,7 @@ class STUserManagement extends STObjectContainer
 				preg_match("/^password\('(.+)'\)$/", $password, $preg);
 				$password= $preg[1];
 				$userId= $this->db->getLastInsertID();
-				$this->joinUserGroup($userId, $instance->allAdminCluster);
+				$this->joinUserGroup($userId, $instance->allAdminGroup);
 				$instance->registerSession();
 				$instance->acceptUser($sqlResult[$userName], $password);
 				$instance->setProperties( $userManagementID );

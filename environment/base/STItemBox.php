@@ -2007,10 +2007,9 @@ class STItemBox extends STBaseBox
             			$this->setSqlError($res);
             			$bError= true;
 					}
-            	}
-            	// verwende post als Ergebnis des DB-Inserts f�r eventuelle ausgaben f�r den User
+            	}            	
 				if(!$bError)
-				{
+				{// use post as result from INSERT or UPDATE for some output to user
             		$this->aResult= $showpost;
             		return true;
 				}
@@ -2044,6 +2043,10 @@ class STItemBox extends STBaseBox
   		$this->makeBox($table, $join, $where, $changedPost);
         return !$bError;
 
+	}
+	public function getResult() : array
+	{
+	    return $this->aResult;
 	}
 		private function getChangedResult(array $post_vars) : array
 		{

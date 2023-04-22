@@ -5,7 +5,7 @@ require_once($_stmessagehandling);
 require_once($php_javascript);
 require_once($_stcallbackclass);
 
-class STBaseBox extends TableTag
+abstract class STBaseBox extends TableTag
 {
 		var	$db;
 		var $tableContainer;
@@ -415,6 +415,7 @@ class STBaseBox extends TableTag
   			}elseif(!isset($sqlResult) || !is_array($sqlResult) || count($sqlResult)===0)
 				$this->msg->setMessageId("EMPTY_RESULT");
 		}
+		public abstract function getResult() : array;
 		public function getCssLink()
 		{
 			showBackTrace();

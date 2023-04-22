@@ -2441,6 +2441,10 @@ class STListBox extends STBaseBox
 		if(typeof($table, "STBaseTable"))
 			$this->takeTypesFromTable();
 	}
+	public function getResult() : array
+	{
+	    return $this->SqlResult;
+	}
 	function setCaption($bSet)
 	{
 		$this->bCaption= $bSet;

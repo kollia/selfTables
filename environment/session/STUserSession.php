@@ -51,7 +51,7 @@ class STUserSession extends STDbSession
 	var $usermanagementAccessCluster= "UM_ACCESS";
 	var $usermanagementChangeCluster= "UM_CHANGE";
 	var	$allAdminCluster= "allAdmin";
-    
+    var $allAdminGroup= "Admin";
 	var	$sGroupTable= "Group";
 
 	// all for own Projects
@@ -583,7 +583,7 @@ class STUserSession extends STDbSession
         $GroupType->identifColumn($this->asGroupTypeTableColumns["Label"]["column"],
 													$this->asGroupTypeTableColumns["Label"]["alias"]);
         $User->identifColumn($this->asUserTableColumns["GroupType"]["column"], $this->asUserTableColumns["GroupType"]["alias"]);
-        $User->identifColumn($this->asUserTableColumns["UserName"]["column"], $this->asUserTableColumns["UserName"]["alias"]);
+        $User->identifColumn($this->asUserTableColumns["user"]["column"], $this->asUserTableColumns["user"]["alias"]);
 
 		// set foreign keys in tables
         $Cluster->foreignKey($this->asClusterTableColumns["ProjectID"]["column"], $this->sProjectTable);
@@ -981,10 +981,10 @@ class STUserSession extends STDbSession
 		$selector->clearSelects();
 		$selector->clearGetColumns();
 		$selector->select("User", "ID", "ID");
-		$selector->select("User", "UserName", "UserName");
+		$selector->select("User", "user", "UserName");
 		$selector->select("AccessDomain", "Name", "Domain");
 		if(is_string($user))
-			$selector->where("UserName='".$user."'");
+			$selector->where("user='".$user."'");
 		else
 			$selector->where("ID=".$user);
 		if($domain != "")
@@ -1079,7 +1079,7 @@ class STUserSession extends STDbSession
 		 	 Tag::echoDebug("user", "do not found user with given password ...");
 			 return 2;// Passwort ist falsch
 		}
-		$this->sGroupType= "custom";
+		//$this->sGroupType= "custom";
 		$this->userID= $ID;
 		$this->user= $user;
 		$this->setSessionVar("ST_USER", $user);
@@ -1385,13 +1385,13 @@ class STUserSession extends STDbSession
 			$usertable= $this->database->getTable("User");
 			$usertable->clearSelects();
 			$usertable->select("ID", "ID");
-			$usertable->where("UserName='".$user."'");
+			$usertable->where("user='".$user."'");
 			$selector= new STDbSelector($usertable);
 			$selector->execute();
 			$userId= $selector->getSingleResult();
 			if(!userId)
 			{
-				STCheck::is_error(1, "STUserSession::joinUserGroup()", "user ".$user." for join to <b>GROUP</b> does not exist");
+				STCheck::is_error(1, "STUserSession::joinUserGroup()", "user ".$user." for join to <b>GROUP</b> does not exist", 1);
 				return -1;
 			}
 		}else
@@ -1407,7 +1407,7 @@ class STUserSession extends STDbSession
 			$groupId= $selector->getSingleResult();
 			if(!$groupId)
 			{
-				STCheck::is_error(1, "STUserSession::joinUserGroup()", "group ".$group." for join to <b>USER</b> does not exist");
+				STCheck::is_error(1, "STUserSession::joinUserGroup()", "group ".$group." for join to <b>USER</b> does not exist", 1);
 				return -1;
 			}
 		}else
