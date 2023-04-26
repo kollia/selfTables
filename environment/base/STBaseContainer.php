@@ -1004,6 +1004,10 @@ class STBaseContainer extends BodyTag implements STContainerTempl
 						or
 						$nAktLevel<=$nCountLevel	)	);
 		}
+		function hasDynamicAccessToOneEntry()
+		{
+		    return false;
+		}
 		function deleteQueryContainer(&$oGetParam)
 		{
 			$params= $oGetParam->getArrayVars();

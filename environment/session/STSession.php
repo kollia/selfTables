@@ -289,7 +289,6 @@ class STSession
 		}
 		$aAccess= preg_split("/,/", $authorisationString);
 		$clusterString= "";
-		$bRv= false;
 		foreach($aAccess as $autho)
 		{
 			$autho= trim($autho);
@@ -1069,12 +1068,16 @@ class STSession
 					$h1->add(br());
 					$a= new ATag();
 						$a->href(addslashes($Address));
+						$a->target("_top");
 						$a->add($Address);
 					$h1->addObj($a);
 				$body->addObj($h1);
 	  		}else
 			{
+			    // Window-target not works ???
+			    /*@header('Window-target:_top');
 				@header("Location: $Address");
+				exit;*/
 
 				$body->add(br());
 				$body->add(br());
@@ -1082,6 +1085,7 @@ class STSession
 					$h1->add("Please login at:");
 					$a= new ATag();
 						$a->href(addslashes($Address));
+						$a->target("_top");
 						$a->add("Startpage");
 					$h1->addObj($a);
 				$body->addObj($h1);
@@ -1174,15 +1178,6 @@ class STSession
 	}
 	function gotoLoginMask($error= 0)
 	{
-		global	$HTTP_SERVER_VARS,
-				$HTTP_GET_VARS,
-				$st_user_login_mask,
-				$st_user_navigator_mask;
-
-		$nParam= 0;
-		$bFromSet= false;
-		$bErrorSet= false;
-		$bUserSet= false;
 		$loginMask= &$this->getLoginMask($error);
 		$loginMask->display();
   		exit();
