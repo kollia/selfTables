@@ -572,7 +572,7 @@ class STItemBox extends STBaseBox
 				}
 			}//st_print_r($HTTP_POST_VARS);
 		}
-/*		echo __FILE__." ".__FUNCTION__." line:".__LINE__."<br>";
+/*		showLine()
 		st_print_r($post,5);
 		st_print_r($changedPost,5);
 		st_print_r($HTTP_POST_VARS,5);*/
@@ -873,30 +873,31 @@ class STItemBox extends STBaseBox
 							$needChangeBox= true;
 						}
 						$maxlen= 0;
-							$bNotNullField= false;
-						 	$option= new OptionTag();
-							if(count($aRows)>0)
+						$bNotNullField= false;
+					 	$option= new OptionTag();
+						if(count($aRows)>0)
+						{
+							if(preg_match("/not_null/", $field["flags"]))
 							{
-								if(preg_match("/not_null/", $field["flags"]))
-								{
-									$bNotNullField= true;
-									if($this->action==STINSERT)
-										$option->add($this->aSelectNames["select"]);
-								}else
-									$option->add($this->aSelectNames["null_entry"]);
+								$bNotNullField= true;
+								if($this->action==STINSERT)
+									$option->add($this->aSelectNames["select"]);
 							}else
-							{
-								if($joinAnz>1)
-									$option->add($this->aSelectNames["left_select"]);
-								else
-									$option->add($this->aSelectNames["no_entrys"]);
-							}
-							$option->value("");
-							$maxlen= -10;
-							$select->add($option);
+								$option->add($this->aSelectNames["null_entry"]);
+						}else
+						{
+							if($joinAnz>1)
+								$option->add($this->aSelectNames["left_select"]);
+							else
+								$option->add($this->aSelectNames["no_entrys"]);
+						}
+						$option->value("");
+						$maxlen= -10;
+						$select->add($option);
 						$bOneEntry= false;
 						if(count($aRows) == 1)
 						    $bOneEntry= true;
+						$selectedPK= null;
                         foreach($aRows as $row)
                         {// show all options for the select-tag
   							if(!is_array($row))
@@ -909,6 +910,7 @@ class STItemBox extends STBaseBox
             						$bNotNullField	)			)
             				{
             					$option->selected();
+            					$selectedPK= $row['PK'];
             				}
             				$option->add($row["Name"]);
 								$length= strlen($row["Name"]);
@@ -937,7 +939,9 @@ class STItemBox extends STBaseBox
 	                        $hinput= new InputTag();
 	                           $hinput->name($postColumn);
 	                           $hinput->type("hidden");
-	                           $hinput->value($columnValue);
+	                           if(!isset($selectedPK))
+	                               $selectedPK= $columnValue;
+	                               $hinput->value($selectedPK);
 	                        $td->add($hinput);
 	                    }	                       
 						if($this->intersecFld)
