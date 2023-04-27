@@ -18,6 +18,42 @@ class STListBox extends STBaseBox
 		var $Error;
 		var $log;
 		var $checkboxes;
+		/**
+		 * name of form-tag
+		 * @var string
+		 */
+		private $formName= null;
+		/**
+		 * action attribute of form-tag.<br />
+		 * Address to which URL from content should send.
+		 * If not set, content will be sending to current URL
+		 * @var string
+		 */
+		private $formAdr= null;
+		/**
+		 * name of submit text
+		 * @var string
+		 */
+		private $buttonText= "save";
+		/**
+		 * object of STDbSelector
+		 * which create the table listing
+		 * @var STDbSelector
+		 */
+		private $oSelector= null;
+		/**
+		 * index tags, describing the table
+		 * where the user can jump forward, backward
+		 * @var Tag
+		 */
+		private $oIndexTable= null;
+		/**
+		 * nMaxRowSelect and nMaxTableRows
+		 * be set for index number
+		 * @var integer
+		 */
+		private $nMaxRowSelect= 1;
+		private $nMaxTableRows= 3;
 		var $insertStatement;
 		var $deleteStatement;
 		var $showTypes;

@@ -41,6 +41,12 @@ class STBaseContainer extends BodyTag implements STContainerTempl
      * @var STMessageHandling
      */
     protected $oMsg;
+    /**
+     * array of backbutton addresses
+     * for backbutton or container which to go back
+     * @var array
+     */
+    protected $aContainerAdress;
     
 	var $bFirstContainer= false; // ob der Container der erste fuer STDbSiteCreator ist
 	var $nLevel= null; // auf welcher Ebene sich der Contiainer befindet

@@ -14,6 +14,13 @@ abstract class STBaseBox extends TableTag
 		var $error= null;
 		var	$nextOnError;
 		var $aHidden;
+		/**
+		 * filled array with all columns
+		 * in which state (STList/STInsert/STUpdate)
+		 * should be disabled by displaying on Browser
+		 * @var array
+		 */
+		protected $aDisabled= array();
 		var	$newFields= array();
 		var	$aErrorString= null;
 		var	$OKUrl= null;
