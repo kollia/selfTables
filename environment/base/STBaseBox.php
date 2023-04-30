@@ -7,7 +7,13 @@ require_once($_stcallbackclass);
 
 abstract class STBaseBox extends TableTag
 {
-		var	$db;
+    var	$db;
+    /**
+     * array of selected result
+     * from database
+     * @var array
+     */
+    protected $sqlResult= null;
 		var $tableContainer;
 		var $msg; // class for STMessageHandling
 		var	$onError= onErrorMessage;
