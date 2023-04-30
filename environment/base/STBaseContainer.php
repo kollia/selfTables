@@ -47,6 +47,11 @@ class STBaseContainer extends BodyTag implements STContainerTempl
      * @var array
      */
     protected $aContainerAdress;
+    /**
+     * object of executing creator class
+     * @var STSiteCreator
+     */
+    protected $oExternSideCreator= null;
     
 	var $bFirstContainer= false; // ob der Container der erste fuer STDbSiteCreator ist
 	var $nLevel= null; // auf welcher Ebene sich der Contiainer befindet
