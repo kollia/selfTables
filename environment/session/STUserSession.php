@@ -900,6 +900,15 @@ class STUserSession extends STDbSession
     			st_print_r($memberClusters, 2, $space+34);
 		    }else
 		        STCheck::echoDebug("user", "<b>no cluster for Memberships be set</b>");
+		    if(STCheck::isDebug("session"))
+		    {
+		        $space= STCheck::echoDebug("session", "follow session variables be set");
+		        st_print_r($_SESSION, 5, $space);
+				echo "<br>";
+				STCheck::echoDebug("session", "testing position");
+				showBackTrace();
+				echo "<br>";
+		    }
 		}
 	}
 	function selectGroupID($groupname)
