@@ -15,6 +15,14 @@ class STBaseTable
 	 * @var boolean
 	 */
 	private $bCorrect= false;
+	/**
+	 * array with start and limit key
+	 * to provide limitation of select statement.<br />
+	 * If variable is undefined, no limitation will be set
+	 * inside the statement
+	 * @var array
+	 */
+	protected $limitRows= null;
 	var $title= "";
 	var	$sPKColumn;
 	var $columns;

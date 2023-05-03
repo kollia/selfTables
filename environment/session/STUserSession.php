@@ -287,7 +287,7 @@ class STUserSession extends STDbSession
         $dbTableDescription->foreignKey("Log", "ProjectID", "Project", 2);
         $dbTableDescription->column("Log", "Type", "set('ERROR','LOGIN','LOGOUT','ACCESS')", /*null*/false);
         $dbTableDescription->column("Log", "CustomID", "varchar(255)");
-        $dbTableDescription->column("Log", "description", "TEXT", /*null*/false);
+        $dbTableDescription->column("Log", "Description", "TEXT", /*null*/false);
         $dbTableDescription->column("Log", "DateCreation", "DATETIME", /*null*/false);
         
         STObjectContainer::install("um_install", "STUM_InstallContainer", "userDb", $_stum_installcontainer);
@@ -908,6 +908,15 @@ class STUserSession extends STDbSession
     			st_print_r($memberClusters, 2, $space+34);
 		    }else
 		        STCheck::echoDebug("user", "<b>no cluster for Memberships be set</b>");
+		    if(STCheck::isDebug("session"))
+		    {
+		        $space= STCheck::echoDebug("session", "follow session variables be set");
+		        st_print_r($_SESSION, 5, $space);
+				echo "<br>";
+				STCheck::echoDebug("session", "testing position");
+				showBackTrace();
+				echo "<br>";
+		    }
 		}
 	}
 	function selectGroupID($groupname)
@@ -942,7 +951,7 @@ class STUserSession extends STDbSession
         $inserter= new STDbInserter($logTable);
         $inserter->fillColumn("UserID", $user);
         $inserter->fillColumn("ProjectID", $project);
-        $inserter->fillColumn("Typ", $Type);
+        $inserter->fillColumn("Type", $Type);
         $inserter->fillColumn("CustomID", $customID);
         $inserter->fillColumn("Description", $logText);
         $inserter->fillColumn("URL", $url);

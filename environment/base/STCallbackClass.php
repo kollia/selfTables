@@ -7,6 +7,31 @@ class STCallbackClass
 		var	$db;
 		var	$sqlResult;
 		/**
+		 * current action of building box
+		 * ( STLIST / STINSERT / STUPDATE / STDELETE )
+		 * @var string
+		 */
+		public $action;
+		/**
+		 * defined names for update and delete columns
+		 * @var array
+		 */
+		public $aAction= array();
+		/**
+		 * current column, used
+		 * if user not define in some functions
+		 * (maybe <code>getValue()</code> <code>setValue()</code>
+		 * @var string
+		 */
+		public $column;
+		/**
+		 * current row number, used
+		 * if user not define in some functions
+		 * (maybe <code>getValue()</code> <code>setValue()</code>
+		 * @var integer
+		 */
+		public $rownum;
+		/**
 		 * struct of all boolean behavior arguments
 		 * (this time only 
 		 * @var array
@@ -23,8 +48,12 @@ class STCallbackClass
 		var $bNoShowType;
 		var	$bSkip;
 		var $where;
-		var $action;
-		var $rownum;
+		/**
+		 * whether callback routine
+		 * is running before (<code>true</code>) creating database entries
+		 * or after (<code>false</code>)
+		 * @var boolean
+		 */
 		var $before;
 		var $MessageId;
 		var $joinResult;

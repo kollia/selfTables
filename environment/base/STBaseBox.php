@@ -7,13 +7,26 @@ require_once($_stcallbackclass);
 
 abstract class STBaseBox extends TableTag
 {
-		var	$db;
+    var	$db;
+    /**
+     * array of selected result
+     * from database
+     * @var array
+     */
+    protected $sqlResult= null;
 		var $tableContainer;
 		var $msg; // class for STMessageHandling
 		var	$onError= onErrorMessage;
 		var $error= null;
 		var	$nextOnError;
 		var $aHidden;
+		/**
+		 * filled array with all columns
+		 * in which state (STList/STInsert/STUpdate)
+		 * should be disabled by displaying on Browser
+		 * @var array
+		 */
+		protected $aDisabled= array();
 		var	$newFields= array();
 		var	$aErrorString= null;
 		var	$OKUrl= null;

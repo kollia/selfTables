@@ -16,6 +16,12 @@ class STDbUpdater extends STDbSqlCases
 	 * @var integer
 	 */
 	var $nAktRow= 0;
+	/**
+	 * array of where statements
+	 * for every update statement
+	 * @var array
+	 */
+	protected $wheres= array();
 	
 	public function update(string $column, $value)
 	{
@@ -62,8 +68,8 @@ class STDbUpdater extends STDbSqlCases
         $where= null;
         if(isset($this->wheres[$nr]))
             $where= $this->wheres[$nr];
-        $this->statement[$nr]= $this->getUpdateStatement($where, $this->columns[$nr]);
-	    return $this->statement[$nr];
+        $this->statements[$nr]= $this->getUpdateStatement($where, $this->columns[$nr]);
+	    return $this->statements[$nr];
 	}
 	private function getUpdateStatement(string|STDbWhere $where= null, $values= null)
 	{

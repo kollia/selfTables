@@ -9,7 +9,6 @@ class STListBox extends STBaseBox
 {
 		var $arrangement;
 		var $statement;
-		var $SqlResult;
 		var $aGetParams;
 		var	$bGetedSearchboxResult= false;
 		var $address;
@@ -18,6 +17,42 @@ class STListBox extends STBaseBox
 		var $Error;
 		var $log;
 		var $checkboxes;
+		/**
+		 * name of form-tag
+		 * @var string
+		 */
+		private $formName= null;
+		/**
+		 * action attribute of form-tag.<br />
+		 * Address to which URL from content should send.
+		 * If not set, content will be sending to current URL
+		 * @var string
+		 */
+		private $formAdr= null;
+		/**
+		 * name of submit text
+		 * @var string
+		 */
+		private $buttonText= "save";
+		/**
+		 * object of STDbSelector
+		 * which create the table listing
+		 * @var STDbSelector
+		 */
+		private $oSelector= null;
+		/**
+		 * index tags, describing the table
+		 * where the user can jump forward, backward
+		 * @var Tag
+		 */
+		private $oIndexTable= null;
+		/**
+		 * nMaxRowSelect and nMaxTableRows
+		 * be set for index number
+		 * @var integer
+		 */
+		private $nMaxRowSelect= 1;
+		private $nMaxTableRows= 3;
 		var $insertStatement;
 		var $deleteStatement;
 		var $showTypes;
@@ -61,7 +96,7 @@ class STListBox extends STBaseBox
 		function init()
 		{
 			$this->arrangement= STHORIZONTAL;
-			$this->SqlResult= null;
+			$this->sqlResult= null;
 			$this->address= array();
 			$this->checkboxes= array();
 			$this->showTypes= array();
@@ -167,7 +202,7 @@ class STListBox extends STBaseBox
 		{// veraltete Version
   		if(is_array($statement))
 			{
-				$this->SqlResult= $statement;
+				$this->sqlResult= $statement;
 				return;
 			}
 			$this->statement= $statement;
@@ -476,7 +511,7 @@ class STListBox extends STBaseBox
 				$this->msg->setMessageId($preg[1], $message);
 			}elseif($result=="NOERROR")
 			{
-				$this->SqlResult= $oTable->oSearchBox->getResult_array($oTable->getName());
+				$this->sqlResult= $oTable->oSearchBox->getResult_array($oTable->getName());
 				$bDone= true;
 			}
 		}
@@ -485,14 +520,14 @@ class STListBox extends STBaseBox
 		{
 			if(	$this->statement
 				and
-				!$this->SqlResult	)
+				!$this->sqlResult	)
   			{
   				Tag::echoDebug("db.statement", "create result");
 				if($this->oSelector)
 				{   
 				    $this->oSelector->execute();
-					$this->SqlResult= $this->oSelector->getResult();
-					$this->setSqlError($this->SqlResult);
+					$this->sqlResult= $this->oSelector->getResult();
+					$this->setSqlError($this->sqlResult);
 					$errId= $this->oSelector->getErrorId();
 					if($errId > 0)
 					{
@@ -503,8 +538,8 @@ class STListBox extends STBaseBox
 
 				}else
 				{
-  					$this->SqlResult= $this->db->fetch_array($this->statement, STSQL_ASSOC, $this->getOnError("SQL"));
-  					$this->setSqlError($this->SqlResult);
+  					$this->sqlResult= $this->db->fetch_array($this->statement, STSQL_ASSOC, $this->getOnError("SQL"));
+  					$this->setSqlError($this->sqlResult);
 				}
 
   			}else
@@ -1004,8 +1039,8 @@ class STListBox extends STBaseBox
 					$this->insertAttributes($idtr, "tr");
 					$idtd= new ColumnTag(TD);
 						$this->insertAttributes($idtd, "td");
-						if(isset($this->SqlResult[0]))
-							$colspan= count($this->SqlResult[0]);
+						if(isset($this->sqlResult[0]))
+							$colspan= count($this->sqlResult[0]);
 						else
 							$colspan= 1;
 						if($this->asDBTable->nDisplayColumns)
@@ -1026,7 +1061,7 @@ class STListBox extends STBaseBox
 			{
 				$tr= new RowTag();
 					$this->insertAttributes($tr, "tr");
-				$firstRow= $this->SqlResult[0];
+				$firstRow= $this->sqlResult[0];
 	            foreach($firstRow as $key=>$value)
     	        {
 					if(	!in_array($key, $aGetColumns) )
@@ -1055,7 +1090,7 @@ class STListBox extends STBaseBox
 
 
 
-			$Rows= &$this->SqlResult;
+			$Rows= &$this->sqlResult;
 			$CallbackClass= new STCallbackClass($this->asDBTable, $Rows);
 			$CallbackClass->before= false;
 			$CallbackClass->nDisplayColumns= $this->asDBTable->nDisplayColumns;
@@ -1669,8 +1704,8 @@ class STListBox extends STBaseBox
                 $this->insertAttributes($idtr, "tr");
                 $idtd= new ColumnTag(TD);
                     $this->insertAttributes($idtd, "td");
-                if(isset($this->SqlResult[0]))
-                    $colspan= count($this->SqlResult[0]);
+                if(isset($this->sqlResult[0]))
+                    $colspan= count($this->sqlResult[0]);
                 else
                     $colspan= 1;
                 if($this->asDBTable->nDisplayColumns)
@@ -1761,7 +1796,7 @@ class STListBox extends STBaseBox
 			        
 		        $box= array();
 		        $checked= array();
-				foreach($this->SqlResult as $key=>$value)
+				foreach($this->sqlResult as $key=>$value)
 				{
 					if(isset($value[$isCheck]))
 						$checked[$key]= "on";
@@ -1786,11 +1821,11 @@ class STListBox extends STBaseBox
 								{
 									if($this->asDBTable->aCheckDef[$isCheck])
 									{
-										$this->SqlResult[$countBox][$isCheck]= $this->asDBTable->aCheckDef[$isCheck];
+										$this->sqlResult[$countBox][$isCheck]= $this->asDBTable->aCheckDef[$isCheck];
 
 									}elseif($checkBoxColumn["type"]=="string")
 									{
-										$this->SqlResult[$countBox][$isCheck]= "##st_newSet";
+										$this->sqlResult[$countBox][$isCheck]= "##st_newSet";
 									}
 								}// end of if nnTable in table-object save
         					}// end of if not box-key also before checked (in database)
@@ -1808,11 +1843,11 @@ class STListBox extends STBaseBox
 								{
 								    if(preg_match("/not_null/", $checkBoxColumn["flags"]))
 									{
-										$this->SqlResult[$kChecked][$isCheck]= null;
+										$this->sqlResult[$kChecked][$isCheck]= null;
 									}
 									if($checkBoxColumn["type"]=="string")
 									{
-										$this->SqlResult[$kChecked][$isCheck]= "##st_deleteSet";
+										$this->sqlResult[$kChecked][$isCheck]= "##st_deleteSet";
 									}
 								}
         					}
@@ -2052,13 +2087,13 @@ class STListBox extends STBaseBox
 										        return;
 										    }else
 										        $joinFieldName= "join@$joinTableName@$foreignColumn";
-									        if(isset($this->SqlResult[$countBox][$joinFieldName]))
-									            $value= $this->SqlResult[$countBox][$joinFieldName];
+									        if(isset($this->sqlResult[$countBox][$joinFieldName]))
+									            $value= $this->sqlResult[$countBox][$joinFieldName];
 									    }
 									    
 										$field= $useTable->searchByColumn($columnContent["name"]);
-										if(isset($this->SqlResult[$countBox][$field["alias"]]))
-										    $value= $this->SqlResult[$countBox][$field["alias"]];
+										if(isset($this->sqlResult[$countBox][$field["alias"]]))
+										    $value= $this->sqlResult[$countBox][$field["alias"]];
 									    if($value===null)
 									    {
 									        if(preg_match("/not_null/", $columnContent["flags"]))
@@ -2074,8 +2109,8 @@ class STListBox extends STBaseBox
 							}// end of no $this->insertStatement string exist
 						}else// else no nnTable be set
 						{
-						    $pkResult= $this->SqlResult[$countBox][$aliasPk];
-						    $checkBoxResult= $this->SqlResult[$countBox][$isCheck];
+						    $pkResult= $this->sqlResult[$countBox][$aliasPk];
+						    $checkBoxResult= $this->sqlResult[$countBox][$isCheck];
 						    $updater->where($pkName."=".$pkResult);
 						    $updater->update($checkBoxColumn, $checkBoxResult);
 						    $updater->fillNextRow();
@@ -2096,7 +2131,7 @@ class STListBox extends STBaseBox
 					        $tableColumn= $field["alias"];
 					        
 					        $existPk= false;
-					        foreach($this->SqlResult[0] as $column=>$content)
+					        foreach($this->sqlResult[0] as $column=>$content)
 					        {
 					            if($column===$tableColumn)
 					            {
@@ -2126,13 +2161,13 @@ class STListBox extends STBaseBox
 
 								}else
 								{
-								    $value= $this->SqlResult[$kChecked][$tableAlias];
+								    $value= $this->sqlResult[$kChecked][$tableAlias];
 								    $deleter->orWhere("$tableColumn=$value");
 								}
 							}else
 							{
-								$pkResult= $this->SqlResult[$kChecked][$aliasPk];
-								$checkBoxResult= $this->SqlResult[$kChecked][$isCheck];
+								$pkResult= $this->sqlResult[$kChecked][$aliasPk];
+								$checkBoxResult= $this->sqlResult[$kChecked][$isCheck];
 								$updater->where($pkName."=".$pkResult);
 								$updater->update($checkBoxColumn, $checkBoxResult);
 								$updater->fillNextRow();
@@ -2163,7 +2198,7 @@ class STListBox extends STBaseBox
 					}
 				}
 
-				//st_print_r($this->SqlResult,2);
+				//st_print_r($this->sqlResult,2);
 				if($bOnDbChanged)
 	//				$this->msg->setMessageId("NO_CHANGING");
 	//			else
@@ -2303,14 +2338,14 @@ class STListBox extends STBaseBox
 			$this->createStatement();
 
 			// setze zuerst das SQL-Statement ab
-			if(!$this->SqlResult)
+			if(!$this->sqlResult)
 				$this->makeResult($onError);
 
 			$this->createOldInsertDeleteStatements();
 			
 			// if the table has checkBoxes,
 			// or is an nnTable
-			// make changes in database/SqlResult
+			// make changes in database/sqlResult
 			$onDbChecked= $this->createDbChanges();
 
 			//hole aus der Tabelle alle Felder,
@@ -2318,7 +2353,7 @@ class STListBox extends STBaseBox
 			$tMainTable= true;
 
 			$bTablehasCheck= false;
-			if(!isset($this->SqlResult))
+			if(!isset($this->sqlResult))
 			{
 				$indexTr= new RowTag();
 					$indexTd= new ColumnTag(TD);
@@ -2329,7 +2364,7 @@ class STListBox extends STBaseBox
 				$this->addObj($indexTr);
 				return $this->msg->getMessageId();
 			}
-			$obj= $this->SqlResult;
+			$obj= $this->sqlResult;
 			//$defaultAddress= $this->address;
 			if(!count($obj))
 			{
@@ -2368,7 +2403,7 @@ class STListBox extends STBaseBox
 			}
 			/***********************************************/
 			
-			$this->SqlResult= &$Rows;
+			$this->sqlResult= &$Rows;
 			$this->createTags();
 
 			// if the table has checkBoxes,
@@ -2448,7 +2483,7 @@ class STListBox extends STBaseBox
 	}
 	public function getResult() : array
 	{
-	    return $this->SqlResult;
+	    return $this->sqlResult;
 	}
 	function setCaption($bSet)
 	{

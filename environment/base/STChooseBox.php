@@ -11,6 +11,12 @@ class STChooseBox extends TableTag
 		var	$aButtons= array();
 		var	$sButtonAlign= "center";
 		var $bForward= false;
+		/**
+		 * table names which should'nt apear
+		 * in the choise bar
+		 * @var array
+		 */
+		private $aNoChoise= array();
 		
 		// $Db muss STDatabase oder ein Array sein
 		// wenn $Db ein Array ist sind die Eintr�ge [Button-Name] => Adresse
