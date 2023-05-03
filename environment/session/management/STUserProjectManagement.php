@@ -5,10 +5,12 @@ require_once( $_stframecontainer );
 
 class STUserProjectManagement extends STBaseContainer
 {
-    private $homepageLogo= null;
-    private $homepageBanner= null;
-    private $navigationLogo= null;
-    private $navigationBanner= null;
+    /**
+     * definition for default images
+     * on login screen and navigation bar
+     * @var array
+     */
+    private $image= array();
     private $database= null;
     private $loginMaskDescription= "Please insert your Access Data:";
     private $loginMask= null;
@@ -37,21 +39,26 @@ class STUserProjectManagement extends STBaseContainer
     {
         $this->accessibilityString= $string;
     }
-    public function setHomepageLogo(string $address)
+    public function setHomepageLogo(string $address, int $width= null, int $height= 800, string $alt= "DB selftables Homepage")
     {
-        $this->homepageLogo= $address;
+        $this->image['logo']['img']= $address;
+        $this->image['logo']['height']= $height;
+        $this->image['logo']['width']= $width;
+        $this->image['logo']['alt']= $alt;
     }
     public function setHomepageBanner(string $address)
     {
-        $this->homepageBanner= $address;
+        $this->image['logo']['banner']= $address;
     }
-    public function setNavigationLogo(string $address)
+    public function setNavigationLogo(string $address, int $width= null, int $height= 800)
     {
-        $this->navigationLogo= $address;
+        $this->image['nav']['img']= $address;
+        $this->image['nav']['height']= $height;
+        $this->image['nav']['width']= $width;
     }
     public function setNavigationBanner(string $address)
     {
-        $this->navigationBanner= $address;
+        $this->image['nav']['banner']= $address;
     }
     public function getDatabase()
     {
@@ -239,8 +246,14 @@ class STUserProjectManagement extends STBaseContainer
         }
         if($available['show'] == "frame")
         {
+            if(isset($this->image['nav']['height']))
+                $firstFrameHeight= $this->image['nav']['height']+5;
+            elseif(isset($this->image['logo']['height']))
+                $firstFrameHeight= $this->image['logo']['height']/2+5;
+            else
+                $firstFrameHeight= 70;
             $frame= new STFrameContainer();
-            $frame->framesetRows("70,*");
+            $frame->framesetRows("$firstFrameHeight,*");
             $frame->setFramePath("?show=navigation&ProjectID=".$available['project']);
             $frame->setFramePath($this->getProjectLink($available['project']));
             $result= $frame->execute($externSideCreator, $onError);
@@ -265,8 +278,7 @@ class STUserProjectManagement extends STBaseContainer
         }
         if($available['show'] == "list")
         {
-            if( isset($this->homepageLogo) ||
-                isset($this->homepageBanner)    )
+            if(isset($this->image['logo']['img']))
             {
                 $table= new st_tableTag();
                     $table->border(0);
@@ -277,12 +289,18 @@ class STUserProjectManagement extends STBaseContainer
                         $a->href("index.php".$get->getUrlParamString());
                         $a->target("_top");
                         $img= new ImageTag();
-                            $img->src($this->homepageLogo);
+                            $img->src($this->image['logo']['img']);
+                            $img->height($this->image['logo']['height']);
+                            $img->width($this->image['logo']['width']);
                             $img->border(0);
-                            $img->alt("DB selftables Homepage");
+                            $img->alt($this->image['logo']['alt']);
                         $a->add($img);
                     $table->add($a);
-                    $table->columnBackground($this->homepageBanner);
+                    if(isset($this->image['logo']['banner']))
+                    {
+                        $table->columnBackground($this->image['logo']['banner']);
+                        $table->columnHeight($this->image['logo']['height']);
+                    }
                     if($user->isLoggedIn())
                     {
                         $div= new DivTag();
@@ -296,8 +314,12 @@ class STUserProjectManagement extends STBaseContainer
                                 $b->add($span);
                                 $b->add("&nbsp;&nbsp;");
                             $div->add($b);
-                        $table->add($div);
-                        $table->columnBackground($this->homepageBanner);
+                            $table->add($div);
+                        if(isset($this->image['logo']['banner']))
+                        {
+                            $table->columnBackground($this->image['logo']['banner']);
+                            $table->columnHeight($this->image['logo']['height']);
+                        }
                         //$table->width("100%");
                         $table->columnAlign("right");
                     }
@@ -308,88 +330,117 @@ class STUserProjectManagement extends STBaseContainer
             $get->delete("show");
             $get->delete("ERROR");
             $get->delete("ProjectID");
-            if( isset($this->navigationLogo) ||
-                isset($this->navigationBanner)    )
+            //STCheck::debug(TRUE);
+            if(isset($this->image['nav']))
+                $logo= $this->image['nav'];
+            elseif(isset($this->image['logo']))
             {
-                $table= new st_tableTag();
-                    $table->border(0);
-                    $table->cellpadding(0);
-                    $table->cellspacing(0);
-                    $table->width("100%");                    
-                    $a= new ATag();
-                        $a->href("index.php".$get->getUrlParamString());
-                        $a->target("_top");
-                        $img= new ImageTag();
-                            $img->src($this->navigationLogo);
-                            $img->border(0);
-                            $img->alt("DB selftables Homepage");
-                        $a->add($img);
-                    $table->add($a);
-                    $table->columnBackground($this->navigationBanner);
-                    $navSpan= new SpanTag();
-                        $script= new JavaScriptTag();
-                            $function= new jsFunction("myOnSubmit", "myTarget");
-                                $function->add("top.location.href = myTarget;");
-                                $function->add("return false;");
-                            $script->add($function);
-                        $navSpan->add($script);
-                        $form= new FormTag();
-                            $form->name("myForm");
-                            $form->onSubmit("myOnSubmit( myForm.mySelect.value )");
-                            $form->add("Web-Applikation: ");
-                            $select= new SelectTag();
-                                $select->onChange("top.location.href=this.value;");
-                                $select->name("mySelect");
-                            foreach( $this->accessableProjects as $projectID => $project )
-                            {
-                                $option= new OptionTag();
-                                    $get->update("ProjectID=$projectID");
-                                    $option->value($get->getUrlParamString());
-                                    $option->add($project['Name']);
-                                if($projectID == $available['project'])
-                                    $option->selected();
-                                $select->add($option);
-                            }
-                            $form->add($select);
-                            $input= new InputTag("button");
-                                $input->type("submit");
-                                $input->value("GO&nbsp;&gt;&gt;");
-                            $form->add($input);
-                        $navSpan->add($form);
-                    $table->add($navSpan);
-                    $table->columnBackground($this->navigationBanner);
-                    $table->columnWidth("100%");
-                    $table->columnAlign("center");
-                    $table->columnClass("fontSmaller");
-                    $table->columnStyle("font-weight:bold;");
-                    $table->columnNowrap();
-                    $div= new DivTag();
-                    if($available['LoggedIn'])
-                    {                        
-                        $logout= $user->getLogoutButton( "Logout" );
-                        $div->add($logout);
-                        $div->add(br());
-                        $div->add("&#160;logged&#160;In&#160;as:&#160;");
-                        $b= new BTag();
-                            $span= new SpanTag("colorONE");
-                                $span->add($user->getUserName());
-                            $b->add($span);
-                            $b->add("&nbsp;&nbsp;");
-                        $div->add($b);
-                    }else
-                    {
-                        $login= $user->getLogoutButton("Login");
-                        $div->add($login);
-                        $div->add(br());
-                        $div->add(br());                        
-                    }
-                    $table->add($div);
-                    if(!$available['LoggedIn'])
-                        $table->columnBackground($this->navigationBanner);
-                    $table->width("100%");
-                    $table->columnAlign("right");
-                $this->append($table);    
-            }
+                $logo= $this->image['logo'];
+                if(isset($logo['width']))
+                    $logo['width']= $logo['width']/2;
+                $logo['height']= $logo['height']/2;
+            }else
+                $logo= array();
+            if(!isset($logo['alt']))
+                $logo['alt']= "DB selftables Homepage";
+            
+            $table= new st_tableTag();
+                $table->border(0);
+                $table->cellpadding(0);
+                $table->cellspacing(0);
+                $table->width("100%");  
+                $a= new ATag();
+                    $a->href("index.php".$get->getUrlParamString());
+                    $a->target("_top");
+                    $img= new ImageTag();
+                        if(isset($logo['img'])) 
+                            $img->src($logo['img']);
+                        if(isset($logo['width']))
+                            $img->width($logo['width']);
+                        if(isset($logo['height']))
+                            $img->height($logo['height']);
+                        $img->border(0);
+                        $img->alt($logo['alt']);
+                    $a->add($img);
+                $table->add($a);
+                if(isset($logo['banner']))
+                {
+                    //st_print_r($logo);
+                    $table->columnBackground($logo['banner']);
+                    $table->columnHeight($logo['height']);
+                }
+                $navSpan= new SpanTag();
+                    $script= new JavaScriptTag();
+                        $function= new jsFunction("myOnSubmit", "myTarget");
+                            $function->add("top.location.href = myTarget;");
+                            $function->add("return false;");
+                        $script->add($function);
+                    $navSpan->add($script);
+                    $form= new FormTag();
+                        $form->name("myForm");
+                        $form->onSubmit("myOnSubmit( myForm.mySelect.value )");
+                        $form->add("Web-Aplikation: ");
+                        $select= new SelectTag();
+                            $select->onChange("top.location.href=this.value;");
+                            $select->name("mySelect");
+                        foreach( $this->accessableProjects as $projectID => $project )
+                        {
+                            $option= new OptionTag();
+                                $get->update("ProjectID=$projectID");
+                                $option->value($get->getUrlParamString());
+                                $option->add($project['Name']);
+                            if($projectID == $available['project'])
+                                $option->selected();
+                            $select->add($option);
+                        }
+                        $form->add($select);
+                        $input= new InputTag("button");
+                            $input->type("submit");
+                            $input->value("GO&nbsp;&gt;&gt;");
+                        $form->add($input);
+                    $navSpan->add($form);
+                $table->add($navSpan);
+                if(isset($logo['banner']))
+                {
+                    $table->columnBackground($logo['banner']);
+                    $table->columnHeight($logo['height']);
+                }
+                $table->columnWidth("100%");
+                $table->columnAlign("center");
+                $table->columnClass("fontSmaller");
+                $table->columnStyle("font-weight:bold;");
+                $table->columnNowrap();
+                $div= new DivTag();
+                if($available['LoggedIn'])
+                {                        
+                    $logout= $user->getLogoutButton( "Logout" );
+                    $div->add($logout);
+                    $div->add(br());
+                    $div->add("&#160;logged&#160;In&#160;as:&#160;");
+                    $b= new BTag();
+                        $span= new SpanTag("colorONE");
+                            $span->add($user->getUserName());
+                        $b->add($span);
+                        $b->add("&nbsp;&nbsp;");
+                    $div->add($b);
+                }else
+                {
+                    $login= $user->getLogoutButton("Login");
+                    $div->add($login);
+                    $div->add(br());
+                    $div->add(br());                        
+                }
+                $table->add($div);
+                if( $available['LoggedIn'] &&
+                    isset($logo['banner']))
+                {
+                    $table->columnBackground($logo['banner']);
+                    $table->columnHeight($logo['height']);
+                    $table->columnValign("height");
+                }
+                $table->width("100%");
+                $table->columnAlign("right");
+            $this->append($table); 
         }
         foreach($this->addedContent as $tag)
         {
