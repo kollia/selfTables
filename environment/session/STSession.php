@@ -40,6 +40,12 @@ class STSession
 	var $startPage;
 	var $loginSite= "";
 	var $oLoginMask;
+	/**
+	 * whether session was generated
+	 * and registered
+	 * @var boolean $sessionRegistered
+	 */
+	private $sessionRegistered= false;
 	var $noRegister= false;
 	var $aSessionVars= array();
 	/** 
@@ -108,9 +114,8 @@ class STSession
 		 */
 		global	$global_selftable_session_class_instance;
 
-		if(isset($global_selftable_session_class_instance))
-			if(isset($global_selftable_session_class_instance[0]))
-				return true;
+		if(isset($global_selftable_session_class_instance[0]))
+		    return $global_selftable_session_class_instance[0]->sessionRegistered;
 		return false;
 	}
 	function startPage($url)
@@ -149,14 +154,13 @@ class STSession
   	function registerSession()
   	{
 		global	$host,
-		        $globalVar,
 				$HTTP_COOKIE_VARS,
 				$php_session_name;
 
 		if($this->noRegister)
 			return;
-		//$client_root= "http://".$host;
 		
+		STCheck::echoDebug("session", "register session");
 		// save session on default harddisk position
 		// or other places
 		$this->session_storage_place();
@@ -765,7 +769,7 @@ class STSession
 	public function verifyLogin(string $projectName, $loginMask) : bool
 	{
 	    STCheck::param($loginMask, 1, "string", "Tag");
-	    
+
 	    $this->UserLoginMask= $loginMask;
 	    $loggedIn= $this->verifyProject($projectName);
 	    return $loggedIn;
@@ -832,11 +836,12 @@ class STSession
 	}
 	public function verifyProject(string $Project)
 	{
-		global	$HTTP_SERVER_VARS,
-				$HTTP_GET_VARS,
-				$HTTP_POST_VARS,
-				$HTTP_COOKIE_VARS;
-				
+		global	$HTTP_GET_VARS,
+				$HTTP_POST_VARS;
+			
+
+		if(!$this->sessionGenerated())
+		    $this->registerSession();
 		STCheck::echoDebug("user", "entering verifyLogin( <b>".print_r( $Project, /*return str*/true ). "</b> ): ...");
 		if($this->noRegister)
 		{
