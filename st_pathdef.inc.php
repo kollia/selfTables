@@ -61,6 +61,13 @@
 	$HTTP_GET_VARS= &$_GET;
 	$HTTP_POST_VARS= &$_POST;
 	$HTTP_COOKIE_VARS= &$_COOKIE;
+	/**
+	 * first HTTP_GET_VARS
+	 * which can synchronized 
+	 * with new values 
+	 * @var array $global_selftables_queryArray
+	 */
+	$global_selftables_queryArray= null;
 	//$HTTP_SESSION_VARS= &$_SESSION;
 	/**
 	 * function to define the global SESSION variable

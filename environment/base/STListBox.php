@@ -265,7 +265,7 @@ class STListBox extends STBaseBox
 	    
 		$inTableFirstRow= 0;
 		$query= new STQueryString();
-		$HTTP_GET_VARS= $query->getArrayVars();
+		$query_array= $query->getArrayVars();
 		
   		if(!$this->statement)
   		{
@@ -273,9 +273,9 @@ class STListBox extends STBaseBox
 			$tableName= $oTable->getName();
 			$from= $oTable->getFirstRowSelect();			
 			if(	$from == 0 &&
-				isset($HTTP_GET_VARS["stget"]["firstrow"][$tableName])	)
+				isset($query_array["stget"]["firstrow"][$tableName])	)
 			{
-				$from= $HTTP_GET_VARS["stget"]["firstrow"][$tableName];
+				$from= $query_array["stget"]["firstrow"][$tableName];
 				STCheck::echoDebug("db.statements.limit", "set limit selection from row to $from");
 				$oTable->setFirstRowSelect($from);
 			}
@@ -317,9 +317,9 @@ class STListBox extends STBaseBox
 			    echo __FILE__.__LINE__."<br>";
 				$tableName= $oTable->getName();
 				if(	!isset($firstRow) &&
-					isset($HTTP_GET_VARS["stget"]["firstrow"][$oTable->getName()])	)
+					isset($query_array["stget"]["firstrow"][$oTable->getName()])	)
 				{
-					$firstRow= $HTTP_GET_VARS["stget"]["firstrow"][$oTable->getName()];
+					$firstRow= $query_array["stget"]["firstrow"][$oTable->getName()];
 				}
 				if(isset($firstRow))
 				{
@@ -543,11 +543,11 @@ class STListBox extends STBaseBox
 			$tableName= $this->getTable()->getName();
 			if(!is_array($this->aSorts))
 			{
-				global	$HTTP_GET_VARS;
+			    $query_array= $query->getArrayVars();
 
 				$aSorts= null;
-				if(isset($HTTP_GET_VARS["stget"]["sort"][$tableName]))
-					$aSorts= $HTTP_GET_VARS["stget"]["sort"][$tableName];
+				if(isset($query_array["stget"]["sort"][$tableName]))
+					$aSorts= $query_array["stget"]["sort"][$tableName];
 				$this->aSorts= array();
 				if(is_array($aSorts))
 				{
@@ -625,7 +625,7 @@ class STListBox extends STBaseBox
 			if(isset($this->oQuery))
 				$query= $this->oQuery;
 			else 
-				$query= new StQuerryString();
+				$query= new STQueryString();
 			$vars= $query->getArrayVars();
 
 			$timestamp= $vars["stget"]["time"];
@@ -704,11 +704,11 @@ class STListBox extends STBaseBox
 			Tag::paramCheck($oTable, 1, "STDbTable");
 
 			$query= new STQueryString();
-			$HTTP_GET_VARS= $query->getArrayVars();
+			$query_array= $query->getArrayVars();
 			$tableName= $oTable->getName();
-			if(isset($HTTP_GET_VARS["stget"]["firstrow"][$tableName]))
+			if(isset($query_array["stget"]["firstrow"][$tableName]))
 			{
-				$this->nShowFirstRow= $HTTP_GET_VARS["stget"]["firstrow"][$tableName];
+				$this->nShowFirstRow= $query_array["stget"]["firstrow"][$tableName];
 				if($this->nShowFirstRow===null)
 					$this->nShowFirstRow= 0;
 			}
@@ -1695,6 +1695,11 @@ class STListBox extends STBaseBox
 				if(isset($this->action))
 				{
 					$form->action($this->action);
+				}else
+				{
+				    $query= new STQueryString();
+				    $query_string= $query->getUrlParamString();
+				    $form->action($query_string);
 				}
 					$form->method("post");
 					$this->inherit= array();

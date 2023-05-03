@@ -1032,14 +1032,14 @@ class STQueryString
 		function resetParams()
 		{
 			global	$HTTP_GET_VARS,
-					$HTTP_COOKIE_VARS,
+			        $global_selftables_queryArray,
 					$global_selftables_query_table;
 
 			if(	isset($global_selftables_query_table["table"]) &&
 				isset($HTTP_GET_VARS["stget"]["nr"])				)
 			{
 				$nr= $HTTP_GET_VARS["stget"]["nr"];
-				$selector= new OSTDbSelector($global_selftables_query_table["table"]);
+				$selector= new STDbSelector($global_selftables_query_table["table"]);
 				// by modify foreign key STQueryString is also needed
 				// and so runs in an loop
 				$selector->modifyForeignKey(false);
@@ -1063,7 +1063,9 @@ class STQueryString
 				unset($HTTP_GET_VARS["stget"]["nr"]);
 			}
 			$session_name= session_name();
-			$this->param_vars= $HTTP_GET_VARS;
+			if(!isset($global_selftables_queryArray))
+			    $global_selftables_queryArray= $HTTP_GET_VARS;
+			$this->param_vars= $global_selftables_queryArray;
 			$session_id= session_id();
 			if($session_id)
 			{
@@ -1071,6 +1073,16 @@ class STQueryString
 					
 			}else
 			    $this->delete($session_name);
+		}
+		/**
+		 * synchronize new defined query string
+		 * with current globaly settings
+		 */
+		public function synchronize()
+		{
+		    global $global_selftables_queryArray;
+		    
+		    $global_selftables_queryArray= $this->param_vars;
 		}
 		function &getHiddenParamTags($without= null)
 		{
