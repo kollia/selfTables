@@ -150,9 +150,8 @@ class STUserClusterGroupManagement extends STObjectContainer
 	    
 	    
 	    
-	    if( $currentTableName == $groupTableName &&
-	        $action= STLIST                                )
-	    {
+	    if( $currentTableName == $groupTableName )
+	    {   
 	        $user= $this->getTable("User");
 	        $user= new STDbSelector($user);
 	        $user->select("User", "ID", "ID");
@@ -176,10 +175,15 @@ class STUserClusterGroupManagement extends STObjectContainer
 	        $query= new STQueryString();
 	        $url= $query->getUrlParamString();
 	        $selected= null;
-	        if($post->getValue("User") != "")
+	        if($post->getValue("User") != "")	            
 	            $selected= $post->getValue("User");
-	        else
+            elseif($query->getValue("User") != "")
+                $selected= $query->getValue("User");
+            else
 	            $selected= $users[0][0];
+	        $query->update("User=$selected");
+	        $query->synchronize();
+	        
 	        $bodyHead= new DivTag();
     	        $center= new CenterTag();
     	           $form= new FormTag();
@@ -204,10 +208,8 @@ class STUserClusterGroupManagement extends STObjectContainer
     	    //$userWhere->writeWhereCondition();
     	    $group->where($userWhere);
     	    
-/*    	    $groupWhere= new STDbWhere();
-    	    $groupWhere->table("Group");
-    	    $groupWhere->where("domain='Abwesenheitsplaner'");
-    	    $group->andWhere($groupWhere);*/
+    	    //$user_group= $this->getTable("UserGroup");
+    	    //$user_group->preSelect("UserID", $selected, STINSERT);
 	    }
 	  
 		$cluster= $this->needTable("Cluster");
@@ -218,14 +220,6 @@ class STUserClusterGroupManagement extends STObjectContainer
 		$cluster->select("Description", "Description");
 		$cluster->preSelect("DateCreation", "sysdate()");
 		$cluster->joinOver("Project");
-/*		if( $currentTableName == $clusterTableName &&
-		    $action == STLIST)
-		{
-		    $where= new STDbWhere();
-		    $where->table("Project");
-		    $where->where("Name='$projectName'");
-		    $cluster->where($where);
-		}*/
 	}
 }
 ?>
