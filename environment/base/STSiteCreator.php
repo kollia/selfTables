@@ -414,6 +414,7 @@ class STSiteCreator extends HtmlTag
 			$result= $msgHandling->getMessageId();
 			if($result=="NOERROR")
 			{
+			    $this->tableContainer->checkPermission();
 			    $result= $this->tableContainer->execute($this, $onError);
 				$msgHandling->setMessageContent($result);
 				$msgHandling->setMessageId($result);

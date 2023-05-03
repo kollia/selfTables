@@ -1,5 +1,6 @@
 .buildpath
 .project
 .runtime
+*.kate-swp
 org.eclipse.*
 extensions.json

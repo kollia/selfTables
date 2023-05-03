@@ -39,8 +39,8 @@ class STUserSession extends STDbSession
 	 * defined for UserManagement
 	 * @var string
 	 */
-	var $usermanagementAdminGroup= "UserManagementAdmin";
-	var $usermanagementAccessGroup= "UserManagementAccess";
+	var $usermanagementAccessGroup= "UM_Access";
+	var $usermanagementAdminGroup= "UM_CHANGE";
 	/**
 	 * user linked with this cluster
 	 * is administrator and has
@@ -48,8 +48,16 @@ class STUserSession extends STDbSession
 	 * and so also to all projects
 	 * @var string
 	 */
-	var $usermanagementAccessCluster= "UM_ACCESS";
-	var $usermanagementChangeCluster= "UM_CHANGE";
+	var $usermanagement_AccessCluster= "UM_ClusterManagementAccess";
+	var $usermanagement_ChangeCluster= "UM_ClusterManagementCHANGE";
+	var $usermanagement_User_Access= "UM_UserAccess";
+	var $usermanagement_User_Change= "UM_UserCHANGE";
+	/**
+	 * user linked with this cluster
+	 * has administration rights
+	 * to all projects
+	 * @var string
+	 */
 	var	$allAdminCluster= "allAdmin";
     var $allAdminGroup= "Admin";
 	var	$sGroupTable= "Group";

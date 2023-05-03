@@ -177,6 +177,10 @@ class STSession
 		    session_set_cookie_params( 60*5, '/');		    
     		$bSetSession= session_start();
     		STCheck::end_outputBuffer();
+		}else
+		{
+		    $bSetSession= false;
+		    STCheck::echoDebug("session", "session was set before, do not start session again");
 		}
 		
 	    if( STCheck::isDebug("user") ||
@@ -234,7 +238,7 @@ class STSession
 				$string= "user is Logged, so return true";
 			}else
 				$string= "user is not logged, so return false";
-			STCheck::echoDebug("user", $string);		    
+			STCheck::echoDebug("user", $string);
 		}
 		return $loggedin;
 	}
@@ -263,7 +267,15 @@ class STSession
 		Tag::deprecated("is died", "STSession::hasProjectAccess()");
 		if($this->noRegister)
 		{
-			/**/Tag::echoDebug("user", "-&gt; User do not have to be registered so return TRUE<br />");
+		    if(STCheck::isDebug())
+		    {
+		        if(STCheck::isDebug("user"))
+    		        $dbg_str= "user";
+		        else
+		            $dbg_str= "access";
+    		    
+		        STCheck::echoDebug($dbg_str, "-&gt; User do not have to be registered so return TRUE<br />");
+		    }
 			return true;
 		}
 		$cluster_membership= $this->getSessionVar("ST_CLUSTER_MEMBERSHIP");
@@ -271,6 +283,15 @@ class STSession
 			and
 			$this->isLoggedIn())
 		{
+		    if(STCheck::isDebug())
+		    {
+		        if(STCheck::isDebug("user"))
+		            $dbg_str= "user";
+	            else
+	                $dbg_str= "access";
+	                
+                STCheck::echoDebug($dbg_str, "user has correct access to '$toAccessInfoString'");
+		    }
   			$this->LOG(STACCESS, $customID, $toAccessInfoString);
   			/**/Tag::echoDebug("user", "-&gt; User is Super-Admin &quot;allAdmin&quot; so return TRUE<br />");
   			return true;
@@ -459,7 +480,19 @@ class STSession
 			$this->LOG(STACCESS_ERROR, $customID, $toAccessInfoString);
 		if($gotoLoginMask)
 		{
-			/**/Tag::echoDebug("user", "User is in none of the Specified Clusters so goto LoginMask<br />");
+		    if(STCheck::isDebug())
+		    {
+		        $dbg= "user";
+		        if(STCheck::isDebug("access"))
+		            $dbg= "access";
+		        elseif(STCheck::isDebug("session"))
+		            $dbg= "session";
+		        $msg= array();
+		        $msg[]= "User is in none of the Specified Clusters";
+		        $msg[]= "    <b>'$clusterString'</b>";
+		        $msg[]= ",so goto LoginMask<br />";
+			    STCheck::echoDebug($dbg, $msg);
+		    }
 			//$this->logHimOut(7, "ACCESS_ERROR");
 			$this->gotoLoginMask(5);
 		}

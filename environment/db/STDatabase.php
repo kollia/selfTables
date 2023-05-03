@@ -550,10 +550,10 @@ abstract class STDatabase extends STObjectContainer
 				        STCheck::echoDebug("db.test", "do not execute ".$preg[1]."-statement on database for testing");
 				}else
 				{
-				    $stats= array(  "show", "select", "update", "delete", "from",
+				    $stats= array(  "show", "select", "insert", "values", "update", "delete", "from",
             				        array( "inner join", "left join", "right join" ),
             				        "where", "having", "order", "limit"                  );
-				    $aStatement= stTools::getWrappedStatement($stats, $statement);				    
+				    $aStatement= stTools::getWrappedStatement($stats, $statement);
 				    $space= STCheck::echoDebug("db.statement", $aStatement);
 				    if(STcheck::isDebug("db.statements.from"))
 				        showBackTrace(1);
@@ -569,8 +569,8 @@ abstract class STDatabase extends STObjectContainer
 			        showBackTrace(1);
 			}else
 			    $res= array();
-		}else// wenn statement schon ein Array, wird dieses sogleich
-			return $statement; // als Ergebnis zur�ckgegeben
+		}else// if statement until was an Array,
+			return $statement; // statement should be the result
 		
 		$this->lastStatement= $statement;
     	if( (	$res==null

@@ -841,7 +841,7 @@ class STObjectContainer extends STBaseContainer
     		$address= $params->getStringVars();
     		if(Tag::isDebug())
     		{
-			echo __file__.__line__."<br>";
+			showLine();
 			echo "define first container!<br>";
     			$h1= new H1Tag();
     				$h1->add("user reached only one entry in table");
@@ -1559,6 +1559,16 @@ class STObjectContainer extends STBaseContainer
 		$desc= &STDbTableDescriptions::instance($this->db->getDatabaseName());
 		$desc->installTables($this->db);
 	}
+	public function getAccessCluster($action)
+	{
+	    $clusters= STBaseContainer::getAccessCluster($action);
+	    if( isset($this->parentContainer) &&
+	        $this->parentContainer != $this    )
+	    {
+	        $clusters= array_merge($clusters, $this->parentContainer->getAccessCluster($action));
+	    }
+	    return $clusters;
+	}	
 	function getColumnFromTable($tableName, $column)
 	{
 		//echo "STObjectContainer::getColumnFromTable($tableName, $column)<br />";

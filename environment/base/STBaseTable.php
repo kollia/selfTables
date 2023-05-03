@@ -663,6 +663,12 @@ class STBaseTable
 					$clusters= substr($clusters, 0, strlen($clusters)-1);
 					$aRv= array_merge($aRv, $clusters);
 				}
+				if(STCheck::isDebug())
+				{
+				    echo "get all access clusters:";
+				    st_print_r($aRv);
+				    showBackTrace();
+				}
 		}
 		return $aRv;
 	}
@@ -3499,7 +3505,7 @@ class STBaseTable
 		$infoString= $this->getAccessInfoString($action);
 		$customID= $this->getAccessCustomID($action);
 		$access= true;
-		if($clusters)
+		if(isset($clusters))
 			$access= $instance->hasAccess($clusters, $infoString, $customID, $makeError, $action);
 
 		if(STCheck::isDebug())
@@ -3542,15 +3548,10 @@ class STBaseTable
 			return true;
 		}
 
+		if(STCheck::isDebug())
 		STCheck::echoDebug("access", "user in action $staction has <b>no access</b> to table "
 								.$this->Name."(".$this->getDisplayName()
 								.") with Clusters '<i>$clusterString</i>'");
-		/*if($gotoLoginMask)
-		{
-			Tag::echoDebug("access", "so goto login-mask");
-			$this->userManagement->gotoLoginMask(5);
-		}*/
-		STCheck::echoDebug("access", "gotoLoginMask not be set, so return false");
 		return false;
 	}
 }

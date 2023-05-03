@@ -207,6 +207,14 @@ class STUserProjectManagement extends STBaseContainer
     {
         STBaseContainer::execute($externSideCreator, $onError);  
         $available= $this->showAvailableSite();
+        if(STCheck::isDebug())
+        {
+            $dbg= "access";
+            if(STCheck::isDebug("user"))
+                $dbg= "user";
+            $space= STCheck::echoDebug($dbg, "access to site:");
+            st_print_r($available,1, $space);
+        }
         
         if( STCheck::isDebug() &&
             $available['show'] == "frame"   )

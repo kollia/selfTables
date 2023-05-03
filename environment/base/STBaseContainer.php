@@ -1603,11 +1603,81 @@ class STBaseContainer extends BodyTag implements STContainerTempl
 		}
 		return -1;
 	}
-	function accessBy($cluster, $sInfoString= "", $customID= null)
+	public function getAccessCluster($action)
+	{
+	    $aRv= array();
+	    foreach($this->aAccessClusters as $cluster)
+	    {
+	        if( $cluster['action'] == $action ||
+	            (   $cluster['action'] == STADMIN &&
+	                (   $action == STINSERT ||
+	                    $action == STUPDATE ||
+	                    $action == STDELETE    )       )   )
+	        {
+	            $aRv[]= $cluster;
+	        }
+	    }
+	    return $aRv;
+	}
+	public function checkPermission()
+	{
+	    if( !StCheck::isDebug("useExtern") &&
+	        STSession::sessionGenerated())
+	    {
+	        $instance= &STUserSession::instance();
+	        $logString= "access to ".$this->getName();
+	        $clusterString= "";
+	        $action= $this->getAction();
+	        switch($action)
+	        {
+	            case "STLIST":
+	                $customID= 1;
+	                break;
+	            case "STINSERT":
+	                $customID= 2;
+	                break;
+	            case "STUPDATE":
+	                $customID= 3;
+	                break;
+	            case "STDELETE":
+	                $customID= 4;
+	                break;
+	            default:
+	                $customID= 0;
+	        }
+	        $clusters= $this->getAccessCluster($action);
+	        foreach($clusters as $aCluster)
+	        {
+	            if($action != STLIST)
+	                $instance->hasAccess($aCluster['cluster'], $aCluster['info'], $customID, true);
+	            $clusterString.= $aCluster['cluster'].",";
+	        }
+	        $allTables= $this->getTables();
+	        foreach($allTables as $table)
+	        {
+	            $clusters= $table->getAccessCluster($action);
+	            if(isset($clusters))
+	                $clusterString.= $clusters.",";
+	        }
+	        if($clusterString != "")
+	        {
+	            $clusterString= substr($clusterString, 0, -1);
+	            if(STCheck::isDebug())
+	            {
+    	            $msg[]= "follow clusters for container '".$this->getName()."' by action >> $action << be set:";
+    	            $msg[]= "    '$clusterString'";
+    	            STCheck::echoDebug("access", $msg);
+	            } 
+    	        $instance->hasAccess($clusterString, $logString, $customID, true);
+	        }
+	    }
+	}
+	function accessBy($cluster, $action= STLIST, $sInfoString= "", $customID= null)
 	{
 		if(!$sInfoString)
 			$sInfoString= "acces to container ".$this->getDisplayName()."(".$this->name.")";
 		$this->aAccessClusters[]= array(	"cluster"	=>	$cluster,
+		                                    "action"    =>  $action,
 											"info"		=>	$sInfoString,
 											"customID"	=>	$customID		);
 	}

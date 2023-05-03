@@ -87,8 +87,10 @@ class STUserManagement extends STObjectContainer
 	}
 	function create()
 	{
+	    $session= &STUserSession::instance();
 	    $this->setDisplayName("Project Management");
-	    $this->accessBy("STUM-UserAccess");
+	    $this->db->accessBy($session->usermanagement_AccessCluster, STLIST);
+	    $this->db->accessBy($session->usermanagement_ChangeCluster, STADMIN);
 		//$this->needContainer("projects");
 	    
 	    $domain= $this->getTable("AccessDomain");
@@ -97,6 +99,8 @@ class STUserManagement extends STObjectContainer
 	    
 	    $user= &$this->needTable("User");
 	    $user->setDisplayName("User");
+	    $user->accessBy($session->usermanagement_User_Access, STLIST);
+	    $user->accessBy($session->usermanagement_User_Change, STADMIN);
 	       
 	    $groups= &$this->needTable("Group");
 	    $groups->setDisplayName("Groups");
@@ -104,11 +108,6 @@ class STUserManagement extends STObjectContainer
 		$project= &$this->needTable("Project");
 		$project->setDisplayName("existing Projects");
 		$this->setFirstTable("Project");
-		
-		
-		$session= &STUserSession::instance();
-		$this->accessBy($session->usermanagementAccessCluster);
-		//$this->accessBy($session->usermanagementChangeCluster);
 	}
 	function init()
 	{

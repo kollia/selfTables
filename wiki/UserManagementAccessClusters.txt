@@ -1,0 +1,17 @@
+
+
+GROUPS:
+~~~~~~~~~~
+UM_ACCESS       access to read hole UserManagement
+UM_CHANGE       access to change data on hole UserManagement
+
+CLUSTRS:
+~~~~~~~~~~~~~~~~~~~~~~~~~~
+UM_UserAccess                   access to read all user-data
+UM_UserCHANGE                   access to change all user-data
+UM_ClusterManagementAccess      access to read all clusters how to manage
+UM_ClusterManagementCHANGE      access to change all cluster behavior with groups
+
+# clusters not defined now -> maybe in the future
+UM_UserProjectAccess    access to read own projects inside UserManagement
+UM_UserProjectChange    access to change UserManagement entries for own projects
