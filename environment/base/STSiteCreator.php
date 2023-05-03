@@ -342,7 +342,7 @@ class STSiteCreator extends HtmlTag
 				//	if save this without chek on this-db
 				//	the container from set table STQueryString in global variable $global_selftables_query_table["table"]
 				//	lost the member variable container
-				$db= &$container->getDatabase();
+				$db= $container->getDatabase();
 				if($db !== NULL)
 				    $this->db= &$db;//&$container->getDatabase();			
 			}

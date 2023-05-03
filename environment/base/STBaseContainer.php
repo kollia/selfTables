@@ -576,7 +576,7 @@ class STBaseContainer extends BodyTag implements STContainerTempl
 		    $bAllowNullObj= $containerName;
 		    $containerName= null;
 		}
-		if(!$containerName)
+		if(!isset($containerName))
 		{
 			$query= new STQueryString();
 			$containerName= $query->getArrayVars("stget", "container");
@@ -672,27 +672,46 @@ class STBaseContainer extends BodyTag implements STContainerTempl
 			require_once($global_array_exist_stobjectcontainer_with_classname[$containerName]["source"]);
 		}
 
-//		STCheck::alert(!$className, "STBaseContainer::getContainer()",
-//				"on first call of getContainer() for '$containerName' second parameter must be an defined class-name");
-		if($className == null)
-			$className= "STObjectContainer";
-		if(STCheck::isDebug("container"))
+		$firstDefaultContainer= null;
+		if(isset($global_array_all_exist_stobjectcontainers[$global_first_objectContainerName]))
 		{
-    		$space= STCheck::echoDebug("container", "create new container $containerName as <b>class:</b>$className");
-    		STCheck::echoSpace($space);
-    		echo "<b>WARNING</b> --------------------------------------------------------------------------------------- <b>WARNING</b><br />";
-    		STCheck::echoSpace($space);
-    		echo "        maybe <b>$containerName</b> will be created to late<br>";
-    		STCheck::echoSpace($space);
-    		echo "        try to create earlyer<br>";
-    		STCheck::echoSpace($space);
-    		echo "             (inside constructer when objects used<br>";
-    		STCheck::echoSpace($space);
-    		echo "              or immediately in index file<br>";
-    		STCheck::echoSpace($space);
-    		echo "<b>WARNING</b> --------------------------------------------------------------------------------------- <b>WARNING</b><br />";
-    		showBackTrace();
+		    $firstDefaultContainerName= $global_first_objectContainerName;
+		    $firstDefaultContainer= $global_array_all_exist_stobjectcontainers[$global_first_objectContainerName];
+		}elseif(!empty($global_array_all_exist_stobjectcontainers))
+		{
+		    $firstDefaultContainerName= reset($global_array_all_exist_stobjectcontainers);
+		    $firstDefaultContainer= $global_array_all_exist_stobjectcontainers[$firstDefaultContainerName];
 		}
+		if(isset($firstDefaultContainer))
+		{
+		    if(STCheck::isDebug())
+		    {
+		        $dbg= "access";
+		        if(STCheck::isDebug("container"))
+		            $dbg= "container";
+		        STCheck::echoDebug($dbg, "container $containerName do not exist, take first founded container '$firstDefaultContainerName'");
+		    }
+		    return $firstDefaultContainer;
+		}
+	    if($className == null)
+	        $className= "STObjectContainer";
+        if(STCheck::isDebug("container"))
+        {
+            $space= STCheck::echoDebug("container", "create new container $containerName as <b>class:</b>$className");
+            STCheck::echoSpace($space);
+            echo "<b>WARNING</b> --------------------------------------------------------------------------------------- <b>WARNING</b><br />";
+            STCheck::echoSpace($space);
+            echo "        maybe <b>$containerName</b> will be created to late<br>";
+            STCheck::echoSpace($space);
+            echo "        try to create earlyer<br>";
+            STCheck::echoSpace($space);
+            echo "             (inside constructer when objects used<br>";
+            STCheck::echoSpace($space);
+            echo "              or immediately in index file<br>";
+            STCheck::echoSpace($space);
+            echo "<b>WARNING</b> --------------------------------------------------------------------------------------- <b>WARNING</b><br />";
+            showBackTrace();
+        }
 		$containerObj= new $className($containerName, $fromContainer);
 		return $containerObj;
 	}
