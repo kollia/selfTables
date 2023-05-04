@@ -159,7 +159,8 @@ class STSession
 
 		if($this->noRegister)
 			return;
-		
+		if(STCheck::warning(STSession::sessionGenerated(), "STSession::registerSession()", "cannot register session twice"))
+		    return;
 		STCheck::echoDebug("session", "register session");
 		// save session on default harddisk position
 		// or other places
@@ -181,6 +182,7 @@ class STSession
 		    session_set_cookie_params( 60*5, '/');		    
     		$bSetSession= session_start();
     		STCheck::end_outputBuffer();
+    		$this->sessionRegistered= true;
 		}else
 		{
 		    $bSetSession= false;
