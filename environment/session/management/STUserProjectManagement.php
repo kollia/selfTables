@@ -39,7 +39,7 @@ class STUserProjectManagement extends STBaseContainer
     {
         $this->accessibilityString= $string;
     }
-    public function setHomepageLogo(string $address, int $width= null, int $height= 800, string $alt= "DB selftables Homepage")
+    public function setHomepageLogo(string $address, int $width= null, int $height= 140, string $alt= "DB selftables Homepage")
     {
         $this->image['logo']['img']= $address;
         $this->image['logo']['height']= $height;
@@ -50,7 +50,7 @@ class STUserProjectManagement extends STBaseContainer
     {
         $this->image['logo']['banner']= $address;
     }
-    public function setNavigationLogo(string $address, int $width= null, int $height= 800)
+    public function setNavigationLogo(string $address, int $width= null, int $height= 70)
     {
         $this->image['nav']['img']= $address;
         $this->image['nav']['height']= $height;
@@ -214,7 +214,9 @@ class STUserProjectManagement extends STBaseContainer
     {
         STBaseContainer::execute($externSideCreator, $onError);  
         $available= $this->showAvailableSite();
-        if(STCheck::isDebug())
+        if( STCheck::isDebug() &&
+            (   STCheck::isDebug("user") ||
+                STCheck::isDebug("access")  )   )
         {
             $dbg= "access";
             if(STCheck::isDebug("user"))
@@ -431,13 +433,6 @@ class STUserProjectManagement extends STBaseContainer
                     $div->add(br());                        
                 }
                 $table->add($div);
-                if( $available['LoggedIn'] &&
-                    isset($logo['banner']))
-                {
-                    $table->columnBackground($logo['banner']);
-                    $table->columnHeight($logo['height']);
-                    $table->columnValign("height");
-                }
                 $table->width("100%");
                 $table->columnAlign("right");
             $this->append($table); 
