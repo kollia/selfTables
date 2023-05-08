@@ -136,11 +136,13 @@ class STUserManagement extends STObjectContainer
 		$groups->select("Name", "Group");
 		
 		$project= &$this->needTable("Project");
+		$project->select("ID", "ID");
 		$project->select("Name", "Project");
 		$project->select("Description", "Description");
 		$project->select("Path", "URL");
 		$project->preSelect("DateCreation", "systemdate()");
 		$project->orderBy("Name");
+		//$project->align("ID", "right");
 		
 		if($action==STLIST)
 		{
