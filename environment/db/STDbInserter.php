@@ -32,7 +32,7 @@ class STDbInserter extends STDbSqlCases
 	}
 	function fillColumn(string $column, $value)
 	{
-		STCheck::param($value, 1, "string", "int");
+		STCheck::param($value, 1, "string", "empty(string)", "int", "float");
 
 		
 		if(preg_match("/^[ ]*['\"](.*)['\"][ ]*$/", $value, $preg))

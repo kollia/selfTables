@@ -988,7 +988,7 @@ abstract class STDatabase extends STObjectContainer
 		if(STCheck::isDebug("show.db.fields"))
 		{
 			$space= STCheck::echoDebug("show.db.fields", "produced column-result:");
-			if(!empty($aRv))
+			if(empty($aRv))
 				echo "<strong>ERROR:</strong> no field content!<br />";
 			st_print_r($aRv, 5, $space);
 		}

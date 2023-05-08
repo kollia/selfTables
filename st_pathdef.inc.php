@@ -36,12 +36,9 @@
 	//
 	//--------------------------------------------------------------------------
 	
-    $__globally_debug_defined= false;
+    $__globally_debug_defined= true;
     function global_debug_definition(bool $define)    
     {
-        global $__globally_debug_defined;
-        
-        $__globally_debug_defined= $define;
         if($define)
         {
     		ini_set('display_errors', 1);
