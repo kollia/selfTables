@@ -11,8 +11,8 @@ class STUserSiteCreator extends STSessionSiteCreator
 
 	function __construct($projectNameNr, $container= null)
 	{
-		STCheck::paramCheck($projectNameNr, 1, "string", "int");
-		STCheck::paramCheck($container, 2, "STBaseContainer", "null");
+		STCheck::param($projectNameNr, 0, "string", "int");
+		STCheck::param($container, 1, "STBaseContainer", "null");
 
 		// if projectName is an integer
 		// define also sProject with it,

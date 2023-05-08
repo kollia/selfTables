@@ -288,18 +288,14 @@ class STSessionSiteCreator extends STSiteCreator
 			
 			return STSiteCreator::execute();
 		}
-		/*function hasTableAccess($forTable, $toAccessInfoString= "", $customID= null, $logout= false)
+		/**
+		 * whether object need registration or login
+		 *
+		 * @return boolean wheter need registration
+		 */
+		public function needRegister() : bool
 		{
-			$clusterString= $this->aAccessClusters[$forTable];
-			echo "OK<br />";
-			if(!isset($clusterString))
-				$clusterString= $this->aAccessClusters["-all"];
-			return $this->userManagement->hasAccess($clusterString, $toAccessInfoString, $customID, $logout);
-		}*/
-		function noRegisterForDebug($defaultStartPage)// muss angegeben werden, da er den Projekt-Pfad nicht
-													  // aus der UserManagement-Datenbank holt
-		{
-			$this->userManagement->noRegisterForDebug($defaultStartPage);
+			return $this->userManagement->needRegister();
 		}
 		function &getUserDb()
 		{

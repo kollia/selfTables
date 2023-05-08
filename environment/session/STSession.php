@@ -129,13 +129,19 @@ class STSession
 
 		return $client_root.$this->startPage;
 	}
-	function noRegisterForDebug($startPage= "")
+	/**
+	 * do not make register process for debugging
+	 */
+	public function noRegister()
 	{
 		$this->noRegister= true;
-		if($startPage!="")
-			$this->startPage= $startPage;
 	}
-	function mustRegister()
+	/**
+	 * whether object need registration or login
+	 * 
+	 * @return boolean wheter need registration
+	 */
+	public function needRegister() : bool
 	{
 		return !$this->noRegister;
 	}
@@ -836,7 +842,7 @@ class STSession
 	{
 	    return $this->loginError;
 	}
-	public function verifyProject(string $Project)
+	public function verifyProject(string $Project) : bool
 	{
 		global	$HTTP_GET_VARS,
 				$HTTP_POST_VARS;
@@ -848,7 +854,7 @@ class STSession
 		if($this->noRegister)
 		{
 			STCheck::echoDebug("user", "disabled registration for DEBUGGING purposes");
-			return;
+			return false;
 		}
 		$this->project= $Project;
  		if(	isset($HTTP_POST_VARS[ "doLogout" ])
@@ -970,6 +976,7 @@ class STSession
 		STCheck::echoDebug("user", "end of verifyLogin, ST_LOGGED_IN is:");
 		echo "end of verifyLogin, ST_LOGGED_IN is ";
 		var_dump($this->getSessionVar("ST_LOGGED_IN"));echo "<br />";
+		return false;
   	}
 	function readCluster()
 	{

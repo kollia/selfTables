@@ -112,7 +112,7 @@ class STUser
 		if($startPage!="")
 			$this->startPage= $startPage;
 	}
-	function mustRegister()
+	function needRegister()
 	{
 		return !$this->noRegister;
 	}
