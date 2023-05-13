@@ -80,7 +80,7 @@ class STFrameContainer extends STBaseContainer
 		if($this->bframeset)
 		{
 		    $this->tag= "frameset";
-		    $this->class= "STFrame";
+		    $this->class("STFrame");
 		    if( !$this->hasAttribut("frameborder") &&
 		        !$this->hasAttribut("framespacing")   )
 		    {

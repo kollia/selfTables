@@ -261,7 +261,7 @@ class STUserProjectManagement extends STBaseContainer
             $result= $frame->execute($externSideCreator, $onError);
             
             $this->tag= "frameset";
-            $this->class= "STFrame";
+            $this->class("STFrame");
             foreach($frame->inherit as $tag)
             {
                 STBaseContainer::append($tag);
