@@ -33,7 +33,7 @@ interface STContainerTempl
     public function hasTable(string $tableName) : bool;
 }
 
-class STBaseContainer extends BodyTag implements STContainerTempl
+abstract class STBaseContainer extends BodyTag implements STContainerTempl
 {
     var $language= "en";
     /**
@@ -423,6 +423,12 @@ class STBaseContainer extends BodyTag implements STContainerTempl
 		    $this->sBackButton= $this->oExternSideCreator->sBackButton;
 		return "NOERROR";
 	}
+	/**
+	 * method will be called by creation
+	 * when container need to know which tables inside
+	 * with witch names
+	 */
+	abstract protected function create();
 	protected function createContainer()
 	{
 	    if(!isset($this->bCreated))// if bCreated is false, container is inside the creation phase
@@ -433,6 +439,14 @@ class STBaseContainer extends BodyTag implements STContainerTempl
 			$this->bCreated= true;
 		}
 	}
+	/**
+	 * method will be called when container has an action
+	 * to display as STListBox or STItembox
+	 *
+	 * @param string $action current action of container STInsert/STUpdate/STList/STDelete
+	 * @param string $table which table is in action
+	 */
+	abstract protected function init(string $action, string $table);
 	protected function initContainer()
 	{
 	    // method needs initialization properties
@@ -448,37 +462,24 @@ class STBaseContainer extends BodyTag implements STContainerTempl
 		        return; // container is currently inside the creation phase
 			$this->bInitialize= false;
 			STCheck::echoDebug("container", "starting initial routine for container ".get_class($this)."(<b>$this->name</b>)");
-			$this->init();
+			$action= $this->getAction();
+			$table= $this->getTableName();
+			if( !isset($table) ||
+			    trim($table == "")   )
+			{
+			    $table= $this->getFirstTableName();
+			    if( !isset($table) ||
+			        trim($table == "")   )
+			    {
+			        // no first table is selected
+			        $table= "";
+			        $action= STCHOOSE;
+			    }
+			}			
+			$this->init($action, $table);
 			$this->bInitialize= true;
 		}
 	}
-    function create()
-    {   
-        if( STCheck::isDebug() &&
-            get_class($this) == "STBaseContainer"   )
-        {
-            STCheck::echoDebug("container", "create routine for container ".get_class($this)."(<b>$this->name</b>)");
-            $currentObject= get_class($this);
-            if($currentObject != "STBaseContainer")
-            {
-                echo "current object:$currentObject<br>";
-                echo __FILE__.__LINE__."<br>";
-                echo "method STBaseContainer::create() shouldn't called from $currentObject<br />";
-                echo "  <b>WARNING</b> --------------------------------------------------------------------------------------- <b>WARNING</b><br />";
-                showBackTrace();
-            }
-            // this function is only a hook for this template-pattern
-            // and startig the creation in the initContainer/execute
-            // when this object is needed
-            // and also in some methodes where tables needed
-        }
-    }
-    protected function init()
-    {//echo "initial container ".get_class($this)."(".$this->name.")<br />";
-       // this function is only a hook for this template-pattern
-    	 // and startig the initialisation in the execute
-    	 // when this object is needed
-    }
 	function currentContainer()
 	{
 		$get= new STQueryString();
@@ -1543,25 +1544,25 @@ class STBaseContainer extends BodyTag implements STContainerTempl
 		// this container STBaseContainer contains no table
 		return array();
 	}
-	function getFirstTableName()
+	public function getFirstTableName()
 	{
 		// dummy function for STSiteCreator
 		// this container STBaseContainer contains no table
 		return null;
 	}
-	function getTableName(string $name= null)
+	public function getTableName(string $name= null)
 	{
 		// dummy function for STSessionSiteCreator
 		// this container STBaseContainer contains no table
 		return null;
 	}
-	function getAction()
+	public function getAction()
 	{
 		// dummy function for STSessionSiteCreator
 		// this container STBaseContainer need no action
 		return null;
 	}
-	function getDatabase()
+	public function getDatabase()
 	{
 		// dummy function for STSessionSiteCreator
 		// this container STBaseContainer contains no database

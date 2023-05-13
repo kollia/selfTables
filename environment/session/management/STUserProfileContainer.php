@@ -28,12 +28,11 @@ class STUserProfileContainer extends STObjectContainer
 		$user->listLayout(STVERTICAL);
 		$user->accessBy("LOGGED_IN");
 	}
-	function init()
+	function init(string $action, string $table)
 	{
 		$user= &$this->needTable("User");
 		$user->select("EmailAddress", "Email Address");
 		$user->select("Description", "Description");
-		$action= $this->getAction();
 		if($action==STLIST)
 		{
 		    $user->select("NrLogin", "logged in");

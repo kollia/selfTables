@@ -64,7 +64,11 @@ class STUserProjectManagement extends STBaseContainer
     {
         return $this->database;
     }
-    public function create()
+    protected function init(string $action, string $table)
+    {
+        
+    }
+    protected function create()
     {
         //$this->database->verifyLogin("##StartPage");
         STCheck::echoDebug("user", "entering ProjectAccess init function...");
