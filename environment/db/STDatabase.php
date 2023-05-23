@@ -1965,6 +1965,7 @@ abstract class STDatabase extends STObjectContainer
 	abstract protected function insert_id();
 	abstract protected function getValueKeywords() : array;
 	abstract protected function getFunctionKeywords() : array;
+	abstract protected function getAllColumnKeyword() : string;
 	/**
 	 * inform whether content of parameter is an keyword
 	 *

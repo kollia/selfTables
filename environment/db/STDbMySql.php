@@ -531,6 +531,8 @@ class STDbMySql extends STDatabase
 	        "in" => array( "type" => "text", "len" => $this->getTextLen() )
 	    );
 	}
+	protected function getAllColumnKeyword() : string
+	{ return "*"; }
 	protected function insert_id()
 	{
 		return $this->conn->insert_id;
