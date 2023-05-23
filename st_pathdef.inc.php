@@ -294,11 +294,12 @@
 		$_stusergroupmanagement=			$_stenvironmenttools_path."/session/management/STUserGroupManagement.php";
 		$_stgroupgroupmanagement=			$_stenvironmenttools_path."/session/management/STGroupGroupManagement.php";
 		
+		$_stdate=                           $_stcmstools_path."/calendar/STTestDate.php";
+		$_stseriescontainer_install=		$_stcmstools_path."/calendar/stseriescontainer_install.php";
+		$_stcalendarserie=					$_stcmstools_path."/calendar/STCalendarSerieForm.php";
 		$_stgallerycontainer_install=		$_stcmstools_path."/gallery/STGalleryContainer_install.php";
 		$_stgallerycontainer=				$_stcmstools_path."/gallery/STGalleryContainer.php";
 		$_stsubgallerycontainer=			$_stcmstools_path."/gallery/STSubGalleryContainer.php";
-		$_stseriescontainer_install=		$_stcmstools_path."/calendar/stseriescontainer_install.php";
-		$_stcalendarserie=					$_stcmstools_path."/calendar/STCalendarSerieForm.php";
 
 		//st_check_require_once($_sttools);
 		//echo __FILE__.__LINE__."<br>";
