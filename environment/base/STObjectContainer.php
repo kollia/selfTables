@@ -9,7 +9,7 @@ require_once($_stlistbox);
 require_once($_stitembox);
 
 
-class STObjectContainer extends STBaseContainer
+abstract class STObjectContainer extends STBaseContainer
 {
 	var $db; // Datenbank-Objekt
 	var $headTag;
@@ -21,7 +21,7 @@ class STObjectContainer extends STBaseContainer
 	var	$sFirstTableName; //erste Tabelle
 	var $sFirstAction= null; // erste Aktion nicht gesetzt hole von Tabelle
 	var $actAction= ""; // current action from this container
-	var $actTableName= ""; // actual main table in this container
+	var $actTableName= ""; // current main table in this container
 	var	$actions= array(); // welche Aktion die Tabelle in der ersten auflistung haben soll
 	var $bChooseByOneTable= false; // soll auch bei einer Tabelle die Auswahl erscheinen?
 

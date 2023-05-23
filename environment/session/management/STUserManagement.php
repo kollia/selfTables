@@ -109,9 +109,8 @@ class STUserManagement extends STObjectContainer
 		$project->setDisplayName("existing Projects");
 		$this->setFirstTable("Project");
 	}
-	function init()
+	function init(string $action, string $table)
 	{
-	    $action= $this->getAction();
 	    $session= &STUserSession::instance();
 	    $domain= $session->getCustomDomain();
 	    
@@ -140,7 +139,7 @@ class STUserManagement extends STObjectContainer
 		$project->select("Name", "Project");
 		$project->select("Description", "Description");
 		$project->select("Path", "URL");
-		$project->preSelect("DateCreation", "systemdate()");
+		$project->preSelect("DateCreation", "sysdate()");
 		$project->orderBy("Name");
 		//$project->align("ID", "right");
 		

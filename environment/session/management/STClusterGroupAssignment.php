@@ -16,7 +16,7 @@ class STClusterGroupAssignment extends STObjectContainer
 	{
 	    $table= $this->needNnTable("Group", "ClusterGroup", "Cluster");
 	}
-	function init()
+	function init(string $action, string $table)
 	{
 	    $cluster= $this->getTable("Cluster");
 	    $selector= new STDbSelector($cluster);

@@ -69,6 +69,26 @@ class STFrameContainer extends STBaseContainer
 	    }
 		$this->urlAddress[]= $address;
 	}
+	/**
+	 * method will be called by creation
+	 * when container need to know which tables inside
+	 * with witch names
+	 */
+	protected function create()
+	{
+	    // dummy method for creation
+	}
+	/**
+	 * method will be called when container has an action
+	 * to display as STListBox or STItembox
+	 *
+	 * @param string $action current action of container STInsert/STUpdate/STList/STDelete
+	 * @param string $table which table is in action
+	 */
+	protected function init(string $action, string $table)
+	{
+	    // dummy method for creation
+	}
 	function execute(&$externSideCreator, $onError= onErrorMessage)
 	{
 		Tag::paramCheck($externSideCreator, 1, "STSiteCreator");
@@ -80,7 +100,7 @@ class STFrameContainer extends STBaseContainer
 		if($this->bframeset)
 		{
 		    $this->tag= "frameset";
-		    $this->class= "STFrame";
+		    $this->class("STFrame");
 		    if( !$this->hasAttribut("frameborder") &&
 		        !$this->hasAttribut("framespacing")   )
 		    {

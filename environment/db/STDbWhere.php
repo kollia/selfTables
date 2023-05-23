@@ -771,7 +771,7 @@ class STDbWhere
 				$ereg2= trim($ereg[2]);
 				if( !substr($ereg2, 0, 1) == "(" )
 				    $ereg2= "($ereg2)";
-				$statement= "${ereg[1]} $ereg2";
+				$statement= "{$ereg[1]} $ereg2";
 			}else
 				$statement= "($statement)";
 			return $statement;

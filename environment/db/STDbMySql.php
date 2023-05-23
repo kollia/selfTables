@@ -87,7 +87,7 @@ class STDbMySql extends STDatabase
 			// if database was defined (same as this case)
 			// function do not select new databse
 			// only create content of table names
-			$this->useDatabase($database);
+			$this->database($database);
 		}
 	}
 	/**
@@ -152,7 +152,7 @@ class STDbMySql extends STDatabase
 	 * {@inheritDoc}
 	 * @see STBaseContainer::init()
 	 */
-	public function init()
+	public function init(string $action, string $table)
 	{
 	    // Dummy
 	}

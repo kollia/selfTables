@@ -739,8 +739,12 @@ class STUserSession extends STDbSession
 			$project->where($where);
 			$project->execute();
 			$row= $project->getRowResult();
-			STCheck::is_alert(	(!is_array($row) || count($row)==0 ), "STUserSession::setUserProject()",
-  										"Project &quote;<b>$ProjectName</b>&quote; is not defined in the database" );
+			if(!is_array($row) || count($row)==0 )
+			{
+    			STCheck::alert(1, "STUserSession::setUserProject()",
+      										"Project <q><b>$ProjectName</b></q>; is not defined in the database", 2 );
+    			exit;
+			}
   			$this->projectID= $row['ID'];
   			$this->project= $row['Name'];
 			if(!$this->startPage)

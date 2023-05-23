@@ -97,7 +97,7 @@ class STUserClusterGroupManagement extends STObjectContainer
 	    $project= $this->getTable("Project");
 	    $project->identifColumn("Name", "Project");
 	}
-	function init()
+	function init(string $action, string $table)
 	{
 	    $container= $this->getContainerName();
 	    $currentTableName= $this->getTableName();

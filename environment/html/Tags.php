@@ -9,9 +9,21 @@ $HTML_TAG_CONTAINER= null;
 
 class Tag extends STCheck
 {
-		var $tag;
-		var $bEndTag;
-		var $inherit;
+    /**
+     * name of the tag
+     * @var string $tag
+     */    
+	protected $tag;
+	/**
+	 * whether tag has an end tag
+	 * @var boolean $bEndTag
+	 */
+	private $bEndTag;
+	/**
+	 * all tags inside this current tag
+	 * @var array $inherit
+	 */
+	protected $inherit;
 		var $aNames;
 		var $isScript= false;
 
