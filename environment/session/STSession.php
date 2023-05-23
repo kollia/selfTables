@@ -254,7 +254,12 @@ class STSession
 		}
 		return $loggedin;
 	}
-	function hasAccess($authorisationString, $toAccessInfoString, $customID= null, $gotoLoginMask= false, $action= STALLDEF)
+	public function needAccess($authorisationString, $toAccessInfoString, $customID= null)
+	{
+	    // method hasAccess() do not exit if gotoLoginMask is true
+	    $this->hasAccess($authorisationString, $toAccessInfoString, $customID, /*gotoLoginMask*/true);
+	}
+	public function hasAccess($authorisationString, $toAccessInfoString, $customID= null, $gotoLoginMask= false, $action= STALLDEF)
 	{
 		STCheck::paramCheck($authorisationString, 1, "string", "array");
 		STCheck::paramCheck($toAccessInfoString, 2, "string", "", "null");
