@@ -431,23 +431,42 @@ class STBaseTable
 		if($height)
 			$this->aInputSize[$column]["height"]= $height;
 	}
-	function attribute($element, $attribute, $value, $tableType= null)
+	/**
+	 * set attribute by displayed table
+	 * when defined for specific column
+	 * and or different action type (STLIST/STINSERT/STUPDATE)
+	 * 
+	 * @param string $element on which tag element the attribute should be set
+	 * @param string $attribute which attribute should be set
+	 * @param string $value the value of the attribute
+	 * @param string $tableType the action type of table (STLIST/STINSERT/STUPDATE) (default null for all actions)
+	 * @param string $aliasName the specific name of column when set, otherwise for all columns
+	 */
+	function attribute($element, $attribute, $value, $tableType= null, $aliasName= null)
 	{
-		if($tableType==STFORM)
-		{
-			$this->aAttributes[STINSERT][$element][$attribute]= $value;
-			$this->aAttributes[STUPDATE][$element][$attribute]= $value;
-			return;
-		}
+	    if(isset($aliasName))
+	    {
+    	    $field= $this->findAliasOrColumn($aliasName);
+    	    if(isset($field))
+                $aliasName= $field['alias'];
+    	    else
+    	       STCheck::is_error($field==null, "STBaseTable::attribute()", "alias name or column ('$aliasName') does not exist");
+	    }
 		if($tableType!==null)
-		{echo "tableType:$tableType<br />";
-			$this->aAttributes[$tableType][$element][$attribute]= $value;
+		{
+		    if(STCheck::isDebug())
+		    {    
+		        STCheck::warning( $tableType != STLIST &&
+                		          $tableType != STINSERT &&
+                		          $tableType != STUPDATE, "STBaseTable::attribute()", "unknown tableType ('$tableType') be set");
+		    }
+		    $this->aAttributes[$tableType][$element][$aliasName][$attribute]= $value;
 			return;
 		}
 		// tableType is NULL
-		$this->aAttributes[STINSERT][$element][$attribute]= $value;
-		$this->aAttributes[STUPDATE][$element][$attribute]= $value;
-		$this->aAttributes[STLIST][$element][$attribute]= $value;
+		$this->aAttributes[STINSERT][$element][$aliasName][$attribute]= $value;
+		$this->aAttributes[STUPDATE][$element][$aliasName][$attribute]= $value;
+		$this->aAttributes[STLIST][$element][$aliasName][$attribute]= $value;
 
 	}
 	function tableAttribute($attribute, $value, $tableType= null)
@@ -462,22 +481,22 @@ class STBaseTable
 	{
 		$this->attribute("th", $attribute, $value, $tableType);
 	}
-	function tdAttribute($column, $attribute, $value, $tableType= null)
+	function tdAttribute($attribute, $value, $tableType= null, $aliasName= null)
 	{
-		$this->attribute("td", $attribute, $value, $tableType= null);
+		$this->attribute("td", $attribute, $value, $tableType, $aliasName);
 	}
 	/**
 	 * make allignment for specific column.<br />
 	 * can be differend between list-, insert- and update-table
 	 * 
-	 * @param string $column name of column
+	 * @param string $aliasName name of column
 	 * @param string $value whether alignment should be 'left', 'center' or 'right'
 	 * @param enum $tableType for which display table - STLIST, STINSERT or STDELETE - alignment should be.
-	 * 							no parameter set (default) is definition for all
+	 * 							(default: <code>STLIST</code>)
 	 */
-	public function align($column, $value, $tableType= null)
+	public function align($aliasName, $value, $tableType= STLIST)
 	{
-		$this->tdAttribute($column, "align", $value);
+	    $this->tdAttribute("align", $value, $tableType, $aliasName);
 	}
 	/**
 	 * define column as must have field, maybe by different actions
