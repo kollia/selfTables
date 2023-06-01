@@ -982,15 +982,25 @@ class STListBox extends STBaseBox
 		{
 			STBaseBox::callback($columnName, $callbackFunction, $action);
 		}
-		function insertAttributes(&$tag, $element)
+		protected function insertAttributes(&$tag, $element, $column= null)
 		{
 			$aAttributes= null;
-			if(isset($this->asDBTable->aAttributes[STLIST][$element]))
-				$aAttributes= $this->asDBTable->aAttributes[STLIST][$element];
+			if(isset($this->asDBTable->aAttributes[STLIST][$element][null]))
+			    $aAttributes= $this->asDBTable->aAttributes[STLIST][$element][null];
+			if(isset($this->asDBTable->aAttributes[STLIST][$element][$column]))
+			{
+			    $bAttributes= $this->asDBTable->aAttributes[STLIST][$element][$column];
+			    if(is_array($aAttributes))
+			        $aAttributes= array_merge($aAttributes, $bAttributes);
+			    else
+			        $aAttributes= $bAttributes;
+			}
 			if(is_array($aAttributes))
 			{
 				foreach($aAttributes as $attribute=>$value)
+				{
 					$tag->insertAttribute($attribute, $value);
+				}
 			}
 		}
 		/**
@@ -1181,7 +1191,7 @@ class STListBox extends STBaseBox
 						if($this->bCaption)
 						{
 	  						$th= new ColumnTag(TH);
-								$this->insertAttributes($th, "th");
+								$this->insertAttributes($th, "th", $columnKey);
 								$th->add($rowKey);
 							$tr->add($th);
 						}
@@ -1261,7 +1271,7 @@ class STListBox extends STBaseBox
 					if(!$getColumn)
 					{
 						$td= new ColumnTag(TD);
-						$this->insertAttributes($td, "td");
+						$this->insertAttributes($td, "td", $createdColumn);
 					}else// wenn getColumn gesetzt ist wird kein neuer TD Tag erzeugt
 						$getColumn= false;
 
