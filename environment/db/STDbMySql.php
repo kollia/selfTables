@@ -143,7 +143,7 @@ class STDbMySql extends STDatabase
 	 * {@inheritDoc}
 	 * @see STBaseContainer::create()
 	 */
-	public function create()
+	protected function create()
 	{
 	    // Dummy
 	}
@@ -152,7 +152,7 @@ class STDbMySql extends STDatabase
 	 * {@inheritDoc}
 	 * @see STBaseContainer::init()
 	 */
-	public function init(string $action, string $table)
+	protected function init(string $action, string $table)
 	{
 	    // Dummy
 	}
