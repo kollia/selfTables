@@ -259,14 +259,29 @@ class STSession
 	    // method hasAccess() do not exit if gotoLoginMask is true
 	    $this->hasAccess($authorisationString, $toAccessInfoString, $customID, /*gotoLoginMask*/true);
 	}
-	public function hasAccess($authorisationString, $toAccessInfoString, $customID= null, $gotoLoginMask= false, $action= STALLDEF)
+	/**
+	 * ask session whether have user currently access to specific CLUSTERs
+	 * 
+	 * @param string $authorisationString string or array of clusters defined inside usermanagement
+	 * @param string $toAccessInfoString authorisation string logged by access into database
+	 * @param string $customID ID saved also into database if need for different statistics
+	 * @param enum $action access only for specified action (STINSERT/STUPDATE/STDELETE or STALLDEF)
+	 * @param boolean $gotoLoginMask goto login mask if access not given, otherwise return false
+	 * @return boolean return true when access given, otherwise by no access and variable <code>$gotoLoginMask = false</code> return false
+	 */
+	public function hasAccess($authorisationString, $toAccessInfoString= null, $customID= null, $action= STALLDEF, $gotoLoginMask= false)
 	{
 		STCheck::paramCheck($authorisationString, 1, "string", "array");
 		STCheck::paramCheck($toAccessInfoString, 2, "string", "", "null");
 		STCheck::paramCheck($customID, 3, "string", "int", "null");
-		STCheck::paramCheck($gotoLoginMask, 4, "bool");
-		STCheck::paramCheck($action, 5, "string");
+		STCheck::paramCheck($action, 4, "bool", "string");
+		STCheck::paramCheck($gotoLoginMask, 5, "bool");
 
+		if(is_bool($action))
+		{
+		    $gotoLoginMask= $action;
+		    $action= STALLDEF;
+		}
 		//Tag::alert($action==STALLDEF, "STSession::access()", "asking by action STAlldef");
 		if(is_array($authorisationString))
 		{
@@ -779,12 +794,22 @@ class STSession
             // Error  4: Unknown error in LDAP authentication!
 			return 1;
 	}
-	public function verifyLogin(string $projectName, $loginMask) : bool
+	/**
+	 * verify project on session management
+	 *  
+	 * @param string|integer $project project as Name like in database, or as project ID<br />
+	 *                                see UserManagement 'existing projects'
+	 * @param string|Tag $login define URL where user can login into system 
+	 *                          (address where STUserProjectManagement defined), or direct login mask as Tag objects 
+	 * @return bool whether user be logged-in
+	 */
+	public function verifyLogin($project, $login) : bool
 	{
-	    STCheck::param($loginMask, 1, "string", "Tag");
+	    STCheck::param($project, 0, "int", "string");
+	    STCheck::param($login, 1, "string", "Tag");
 
-	    $this->UserLoginMask= $loginMask;
-	    $loggedIn= $this->verifyProject($projectName);
+	    $this->UserLoginMask= $login;
+	    $loggedIn= $this->verifyProject($project);
 	    return $loggedIn;
 	}
 	/**
