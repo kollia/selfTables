@@ -85,7 +85,7 @@ class STUserManagement extends STObjectContainer
 		STObjectContainer::__construct($name, $container);
 		$this->userClusterGroup= new STUserClusterGroupManagement("UserClusterGroupManagement", $this->getDatabase());
 	}
-	function create()
+	protected function create()
 	{
 	    $session= &STUserSession::instance();
 	    $this->setDisplayName("Project Management");
@@ -109,7 +109,7 @@ class STUserManagement extends STObjectContainer
 		$project->setDisplayName("existing Projects");
 		$this->setFirstTable("Project");
 	}
-	function init(string $action, string $table)
+	protected function init(string $action, string $table)
 	{
 	    $session= &STUserSession::instance();
 	    $domain= $session->getCustomDomain();
@@ -135,9 +135,10 @@ class STUserManagement extends STObjectContainer
 		$groups->select("Name", "Group");
 		
 		$project= &$this->needTable("Project");
-		$project->select("ID", "ID");
 		$project->select("Name", "Project");
 		$project->select("Description", "Description");
+		$project->select("ID", "ID");
+		$project->align("ID", "center");
 		$project->select("Path", "URL");
 		$project->preSelect("DateCreation", "sysdate()");
 		$project->orderBy("Name");
