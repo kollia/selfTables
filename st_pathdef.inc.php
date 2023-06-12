@@ -267,7 +267,6 @@
 		$_stdbdeleter=				$_stenvironmenttools_path."/db/STDbDeleter.php";
 		$_stdbtablecreator= 		$_stenvironmenttools_path."/db/STDbTableCreator.php";
 		$_stdbtabledescriptions=	$_stenvironmenttools_path."/db/STDbTableDescriptions.php";
-		$_stdbsitecreator=          $_stenvironmenttools_path."/db/STDbSiteCreator.php";
 		
 		$_stuser=					$_stenvironmenttools_path."/session/STUser.php";
 		$_stsession=				$_stenvironmenttools_path."/session/STSession.php";
