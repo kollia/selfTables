@@ -133,19 +133,36 @@ class STDbUpdater extends STDbSqlCases
 	}
 	public function execute($onError= onErrorStop)
 	{
-	  if(!count($this->columns))
-		    return 0;
+	    if( empty($this->columns) &&
+	        empty($this->statements)   )
+	    {
+	        return 0;
+	    }
 		$db= &$this->table->db;
 		$this->nErrorRowNr= null;
-		foreach($this->columns as $nr=>$columns)
+		if(!empty($this->columns))
 		{
-		    $statement= $this->getStatement($nr);
-		    $db->query($statement, $onError);
-			if($db->errno())
-			{
-				$this->nErrorRowNr= $nr;
-				break;
-			}
+    		foreach($this->columns as $nr=>$columns)
+    		{
+    		    $statement= $this->getStatement($nr);
+    		    $db->query($statement, $onError);
+    			if($db->errno())
+    			{
+    				$this->nErrorRowNr= $nr;
+    				break;
+    			}
+    		}
+		}else
+		{
+		    foreach($this->statements as $nr=>$sqlStatement)
+		    {
+		        $db->query($sqlStatement);
+		        if($db->errno())
+		        {
+		            $this->nErrorRowNr= $nr;
+		            break;
+		        }
+		    }
 		}
 		if($this->nErrorRowNr!==null)
 		{

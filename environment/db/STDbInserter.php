@@ -15,6 +15,12 @@ class STDbInserter extends STDbSqlCases
 	 * @var Integer|string
 	 */
 	private $lastInsertID= -1;
+	/**
+	 * all inserted primary keys
+	 * @var Integer|string
+	 */
+	private $aInsertIDs= array();
+	
 
 	/**
 	 * Constructor
@@ -26,9 +32,6 @@ class STDbInserter extends STDbSqlCases
 	    Tag::paramCheck($oTable, 1, "STDbTable");
 		$this->table= &$oTable;
 		$this->db= &$oTable->db;
-	}
-	function insertByPost()
-	{
 	}
 	function fillColumn(string $column, $value)
 	{
@@ -103,24 +106,47 @@ class STDbInserter extends STDbSqlCases
 	}
 	public function execute($onError= onDebugErrorShow)
 	{
-	  if(!count($this->columns))
+	    if( empty($this->columns) &&
+	        empty($this->statements)   )
+	    {
 		    return 0;
+	    }
 		$db= &$this->table->db;
 		$this->nErrorRowNr= null;
-		foreach($this->columns as $nr=>$columns)
+		if(!empty($this->columns))
 		{
-    		$statement= $this->getStatement($nr);
-    		//echo "$statement<br>";
-			$db->query($statement, $onError);
-			if($db->errno())
-			{
-				$this->nErrorRowNr= $nr;
-				break;
-			}else
-			{
-				$this->lastInsertID= $db->getLastInsertID();
-				$this->updateCluster($columns);
-			}
+    		foreach($this->columns as $nr=>$columns)
+    		{
+        		$statement= $this->getStatement($nr);
+        		//showLine();
+        		//echo "$statement<br>";
+    			$db->query($statement, $onError);
+    			if($db->errno())
+    			{
+    				$this->nErrorRowNr= $nr;
+    				break;
+    			}else
+    			{
+    				$this->lastInsertID= $db->getLastInsertID();
+    				$this->aInsertIDs[]= $this->lastInsertID;
+    				$this->updateCluster($columns);
+    			}
+    		}
+		}else
+		{
+		    foreach($this->statements as $nr=>$sqlStatement)
+		    {
+		        $db->query($sqlStatement);
+		        if($db->errno())
+		        {
+		            $this->nErrorRowNr= $nr;
+		            break;
+		        }else
+		        {
+		            $this->lastInsertID= $db->getLastInsertID();
+		            $this->aInsertIDs[]= $this->lastInsertID;
+		        }
+		    }
 		}
 		if($this->nErrorRowNr!==null)
 		{
@@ -134,9 +160,10 @@ class STDbInserter extends STDbSqlCases
 	}
 	function getLastInsertID()
 	{
-	    showBackTrace();
 		return $this->lastInsertID;
 	}
+	function getInsertedIDs()
+	{ return $this->aInsertIDs; }
 	function createCluster(&$row)
 	{
 		// if it is generate an STUserManagementSession
