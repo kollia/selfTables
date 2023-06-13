@@ -19,6 +19,11 @@ class STUserProjectManagement extends STBaseContainer
     private $accessibilityProjectMask= null;
     private $availableSite= null;
     /**
+     * prefix path add to all projects inside database     * 
+     * @var string
+     */
+    private $prefixPath= "";
+    /**
      * add html tags before execute container
      * @var array
      */
@@ -59,6 +64,19 @@ class STUserProjectManagement extends STBaseContainer
     public function setNavigationBanner(string $address)
     {
         $this->image['nav']['banner']= $address;
+    }
+    /**
+     * add a prefix path to all projects into database.<br />
+     * this can be used for development where the user
+     * should jump to the development path and not
+     * to the correct original path where the project inside
+     * real-time running
+     * 
+     * @param string $path prefix path add to the normal project path
+     */
+    public function addClientRootPath(string $path)
+    {
+        $this->prefixPath= $path;
     }
     public function getDatabase()
     {
@@ -203,7 +221,9 @@ class STUserProjectManagement extends STBaseContainer
         $get= new STQueryString();
         $debug= $get->getUrlParamValue("debug");
         $preg= preg_split("/\?/", $this->accessableProjects[$projectID]['Path']);
-        $projectAddress= $preg[0];
+        $projectAddress= $preg[0];        
+        if(preg_match("/^\//", $projectAddress))
+            $projectAddress= $this->prefixPath.$projectAddress;
         $projectQueryString= null;
         if(isset($preg[1]))
             $projectQueryString= $preg[1];
