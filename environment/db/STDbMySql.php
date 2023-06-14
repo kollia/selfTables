@@ -614,13 +614,13 @@ class STDbMySql extends STDatabase
 	           "is not"  => "is not",
 	        // "not in"   => "not in", <- in is an keyword
 	           "not"     => "not", // take not in last position
-    	       "="       => "=",
-    	       ">"       => ">",
-    	       ">="      => ">",
+	           "="       => "=",
+	           ">="      => ">=", // <- have to be before single character >
+	           ">"       => ">",
+	           "<>"      => "<>", // <- have to be before single character <
+	           "<="      => "<=", // <- have to be before single character <
     	       "<"       => "<",
-    	       "<="      => "<=",
-    	       "!="      => "!=",
-	           "<>"      => "<>"
+    	       "!="      => "!="
 	       );
 	    return $arr;
 	}
