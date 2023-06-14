@@ -102,10 +102,8 @@ abstract class STObjectContainer extends STBaseContainer
 	{
 		return $this->db->getDatabaseName();
 	}
-	function &needEmptyTable($sTableName)
-	{
-		STCheck::paramCheck($sTableName, 1, "string");
-		
+	function &needEmptyTable(string $sTableName)
+	{	
 		return $this->needTable($sTableName, /*empty*/true);
 	}
 	/**
@@ -144,7 +142,7 @@ abstract class STObjectContainer extends STBaseContainer
 	    $sTableName= strtolower($orgTableName);
 	    $this->tables[$sTableName]= &$table;
 	}
-	public function &needTable(string $sTableName) : object
+	public function &needTable(string $sTableName, bool $bEmpty= false) : object
 	{   
 	    $this->initContainer();
 	    
@@ -161,7 +159,7 @@ abstract class STObjectContainer extends STBaseContainer
             $table= &$this->tables[$sTableName];
         else
         {
-            $gettable= $this->getTable($orgTableName);
+            $gettable= $this->getTable($orgTableName, /*container*/null, $bEmpty);
             if(isset($gettable))
             {
                 $this->tables[$sTableName]= $gettable;
@@ -172,16 +170,16 @@ abstract class STObjectContainer extends STBaseContainer
         }
         return $table;
 	}
-	public function &getTable(string $tableName= null, string $sContainer= null)
+	public function &getTable(string $tableName= null, string $sContainer= null, bool $bEmpty= false)
 	{
 		$nParams= func_num_args();
-		STCheck::lastParam(2, $nParams);
+		STCheck::lastParam(3, $nParams);
 		
 		if( $sContainer != null &&
 		    $sContainer != $this->name )
 		{
 		    $container= &STBaseContainer::getContainer($sContainer);
-		    return $container->getTable($tableName);
+		    return $container->getTable($tableName, $sContainer, $bEmpty);
 		}else
 		    $container= &$this;
 		// method needs initialization properties
@@ -247,7 +245,8 @@ abstract class STObjectContainer extends STBaseContainer
 		    }
 		    $table= &$this->oGetTables[$tableName];
 		    
-		}else if( $this->parentContainer != null &&
+		}else if( !$bEmpty &&
+		          $this->parentContainer != null &&
 		          $this->name !== $this->parentContainer->getName()   )
 		{	// alex 24/05/2005:	// alex 17/05/2005:	die Tabelle wird von der �berschriebenen Funktion
 			//					getTable() aus dem Datenbank-Objekt geholt.
@@ -279,7 +278,12 @@ abstract class STObjectContainer extends STBaseContainer
 			}
 		}else
 		{
-		    $table= &$this->createTable($orgTableName);
+		    if($bEmpty)
+		    {
+		        $table= new STBaseTable($tableName);
+		        Tag::echoDebug("table", "created dummy table ".$table->toString()." inside database container <b>".$this->getName()."</b>");
+		    }else
+		        $table= &$this->createTable($orgTableName);
 		    $this->oGetTables[$tableName]= &$table;
 		}
 		//showBackTrace();
