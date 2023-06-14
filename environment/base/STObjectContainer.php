@@ -1014,8 +1014,8 @@ abstract class STObjectContainer extends STBaseContainer
 			}
 
 			$PK= $table->getPkColumnName();
-			if(!STCheck::is_warning(	typeof($table, "STDbTable") &&
-									$PK === false, "makeListTags", "in table $tableName is no preimery key defined"))
+			if( typeof($table, "STDbTable") &&
+			    !STCheck::is_warning($PK === false, "makeListTags", "in table $tableName is no preimery key defined"))
 			{
 				$updateAccess= $table->hasAccess(STUPDATE);
 				$deleteAccess= $table->hasAccess(STDELETE);
