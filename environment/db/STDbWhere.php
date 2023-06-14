@@ -516,7 +516,8 @@ class STDbWhere
 		    
 		    $oTable= $this->oDb->getTable($this->sForTable);
 		    //-----------------------------------------------------------
-		    $pattern_first=  "([^><=! \\t]*)"; // first is always the column
+		    //$pattern_first=  "([^><=! \\t]*)";
+		    $pattern_first=  "([^><=!]*)"; // first is always the column
 		    //-----------------------------------------------------------
 		    $operators= $this->oDb->getOperatorArray();
 		    $pattern_op= "(";
@@ -535,7 +536,8 @@ class STDbWhere
 		    $preg= array();
 		    if(!preg_match("/^$pattern_first$pattern_op$pattern_second$/i", $content, $preg))
 		    {
-		        Tag::echoDebug("db.statements.where", "<b>WARNING</b> can not localize '".$old_content."'");
+		        STCheck::echoDebug("db.statements.where", "<b>WARNING</b> can not localize \"".$old_content."\"");
+		        STCheck::echoDebug("db.statements.where", "       from pattern:\"/^$pattern_first$pattern_op$pattern_second$/i\"");
 		    }else
 		    {
 		        if(STCheck::isDebug("db.statements.where"))
