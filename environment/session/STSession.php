@@ -262,16 +262,16 @@ class STSession
 	/**
 	 * ask session whether have user currently access to specific CLUSTERs
 	 * 
-	 * @param string $authorisationString string or array of clusters defined inside usermanagement
+	 * @param string|array $authoricationCluster string or array of clusters defined inside usermanagement
 	 * @param string $toAccessInfoString authorisation string logged by access into database
 	 * @param string $customID ID saved also into database if need for different statistics
 	 * @param enum $action access only for specified action (STINSERT/STUPDATE/STDELETE or STALLDEF)
 	 * @param boolean $gotoLoginMask goto login mask if access not given, otherwise return false
 	 * @return boolean return true when access given, otherwise by no access and variable <code>$gotoLoginMask = false</code> return false
 	 */
-	public function hasAccess($authorisationString, $toAccessInfoString= null, $customID= null, $action= STALLDEF, $gotoLoginMask= false)
+	public function hasAccess($authoricationCluster, $toAccessInfoString= null, $customID= null, $action= STALLDEF, $gotoLoginMask= false)
 	{
-		STCheck::paramCheck($authorisationString, 1, "string", "array");
+		STCheck::paramCheck($authoricationCluster, 1, "string", "array");
 		STCheck::paramCheck($toAccessInfoString, 2, "string", "", "null");
 		STCheck::paramCheck($customID, 3, "string", "int", "null");
 		STCheck::paramCheck($action, 4, "bool", "string");
@@ -283,16 +283,7 @@ class STSession
 		    $action= STALLDEF;
 		}
 		//Tag::alert($action==STALLDEF, "STSession::access()", "asking by action STAlldef");
-		if(is_array($authorisationString))
-		{
-			foreach($authorisationString as $cluster)
-			{
-				if(!$this->access($cluster, $toAccessInfoString, $customID, $gotoLoginMask, $action))
-					return false;
-			}
-			return true;
-		}
-		return $this->access($authorisationString, $toAccessInfoString, $customID, $gotoLoginMask, $action);
+		return $this->access($authoricationCluster, $toAccessInfoString, $customID, $gotoLoginMask, $action);
 	}
 	function hasProjectAccess($authorisationString, $toAccessInfoString= null, $customID= null)
 	{
@@ -364,9 +355,9 @@ class STSession
 	// alex 06/05/2005:	Funktionsname von hasAccess auf access ge�ndert,
 	//					da jetzt in hasAccess zwischen access und hasProjectAccess
 	//					unterschieden wird
-	function access($clusterString, $toAccessInfoString= null, $customID= null, $gotoLoginMask= false, $action= STALLDEF)
+	protected function access($authoricationCluster, $toAccessInfoString= null, $customID= null, $gotoLoginMask= false, $action= STALLDEF)
 	{
-		Tag::paramCheck($clusterString, 1, "string");
+		Tag::paramCheck($authoricationCluster, 1, "string", "array");
 		Tag::paramCheck($toAccessInfoString, 2, "string", "null");
 		Tag::paramCheck($customID, 3, "string", "int", "null");
 		Tag::paramCheck($gotoLoginMask, 4, "bool");
@@ -403,7 +394,7 @@ class STSession
 				$staction= "STALLDEF";
 			elseif($action==STADMIN)
 				$staction= "STADMIN";
-			STCheck::echoDebug("user", "entering hasAccess(<b><em>&quot;".htmlspecialchars( $clusterString )."&quot;</b>, ".$sAccess.", ".$sID.", ".$staction."</em>)");
+			STCheck::echoDebug("user", "entering hasAccess(<b><em>&quot;".htmlspecialchars( $authoricationCluster )."&quot;</b>, ".$sAccess.", ".$sID.", ".$staction."</em>)");
 		}
 		// alex 09/10/2005:	User muss nicht eingeloggt sein
 		//					um auf Projekte zugriff zu haben
@@ -414,7 +405,10 @@ class STSession
 			exit;
 		}*/
 		$logincluster= false;
-		$clusters= preg_split("/[\s,]/", $clusterString, -1, PREG_SPLIT_NO_EMPTY);
+		if(is_string($authoricationCluster))
+		    $clusters= array( $authoricationCluster );
+		else
+		    $clusters= $authoricationCluster;
 		if(typeof($this, "STUserSession"))
 		{
 		    // if searching for ONLINE-Cluster, ONLINE exist only as group,
@@ -521,7 +515,7 @@ class STSession
 		            $dbg= "session";
 		        $msg= array();
 		        $msg[]= "User is in none of the Specified Clusters";
-		        $msg[]= "    <b>'$clusterString'</b>";
+		        $msg[]= "    <b>'".print_r($clusters, /*return*/true)."'</b>";
 		        $msg[]= ",so goto LoginMask<br />";
 			    STCheck::echoDebug($dbg, $msg);
 		    }
