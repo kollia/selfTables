@@ -8,7 +8,6 @@ class STDbInserter extends STDbSqlCases
 	var	$db;
 	var	$table;
 	var $columns= array();
-	var $nAktRow= 0;
 	var $sAccessClusterColumn;
 	/**
 	 * last inserted primary key 
@@ -22,29 +21,10 @@ class STDbInserter extends STDbSqlCases
 	private $aInsertIDs= array();
 	
 
-	/**
-	 * Constructor
-	 *
-	 * @param STBaseTable $oTable object of Table
-	 */
-	function __construct(&$oTable)
-	{
-	    Tag::paramCheck($oTable, 1, "STDbTable");
-		$this->table= &$oTable;
-		$this->db= &$oTable->db;
-	}
 	function fillColumn(string $column, $value)
 	{
 		STCheck::param($value, 1, "string", "empty(string)", "int", "float");
-
-		
-		if(preg_match("/^[ ]*['\"](.*)['\"][ ]*$/", $value, $preg))
-			$value= $preg[1];
-		$this->columns[$this->nAktRow][$column]= $value;
-	}
-	function fillNextRow()
-	{
-		++$this->nAktRow;
+        $this->fillColumnContent($column, $value);
 	}
 	public function getStatement($nr= 0) : string
 	{

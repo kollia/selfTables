@@ -1,43 +1,12 @@
 <?php
 
-require_once($_stdbsqlcases);
+require_once($_stdbsqlwherecases);
 
-class STDbUpdater extends STDbSqlCases
-{
-	/**
-	 * updating content of columns
-	 * for more than one row
-	 * @var array columns
-	 */
-	var $columns= array();
-	/**
-	 * current row which can be filled
-	 * with new content
-	 * @var integer
-	 */
-	var $nAktRow= 0;
-	/**
-	 * array of where statements
-	 * for every update statement
-	 * @var array
-	 */
-	protected $wheres= array();
-	
+class STDbUpdater extends STDbSqlWhereCases
+{	
 	public function update(string $column, $value)
-	{
-	    $field= $this->table->findColumnOrAlias($column);
-	    STCheck::alert(($field["type"]=="no found"), "STDbUpdater::update()",
-	        "column '$column' do not exist inside table ".$this->table->getName());
-		$this->columns[$this->nAktRow][$field['column']]= $value;
-	}
-	function where($where)
-	{
-		$this->wheres[$this->nAktRow]= $where;
-	}
-	function fillNextRow()
-	{
-		++$this->nAktRow;
-	}
+	{ $this->fillColumnContent($column, $value); }
+	
 	public function getStatement(int $nr= 0) : string
 	{
 	    $case= STCheck::increase("db.statement");
@@ -65,43 +34,13 @@ class STDbUpdater extends STDbSqlCases
 	        return $this->statements[$nr];
 	    }
 	    
-        $where= null;
-        if(isset($this->wheres[$nr]))
-            $where= $this->wheres[$nr];
-        $this->statements[$nr]= $this->getUpdateStatement($where, $this->columns[$nr]);
+        $this->statements[$nr]= $this->getUpdateStatement($nr);
 	    return $this->statements[$nr];
 	}
-	private function getUpdateStatement(string|STDbWhere $where= null, $values= null)
-	{
-	    
-	    if(isset($where))
-	    {
-	        // alex 03/08/2005:	gib where-class in Tabelle
-	        //$oTable= new STDbTable($table, $this);
-	        //$bModify= $oTable->modify();
-	        //$oTable->modifyForeignKey(false);
-	        $this->table->andWhere($where);
-	        //$oTable->modifyForeignKey($bModify);
-	    }
-	    $this->table->modifyQueryLimitation();
-	    $oWhere= $this->table->getWhere();
-	    STCheck::alert(!isset($oWhere), "STCheck::getUpdateStatement()", "no where usage for update exist");
-	    //$whereAliases= $this->table->getWhereAliases();
-	    $whereStatement= $this->table->getWhereStatement("where");//, $whereAliases);
-	    if($whereStatement!="")
-	    {
-	        if(preg_match("/^(and|or)/i", $whereStatement, $ereg))
-	        {
-	            if($ereg[1] == "and")
-	                $whereStatement= substr($where, 4);
-                else
-                   $whereStatement= substr($where, 3);
-	        }
-	        $whereStatement= " $whereStatement";
-	    }
-	    
+	private function getUpdateStatement(int $nr= 0) : string //string|STDbWhere $where= null, $values= null)
+	{   
 	    $update_string= "";
-        $result= $this->make_sql_values($values);
+	    $result= $this->make_sql_values($this->columns[$nr]);
         if(!count($result))
             return null;
         if(STCheck::isDebug("db.statement.update"))
@@ -124,12 +63,12 @@ class STDbUpdater extends STDbSqlCases
             $update_string.= $key."=".$this->add_quotes($types[$key], $value).",";
         }
         $update_string= substr($update_string, 0, strlen($update_string)-1);
-        $sql="UPDATE ".$this->table->Name." set $update_string";
-        $sql.= $whereStatement;
+        $whereStatement= $this->getWhereStatement($nr);
+        $statement= "UPDATE ".$this->table->Name." set $update_string $whereStatement";
         
-        STCheck::echoDebug("db.main.statement", $sql);        
-        STCheck::alert(!preg_match("/where/i", $sql), "STCheck::getUpdateStatement()", "no where usage for update exist");
-        return $sql;
+        STCheck::echoDebug("db.main.statement", $statement);        
+        STCheck::alert(!preg_match("/where/i", $statement), "STCheck::getUpdateStatement()", "no where usage for update exist");
+        return $statement;
 	}
 	public function execute($onError= onErrorStop)
 	{

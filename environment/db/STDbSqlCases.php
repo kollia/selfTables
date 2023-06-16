@@ -10,6 +10,18 @@ class STDbSqlCases
      */
     var	$table;
     /**
+     * current row which can be filled
+     * with new content
+     * @var integer
+     */
+    var $nAktRow= 0;
+    /**
+     * updating content of columns
+     * for more than one row
+     * @var array columns
+     */
+    var $columns= array();
+    /**
      * exist sql statement for all rows
      * @var string array
      */
@@ -21,11 +33,31 @@ class STDbSqlCases
      */
     protected $nErrorRowNr= null;
     
-    public function __construct(&$oTable)
+    // do not take by reference
+    // because into table comming
+    // where statements
+    public function __construct(object $oTable)
     {
         Tag::paramCheck($oTable, 1, "STDbTable");
-        $this->table= &$oTable;
-    }public function setStatement(string $statement, int $nr= 0)
+        $this->table= clone $oTable;
+        $this->db= &$oTable->db;
+    }
+    protected function fillColumnContent(string $column, $value)
+    {
+        STCheck::param($value, 1, "string", "empty(string)", "int", "float");
+        
+        $field= $this->table->findColumnOrAlias($column);
+        STCheck::alert(($field["type"]=="no found"), "STDbUpdater::update()",
+            "column '$column' do not exist inside table ".$this->table->getName(), 2);
+        if(preg_match("/^[ ]*['\"](.*)['\"][ ]*$/", $value, $preg))
+            $value= $preg[1];
+        $this->columns[$this->nAktRow][$field['column']]= $value;
+    }
+    function fillNextRow()
+    {
+        ++$this->nAktRow;
+    }
+    public function setStatement(string $statement, int $nr= 0)
     {
         if(STCheck::isDebug("db.statement"))
         {

@@ -15,14 +15,6 @@ class STDbDeleter
 	private $aFkLinkTables= "";
 	private $aStatement= array();
 	
-	// do not take by reference
-	// because into table comming
-	// where statements
-	public function __construct(object $oTable)
-	{
-	    Tag::paramCheck($oTable, 1, "STDbTable");
-		$this->table= &$oTable;
-	}
 	/**
 	 * make for every where 
 	 * @param unknown $stwhere

@@ -300,6 +300,8 @@ class STBaseTable
 	    $this->FK= &$main->FK;
 	    $this->aFks= &$main->aFks;
 	    $this->aBackJoin= &$main->aBackJoin;
+	    if(isset($this->oWhere))
+	        $this->oWhere->resetQueryLimitation("own", true);
 	    //---------------------------------------------------------------------------------
 	    STCheck::increase("table");
 	    if( STCheck::isDebug() &&
@@ -2353,11 +2355,25 @@ class STBaseTable
 	 			(	is_string($stwhere) ||
 	 				$this->oWhere->isModified()	)	)
 	 		{
+    	 		if(STCheck::isDebug("db.statements.where"))
+    	 		{
+    	 		    showLine();
+    	 		    echo "Name:".$this->Name."<br>";
+    	 		    echo "where Name:".$this->oWhere->table()."<br>";
+    	 		}
 	 			// 1. parameter is an string or STDbWhere object
- 				if(	is_string($stwhere) &&
- 					$this->Name != $this->oWhere->table()	)
+ 				if(	is_string($stwhere) ) // &&
+//                  2023/06/16 alex
+//                  remove question because if where clause is string
+//                  implementation should always for current table
+// 					$this->Name != $this->oWhere->table()	)
  				{
- 					$stwhere= new STDbWhere($stwhere, $this->Name);
+ 				    $stwhere= new STDbWhere($stwhere, $this->Name);
+ 				    if(STCheck::isDebug("db.statements.where"))
+ 				    {
+ 				        showLine();
+ 				        st_print_r($stwhere,10);
+ 				    }
  				}
  				if(	is_object($stwhere) &&
  					$stwhere->table() == ""	)
@@ -3095,7 +3111,9 @@ class STBaseTable
 	    if(STCheck::isDebug())
 	    {
             $tableMsg= "inside table ".$this->toString();
-            $tableMsg.= " from container <b>".$this->container->getName()."</b>";
+            if(isset($this->container))
+                $tableMsg.= " from container <b>".$this->container->getName();
+            $tableMsg.= "</b>";
 	    }
 	    
 	    if($this->bModifiedByQuery)

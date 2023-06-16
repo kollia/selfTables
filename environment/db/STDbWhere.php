@@ -601,6 +601,7 @@ class STDbWhere
 			//echo __FILE__.__LINE__."<br>";
 			//echo "incomming aliases:";
 			//st_print_r($aliases);
+			$this->setDatabase($oTable, /*overwrite*/false);
 			if(STCheck::isDebug("db.statements.where"))
 			{
 			    $amsg= array();

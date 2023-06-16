@@ -16,7 +16,7 @@ class STDbTable extends STBaseTable
 	 * the table is located
 	 * @var object
 	 */
-    public $container;
+    public $container= null;
 	var $aAuto_increment= array(); // um ein Feld mit Autoincrement vor dem eigentlichen Insert zu holen
 	var	$password= array(); // all about to set an password in database
 	/**
@@ -126,7 +126,7 @@ class STDbTable extends STBaseTable
     {
         STBaseTable::__clone();
         STCheck::echoDebug("table", "clone STDbTable::content ".$this->Name.":".$this->ID);
-        unset($this->container);
+        //unset($this->container);
     }
 	function copy($oTable)
 	{
