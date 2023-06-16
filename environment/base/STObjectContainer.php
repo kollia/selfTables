@@ -574,13 +574,9 @@ abstract class STObjectContainer extends STBaseContainer
 		    {
 		        $table= $this->getTable();
 		        if(!isset($table))// all trys to find table be ineffective
-		            return STLIST;// so return standard action
-		        $action= $table->getAction();
-		        if(   !isset($action) ||
-		              trim($action) == "" )
-		        {
-		            
-		        }
+		            $action= STLIST;// so return standard action
+		        else
+		            $action= $table->getFirstAction();
 		    }
 		}
 		return $action;
