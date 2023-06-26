@@ -333,7 +333,7 @@ class STDbSelector extends STDbTable implements STContainerTempl
     			STCheck::param($where, 1, "string", "STDbWhere", "null");
     			STCheck::param($operator, 2, "string", "empty(string)");
 		    }
-		    
+
 		    if( !isset($where) ||
 		        (   is_string($where) &&
 		            (   $where == "" ||
@@ -345,7 +345,7 @@ class STDbSelector extends STDbTable implements STContainerTempl
 		        else
 		            $operator= $where;
 		        
-		        $where= $table;
+	            $where= $table;
 		        STDbTable::where($where, $operator);
 		        return;
 		    }
@@ -367,7 +367,8 @@ class STDbSelector extends STDbTable implements STContainerTempl
                 if(!isset($where))
                     $where= "";
                 //echo __FILE__.__LINE__."<br>";
-                //st_print_r($table);st_print_r($where);
+                    //st_print_r($table);st_print_r($where);
+                    showLine();
                 STDbTable::where($table, $where);
                 return;
 		    }

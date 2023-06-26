@@ -1,8 +1,9 @@
 <?php
 
-class STDbDeleter
+require_once $_stdbsqlwherecases;
+
+class STDbDeleter extends STDbSqlWhereCases
 {
-	private	$table;
 	private $oWhere= null;
 	private $bModify= true;
 	private $nErrno= 0;
@@ -15,36 +16,6 @@ class STDbDeleter
 	private $aFkLinkTables= "";
 	private $aStatement= array();
 	
-	/**
-	 * make for every where 
-	 * @param unknown $stwhere
-	 */
-	public function where($stwhere)
-	{
-	    STCheck::param($stwhere, 0, "STDbWhere", "string");
-	    
-		if(is_string($stwhere))
-			$stwhere= new STDbWhere($stwhere);
-		$this->oWhere= &$stwhere;
-	}
-	public function orWhere($stwhere)
-	{
-	    STCheck::param($stwhere, 0, "STDbWhere", "string");
-	    
-	    if(isset($this->oWhere))
-	        $this->oWhere->orWhere($stwhere);
-	    else
-	        $this->where($stwhere);
-	}
-	public function andWhere($stwhere)
-	{
-	    STCheck::param($stwhere, 0, "STDbWhere", "string");
-	    
-	    if(isset($this->oWhere))
-	        $this->oWhere->andWhere($stwhere);
-        else
-            $this->where($stwhere);
-	}
 	public function execute($onError= onDebugErrorShow)
 	{
 		$db= &$this->table->db;
@@ -87,7 +58,7 @@ class STDbDeleter
 	    
 	    $tableName= $this->table->getName();
 	    $this->table->allowFkQueryLimitation(false);
-	    $whereStatement= $this->table->getWhereStatement("where");
+	    $whereStatement= $this->getWhereStatement(0);
         $statement= "delete from ".$tableName;
         $this->aStatement['from']= $statement;
         $ereg= array();

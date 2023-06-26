@@ -242,6 +242,11 @@ class STDbWhere
 			if($tableName!=$this->sForTable)
 				$overName= $this->sForTable;
 			$this->sForTable= $tableName;
+			foreach($this->array as &$innerWhere)
+			{
+                if(typeof($innerWhere, "STDbWhere"))
+                    $innerWhere->table($table);
+			}
 		}
 
 		if(	isset($this->aValues[$overName]) &&
@@ -509,15 +514,132 @@ class STDbWhere
 		}
 		private function createStringContent(string $content, string $aliasName) : string
 		{
+		    $comparison= $this->validComparison($this->sForTable, $content);
+		    if(STCheck::isDebug("db.statements.where"))
+		    {
+		        $msg[]= "create compare objects from string:";
+		        $msg[]= $content;
+		        $space= STCheck::echoDebug("db.statements.where", $msg);
+		        st_print_r($comparison, 5, $space);
+		    }
+		    if(STCheck::isDebug())
+		    {
+		        $nField= 0;
+		        $nOperator= 0;
+		        $nValue= 0;
+		        $nFunction= 0;
+		        $functionObj= null;
+		        foreach($comparison as $field)
+		        {
+		            switch($field['keyword'])
+		            {
+		                case "@field":
+		                    $nField++;
+		                    break;
+		                case "@operator":
+		                    $nOperator++;
+		                    break;
+		                case "@value":
+		                    $nValue++;
+		                    break;
+		                case "@function":
+		                    $nFunction++;
+		                    $functionObj= $field;
+		                    break;
+		            }
+		        }
+		        $res= $nField + $nOperator + $nValue + $nFunction;
+		        $correct= false;
+		        $correct= ($res == 1 && $nOperator == 0);// can be one field, one value, or one function
+		        if(!$correct)
+		        {
+    		        $correct= ($res == 3);// can be an operator with two fields or one field and one value
+    		        if(!$correct)
+    		        {
+    		            // can be a funtion which need no operator with a field or a value
+    		            $correct= ($res == 2 && $nOperator == 0 && $nFunction == 1 && $functionObj['content']['needOp'] == false);
+        		        if(STCheck::warning(!$correct, "STDbWhere::createStringContent()", "incorrect where statement >> $content <<"))
+        		            st_print_r($comparison,5);
+    		        }
+		        }
+		    }
+		    $result= "";
+		    foreach($comparison as $field)
+		    {
+		        if($field['keyword'] == "@field")
+		        {
+		            if($aliasName !== "")
+		            {
+    		            $result.= $aliasName.".";
+    		            STCheck::echoDebug("db.statements.where",
+    		                "field '{$field['content']['column']}' become to column('$aliasName.{$field['content']['column']}')");
+		            }
+		            $result.= $field['content']['column'];
+		        }else
+		        {
+    		        if($field['keyword'] == "@value")
+    		        {
+    		            if($field['type'] == "string")
+    		                $result.= "'{$field['content']}'";
+        		        else
+        		            $result.= $field['content'];
+        		        
+    		        }elseif($field['keyword'] == "@function")
+    		        {
+    		            $delimiter= $this->oDb->getFunctionDelimiter();
+    		            $result.= " ".$field['content']['keyword'].$delimiter['open']['delimiter'];
+    		            foreach($field['content']['content'] as $value)
+    		            {
+    		                $result.= "$value,";
+    		            }
+    		            $result= substr($result, 0, -1).$delimiter['close']['delimiter']." ";
+    		            
+    		        }elseif($field['keyword'] == "password")
+    		        {
+    		            $result.= "password({$field['content'][0]})";
+    		        }else // keyword = @operator
+    		        {
+    		            if(STCheck::is_error(!is_string($field['content']), "STDbWhere::createStringContent()", "wrong creation of field inside validComparison() creation"))
+    		            {
+    		                echo "<pre>";
+    		                echo "<b>ERROR:</b>";
+    		                st_print_r($field, 2);
+    		                echo "</pre>";
+    		            }
+    		            $result.= $field['content'];
+    		        }
+		        }
+		    }
+		    return $result;
+		}
+		private function validComparison($table, string $content) : array
+		{
+		    STCheck::param($table, 0, "string", "STBaseTable");
+		    
+		    $aRcomparison= array();
 		    $old_content= $content;
+		    $content= trim($content);
+		    $function= $this->oDb->keyword($content);
+		    if($function != false)
+		    {
+		        $bFirstFunction= $function['beginpos'] == 0 ? true : false;
+		        if($bFirstFunction)
+		            $content= substr($content, $function['endpos']+1);
+		        else
+		            $content= substr($content, 0, $function['beginpos']);
+		        
+		    }
 		    //echo $content."<br />";
 		    //$content= preg_quote($content); // preg_quote makes before = an backslash
 		    //echo $content."<br />";
 		    
-		    $oTable= $this->oDb->getTable($this->sForTable);
+		    if(is_string($table))
+		        $oTable= $this->oDb->getTable($table);
+		    else
+		        $oTable= $table;
 		    //-----------------------------------------------------------
 		    //$pattern_first=  "([^><=! \\t]*)";
-		    $pattern_first=  "([^><=!]*)"; // first is always the column
+		    $pattern_first=  "(['\"].*['\"]|[^><=!]*)"; // first is always the column
 		    //-----------------------------------------------------------
 		    $operators= $this->oDb->getOperatorArray();
 		    $pattern_op= "(";
@@ -528,62 +650,72 @@ class STDbWhere
     		        $str= preg_replace("/[ \\t]+/", "[ \\t]+", $op);
     		        $pattern_op.= "$str|";
 		        }
-		    }		    
+		    }
+		    $functions= $this->oDb->getFunctionKeywords();
+		    foreach($functions as $keyword=>$return)
+		        $pattern_op.= "(\b$keyword\b)|";
 		    $pattern_op= substr($pattern_op, 0, -1).")";
 		    //-----------------------------------------------------------
 		    $pattern_second= "(.*)"; // second content can be an column or an content
 		    //-----------------------------------------------------------
 		    $preg= array();
-		    if(!preg_match("/^$pattern_first$pattern_op$pattern_second$/i", $content, $preg))
+		    if(!preg_match("/^$pattern_first$pattern_op$pattern_second$/i", $content, $preg, PREG_OFFSET_CAPTURE))
 		    {
-		        STCheck::echoDebug("db.statements.where", "<b>WARNING</b> can not localize \"".$old_content."\"");
-		        STCheck::echoDebug("db.statements.where", "       from pattern:\"/^$pattern_first$pattern_op$pattern_second$/i\"");
+		        if( $function == false ||
+		            $function['needOp']   )
+		        {
+    		        STCheck::echoDebug("db.statements.where", "<b>WARNING</b> can not localize \"".$old_content."\"");
+    		        STCheck::echoDebug("db.statements.where", "       from pattern:\"/^$pattern_first$pattern_op$pattern_second$/i\"");
+		        }
 		    }else
 		    {
 		        if(STCheck::isDebug("db.statements.where"))
 		        {
+		            $new_preg= array();
+		            foreach($preg as $field)
+		            {
+		                if($field[1] >= 0)
+		                    $new_preg[]= $field;
+		            }
 		            $space= STCheck::echoDebug("db.statements.where", "localize statement string '$content' as:");
-		            st_print_r($preg, 2, $space);
+		            st_print_r($new_preg, 2, $space);
 		        }
 		    }
 		    
-		    $sOrgField1= trim($preg[1]);
-		    $operator= trim($preg[2]);
-		    $sOrgField2= trim($preg[3]);
-		    
-		    $content1= $content2= array();
-		    $field1= $oTable->validColumnContent($sOrgField1, $content1, /*alias*/true);
-		    STCheck::warning(!$field1, "STDbWhere::getStatement()",
-		        "incorrect first field of comparison from where statement '$old_content'", /*output*/2);
-		    if($content1['keyword'] == "@field")
+		    $step= 1;
+		    $size= count($preg);
+		    if($size)
 		    {
-		        $sfield1= $content1['content']['column'];
-		        if($aliasName)
-		            $sfield1= "$aliasName.$sfield1";
+    		    while($step < $size)
+    		    {
+    		        if($preg[$step][1] >= 0)
+    		        {
+    		            $res= array();
+            		    $field= $oTable->validColumnContent($preg[$step][0], $res, /*alias*/true);
+            		    if($field)
+            		        $aRcomparison[]= $res;
+    		        }
+    		        $step++;
+    		    }
 		    }else
-		        $sfield1= $sOrgField1;
-		    $field2= $oTable->validColumnContent($sOrgField2, $content2, /*alias*/true);
-		    STCheck::warning(!$field2, "STDbWhere::getStatement()",
-		        "incorrect second field of comparison from where statement '$old_content'", /*output*/2);
-		    if($content2['keyword'] == "@field")
 		    {
-		        $sfield2= $content1['content']['column'];
-		        if($aliasName)
-		            $sfield2= "$aliasName.$sfield2";
-		    }else
-		        $sfield2= $sOrgField2;
-		    
-	        $content= $sfield1.$operator.$sfield2;
-	        if(STCheck::isDebug("db.statements.where"))
-	        {
-	            if($content1['keyword'] == "@field")
-	                STCheck::echoDebug("db.statements.where", 
-	                    "first field '$sOrgField1' become to column('".$sfield1."') with content('".$content."')");
-                if($content2['keyword'] == "@field")
-                    STCheck::echoDebug("db.statements.where",
-                        "second field '$sOrgField2' become to column('".$sfield2."') with content('".$content."')");
-	        }
-	        return $content;
+		        $res= array();
+		        $field= $oTable->validColumnContent($content, $res, /*alias*/true);
+		        if($field)
+		            $aRcomparison[]= $res;
+		    }
+		    if($function != false)
+		    {
+		        $newField= array( "keyword" => "@function",
+		                          "content" => $function,
+		                          "type" => $function['type'],
+		                          "len" => $function['len']       );
+		        if($bFirstFunction)
+		            array_unshift($aRcomparison, $newField);
+		        else
+		            $aRcomparison[]= $newField;
+		    }
+		    return $aRcomparison;
 		}
 		public function reset()
 		{
@@ -593,8 +725,16 @@ class STDbWhere
 		        if(typeof($content, "STDbWhere"))
 		            $content->reset();
 		    }
-		}   
-		public function getStatement(STDbTable $oTable, string $condition, array $aliases= null)
+		}  
+		/**
+		 * create where statement
+		 * 
+		 * @param STDbTable $oTable
+		 * @param string $condition
+		 * @param array $aliases
+		 * @return array
+		 */
+		public function getStatement(STDbTable $oTable, string $condition, array $aliases= null) : array
 		{
 			STCheck::param($condition, 1, "check", $condition=="on"||$condition=="where", "'on' string", "'where' string");
 
@@ -697,7 +837,16 @@ class STDbWhere
                     Tag::echoDebug("db.statements.where", "no alias, because it only one alias set, do not need alias for table");
             }
 		    
+            /**
+             * result of sql where statement
+             * @var string $statement
+             */
 		    $statement= "";
+		    /**
+		     * how much compairson found
+		     * @var integer $case
+		     */
+		    $case= 0;
 		    foreach($this->array as $content)
 		    {
 		        if(is_string($content))
@@ -713,9 +862,10 @@ class STDbWhere
 		                if($bMakeStatement)
 		                {
 		                    $newStatement= $this->createStringContent($content, $aliasName);
-		                    if($statement != "")
+		                    if($case > 0)
 		                        $statement.= $plusContent;
 		                    $statement.= $newStatement;
+		                    $case++;
 		                }
 		            }else
 		            { // content is operator
@@ -727,11 +877,15 @@ class STDbWhere
 		                $content->setDatabase($this->oDb);
 	                STCheck::echoDebug("db.statements.where", "found new STDbWhere object inside array and create rekursive");
 	                $newStatement= $content->getStatement($oTable, $condition, $aliases);
-	                if(trim($newStatement) != "")
+	                if($newStatement["case"])
 	                {// where statement exist for current Table
-	                    if(trim($statement) != "")
+	                    if($case)
 	                        $statement.= $plusContent;
-	                    $statement.= $newStatement;
+	                    if($newStatement['case'] > 1)
+	                        $statement.= $this->addBraces($newStatement['str']);
+	                    else
+	                        $statement.= $newStatement['str'];
+	                    $case.= $newStatement["case"];
 	                }
 		        }else//if($content)
 		        {
@@ -742,13 +896,12 @@ class STDbWhere
 		    }//foreach($array as $content)
 		    if($bMakeStatement)
 		        $this->bWritten= true;
-		    $statement= $this->addBraces($statement);
 		    if(STCheck::isDebug("db.statements.where"))
 		    {
 		        STCheck::echoDebug("db.statements.where", "result for current table is <b>'$statement'</b>");
 		        STCheck::echoDebug("db.statements.where", $blanc);
 		    }
-		    return $statement;
+		    return array( "str"=>$statement, "case"=>$case );
 		}
 		/**
 		 * add braces before and behind the statement
@@ -763,11 +916,6 @@ class STDbWhere
 		    $statement= trim($statement);
 		    if($statement == "")
 		        return "";
-		    if( substr($statement, 0, 1) == "(" )  // if the first char is an bracket the last have to be also one
-		        //substr($statement, strlen($statement) - 1) == ")" )  // <- so do not need to check
-		    {
-		        return $statement;
-		    }
 			if(preg_match("/^(and|or)[ \t]+(.*)$/", $statement, $ereg))
 			{
 				//st_print_r($ereg);

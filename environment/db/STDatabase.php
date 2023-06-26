@@ -562,6 +562,21 @@ abstract class STDatabase extends STObjectContainer
 			}
 			if($bExecuteDb)
 			{
+			    $functionName= strtolower(substr(trim($statement), 0, 6));
+			    if( $functionName == "delete" ||
+			        $functionName == "update"     )
+			    {// as security port
+			        if(!preg_match("/where/i", $statement))
+			        {
+			            
+			            STCheck::warning(1, "STDatabase::query()", "do not execute $functionName-statement on database, because no where-clause exist");
+                        STCheck::echoDebug("db.statement", "wrong statement:$statement");
+                        $bExecuteDb= false;
+			        }
+			    }
+			}
+			if($bExecuteDb)
+			{
 			    $this->errno= null;
 			    $this->error= null;
 			    $res= $this->querydb($statement);
@@ -1964,7 +1979,8 @@ abstract class STDatabase extends STObjectContainer
 	}
 	abstract protected function insert_id();
 	abstract protected function getValueKeywords() : array;
-	abstract protected function getFunctionKeywords() : array;
+	abstract public function getFunctionKeywords() : array;
+	abstract public function getFunctionDelimiter() : array;
 	abstract protected function getAllColumnKeyword() : string;
 	/**
 	 * inform whether content of parameter is an keyword
@@ -1985,20 +2001,72 @@ abstract class STDatabase extends STObjectContainer
 	    {
 	        $keyword= $lwStr;
 	        $inherit= array();
+	        $begin= 0;
+	        $end= strlent($lwStr)-1;
 	    }else
 	    {
 	        $preg= array();
-	        if(!preg_match("/^([^\(\)]+)\((.*)\)$/", trim($column), $preg))
-	            return false;
-            $keyword= strtolower($preg[1]);
+	        $delimiter= $this->getFunctionDelimiter();
+	        $open= "";
+	        if($delimiter['open']['ESC']['regex'])
+	            $open.= "\\";
+            $open.= $delimiter['open']['delimiter'];
+            $close= "";
+            if($delimiter['close']['ESC']['regex'])
+                $close.= "\\";
+            $close.= $delimiter['close']['delimiter'];
+            $pattern= "/([^\(\) ]+)[ ]*$open(.*)($close)/";
+            if(!preg_match($pattern, trim($column), $preg, PREG_OFFSET_CAPTURE))
+                return false;
+            $begin= $preg[0][1];
+            $keyword= strtolower($preg[1][0]);
+            $end= $preg[3][1] - strlen($preg[3][0]) + 1;
             if(!array_key_exists($keyword, $allowed))
                 return false;
-            $inherit= preg_split("/[ ,]/", $preg[2], PREG_SPLIT_NO_EMPTY);
+            $inherit= array();
+            $splited= preg_split("/,/", $preg[2][0]);
+            $quote_open= false;
+            $dquote_open= false;
+            $in_str= "";
+            // split only outside of quotes
+            foreach($splited as $each)
+            {
+                $in_str.= $each;
+                $first= substr(trim($each), 0, 1);
+                $last= substr(trim($each), -1, 1);
+                if( !$quote_open &&
+                    !$dquote_open   )
+                {
+                    if($first == "'" && $last != "'")
+                        $quote_open= true;
+                    elseif($first == '"' && $last != '"')
+                        $dquote_open= true;
+                }elseif($quote_open &&
+                        $last == "'"    )
+                {
+                    $quote_open= false;
+                    
+                }elseif($dquote_open &&
+                    $last == '"'    )
+                {
+                    $dquote_open= false;
+                }
+                if( !$quote_open &&
+                    !$dquote_open   )
+                {
+                    $inherit[]= $in_str;
+                    $in_str= "";
+                }
+            }
 	    }
-	    return array(  "keyword" => $keyword,
-	        "content" => $inherit,
-	        "type" => $allowed[$keyword]['type'],
-	        "len" => $allowed[$keyword]['len']     );
+	    return array(   "keyword" => $keyword,
+            	        "content" => $inherit,
+            	        "type" => $allowed[$keyword]['type'],
+            	        "len" => $allowed[$keyword]['len'],
+            	        "beginpos" => $begin,
+            	        "endpos" => $end,
+	                    "needOp" => $allowed[$keyword]['needOp']
+	    );
 	}
 	function getLastInsertID()
 	{

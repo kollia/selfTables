@@ -42,16 +42,19 @@ class STDbSqlWhereCases extends STDbSqlCases
         if(!isset($this->wheres[$nr]))
         {
             STCheck::alert(!isset($this->tableWhere), "STCheck::getUpdateStatement()", "no where usage for update exist");
-            return "where ".$this->table->getWhereStatement("where");
+            $whereStatement= $this->table->getWhereStatement("where");
+            return $whereStatement;
         }
         if( !isset($this->tableWhere) ||
             $this->wheres[$nr]['operator'] == ""    )
-        {
-            return "where ".$this->wheres[$nr]['clause']->getStatement($this->table, "where");
+        {   
+            $where= $this->wheres[$nr]['clause']->getStatement($this->table, "where");
+            return "where ".$where['str'];
         }
         $oWhere= clone $this->tableWhere;// <- need always fresh where object
         $oWhere->where($this->wheres[$nr]['clause'], $this->wheres[$nr]['operator']);
-        return "where ".$oWhere->getStatement($this->table, "where");
+        $where= $oWhere->getStatement($this->table, "where");
+        return "where ".$where['str'];
     }
 }
 ?>

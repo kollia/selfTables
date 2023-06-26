@@ -513,25 +513,39 @@ class STDbMySql extends STDatabase
 	protected function getValueKeywords() : array
 	{
 	    return array(
-	        "null" => array( "type" => "byte", "len" => 1 ),
-	        "false" => array( "type" => "byte", "len" => 1 ),
-	        "true" => array( "type" => "byte", "len" => 1 )
+	        "null" => array( "type" => "byte", "len" => 1, "needOp" => true ),
+	        "false" => array( "type" => "byte", "len" => 1, "needOp" => true ),
+	        "true" => array( "type" => "byte", "len" => 1, "needOp" => true )
 	    );
 	}
-	protected function getFunctionKeywords() : array
+	public function getFunctionKeywords() : array
 	{
 	    return array(
-	        "now" => array( "type" => "date", "len" => 10 ),
-	        "date" => array( "type" => "date", "len" => 10 ),
-	        "sysdate" => array( "type" => "date", "len" => 10 ),
-	        "password" => array( "type" => "char", "len" => 512 ),
-	        "count" => array( "type" => "int", "len" => 11 ),
-	        "min" => array( "type" => "int", "len" => 11 ),
-	        "max" => array( "type" => "int", "len" => 11 ),
-	        "in" => array( "type" => "text", "len" => $this->getTextLen() )
+	        "now" => array( "type" => "date", "len" => 10, "needOp" => true ),
+	        "date" => array( "type" => "date", "len" => 10, "needOp" => true ),
+	        "sysdate" => array( "type" => "date", "len" => 10, "needOp" => true ),
+	        "password" => array( "type" => "char", "len" => 512, "needOp" => true ),
+	        "count" => array( "type" => "int", "len" => 11, "needOp" => true ),
+	        "min" => array( "type" => "int", "len" => 11, "needOp" => true ),
+	        "max" => array( "type" => "int", "len" => 11, "needOp" => true ),
+	        "in" => array( "type" => "text", "len" => $this->getTextLen(), "needOp" => false )
 	    );
 	}
-	protected function getAllColumnKeyword() : string
+	public function getFunctionDelimiter() : array
+	{
+	    $aRv= array();
+	    // whether delimiter sign character need to be escaped
+	    $esc= array(   'str' => false,
+	                   'regex' => true     );
+	    $open= array(  'delimiter' => "(",
+	                   'ESC' => $esc       );
+	    $close= array( 'delimiter' => ")",
+	                   'ESC' => $esc       );
+	    $aRv['open']= $open;
+	    $aRv['close']= $close;
+	    return $aRv;
+	}
+	public function getAllColumnKeyword() : string
 	{ return "*"; }
 	protected function insert_id()
 	{

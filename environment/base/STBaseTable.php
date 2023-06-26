@@ -1678,12 +1678,13 @@ class STBaseTable
 		{
 		    STCheck::param($abCorrect, 1, "array", "bool", "null");
 		    
+		    $content= trim($content);
 		    if(is_numeric($content))
 		    {
 		        if(is_array($abCorrect))
 		        {
     		        $abCorrect['keyword']= "@value";
-    		        $abCorrect['content']= array();
+    		        $abCorrect['content']= $content;
     		        if(is_float($content))
     		        {
     		            $abCorrect['type']= "real";
@@ -1701,7 +1702,7 @@ class STBaseTable
 		        if(is_array($abCorrect))
 		        {
 		            $abCorrect['keyword']= "@value";
-		            $abCorrect['content']= array( substr($content, 1, -1) );
+		            $abCorrect['content']= substr($content, 1, -1);
 		            $abCorrect['type']= "string";
 		            $abCorrect['len']= strlen($content) - 2;
 		        }
@@ -1723,6 +1724,11 @@ class STBaseTable
 		        (   $bAlias == false &&
 		            $field['type'] == "alias"  )   )
 		    {
+		        if(is_array($abCorrect))
+		        {
+		            $abCorrect['keyword']= "unknown";
+		            $abCorrect['len']= strlen($content);
+		        }
 		        return false;
 		    }
 		    return true;
@@ -3551,7 +3557,7 @@ class STBaseTable
 		$customID= $this->getAccessCustomID($action);
 		$access= true;
 		if(isset($clusters))
-			$access= $instance->hasAccess($clusters, $infoString, $customID, $makeError, $action);
+			$access= $instance->hasAccess($clusters, $infoString, $customID, $action, $makeError);
 
 		if(STCheck::isDebug())
 		{

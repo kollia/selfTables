@@ -1730,7 +1730,8 @@ class STDbTable extends STBaseTable
 	    if(typeof($ostwhere, "STDbWhere"))
 	    {
 	        STCheck::echoDebug("db.statements.where", "execute for own table <b>".$this->Name."</b>");
-	        $statement= $ostwhere->getStatement($from, $condition, $aliases);
+	        $res= $ostwhere->getStatement($from, $condition, $aliases);
+	        $statement= $res['str'];
 	        $aMade[]= $this->getName();
 	    }
 	    if(is_array($aliases))
@@ -1748,7 +1749,8 @@ class STDbTable extends STBaseTable
 	                    if(typeof($ostwhere, "STDbWhere"))
 	                    {
 	                        STCheck::echoDebug("db.statements.where", "execute for joind table <b>".$table->Name."</b>");
-	                        $whereStatement= $ostwhere->getStatement($table, $condition, $aliases);
+	                        $res= $ostwhere->getStatement($table, $condition, $aliases);
+	                        $whereStatement= $res['str'];
 	                        if($whereStatement)
 	                        {
 	                            if(!preg_match("/^[ \t]*where/", $whereStatement))
@@ -2094,22 +2096,46 @@ class STDbTable extends STBaseTable
 	 */
 	public function validColumnContent($content, &$abCorrect= null, bool $bAlias= false) : bool
 	{
-        $field= $this->getDatabase()->keyword($content);
+	    STCheck::param($abCorrect, 1, "array", "bool", "null");
+	    
+	    $db= $this->getDatabase();
+        $field= $db->keyword($content);
         if($field != false)
         {
+            $valid= true;
+            $allColumn= $db->getAllColumnKeyword();
             foreach($field['content'] as $column)
             {
-                if( $column != "*" &&
+                if( $column != $allColumn &&
                     !STBaseTable::validColumnContent($column, $abCorrect, $bAlias) )
                 {
-                    return false;
+                    $valid= false;
+                    break;
                 }
             }
-            if(typeof($abCorrect, "array"))
-                $abCorrect= $field;
-            return true;
+            if($valid)
+            {
+                if(typeof($abCorrect, "array"))
+                    $abCorrect= $field;
+                return true;
+            }
         }
-        return STBaseTable::validColumnContent($content, $abCorrect, $bAlias);
+        $valid= STBaseTable::validColumnContent($content, $abCorrect, $bAlias);
+        if(!$valid)
+        {
+            $content= trim($content);
+            $operators= $db->getOperatorArray();
+            foreach($operators as $operator)
+            {
+                if($content == $operator)
+                {
+                    $abCorrect['keyword']= "@operator";
+                    $abCorrect['content']= $abCorrect['content']['column'];
+                    return true;
+                }
+            }
+        }
+        return $valid;
 	}
 	// alex 19/04/2005:	alle links in eine Funktion zusammengezogen
 	//					und $address darf auch ein STDbTable,
