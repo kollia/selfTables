@@ -38,6 +38,12 @@ class STItemBox extends STBaseBox
 		var $joinBuffer= array();
 		var	$onlyRadioButtons= array(); // wenn nur zwei Enumns vorhanden sind, trotzdem radio Buttons verwenden
 		var $aSelectNames= array();
+	    /**
+	     * replace spaces inside field-names
+	     * from formular
+	     * @var string
+	     */
+		private $sReplaceSpaceSign= "_";
 		/**
 		 * aktual inner table position for better design
 		 */
@@ -766,7 +772,7 @@ class STItemBox extends STBaseBox
 			$field= $fields[$x];		
 			$name= $field["name"];
 			$column= $columns[$name];
-			$postColumn= preg_replace("/[ \t]/", "_", $column);
+			$postColumn= preg_replace("/[ \t]/", $this->sReplaceSpaceSign, $column);
 			if( (   !isset($HTTP_POST_VARS) ||
 			        empty($HTTP_POST_VARS)       ) &&
 			    isset($post[$column])                    )
@@ -2352,8 +2358,9 @@ class STItemBox extends STBaseBox
                 $columnName= $columns[$name];
             else
                 $columnName= $name;
+            $postColumn= preg_replace("/[ \t]/", $this->sReplaceSpaceSign, $columnName);
             if( STCheck::isDebug() &&
-                isset($post[$columnName]) &&
+                isset($post[$postColumn]) &&
                 (   STCheck::isDebug("show.db.fields") ||
                     $bFieldDefineSelection                  )   )
             {
@@ -2365,17 +2372,17 @@ class STItemBox extends STBaseBox
                 $space+= 40;
                 st_print_r($field, 2, $space);
                 STCheck::echoSpace($space);
-                echo "<b>content:</b> \"".$post[$columnName]."\"<br />";
+                echo "<b>content:</b> \"".$post[$postColumn]."\"<br />";
             }
             $ch= 0;
-            if(isset($post[$columnName]))
+            if(isset($post[$postColumn]))
             {
-                $post[$columnName]= str_replace("'", "\\'", $post[$columnName], $ch);
+                $post[$postColumn]= str_replace("'", "\\'", $post[$postColumn], $ch);
                 if( $bFieldDefineSelection &&
                     $ch > 0                     )
                 {
                     STCheck::echoSpace($space);
-                    echo "<b>changed to:</b>\"".$post[$columnName]."\"<br>";
+                    echo "<b>changed to:</b>\"".$post[$postColumn]."\"<br>";
                 }
             }
 			$enum= 0;
@@ -2386,23 +2393,23 @@ class STItemBox extends STBaseBox
 			}
 			if(	$field["type"]=="date"
 				and
-				isset($post[$columnName])		)
+				isset($post[$postColumn])		)
 			{
-				if($post[$columnName]==$this->db->getNullDate())
-					$post[$columnName]= null;
+				if($post[$postColumn]==$this->db->getNullDate())
+					$post[$postColumn]= null;
 				else
 				{
-					if(	$post[$columnName]!="now()"
+					if(	$post[$postColumn]!="now()"
 						and
-						$post[$columnName]!="sysdate()"	)
+						$post[$postColumn]!="sysdate()"	)
 					{
-    					$result= $this->db->makeSqlDateFormat(trim($post[$columnName]));
+    					$result= $this->db->makeSqlDateFormat(trim($post[$postColumn]));
     					if(!$result)
     					{
     					    $this->msg->setMessageId("WRONGDATEFORMAT@@", $columnName, $this->db->getDateFormat());
     						return false;
     					}
-    					$post[$columnName]= $result;
+    					$post[$postColumn]= $result;
 					}
 				}
 			}
@@ -2416,53 +2423,57 @@ class STItemBox extends STBaseBox
 				// alex 08/06/2005:	the compairson to null or "" (null string)
 				//					have to be checkd with 3 equal to signs
 				//					because the zero number should be allowed
-                if( (   !isset($post[$columnName]) ||
-    					$post[$columnName]===null ||
-                        $post[$columnName]===""	      ) &&
+                if( (   !isset($post[$postColumn]) ||
+                        $post[$postColumn]===null ||
+                        $post[$postColumn]===""	      ) &&
                     (   !isset($this->aDisabled[$columns[$field['name']]]) ||
                         $this->aDisabled[$columns[$field['name']]][/*rownr*/0] == false ) &&
                     (   $this->action == STINSERT ||  // if action is STUPDATE and it be a password field
                         $this->action == STDELETE ||  // field can be an null string for no update
                         $this->password != $name  ||  // elsewhere password repetition be defined
                         isset($post['re_$name'])        )   )
-                {       
+                {  
+                    showLine();
+                    st_print_r($field);
+                    st_print_r($post);
+                    echo "column:$columnName<br>";
 					$this->msg->setMessageId("COLUMNNOTFILLED@", $columnName);
                     return false;
                 }
             }
-            if(	isset($post[$columnName])
+            if(	isset($post[$postColumn])
             	&&
-            	$post[$columnName] !== ""
+            	$post[$postColumn] !== ""
             	&&
             	$field["type"] == "int"
 				&&
 				!preg_match("/auto_increment/", $field["flags"])	)
 			{
-				if(	!is_numeric(trim($post[$columnName]))
+				if(	!is_numeric(trim($post[$postColumn]))
 					||
-					preg_match("/[.]/", $post[$columnName])	)
+					preg_match("/[.]/", $post[$postColumn])	)
 				{
 					$this->msg->setMessageId("NOINTEGER@", $columnName);
 					return false;
 				}
-			}elseif(isset($post[$columnName])
+			}elseif(isset($post[$postColumn])
 	            	&&
-	            	$post[$columnName] !== ""
+	            	$post[$postColumn] !== ""
 	            	&&
 	            	$field["type"] == "real")
 			{
-				if(!is_numeric(trim($post[$columnName])))
+				if(!is_numeric(trim($post[$postColumn])))
 				{
 					$this->msg->setMessageId("NOFLOAT@", $columnName);
 					return false;
 				}
-			}elseif(isset($post[$columnName])
+			}elseif(isset($post[$postColumn])
 	            	&&
-	            	$post[$columnName] !== ""
+	            	$post[$postColumn] !== ""
 	            	&&
 	            	$field["type"] == "string")
 			{
-				if(strlen($post[$columnName]) > $field["len"])
+				if(strlen($post[$postColumn]) > $field["len"])
 				{
 					$this->msg->setMessageId("TOLONGSTRING@@", $columnName, $field["len"]);
 					return false;
@@ -2474,14 +2485,14 @@ class STItemBox extends STBaseBox
 				and
 				!preg_match("/auto_increment/", $field["flags"])		)
 			{
-				$value= $post[$columnName];
+				$value= $post[$postColumn];
 				if(is_string($value))
 					$value= "'$value'";
 				$statement= "select $name from $table where $name=$value";
 				if(!$this->db->fetch_single($statement))
 					$this->setSqlError(null);
 				else
-				{//echo $columnName."<br />";
+				{//echo $postColumn."<br />";
 					$this->msg->setMessageId("COLUMNVALUEEXIST@", $columnName);
 					return false;
 				}
@@ -2583,15 +2594,15 @@ class STItemBox extends STBaseBox
 				 	if(count($this->passwordNames) >= 2)
 				 	{
 				 	    if( isset($post["re_".$name]) && // if password repetition not be set, password also a null string
-						    $post[$columnName] != $post["re_".$name]    ) // and for STUPDATE no entry needed
+						    $post[$postColumn] != $post["re_".$name]    ) // and for STUPDATE no entry needed
 						{
 							$this->msg->setMessageId("PASSWORDNOTSAME");
 							return false;
 						}
 					}
 				}
-				if(isset($post[$columnName]))
-					$newPost[$name]= $post[$columnName];
+				if(isset($post[$postColumn]))
+					$newPost[$name]= $post[$postColumn];
         }
         //$post= $newPost;
 		//echo __file__.__line__."<br>";
