@@ -49,19 +49,26 @@ class STDbSelector extends STDbTable implements STContainerTempl
 
 		function __construct(&$oTable, $defaultTyp= STSQL_ASSOC, $onError= onErrorStop)
 		{
-			STCheck::param($oTable, 0, "STBaseTable");
+			STCheck::param($oTable, 0, "STDbTable", "STObjectContainer");
 			STCheck::param($defaultTyp, 1, "check", $defaultTyp==STSQL_NUM || $defaultTyp==STSQL_ASSOC || $defaultTyp==STSQL_BOTH,
 														"STSQL_NUM, STSQL_ASSOC or STSQL_BOTH");
 			STCheck::param($onError, 2, "check", $onError==noErrorShow || $onError==onErrorShow || $onError==onErrorStop,
 														"noErrorShow", "onErrorShow", "onErrorStop");
 
+			if(typeof($oTable, "STDbTable"))
+			{
+			    $container= null;
+			    $table= $oTable;
+			    $this->aoToTables[$oTable->getName()]= &$oTable;
+			    STCheck::echoDebug("table", "copy ".$oTable->toString()." into own ".$this->toString());
+			}else
+			{
+			    $container= $oTable;
+			    $table= null;
+			}
 			$this->defaultTyp= $defaultTyp;
 			$this->onError= $onError;
-			//$db= &$oTable->getDatabase();
-			//$this->oMainTable= &$oTable;
-			$this->aoToTables[$oTable->getName()]= &$oTable;
-			STDbTable::__construct($oTable);
-			STCheck::echoDebug("table", "copy ".$oTable->toString()." into own ".$this->toString());
+			STDbTable::__construct($table, $container, $onError);			
 		}
 		function __clone()
 		{
@@ -451,12 +458,20 @@ class STDbSelector extends STDbTable implements STContainerTempl
 			$desc= STDbTableDescriptions::instance($this->db->getDatabaseName());
 			$tableName= $desc->getTableName($tableName);
 			$orgColumn= $desc->getColumnName($tableName, $column, /*warnFuncOutput*/1);// if tableName is original function must not search
+			if(!isset($this->Name))
+			{
+			    $oTable= $this->db->getTable($tableName);
+			    $this->createFirstOwnTable($oTable);
+			}
 			if(STCheck::isDebug())
 			{
-				if($tableName===$this->Name)
-					$oTable= &$this;
-				else
-					$oTable= &$this->getTable($tableName);
+			    if(!isset($oTable))
+			    {
+    				if($tableName===$this->Name)
+    					$oTable= &$this;
+    				else
+    					$oTable= &$this->getTable($tableName);
+			    }
 				STCheck::alert(!$oTable->validColumnContent($column), "STBaseTable::selectA()",
 											"column $column not exist in table ".$tableName.
 											"(".$oTable->getDisplayName().")");
@@ -782,7 +797,12 @@ class STDbSelector extends STDbTable implements STContainerTempl
 			STCheck::param($column, 1, "string");
 			$nParams= func_num_args();
 			STCheck::lastParam(3, $nParams);
-
+			
+			if(!isset($this->Name))
+			{
+			    $oTable= $this->db->getTable($tableName);
+			    $this->createFirstOwnTable($oTable);
+			}
 			$this->getColumnA($tableName, array( "column"=>$column, "alias"=>$alias));
 		}
 		public function getErrorId() : int

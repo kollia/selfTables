@@ -199,7 +199,7 @@ class STBaseTable
     	        $this->Name= $oTable;
             $this->bCorrect= true;
     	}else
-    	    $this->Name= "- NULL -";
+    	    $this->Name= null;
     	
     	STCheck::increase("table");
         if( STCheck::isDebug() &&

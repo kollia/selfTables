@@ -26,42 +26,93 @@ class STDbTable extends STBaseTable
 	 */
 	protected $aStatement= array();
 
-    function __construct($Table, $container= null, $onError= onErrorStop)
+	protected function createFirstOwnTable($Table)
+	{
+	    STCheck::param($Table, 0, "STDbTable", "string");
+	    
+	    if(typeof($Table, "string"))
+	    {
+	        Tag::echoDebug("describeTable", "table constructor file:".__file__." line:".__line__);
+	        $fieldArray= $this->db->describeTable($Table, $this->onError);
+	        $this->columns= &$fieldArray;
+	        $this->error= $this->db->isError();
+	        foreach($fieldArray as $field)
+	        {
+	            if(	preg_match("/pri_key/i", $field["flags"]) ||
+	                preg_match("/primary_key/i", $field["flags"])		)
+	            {
+	                $this->sPKColumn= $field["name"];
+	            }
+	            if(preg_match("/multiple_key/i", $field["flags"]))
+	            {
+	                $sql=  "select `REFERENCED_TABLE_SCHEMA`, `REFERENCED_TABLE_NAME`, `REFERENCED_COLUMN_NAME` ";
+	                $sql.= "FROM `information_schema`.`KEY_COLUMN_USAGE` ";
+	                $sql.= "WHERE `TABLE_SCHEMA`='".$this->db->getDatabaseName()."' ";
+	                $sql.= " and  `TABLE_NAME` = '$Table'";
+	                $sql.= " and  `COLUMN_NAME`='".$field["name"]."'";
+	                $sql.= " and  `REFERENCED_COLUMN_NAME` is not NULL";
+	                $this->db->query($sql);
+	                $result= $this->db->fetch_row(STSQL_NUM);
+	                
+	                if(	isset($result) &&
+	                    isset($result[0]) &&
+	                    is_array($result) &&
+	                    count($result) == 3	)
+	                {
+	                    $this->fk($field["name"], $result[1], $result[2]);
+	                    //echo "result of Fk for $tableName.$name:<br>";
+	                    //st_print_r($this->FK, 2);echo "<br>";
+	                }
+	            }
+	        }
+	    }else
+	    {
+	        $this->copy($Table);
+	        $this->columns= $Table->columns;
+	    }
+	}
+    public function __construct($Table, $container= null, $onError= onErrorStop)
     {
-		Tag::paramCheck($Table, 1, "string", "STBaseTable");
-		Tag::paramCheck($container, 2, "STObjectContainer", "string", "null");
+        if(typeof($this, "STDbSelector"))
+		    STCheck::paramCheck($Table, 1, "string", "STBaseTable", "null");
+        else
+            STCheck::paramCheck($Table, 1, "string", "STBaseTable");
+		STCheck::paramCheck($container, 2, "STObjectContainer", "string", "null");
 
 		$this->abOrigChoice= array();
-
-		if(typeof($Table, "STBaseTable"))
-		{
-			$tableName= $Table->Name;
-		}else
-		{
-			$co= &$container;
-			if(is_string($co))
-			{
-				$co= null;
-				$co= STBaseContainer::getContainer($container);
-			}
-			$db= &$co->getDatabase();
-			$desc= &STDbTableDescriptions::instance($db->getDatabaseName());
-			$tableName= $desc->getTableName($Table);
-			$this->onError= $onError;
-		}
+		$this->onError= $onError;
+		
 		if(isset($container))
 		{
 		    if(is_string($container))
 		        $this->container= &STBaseContainer::getContainer($container);
 	        else
-	            $this->container= $container;            
-		}else
+	            $this->container= $container;
+	        $this->db= &$this->container->getDatabase();
+	        
+		}elseif(isset($Table) && typeof($Table, "STObjectContainer"))
+		{
 		    $this->container= &$Table->container;
+		    $this->db= &$this->container->getDatabase();
+		}else
+		    $this->container= null;
+		
+		if(typeof($Table, "STBaseTable"))
+		{
+			$tableName= $Table->Name;
+		}elseif(isset($this->container) && typeof($Table, "string"))
+		{
+		    if(!isset($this->db))
+		        $this->db= &$this->container->getDatabase();
+		    $desc= &STDbTableDescriptions::instance($this->db->getDatabaseName());
+		    $tableName= $desc->getTableName($Table);
+		}else
+		    $tableName= "UNKNOWN";
 		
 		STBaseTable::__construct($Table);
 		if(Tag::isDebug())
 		{
-			Tag::alert(	!$container
+			STCheck::alert(	!$container
 						and
 						(	typeof($Table, "string")
 							or
@@ -72,55 +123,13 @@ class STDbTable extends STBaseTable
 						"second parameter must be an object from STObjectContainer"			);
 			if(typeof($Table, "string"))
 				Tag::echoDebug("table", "create new object for table <b>".$Table."</b>");
-			else
+			elseif(typeof($Table, "STBaseTable"))
 				Tag::echoDebug("table", "make copy from table-object <b>".$Table->Name."</b> for an new one");
+			else // own table should be a STDbSelector container
+			    STCheck::echoDebug("table", "create an empty STDbSelector object");
 		}
-		//$this->created[$tableName]= true;
-		if(typeof($Table, "STBaseTable"))
-		{
-		    $this->copy($Table);
-		}
-		$this->db= &$this->container->getDatabase();
-		if(typeof($Table, "STBaseTable"))
-		{
-			$this->columns= $Table->columns;
-			return;
-		}else
-		{
-    		Tag::echoDebug("describeTable", "table constructor file:".__file__." line:".__line__);
-        	$fieldArray= $this->db->describeTable($tableName, $onError);
-    		$this->columns= &$fieldArray;
-			$this->error= $this->db->isError();
-    		foreach($fieldArray as $field)
-      		{
-      			if(	preg_match("/pri_key/i", $field["flags"]) ||
-				  	preg_match("/primary_key/i", $field["flags"])		)
-				{
-      				$this->sPKColumn= $field["name"];
-				}
-				if(preg_match("/multiple_key/i", $field["flags"]))
-				{
-					$sql=  "select `REFERENCED_TABLE_SCHEMA`, `REFERENCED_TABLE_NAME`, `REFERENCED_COLUMN_NAME` ";
-					$sql.= "FROM `information_schema`.`KEY_COLUMN_USAGE` ";
-					$sql.= "WHERE `TABLE_SCHEMA`='".$this->db->getDatabaseName()."' ";
-					$sql.= " and  `TABLE_NAME` = '$tableName'";
-					$sql.= " and  `COLUMN_NAME`='".$field["name"]."'";
-					$sql.= " and  `REFERENCED_COLUMN_NAME` is not NULL";
-					$this->db->query($sql);
-					$result= $this->db->fetch_row(STSQL_NUM);
-					
-					if(	isset($result) &&
-						isset($result[0]) &&
-						is_array($result) &&
-						count($result) == 3	)
-					{
-						$this->fk($field["name"], $result[1], $result[2]);
-						//echo "result of Fk for $tableName.$name:<br>";
-						//st_print_r($this->FK, 2);echo "<br>";
-					}
-				}
-      		}
-		}
+		if(isset($Table))
+		    $this->createFirstOwnTable($Table);
     }
     public function __clone()
     {
