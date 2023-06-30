@@ -324,7 +324,7 @@ class STUserSession extends STDbSession
 	{
 		if(!$this->projectCluster)
 		{
-			$project= $this->database->getTable("Project");
+			$project= $this->container->getTable("Project");
         	$project->clearSelects();
         	$project->clearIdentifColumns();
         	$project->clearGetColumns();
@@ -601,24 +601,21 @@ class STUserSession extends STDbSession
         $UserGroup->foreignKey($this->asUserGroupTableColumns["UserID"]["column"], $this->sUserTable);
         $Log->foreignKey($this->asLogTableColumns["UserID"]["column"], $this->sUserTable);
         $Log->foreignKey($this->asLogTableColumns["ProjectID"]["column"], $this->sProjectTable);
-
-		//$this->database->getTableStructure(true);
 	}
 	function setLog($bLog)
 	{
 		$this->bLog= $bLog;
 	}
-  	function getUserID()
+  	public function getUserID()
   	{
   	    $userID= $this->getSessionVar("ST_USERID");
   	    if(!isset($userID))
 	  		return 0;
   		return $userID;
   	}
-	function getUserName()
+	public function getUserName()
 	{
 	    $user= $this->getSessionVar("ST_USER");
-	    $session= STSession::instance();
 	    if( !$this->isLoggedIn() &&
 	        $this->loginUser != "" )
 	    {
@@ -628,11 +625,56 @@ class STUserSession extends STDbSession
 	        return "";
 	    return $user;
 	}
-	function getProjectID()
+	/**
+	 * return database entry from current user.<br />
+	 * (with maybe modified table from database)
+	 * 
+	 * @param string $sqlType which keys the database row should have (default: STSQL_ASSOC)
+	 * @return array array of database row content, by error -> error nr
+	 */
+	public function getUserData($sqlType= null)
+	{
+	    $user= $this->container->getTable("User");
+	    $selector= new STDbSelector($user);
+	    $selector->where("User", "ID=".$this->getUserID());
+	    $res= $selector->execute();
+	    if($res <= 0)
+	        return $res;
+	    $aRv= $selector->getRowResult($sqlType);
+		// search correct name inside database
+	    $pwd= $user->searchByColumn("Pwd");
+	    unset($aRv[$pwd['column']]);// toDo: maybe better create new function for STdbSelector "->noSelect()"
+	                                //       because the selector should take the pre-defined columns from User-table
+	    return $aRv;
+	}
+	/**
+	 * return database list from all users.<br />
+	 * (with maybe modified table from database)
+	 *
+	 * @param string $sqlType which keys the database rows should have (default: STSQL_ASSOC)
+	 * @return array
+	 */
+	public function getUserDataList($sqlType= null)
+	{
+	    $user= $this->container->getTable("User");
+	    $selector= new STDbSelector($user);
+	    $res= $selector->execute();
+	    if($res <= 0)
+	        return $res;
+        $aRv= $selector->getResult($sqlType);
+        $pwd= $user->searchByColumn("Pwd");// search correct name inside database
+        foreach($aRv as &$row)
+        {// toDo: maybe better create new function for STdbSelector "->noSelect()"
+         //       because the selector should take the pre-defined columns from User-table
+            unset($aRv[$pwd['column']]);
+        }
+	    return $aRv;
+	}
+	public function getProjectID()
 	{
 		return $this->projectID;
 	}
-	function getProjectName()
+	public function getProjectName()
 	{
 		return $this->project;
 	}
@@ -725,7 +767,7 @@ class STUserSession extends STDbSession
 		}else
 		{
   			// deffiniere Projekt
-  			$proj= $this->database->getTable("Project");
+  			$proj= $this->container->getTable("Project");
   			$project= new STDbSelector($proj);
   			$project->select("Project", "ID");
   			$project->select("Project", "Name");
@@ -779,7 +821,7 @@ class STUserSession extends STDbSession
 				echo "->select all exist clusters from database<br />";
 			}
 
-			$clusterTable= $this->database->getTable("Cluster");
+			$clusterTable= $this->container->getTable("Cluster");
 			$clusterTable->select("ID");
 			$clusterTable->select("ProjectID");
 			$statement= $clusterTable->getStatement();
@@ -817,7 +859,7 @@ class STUserSession extends STDbSession
 		}
 		
 		//$statement= "select ID,ProjectID from MUCluster";
-		$oCluster= &$this->database->getTable("Cluster");
+		$oCluster= &$this->container->getTable("Cluster");
 		$clusterSelector= new STDbSelector($oCluster, STSQL_ASSOC);
 		$clusterSelector->select("Cluster", "ID", "ID");
 		$clusterSelector->select("Cluster", "ProjectID", "ProjectID");
@@ -831,7 +873,7 @@ class STUserSession extends STDbSession
 			st_print_r($this->getExistClusters(), 2, $space);
 		}
 
-		$oProject= $this->database->getTable("Project");
+		$oProject= $this->container->getTable("Project");
 		if(!typeof($oProject, "STDbSelector"))
 		  $projectCluster= new STDbSelector($oProject, STSQL_ASSOC);
 		else
@@ -925,7 +967,7 @@ class STUserSession extends STDbSession
 	}
 	function selectGroupID($groupname)
 	{
-		$group= $this->database->getTable("Group");
+		$group= $this->constainer->getTable("Group");
 		$selector= new STDbSelector($group);
 		$selector->select("Group", "ID");
 		$selector->where("Name='$groupname'");
@@ -951,7 +993,7 @@ class STUserSession extends STDbSession
         $project= $this->projectID;
         if($project==null)
         	$project= -1;
-        $logTable= &$this->database->getTable("Log");
+        $logTable= &$this->container->getTable("Log");
         $inserter= new STDbInserter($logTable);
         $inserter->fillColumn("UserID", $user);
         $inserter->fillColumn("ProjectID", $project);
@@ -997,7 +1039,7 @@ class STUserSession extends STDbSession
                 $user= $preg[1];
     	    }
 		}
-		$userTable= $this->database->getTable("User");
+		$userTable= $this->container->getTable("User");
 		$selector= new STDbSelector($userTable);
 		$selector->clearSelects();
 		$selector->clearGetColumns();
@@ -1088,7 +1130,7 @@ class STUserSession extends STDbSession
 		$oWhere->where("ID='$ID'");
 		$oWhere->andWhere("Pwd=password('".$password."')");
 		
-		//$oUserTable= $this->database->getTable("User");
+		//$oUserTable= $this->container->getTable("User");
 		$userSelector= new STDbSelector($userTable);
 		$userSelector->select("User", "ID", "ID");
 		$userSelector->where($oWhere);
@@ -1110,7 +1152,7 @@ class STUserSession extends STDbSession
 	}
 	public function existsDbCluster(string $clusterName)
 	{
-		$cluster= $this->database->getTable("Cluster");
+		$cluster= $this->container->getTable("Cluster");
 		$selector= new STDbSelector($cluster);
 		//$selector->clearSelects();
 		$selector->count();
@@ -1134,7 +1176,7 @@ class STUserSession extends STDbSession
 	    $groupWhere->table("Group");
 	    $groupWhere->orWhere("Name='$groupName'");
 	    
-	    $clustergroup= new STDbSelector($this->database->getTable("ClusterGroup"));
+	    $clustergroup= new STDbSelector($this->container->getTable("ClusterGroup"));
 	    $clustergroup->count();
 	    $clustergroup->where($clusterWhere);
 	    $clustergroup->andWhere($groupWhere);
@@ -1147,7 +1189,7 @@ class STUserSession extends STDbSession
 	public function existsDbGroup(string $groupName, string $domainName)
 	{
 	    $domain= $this->getDomainID($domainName);
-	    $group= $this->database->getTable("Group");
+	    $group= $this->container->getTable("Group");
 	    
 	    $selector= new STDbSelector($group);
 	    $selector->clearSelects();
@@ -1171,7 +1213,7 @@ class STUserSession extends STDbSession
 			return $this->nPartition[$partitionName];
 
 		$clusters= $this->getProjectCluster();
-		$oPartition= $this->database->getTable("Partition");
+		$oPartition= $this->container->getTable("Partition");
 		$desc= STDbTableDescriptions::instance($this->database->getDatabaseName());
   		$oPartition->accessBy($clusters[$desc->getColumnName("Project", "has_access")], STLIST);
 		$oPartition->clearIdentifColumns();
@@ -1221,7 +1263,7 @@ class STUserSession extends STDbSession
 	    STCheck::alert(!isset($domain), "STUserSession::getCustomDomain()", "get from method STUserSession::getDomain() wrong null value");
 	    if( $domain['ID'] == -1 )
 	    {
-	        $table= $this->database->getTable("AccessDomain");
+	        $table= $this->container->getTable("AccessDomain");
 	        $domainTable= new STDbSelector($table);
 	        $domainTable->select("AccessDomain", $table->getPKColumnName(), "ID");
 	        $domainTable->where("Name='".$this->mainDOMAIN."'");
@@ -1246,7 +1288,7 @@ class STUserSession extends STDbSession
 	        return "NOCLUSTERCREATE";
 		$this->setExistCluster($clusterName, $this->getProjectID());
 		//$partitionId= $this->getPartitionID($sIdentifString);
-		$oCluster= &$this->database->getTable("Cluster");
+		$oCluster= &$this->container->getTable("Cluster");
 		$insert= new STDbInserter($oCluster);
 		$insert->fillColumn("ID", $clusterName);
 		$insert->fillColumn("ProjectID", $this->projectID);
@@ -1350,7 +1392,7 @@ class STUserSession extends STDbSession
 	    if($this->existsDbGroup($groupName, $domain))
 	       return -1; 
         
-		$group= $this->database->getTable("Group");
+		$group= $this->container->getTable("Group");
 		$inserter= new STDbInserter($group);
 		$inserter->fillColumn("Name", $groupName);
 		$inserter->fillColumn("domain", $domainID);
@@ -1368,14 +1410,14 @@ class STUserSession extends STDbSession
 	public function joinClusterGroup(string $clusterName, string $groupName)
 	{
 	    // select only whether exist
-	    $cluster= new STDbSelector($this->database->getTable("Cluster"));
+	    $cluster= new STDbSelector($this->container->getTable("Cluster"));
 		$cluster->select("Cluster", "ID", "ID");
 		$cluster->where("ID='".$clusterName."'");
 		$cluster->execute();
 		if(STCheck::is_error($cluster->getErrorId(), "STUserSession::joinClusterGroup()", "cluster ".$clusterName." for join to <b>GROUP</b> does not exist", 2))
 		    return -1;
 		    
-	    $grouptable= new STDbSelector($this->database->getTable("Group"));
+	    $grouptable= new STDbSelector($this->container->getTable("Group"));
 	    $grouptable->select("Group", "ID", "ID");
 		$grouptable->where("Name='".$groupName."'");
 		$grouptable->execute();
@@ -1386,7 +1428,7 @@ class STUserSession extends STDbSession
 		if($this->existsDbClusterGroupJoin($clusterName, $groupName))
 		    return -1;
 
-		$clusterGroup= $this->database->getTable("ClusterGroup");
+		$clusterGroup= $this->container->getTable("ClusterGroup");
 		$inserter= new STDbInserter($clusterGroup);
 		$inserter->fillColumn("ClusterID", $clusterName);
 		$inserter->fillColumn("GroupID", $groupId);
@@ -1403,7 +1445,7 @@ class STUserSession extends STDbSession
 
 		if(is_string($user))
 		{
-			$usertable= $this->database->getTable("User");
+			$usertable= $this->container->getTable("User");
 			$usertable->clearSelects();
 			$usertable->select("ID", "ID");
 			$usertable->where("user='".$user."'");
@@ -1419,7 +1461,7 @@ class STUserSession extends STDbSession
 			$userId= $user;
 		if(is_string($group))
 		{
-			$grouptable= $this->database->getTable("Group");
+			$grouptable= $this->container->getTable("Group");
 			$grouptable->clearSelects();
 			$grouptable->select("ID", "ID");
 			$grouptable->where("Name='".$group."'");
@@ -1434,7 +1476,7 @@ class STUserSession extends STDbSession
 		}else
 			$groupId= $group;
 
-		$userGroup= $this->database->getTable("UserGroup");
+		$userGroup= $this->container->getTable("UserGroup");
 		$inserter= new STDbInserter($userGroup);
 		$inserter->fillColumn("UserID", $userId);
 		$inserter->fillColumn("GroupID", $groupId);
@@ -1461,7 +1503,7 @@ class STUserSession extends STDbSession
 	{
 		Tag::paramCheck($cluster, 1, "string");
 
-		$clusterGroup= $this->database->getTable($this->sClusterGroupTable);
+		$clusterGroup= $this->container->getTable($this->sClusterGroupTable);
 		$clusterGroup->clearSelects();
 		$clusterGroup->select("ID", "ID");
 		$clusterGroup->select("GroupID", "GroupID");

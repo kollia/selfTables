@@ -37,10 +37,12 @@ class STDbSession extends STSession
 {
     private $bStoreFile= false;
     protected $database= null;
+    protected $container= null;
     
-    protected function __construct($Db)
+    protected function __construct(&$container)
     {
-        $this->database= &$Db;
+        $this->container= &$container;
+        $this->database= &$container->getDatabase();
         STSession::__construct();
     }
     /**
