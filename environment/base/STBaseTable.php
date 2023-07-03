@@ -77,7 +77,7 @@ class STBaseTable
     var $error;
 	var $errorText;
 	var	$showTypes= array();
-	var $oWhere;
+	var $oWhere= null;
 	var $asOrder= array();
 	var	$identifier;
 	var	$bDistinct= false;
@@ -2335,7 +2335,15 @@ class STBaseTable
 
 		 	if(STCheck::isDebug("db.statements.where"))
 		 	{
-		 	    $msg= "set where clause ";
+		 	    if( !isset($this->oWhere) ||
+		 	        $operator == ""        )
+		 	    {
+		 	        $msg= "set ";
+		 	        if($operator == "")
+		 	            $msg.= "<b>new</b> ";
+		 	    }else
+		 	        $msg= "add ";		 	    
+		 	    $msg.= "where clause ";
 		 	    if(is_string($stwhere))
 		 	        $msg.= "'$stwhere' ";
 	 	        $msg.= "inside table '".$this->Name."(".$this->ID.")'";
@@ -2352,6 +2360,8 @@ class STBaseTable
 					get_class($stwhere) == "STDbWhere" &&
 					!$stwhere->isModified()					)	)
 		 	{
+		 	    STCheck::echoDebug("db.statements.where", "get undefined (or not modified) ".
+		 	        "where clause, so return only current where Object");
 		 		return $this->oWhere;
 		 	}
 		 	if($operator == "")
@@ -2386,19 +2396,20 @@ class STBaseTable
  				{
  					$stwhere->table($this->Name);
  				}
-	 			if($operator == "or")
-	 			{
+	 			if($operator == "or") {
 	 				$this->oWhere->orWhere($stwhere);
-	 			}else
-	 				$this->oWhere->andWhere($stwhere);
+	 			}else // operator can be "and" or ""
+	 			    $this->oWhere->andWhere($stwhere);
+ 			    if(STCheck::isDebug("db.statements.where"))
+ 			    {
+ 			        showLine();
+ 			        st_print_r($this->oWhere,10);
+ 			    }
 	 		}else
 	 		{// no where be set
-	 			if(is_string($stwhere))
-	 			    $this->oWhere= new STDbWhere($stwhere, $this->Name);
- 				else
- 				    $this->oWhere= $stwhere;
- 				$this->oWhere->setDatabase($this->db);
-				$this->oWhere->table($this->Name);
+	 		    $this->oWhere= new STDbWhere();
+	 		    $this->oWhere->table($this);
+	 		    $this->oWhere->where($stwhere, $operator);
 	 		}
 	 		
 		 	return $this->oWhere;

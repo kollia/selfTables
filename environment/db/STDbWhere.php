@@ -126,6 +126,11 @@ class STDbWhere
 	            $this->array[$key]->setDatabase($db, $bOverwrite);
 	    }
 	}
+	/**
+	 * Whether object has any where-clauses
+	 * 
+	 * @return boolean true if correct content exist, otherwise false
+	 */
 	function isModified()
 	{
 		if(count($this->array))
@@ -875,7 +880,11 @@ class STDbWhere
 		        {
 		            if($this->sDbName != "")
 		                $content->setDatabase($this->oDb);
-	                STCheck::echoDebug("db.statements.where", "found new STDbWhere object inside array and create rekursive");
+		            if(STCheck::isDebug("db.statements.where"))
+		            {
+	                    $space= STCheck::echoDebug("db.statements.where", "found new STDbWhere object inside array and create rekursive");
+	                    st_print_r($content, 20, $space);
+		            }
 	                $newStatement= $content->getStatement($oTable, $condition, $aliases);
 	                if($newStatement["case"])
 	                {// where statement exist for current Table
@@ -884,7 +893,7 @@ class STDbWhere
 	                    if($newStatement['case'] > 1)
 	                        $statement.= $this->addBraces($newStatement['str']);
 	                    else
-	                        $statement.= $newStatement['str'];
+	                        $statement.= $newStatement['str'];	                    
 	                    $case.= $newStatement["case"];
 	                }
 		        }else//if($content)

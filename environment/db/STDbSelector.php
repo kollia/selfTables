@@ -290,10 +290,11 @@ class STDbSelector extends STDbTable implements STContainerTempl
 		    if(STCheck::isDebug())
 		    {
 		        STCheck::param($table, 0, "string", "STDbWhere", "STDbTable");
-		        STCheck::param($where, 1, "string", "STDbTable", "null");
+		        STCheck::param($where, 1, "string", "STDbWhere", "null");
 		    }
 		    if(!isset($where))
 		    {
+		        STCheck::alert(!isset($this->Name), "STDbSelector::andWhere()", "please set Before an table");
 		        $where= $table;
 		        if(is_string($where))
 		            $where= new STDbWhere($where, $this->Name);
@@ -310,10 +311,11 @@ class STDbSelector extends STDbTable implements STContainerTempl
 		    if(STCheck::isDebug())
 		    {
 		        STCheck::param($table, 0, "string", "STDbWhere", "STDbTable");
-		        STCheck::param($where, 1, "string", "STDbTable", "null");
+		        STCheck::param($where, 1, "string", "STDbWhere", "null");
 		    }
 		    if(!isset($where))
 		    {
+		        STCheck::alert(!isset($this->Name), "STDbSelector::orWhere()", "please set Before an table");
 		        $where= $table;
 		        if(is_string($where))
 		            $where= new STDbWhere($where, $this->Name);
@@ -380,7 +382,8 @@ class STDbSelector extends STDbTable implements STContainerTempl
                 return;
 		    }
 		    
-            $where= new STDbWhere($where);
+		    if(is_string($where))
+                $where= new STDbWhere($where);
             $where->table($table);
             //$where->setDatabase($table->db);
             STDbTable::where($where);
