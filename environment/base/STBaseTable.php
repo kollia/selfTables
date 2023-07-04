@@ -1676,6 +1676,7 @@ class STBaseTable
 		 */		
 		public function validColumnContent($content, &$abCorrect= null, bool $bAlias= false) : bool
 		{
+		    STCheck::param(trim($content), 0, "string");
 		    STCheck::param($abCorrect, 1, "array", "bool", "null");
 		    
 		    $content= trim($content);

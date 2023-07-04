@@ -135,7 +135,12 @@
 	define("STSQL_NUM", MYSQL_NUM);
 	define("STSQL_ASSOC", MYSQL_ASSOC);
 	define("STSQL_BOTH", MYSQL_BOTH);
-
+	
+	define("NUM_OSTfetchArray", -1);// erzeugt in der Datenbank ein Array zur Suche
+	define("ASSOC_OSTfetchArray", -2);// erzeugt in der Datenbank ein Array zur Suche
+	define("BOTH_OSTfetchArray", -3);// erzeugt in der Datenbank ein Array zur Suche
+	
+	
 	define("STCHOOSE", "choose");
 	define("STLIST",   "list");
 	define("STINSERT", "insert");
@@ -191,10 +196,6 @@
 	// n�chsten 2 werden fallen
 	define("addUser", "addUser");
 	define("addGroup", "addGroup");
-
-	define("NUM_OSTfetchArray", -1);// erzeugt in der Datenbank ein Array zur Suche
-	define("ASSOC_OSTfetchArray", -2);// erzeugt in der Datenbank ein Array zur Suche
-  	define("BOTH_OSTfetchArray", -3);// erzeugt in der Datenbank ein Array zur Suche
 
 	// globaly variables
 	$global_first_objectContainer= null;

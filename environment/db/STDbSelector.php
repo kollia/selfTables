@@ -296,13 +296,18 @@ class STDbSelector extends STDbTable implements STContainerTempl
 		    {
 		        STCheck::alert(!isset($this->Name), "STDbSelector::andWhere()", "please set Before an table");
 		        $where= $table;
-		        if(is_string($where))
-		            $where= new STDbWhere($where, $this->Name);
+//		        if(is_string($where))
+//		            $where= new STDbWhere($where, $this->Name);
 		        if( typeof($where, "STDbWhere") &&
 		            $where->sDbName == ""         )
 		        {
 		            $where->setDatabase($this->db);
 		        }		        
+		    }else 
+		    {
+		        if(is_string($where))
+		            $where= new STDbWhere($where);
+		        $where->table($table);
 		    }
 		    STDbTable::where($where, "and");
 		}

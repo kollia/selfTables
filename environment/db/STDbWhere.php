@@ -563,7 +563,8 @@ class STDbWhere
     		        {
     		            // can be a funtion which need no operator with a field or a value
     		            $correct= ($res == 2 && $nOperator == 0 && $nFunction == 1 && $functionObj['content']['needOp'] == false);
-        		        if(STCheck::warning(!$correct, "STDbWhere::createStringContent()", "incorrect where statement >> $content <<"))
+        		        if(STCheck::warning(!$correct, "STDbWhere::createStringContent()", "incorrect ".
+        		            "where statement from table '{$this->sForTable}' >> $content <<")               )
         		            st_print_r($comparison,5);
     		        }
 		        }
@@ -579,7 +580,7 @@ class STDbWhere
     		            STCheck::echoDebug("db.statements.where",
     		                "field '{$field['content']['column']}' become to column('$aliasName.{$field['content']['column']}')");
 		            }
-		            $result.= $field['content']['column'];
+		            $result.= "`{$field['content']['column']}`";
 		        }else
 		        {
     		        if($field['keyword'] == "@value")
@@ -611,7 +612,7 @@ class STDbWhere
     		                st_print_r($field, 2);
     		                echo "</pre>";
     		            }
-    		            $result.= $field['content'];
+    		            $result.= " {$field['content']}";
     		        }
 		        }
 		    }
@@ -624,6 +625,7 @@ class STDbWhere
 		    $aRcomparison= array();
 		    $old_content= $content;
 		    $content= trim($content);
+		    // first search whether a function exist
 		    $function= $this->oDb->keyword($content);
 		    if($function != false)
 		    {
@@ -664,6 +666,9 @@ class STDbWhere
 		    $pattern_second= "(.*)"; // second content can be an column or an content
 		    //-----------------------------------------------------------
 		    $preg= array();
+		    //showLine();
+		    //echo "pattern:/^$pattern_first$pattern_op$pattern_second$/i<br>";
+		    //echo "content:'$content'<br>";
 		    if(!preg_match("/^$pattern_first$pattern_op$pattern_second$/i", $content, $preg, PREG_OFFSET_CAPTURE))
 		    {
 		        if( $function == false ||
@@ -693,7 +698,8 @@ class STDbWhere
 		    {
     		    while($step < $size)
     		    {
-    		        if($preg[$step][1] >= 0)
+    		        if( $preg[$step][1] >= 0 &&
+    		            trim($preg[$step][0]) !== ""  )
     		        {
     		            $res= array();
             		    $field= $oTable->validColumnContent($preg[$step][0], $res, /*alias*/true);
