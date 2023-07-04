@@ -702,7 +702,7 @@ class STDbSelector extends STDbTable implements STContainerTempl
 		}
 		function getRowResult($sqlType= null) // need sqlType only to be compatible with STDbTable
 		{
-			if($this->defaultTyp==NUM_OSTfetchArray)
+			if($this->defaultTyp==NUM_STfetchArray)
 			{
 				$count= 0;
 				$null= true;
@@ -733,7 +733,7 @@ class STDbSelector extends STDbTable implements STContainerTempl
 		}
 		function reset()
 		{
-			if($this->defaultTyp==NUM_OSTfetchArray)
+			if($this->defaultTyp==NUM_STfetchArray)
 				$this->fetchArrayCount= 0;
 			else
 				reset($this->SqlResult);
@@ -747,15 +747,15 @@ class STDbSelector extends STDbTable implements STContainerTempl
 			if($sqlType===null)
 				$sqlType= $this->defaultTyp;
 			$sqlType2= $sqlType;
-			if($sqlType=="NUM_STfetchArray")
+			if($sqlType==NUM_STfetchArray)
 			{
 				$sqlType2= MYSQL_NUM;
 				$bNormal= false;
-			}elseif($sqlType=="ASSOC_STfetchArray")
+			}elseif($sqlType==ASSOC_STfetchArray)
 			{
 				$sqlType2= MYSQL_ASSOC;
 				$bNormal= false;
-			}elseif($sqlType=="BOTH_STfetchArray")
+			}elseif($sqlType==BOTH_STfetchArray)
 			{
 				$sqlType2= MYSQL_BOTH;
 				$bNormal= false;
@@ -869,16 +869,16 @@ class STDbSelector extends STDbTable implements STContainerTempl
 				echo " bevor im Hash-Table gesucht werden kann!";
 				exit();
 			}
-			if(	$this->defaultTyp!=NUM_OSTfetchArray
+			if(	$this->defaultTyp!=NUM_STfetchArray
 				and
-				$this->defaultTyp!=ASSOC_OSTfetchArray
+				$this->defaultTyp!=ASSOC_STfetchArray
 				and
-				$this->defaultTyp!=BOTH_OSTfetchArray)
+				$this->defaultTyp!=BOTH_STfetchArray)
 			{
 				echo "wenn im <b>OSTDbSelector</b> eine Suche mittels Hash vorgenommen wird<br>";
 				echo "muss der <b>MYSQL-Typ</b> im Konstruktor mit ";
-				echo "<b>NUM_OSTfetchArray, ASSOC_OSTfetchArray</b> oder ";
-				echo "<b>BOTH_OSTfetchArray</b> vordeffiniert werden";
+				echo "<b>NUM_STfetchArray, ASSOC_STfetchArray</b> oder ";
+				echo "<b>BOTH_STfetchArray</b> vordeffiniert werden";
 				exit();
 			}
 			$flipCol= array_flip($this->columns);

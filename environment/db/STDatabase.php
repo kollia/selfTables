@@ -888,19 +888,19 @@ abstract class STDatabase extends STObjectContainer
 		if(!$res)
 			return NULL;
 		$orderTyp= $typ;
-		if($typ==NUM_OSTfetchArray)
+		if($typ==NUM_STfetchArray)
 			$typ= MYSQL_NUM;
-		elseif($typ==ASSOC_OSTfetchArray)
+		elseif($typ==ASSOC_STfetchArray)
 			$typ= MYSQL_ASSOC;
-		elseif($typ==BOTH_OSTfetchArray)
+		elseif($typ==BOTH_STfetchArray)
 			$typ= MYSQL_BOTH;
 		while($row = $this->fetchdb_row($typ, $onError))
  		{
-			if(	$orderTyp==NUM_OSTfetchArray
+			if(	$orderTyp==NUM_STfetchArray
 				or
-				$orderTyp==ASSOC_OSTfetchArray
+				$orderTyp==ASSOC_STfetchArray
 				or
-				$orderTyp==BOTH_OSTfetchArray	)
+				$orderTyp==BOTH_STfetchArray	)
 			{// Array wird zum suchen umsortiert
 				foreach($row as $key => $value)
 					$Array[$key][$count]= $value;

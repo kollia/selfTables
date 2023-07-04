@@ -136,9 +136,9 @@
 	define("STSQL_ASSOC", MYSQL_ASSOC);
 	define("STSQL_BOTH", MYSQL_BOTH);
 	
-	define("NUM_OSTfetchArray", -1);// erzeugt in der Datenbank ein Array zur Suche
-	define("ASSOC_OSTfetchArray", -2);// erzeugt in der Datenbank ein Array zur Suche
-	define("BOTH_OSTfetchArray", -3);// erzeugt in der Datenbank ein Array zur Suche
+	define("NUM_STfetchArray", -1);// erzeugt in der Datenbank ein Array zur Suche
+	define("ASSOC_STfetchArray", -2);// erzeugt in der Datenbank ein Array zur Suche
+	define("BOTH_STfetchArray", -3);// erzeugt in der Datenbank ein Array zur Suche
 	
 	
 	define("STCHOOSE", "choose");
