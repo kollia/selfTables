@@ -1667,14 +1667,15 @@ class STBaseTable
 		/**
 		 * check whether given name is a valid column.<br />
 		 * The column can also be a quoted string,
-		 * or contain a keyword from database
+		 * or contain a keyword from SQL
 		 *  
 		 * @param string|int|float $content string to check
 		 * @param array|boolean|null $abCorrect can be an empty array where the correct column inside by return, or the next boolean parameter
 		 * @param boolean $alias whether column can also be an alias name (default:false) 
+		 * @param array $aKeyword do not need this paramerer, only for overloaded method
 		 * @return boolean true if the column parameter is valid
 		 */		
-		public function validColumnContent($content, &$abCorrect= null, bool $bAlias= false) : bool
+		public function validColumnContent($content, &$abCorrect= null, bool $bAlias= false, $aKeyword= null) : bool
 		{
 		    STCheck::param(trim($content), 0, "string");
 		    STCheck::param($abCorrect, 1, "array", "bool", "null");
@@ -1717,6 +1718,11 @@ class STBaseTable
 		        $abCorrect['content']= array();
 		        $abCorrect['type']= "string";
 		        $abCorrect['len']= strlen($content) - 2;
+		    }
+		    if( substr($content, 0, 1) == "`" &&
+		        substr($content, -1) == "`"       )
+		    {
+		        $content= substr($content, 1, -1);
 		    }
 		    $field= $this->findColumnAlias($content, $bAlias, 2);
 		    if(is_array($abCorrect))

@@ -578,12 +578,12 @@ class STDbSelector extends STDbTable implements STContainerTempl
 		/**
 		 * check whether given name is a valid column.<br />
 		 * The column can also be a quoted string,
-		 * or contain a keyword from database
+		 * or contain a keyword from SQL
 		 *
 		 * {@inheritDoc}
 		 * @see STBaseTable::validColumnContent()
 		 */
-		public function validColumnContent($content, &$abCorrect= null, bool $bAlias= false) : bool
+		public function validColumnContent($content, &$abCorrect= null, bool $bAlias= false, $aKeyword= null) : bool
 		{
 		    $field= null;
 		    if( $this->bIsNnTable &&
@@ -594,7 +594,7 @@ class STDbSelector extends STDbTable implements STContainerTempl
     		    $field= array();
     		    $field['content'][]= $content;
 		    }
-		    $bRv= STDbTable::validColumnContent($content, $abCorrect, $bAlias);
+		    $bRv= STDbTable::validColumnContent($content, $abCorrect, $bAlias, $aKeyword);
 		    if( typeof($abCorrect, "array") &&
 		        isset($field)                 )
 		    {

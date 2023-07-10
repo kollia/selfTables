@@ -2098,23 +2098,28 @@ class STDbTable extends STBaseTable
 	/**
 	 * check whether given name is a valid column.<br />
 	 * The column can also be a quoted string,
-	 * or contain a keyword from database
+	 * or contain a keyword from SQL
 	 *
-	 * {@inheritDoc}
-	 * @see STBaseTable::validColumnContent()
+	 * @param string|int|float $content string to check
+	 * @param array|boolean|null $abCorrect can be an empty array where the correct column inside by return, or the next boolean parameter
+	 * @param boolean $alias whether column can also be an alias name (default:false) 
+	 * @param array|boolean|null $aKeyword if defined, do not make own check as keyword from content. (bool can only be false, no keyword exist)
+	 * @return boolean true if the column parameter is valid
 	 */
-	public function validColumnContent($content, &$abCorrect= null, bool $bAlias= false) : bool
+	public function validColumnContent($content, &$abCorrect= null, bool $bAlias= false, $aKeyword= null) : bool
 	{
 	    STCheck::param(trim($content), 0, "string");
 	    STCheck::param($abCorrect, 1, "array", "bool", "null");
+	    STCheck::param($aKeyword, 3, "array", "bool", "null");
 	    
 	    $db= $this->getDatabase();
-        $field= $db->keyword($content);
-        if($field != false)
+	    if(!isset($aKeyword))
+            $aKeyword= $db->keyword($content);
+        if($aKeyword != false)
         {
             $valid= true;
             $allColumn= $db->getAllColumnKeyword();
-            foreach($field['content'] as $column)
+            foreach($aKeyword['content'] as $column)
             {
                 if( $column != $allColumn &&
                     !STBaseTable::validColumnContent($column, $abCorrect, $bAlias) )
@@ -2126,7 +2131,11 @@ class STDbTable extends STBaseTable
             if($valid)
             {
                 if(typeof($abCorrect, "array"))
-                    $abCorrect= $field;
+                {
+                    $abCorrect['keyword']= "@{$aKeyword['usage']}";
+                    $abCorrect['content']= $aKeyword;
+                    $abCorrect['type']= "keyword";
+                }
                 return true;
             }
         }

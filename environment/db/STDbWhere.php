@@ -585,27 +585,30 @@ class STDbWhere
 		        {
     		        if($field['keyword'] == "@value")
     		        {
-    		            if($field['type'] == "string")
-    		                $result.= "'{$field['content']}'";
+    		            if($field['type'] == "keyword")
+    		                $result.= " ".$field['content']['keyword'];
+    		            elseif($field['type'] == "string")
+    		                $result.= " ".$this->oDb->getDelimitedString($field['content'], "string");
         		        else
-        		            $result.= $field['content'];
+        		            $result.= " ".$field['content'];
         		        
     		        }elseif($field['keyword'] == "@function")
     		        {
-    		            $delimiter= $this->oDb->getFunctionDelimiter();
-    		            $result.= " ".$field['content']['keyword'].$delimiter['open']['delimiter'];
+    		            $content= "";
     		            foreach($field['content']['content'] as $value)
     		            {
-    		                $result.= "$value,";
+    		                $content.= "$value,";
     		            }
-    		            $result= substr($result, 0, -1).$delimiter['close']['delimiter']." ";
+    		            $result.= " ".$field['content']['keyword'];
+    		            $result.= $this->oDb->getDelimitedString(substr($content, 0, -1), "function")." ";
     		            
     		        }elseif($field['keyword'] == "password")
     		        {
     		            $result.= "password({$field['content'][0]})";
     		        }else // keyword = @operator
     		        {
-    		            if(STCheck::is_error(!is_string($field['content']), "STDbWhere::createStringContent()", "wrong creation of field inside validComparison() creation"))
+    		            if(STCheck::is_error(!is_string($field['content']), 
+    		                "STDbWhere::createStringContent()", "wrong creation of field inside validComparison() creation"))
     		            {
     		                echo "<pre>";
     		                echo "<b>ERROR:</b>";
@@ -625,7 +628,13 @@ class STDbWhere
 		    $aRcomparison= array();
 		    $old_content= $content;
 		    $content= trim($content);
-		    // first search whether a function exist
+		    if(is_string($table))
+		        $oTable= $this->oDb->getTable($table);
+	        else
+	            $oTable= $table;
+		    
+		    // first search whether a function exist (can only be before or behind operators)
+		    //--------------------------------------------------------------------------------------------
 		    $function= $this->oDb->keyword($content);
 		    if($function != false)
 		    {
@@ -636,95 +645,87 @@ class STDbWhere
 		            $content= substr($content, 0, $function['beginpos']);
 		        
 		    }
-		    //echo $content."<br />";
-		    //$content= preg_quote($content); // preg_quote makes before = an backslash
-		    //echo $content."<br />";
 		    
-		    if(is_string($table))
-		        $oTable= $this->oDb->getTable($table);
-		    else
-		        $oTable= $table;
-		    //-----------------------------------------------------------
-		    //$pattern_first=  "([^><=! \\t]*)";
-		    $pattern_first=  "(['\"].*['\"]|[^><=!]*)"; // first is always the column
-		    //-----------------------------------------------------------
+		    // second search extra for operators, because otherwise find not always the right one
+		    //--------------------------------------------------------------------------------------------
 		    $operators= $this->oDb->getOperatorArray();
 		    $pattern_op= "(";
 		    foreach($operators as $op)
 		    {
 		        if(isset($op))
 		        {
-    		        $str= preg_replace("/[ \\t]+/", "[ \\t]+", $op);
-    		        $pattern_op.= "$str|";
+		            $str= preg_replace("/[ \\t]+/", "[ \\t]+", $op);
+		            $pattern_op.= "$str|";
 		        }
 		    }
-		    $functions= $this->oDb->getFunctionKeywords();
-		    foreach($functions as $keyword=>$return)
-		        $pattern_op.= "(\b$keyword\b)|";
 		    $pattern_op= substr($pattern_op, 0, -1).")";
-		    //-----------------------------------------------------------
-		    $pattern_second= "(.*)"; // second content can be an column or an content
-		    //-----------------------------------------------------------
+		    
 		    $preg= array();
-		    //showLine();
-		    //echo "pattern:/^$pattern_first$pattern_op$pattern_second$/i<br>";
-		    //echo "content:'$content'<br>";
-		    if(!preg_match("/^$pattern_first$pattern_op$pattern_second$/i", $content, $preg, PREG_OFFSET_CAPTURE))
+		    $str_before= "";
+		    $str_after= "";
+		    if(!preg_match("/$pattern_op/i", $content, $preg, PREG_OFFSET_CAPTURE))
 		    {
+		        $operator= "";
 		        if( $function == false ||
 		            $function['needOp']   )
 		        {
-    		        STCheck::echoDebug("db.statements.where", "<b>WARNING</b> can not localize \"".$old_content."\"");
-    		        STCheck::echoDebug("db.statements.where", "       from pattern:\"/^$pattern_first$pattern_op$pattern_second$/i\"");
+		            STCheck::echoDebug("db.statements.where", "<b>WARNING</b> can not localize \"".$old_content."\"");
+		            STCheck::echoDebug("db.statements.where", "       from pattern:\"/$pattern_op/i\"");
+		            
+		        }else
+		        {
+		            if($bFirstFunction)
+		                $str_after= $content;
+		            else
+		                $str_before= $content;
 		        }
 		    }else
 		    {
-		        if(STCheck::isDebug("db.statements.where"))
-		        {
-		            $new_preg= array();
-		            foreach($preg as $field)
-		            {
-		                if($field[1] >= 0)
-		                    $new_preg[]= $field;
-		            }
-		            $space= STCheck::echoDebug("db.statements.where", "localize statement string '$content' as:");
-		            st_print_r($new_preg, 2, $space);
-		        }
+		        if($preg[1][1] > 0)
+		            $str_before= substr($content, 0, $preg[1][1]);
+		        $operator= $preg[1][0];
+		        $op_len= strlen($operator);
+		        $after_pos= $preg[1][1] + $op_len;
+		        if($after_pos < strlen($content))
+		            $str_after= substr($content, $after_pos);
+		        
+	            if(STCheck::isDebug("db.statements.where"))
+	            {
+	                $space= STCheck::echoDebug("db.statements.where", "localize statement string '$content' from pattern:\"/$pattern_op$/i\":");
+	                st_print_r($preg, 2, $space);
+	                STCheck::echoDebug("db.statements.where", "result is field/value('$str_before') operator('$operator') field/value('$str_after')");
+	                echo "from '$content' read at position $after_pos<br>";
+	            }
 		    }
 		    
-		    $step= 1;
-		    $size= count($preg);
-		    if($size)
+		    $res= array();
+		    if(trim($str_before) != "")
 		    {
-    		    while($step < $size)
-    		    {
-    		        if( $preg[$step][1] >= 0 &&
-    		            trim($preg[$step][0]) !== ""  )
-    		        {
-    		            $res= array();
-            		    $field= $oTable->validColumnContent($preg[$step][0], $res, /*alias*/true);
-            		    if($field)
-            		        $aRcomparison[]= $res;
-    		        }
-    		        $step++;
-    		    }
-		    }else
+    		    $field= $oTable->validColumnContent($str_before, $res, /*alias*/true);
+    		    if($field)
+    		        $aRcomparison[]= $res;
+		    }
+		    if(trim($operator) != "")
 		    {
-		        $res= array();
-		        $field= $oTable->validColumnContent($content, $res, /*alias*/true);
+		        $field= $oTable->validColumnContent($operator, $res, /*alias*/true, /*keyword*/false);
+		        if($field)
+		            $aRcomparison[]= $res;
+		    }
+		    if(trim($str_after) != "")
+		    {
+		        $field= $oTable->validColumnContent($str_after, $res, /*alias*/true);
 		        if($field)
 		            $aRcomparison[]= $res;
 		    }
 		    if($function != false)
 		    {
-		        $newField= array( "keyword" => "@function",
-		                          "content" => $function,
-		                          "type" => $function['type'],
-		                          "len" => $function['len']       );
+		        $newField= array( "keyword" => "@{$function['usage']}",
+		            "content" => $function,
+		            "type" => "keyword"                                  );
 		        if($bFirstFunction)
 		            array_unshift($aRcomparison, $newField);
-		        else
-		            $aRcomparison[]= $newField;
+		            else
+		                $aRcomparison[]= $newField;
 		    }
 		    return $aRcomparison;
 		}

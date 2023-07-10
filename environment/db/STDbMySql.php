@@ -535,14 +535,42 @@ class STDbMySql extends STDatabase
 	{
 	    $aRv= array();
 	    // whether delimiter sign character need to be escaped
-	    $esc= array(   'str' => false,
-	                   'regex' => true     );
+	    $esc= array(   'regex'  => true,
+	                   'reg-br' => false     );// inside brackets  [...]
 	    $open= array(  'delimiter' => "(",
 	                   'ESC' => $esc       );
 	    $close= array( 'delimiter' => ")",
 	                   'ESC' => $esc       );
-	    $aRv['open']= $open;
-	    $aRv['close']= $close;
+	    $aRv[]= array('open'=> $open, 'close'=> $close);
+	    return $aRv;
+	}
+	public function getFieldDelimiter() : array
+	{
+	    $aRv= array();
+	    // whether delimiter sign character need to be escaped
+	    $esc= array(   'regex'  => true,
+	        'reg-br' => false     );// inside brackets  [...]
+	    $open= array(  'delimiter' => "`",
+	        'ESC' => $esc       );
+	    $close= array( 'delimiter' => "`",
+	        'ESC' => $esc       );
+	    $aRv[]= array('open'=> $open, 'close'=> $close);
+	    return $aRv;
+	}
+	public function getStringDelimiter() : array
+	{
+	    $aRv= array();
+	    // whether delimiter sign character need to be escaped
+	    $esc= array(   'regex'  => true,
+	        'reg-br' => false     );// inside brackets  [...]
+	    $open= array(  'delimiter' => "'",
+	        'ESC' => $esc       );
+	    $close= array( 'delimiter' => "'",
+	        'ESC' => $esc       );
+	    $aRv[]= array('open'=> $open, 'close'=> $close);
+	    $open['delimiter']= '"';
+	    $close['delimiter']= '"';
+	    $aRv[]= array('open'=> $open, 'close'=> $close);
 	    return $aRv;
 	}
 	public function getAllColumnKeyword() : string
@@ -624,8 +652,8 @@ class STDbMySql extends STDatabase
 	           "not regexp" => "not regexp",
 	           "like"     => "like",
 	           "not like" => "not like",
-    	       "is"      => "is",
-	           "is not"  => "is not",
+	           "is not"  => "is not", // <- have to be before single word 'is'
+	           "is"      => "is",
 	        // "not in"   => "not in", <- in is an keyword
 	           "not"     => "not", // take not in last position
 	           "="       => "=",

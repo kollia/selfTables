@@ -1981,7 +1981,55 @@ abstract class STDatabase extends STObjectContainer
 	abstract protected function getValueKeywords() : array;
 	abstract public function getFunctionKeywords() : array;
 	abstract public function getFunctionDelimiter() : array;
+	abstract public function getFieldDelimiter() : array;
+	abstract public function getStringDelimiter() : array;
 	abstract protected function getAllColumnKeyword() : string;
+	public function getDelimitedString(string $content, string $for, bool $bRegex= false)
+	{
+	    $sRv= "";
+	    $delimiter= array();
+	    switch ($for)
+	    {
+	        case "string":
+	            $delimiter= $this->getStringDelimiter();
+	            break;
+	        case "field":
+	            $delimiter= $this->getFieldDelimiter();
+	            break;
+	        case "function":
+	            $delimiter= $this->getFunctionDelimiter();
+	            break;
+	        default:
+	            STCheck::alert(1, "STDatabase::getDelimitedString()", 
+	               "second parameter \$for have no correct enum (only string/field/function are allowed)");
+	            break;
+	    }
+	    if($bRegex)
+	    {
+	        $sRv= "[";
+	        foreach($delimiter as $one)
+	        {
+	            if($one['open']['ESC']['reg-br'])
+	                $sRv.= "\\";
+	            $sRv.= $one['open']['delimiter'];
+	        }
+	        $sRv.= "]{$content}[";
+	        foreach($delimiter as $one)
+	        {
+	            if($one['close']['ESC']['reg-br'])
+	                $sRv.= "\\";
+                $sRv.= $one['close']['delimiter'];
+	        }
+	        $sRv.= "]";
+	        
+	    }else
+	    {
+	        $sRv=  $delimiter[0]['open']['delimiter'];
+	        $sRv.= $content;
+	        $sRv.= $delimiter[0]['close']['delimiter'];
+	    }
+	    return $sRv;
+	}
 	/**
 	 * inform whether content of parameter is an keyword
 	 *
@@ -2002,20 +2050,23 @@ abstract class STDatabase extends STObjectContainer
 	        $keyword= $lwStr;
 	        $inherit= array();
 	        $begin= 0;
-	        $end= strlent($lwStr)-1;
+	        $end= strlen($lwStr)-1;
+	        $usage= "value";
 	    }else
 	    {
 	        $preg= array();
+	        $usage= "function";
 	        $delimiter= $this->getFunctionDelimiter();
 	        $open= "";
-	        if($delimiter['open']['ESC']['regex'])
+	        if($delimiter[0]['open']['ESC']['regex'])
 	            $open.= "\\";
-            $open.= $delimiter['open']['delimiter'];
+            $open.= $delimiter[0]['open']['delimiter'];
             $close= "";
-            if($delimiter['close']['ESC']['regex'])
+            if($delimiter[0]['close']['ESC']['regex'])
                 $close.= "\\";
-            $close.= $delimiter['close']['delimiter'];
+            $close.= $delimiter[0]['close']['delimiter'];
             $pattern= "/([^\(\) ]+)[ ]*$open(.*)($close)/";
+            //$pattern= "/b"
             if(!preg_match($pattern, trim($column), $preg, PREG_OFFSET_CAPTURE))
                 return false;
             $begin= $preg[0][1];
@@ -2060,6 +2111,7 @@ abstract class STDatabase extends STObjectContainer
             }
 	    }
 	    return array(   "keyword" => $keyword,
+	                    "usage" => $usage,
             	        "content" => $inherit,
             	        "type" => $allowed[$keyword]['type'],
             	        "len" => $allowed[$keyword]['len'],
