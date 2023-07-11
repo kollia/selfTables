@@ -295,7 +295,8 @@
 		$_stusergroupmanagement=			$_stenvironmenttools_path."/session/management/STUserGroupManagement.php";
 		$_stgroupgroupmanagement=			$_stenvironmenttools_path."/session/management/STGroupGroupManagement.php";
 		
-		$_stdate=                           $_stcmstools_path."/calendar/STTestDate.php";
+		$_sttdate=                          $_stcmstools_path."/calendar/STTestDate.php";
+		$_stdbtdate=						$_stcmstools_path."/calendar/STDbTestDate.php";
 		$_stseriescontainer_install=		$_stcmstools_path."/calendar/stseriescontainer_install.php";
 		$_stcalendarserie=					$_stcmstools_path."/calendar/STCalendarSerieForm.php";
 		$_stgallerycontainer_install=		$_stcmstools_path."/gallery/STGalleryContainer_install.php";
