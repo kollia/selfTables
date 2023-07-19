@@ -22,6 +22,12 @@ $g__STCheck_exit_entry= array();
  */
 $global_activeOutputBuffer= false;
 $global_outputBufferWasErased= false;
+/**
+ * whether should show tat session set to noRegister
+ * @var boolean $global_SESSION_noRegister_SHOWEN
+ */
+$global_SESSION_noRegister_SHOWEN= false;
+$global_SESSION_noRegister_onLine= "";
 
 /**
  * definition of explicit creation of statements
@@ -417,6 +423,7 @@ class STCheck
 					$global_logfile_dataname,
 					$global_activeOutputBuffer,
 					$global_outputBufferWasErased,
+					$global_SESSION_noRegister_SHOWEN,
 					$__stdbtables_statement_count,
 					$__stdbtables_statement_count_from,
 					$__stdbtables_statement_count_to;
@@ -473,6 +480,12 @@ class STCheck
 				!$dbg_str	)
 			{
 				echo "\n</pre>\n";
+			}
+			if( $dbg_str == "noRegister_warning" &&
+			    (    !isset($global_SESSION_noRegister_SHOWEN) ||
+			         !$global_SESSION_noRegister_SHOWEN              )   )
+			{
+			    $global_SESSION_noRegister_SHOWEN= true;
 			}
 			if($dbg_str)
 			{
@@ -641,7 +654,7 @@ class STCheck
 		    echo STCheck::getSpaces($count);
 		}
 		/**
-		 * Debug message whitch should be showen on screen.<br />
+		 * Debug message which should be showen on screen.<br />
 		 * Only when debugging be set for defined <code>$dbg_str</code>
 		 * 
 		 * @param string $dbg_str for which debug output the string should be displayed

@@ -131,9 +131,20 @@ class STSession
 	}
 	/**
 	 * do not make register process for debugging
+	 * 
+	 * @param boolean $warning as default method write warning on screen
 	 */
-	public function noRegister()
+	public function noRegister(bool $warning= true)
 	{
+	    if($warning)
+	    {
+	        global $global_SESSION_noRegister_onLine;
+	        
+	        STCheck::debug("noRegister_warning");
+	        $trace= stTools::getBackTrace();
+	        $global_SESSION_noRegister_onLine= $trace[1];
+	        echo "$global_SESSION_noRegister_onLine<br />";
+	    }
 		$this->noRegister= true;
 	}
 	/**

@@ -130,7 +130,9 @@ class Tag extends STCheck
 		{
 			global 	$tag_spaces,
 					$HTML_CLASS_DEBUG_CONTENT,
-					$HTML_CLASS_DEBUG_CONTENT_SHOWN;
+					$HTML_CLASS_DEBUG_CONTENT_SHOWN,
+					$global_SESSION_noRegister_SHOWEN,
+					$global_SESSION_noRegister_onLine;
 
             $displayString= "";
             
@@ -148,7 +150,13 @@ class Tag extends STCheck
       				$displayString.= "</pre></td></tr></table>";
     				$displayString.= "<table width='100%' bgcolor='white'><tr><td>";
     				$displayString.= "<center>this side is set for <b>DEBUG-session</b> ";
-      				$displayString.= "(STCheck::debug(<font color='blue'>true</font>))</center>";
+    				$displayString.= "(STCheck::debug(<font color='blue'>true</font>))";
+    				if($global_SESSION_noRegister_SHOWEN)
+    				{
+    				    $displayString.= "<br /><b>WARNING:</b> SESSION set to noRegister <b>:WARNING</b><br />";
+    				    $displayString.= $global_SESSION_noRegister_onLine;
+    				}
+      				$displayString.= "</center>";
 					$displayString.= "</td></tr></table>";
 					$HTML_CLASS_DEBUG_CONTENT_SHOWN= true;
 				}
