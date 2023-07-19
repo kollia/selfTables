@@ -241,11 +241,7 @@
 		$_stbasetable=				$_stenvironmenttools_path."/base/STBaseTable.php";
 		$_stitembox=				$_stenvironmenttools_path."/base/STItemBox.php";
 		$_stlistbox=				$_stenvironmenttools_path."/base/STListBox.php";
-		$_stsearchbox=				$_stenvironmenttools_path."/base/STSearchBox.php";
-		$_stcategorygroup=			$_stenvironmenttools_path."/base/STCategoryGroup.php";
-		$_stbasesearch=				$_stenvironmenttools_path."/base/STBaseSearch.php";
 		$_stchoosebox=				$_stenvironmenttools_path."/base/STChooseBox.php";
-		$stselectbox=				$_stenvironmenttools_path."/base/STSelectBox.php";
 		$_stdownload=				$_stenvironmenttools_path."/base/STDownload.php";
 		$_stbasecontainer=			$_stenvironmenttools_path."/base/STBaseContainer.php";
 		$_stframecontainer=			$_stenvironmenttools_path."/base/STFrameContainer.php";
