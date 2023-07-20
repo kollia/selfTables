@@ -5,18 +5,6 @@ require_once($_stdbtabledescriptions);
 require_once($_stdbinserter);
 
   /**
-   *  gibt ein verkn�pfungs-Tag auf eine Cascade Sylesheet aus
-   *
-	 *  @param: $FileName	Cascade Sylesheet-Datei mit Pfadangabe
-	 *  @param: $title	Titel des Stylesheets, muss nicht angegeben werden
-   *
-	 *  @Autor: Alexander Kolli
-   */
-	 	function getCssLink($FileName, $title= null)
-		{
-			return STQueryString::getCssLink($FileName, $title);
-		}
-  /**
    *  gibt ein JavaScript-Statement im HTML, innerhalb des Script-Tags, aus
    *
 	 *  @param: $src	der Dateiname einer javascript-Datei, <br>

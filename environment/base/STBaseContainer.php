@@ -52,7 +52,11 @@ abstract class STBaseContainer extends BodyTag implements STContainerTempl
      * @var STSiteCreator
      */
     protected $oExternSideCreator= null;
-    
+    /**
+     * parent container produced before
+     * @var STBaseContainer
+     */
+    protected $parentContainer= null;
 	var $bFirstContainer= false; // ob der Container der erste fuer STDbSiteCreator ist
 	var $nLevel= null; // auf welcher Ebene sich der Contiainer befindet
 	var $name;  // Name des Containers mit dem er als Objekt gehandelt wird
@@ -97,17 +101,34 @@ abstract class STBaseContainer extends BodyTag implements STContainerTempl
 	
 	var $headTag= "";
 	var $chooseTitle= "";
-	var $sDefaultCssLink= null;
+	/**
+	 * whether container use also default css links
+	 * defined from global SiteCreator
+	 * @var boolean
+	 */
+	protected $bUseDefaultCssLinks= true;
+	/**
+	 * all defined css links inside this container
+	 * @var array
+	 */
+	protected $aCssLinks= array();
 
-	function __construct($name, $bodyClass= "body_content")
+	function __construct($name, &$container, $bodyClass= "body_content")
 	{
 	    global $global_first_objectContainerName,
 	           $global_array_all_exist_stobjectcontainers;
-		
-		Tag::paramCheck($name, 1, "string");
-		Tag::echoDebug("container", "create new container-object ".get_class($this)."(<b>$name</b>)");
+	    
+	    if(STCheck::isDebug())
+	    {
+            STCheck::param($name, 0, "string");
+            STCheck::param($container, 1, "STObjectContainer");
+            STCheck::param($bodyClass, 2, "string");
+    	    STCheck::echoDebug("container", "create new container-object ".get_class($this)."(<b>$name</b>)");
+	    }
 
 		$this->name= $name;
+		if($container->name != $this->name)
+		    $this->parentContainer= &$container;
 		$this->oMsg= new STMessageHandling(get_class($this)); // <-- not implemented jet by STObjectContainer
 		Tag::alert(isset($global_array_all_exist_stobjectcontainers[$name]),
 					"STBaseContainer::STBaseContainer(\"$name\"",
@@ -119,7 +140,7 @@ abstract class STBaseContainer extends BodyTag implements STContainerTempl
 		    $global_first_objectContainerName= $name;
 		}
 		BodyTag::__construct($bodyClass);
-	}
+	}	
 	public function clearFirstObjectContainer()
 	{
 	    global $global_first_objectContainerName;
@@ -208,23 +229,50 @@ abstract class STBaseContainer extends BodyTag implements STContainerTempl
   		}
   		$title= new TitleTag($titleString);
   		$head->add($title);
-			$head->add($this->oExternSideCreator->getCssLink());
+  		$cssLinks= $this->oExternSideCreator->getCssLinks();
+  		foreach($cssLinks as $css)
+			$head->add($css);
 		$this->headTag= &$head;
 		return $head;
 	}
-	function setCssLink($href, $media= "all")
+	public function needDefaultCssLinks()
 	{
-		$this->sDefaultCssLink= array("rel"   =>  "stylesheet",
-		                              "type"  =>  "text/css",
-		                              "href"  =>  $href,
-		                              "media" =>  $media	);
+	    if(!$this->bUseDefaultCssLinks)
+	        return false;
+	    if(isset($this->parentContainer))
+	        return $this->parentContainer->needDefaultCssLinks();
+	    return true;
 	}
-	function getCssLink()
+	function setCssLink($href, $media= "all", $title= "protokoll Stylesheet")
 	{
-		$link= null;
-		if($this->sDefaultCssLink)
-			$link= getCssLink($this->sDefaultCssLink["href"], $this->sDefaultCssLink["media"]);
-		return $link;
+	    $this->bUseDefaultCssLinks= false;
+	    if($media == "all")
+	        $this->aCssLinks= array();
+	    else
+	        $this->aCssLinks[$media]= array();
+	        $this->aCssLinks[$media][]= array( "href"  =>	$href,
+	                                           "title" =>	$title	);
+	}
+	function addCssLink($href, $media= "all", $title= "protokoll Stylesheet")
+	{
+	    $this->aCssLinks[$media][]= array( "href"  =>	$href,
+	                                       "title" =>	$title	);
+	}
+	function getCssLinks()
+	{
+		$aLinks= array();
+		foreach($this->aCssLinks as $media => $mediaLinks)
+		{
+		    foreach($mediaLinks as $aLink)
+			    $aLinks[]= STQueryString::getCssLink($aLink["href"], $media, $aLink['title']);
+		}
+		if(isset($this->parentContainer))
+		{
+		    $aContainerLinks= $this->parentContainer->getCssLinks();
+		    foreach($aContainerLinks as $link)
+		        $aLinks[]= $link;
+		}
+		return $aLinks;
 	}
 	/**
 	 * get current [stget] query string

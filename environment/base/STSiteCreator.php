@@ -34,7 +34,8 @@ class STSiteCreator extends HtmlTag
 		var	$bContainerManagement= true; // ob die Container in das older verschoben werden soll
 		var	$aContainerAdress= array(); // alle link-Adressen der ContainerButtons
 		var $logoutButton= null;
-		var $sDefaultCssLink;
+		var $aDefaultCssLink= array();
+		protected $bUseOnlyDefaultCssLinks= false;
 
 		function __construct($container= null)
 		{
@@ -544,23 +545,43 @@ class STSiteCreator extends HtmlTag
 		{
 			return $this->tableContainer->aContainerAdress[$containerName];
 		}
-		function setDefaultCssLink($link, $media= "screen", $title= "protokoll default Stylesheet")
+		public function setDefaultCssLink($href, $media= "all", $title= "protokoll default Stylesheet")
 		{
-			$this->sDefaultCssLink= array(	"link"=>	$link,
-											"media"=>	$media,
-											"title"=>	$title	);
+		    $this->bUseOnlyDefaultCssLinks= true;
+		    $this->setCssLink($href, $media, $title);
 		}
-		function getCssLink()
+		public function setCssLink($href, $media= "all", $title= "protokoll default Stylesheet")
 		{
-			global	$default_css_link;
-
-			$link= $this->tableContainer->getCssLink();
-			if(!$link)
+		    if($media == "all")
+		        $this->aDefaultCssLink= array();
+		    else
+		        $this->aDefaultCssLink[$media]= array();
+			$this->aDefaultCssLink[$media][]= array( "href"=>	$href,
+											         "title"=>	$title	);
+		}
+		public function addCssLink($href, $media= "all", $title= "protokoll default Stylesheet")
+		{
+		    $this->aDefaultCssLink[$media][]= array( "href"=>	$href,
+		                                             "title"=>	$title	);
+		}
+		function getCssLinks()
+		{
+		    $aLinks= array();			
+			if($this->tableContainer->needDefaultCssLinks())
 			{
-				if($this->sDefaultCssLink)
-					$link= getCssLink($this->sDefaultCssLink["link"], $this->sDefaultCssLink["media"], $this->sDefaultCssLink["title"]);
+				foreach($this->aDefaultCssLink as $media => $mediaLinks)
+				{
+				    foreach($mediaLinks as $link)
+				        $aLinks[]= STQueryString::getCssLink($link["href"], $media, $link["title"]);
+				}
 			}
-			return $link;
+			if(!$this->bUseOnlyDefaultCssLinks)
+			{
+    			$aContainerLinks= $this->tableContainer->getCssLinks();
+    			foreach($aContainerLinks as $link)
+    			    $aLinks[]= $link;
+			}
+			return $aLinks;
 		}
 		// deprecatet wird in STObjectContainer verschoben
 		function chooseInTable($bChoose)

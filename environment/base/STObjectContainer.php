@@ -15,7 +15,6 @@ abstract class STObjectContainer extends STBaseContainer
 	var $headTag;
 	var $chooseTitle;
 	var $sDefaultCssLink;
-	var	$parentContainer= null; // parent container produced before
 	var	$oGetTables= array(); // all tables which are geted but not needed
 	var $tables= array(); // alle STDbTable Objekte welche f�r die Auflistung gebraucht werden
 	var	$sFirstTableName; //erste Tabelle
@@ -49,14 +48,17 @@ abstract class STObjectContainer extends STBaseContainer
 	 */
 	protected $oMainTable;
 
-	function __construct($name, &$container)
+	function __construct($name, &$container, $bodyClass= "body_content")
 	{
-		Tag::paramCheck($name, 1, "string");
-		Tag::paramCheck($container, 2, "STObjectContainer");
+	    if(STCheck::isDebug())
+	    {
+    		STCheck::param($name, 0, "string");
+    		STCheck::param($container, 1, "STObjectContainer");
+    		STCheck::param($bodyClass, 2, "string");
+	    }
 
-		$this->parentContainer= &$container;
 		$this->db= &$container->getDatabase();
-		STBaseContainer::__construct($name);
+		STBaseContainer::__construct($name, $container, $bodyClass);
 	}
 	protected function createMessages(string $language)
 	{
