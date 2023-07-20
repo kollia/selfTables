@@ -1869,43 +1869,43 @@ abstract class STDatabase extends STObjectContainer
 	abstract public function getOperatorArray();
 	function getRegexpOperator()
 	{
-	    return getOperatorArray()["regexp"];
+	    return $this->getOperatorArray()["regexp"];
 	}
 	function getLikeOperator()
 	{
-	    return getOperatorArray()["like"];
+	    return $this->getOperatorArray()["like"];
 	}
 	function getIsOperator()
 	{
-	    return getOperatorArray()["="];
+	    return $this->getOperatorArray()["="];
 	}
 	function getGreaterOperator()
 	{
-	    return getOperatorArray()[">"];
+	    return $this->getOperatorArray()[">"];
 	}
 	function getGreaterEqualOperator()
 	{
-	    return getOperatorArray()[">="];
+	    return $this->getOperatorArray()[">="];
 	}
 	function getLowerOperator()
 	{
-	    return getOperatorArray()["<"];
+	    return $this->getOperatorArray()["<"];
 	}
 	function getLowerEqualOperator()
 	{
-	    return getOperatorArray()["<="];
+	    return $this->getOperatorArray()["<="];
 	}
 	function getIsNotOperator()
 	{
-	    return getOperatorArray()["!="];
+	    return $this->getOperatorArray()["!="];
 	}
 	function getIsNullOberator()
 	{
-	    return getOperatorArray()["is"];
+	    return $this->getOperatorArray()["is"];
 	}
 	function getIsNotNullOperator()
 	{
-	    return getOperatorArray()["is not"];
+	    return $this->getOperatorArray()["is not"];
 	}
 	function getDatabaseByName($dbName)
 	{
