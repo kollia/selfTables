@@ -34,7 +34,7 @@ class STUserProjectManagement extends STBaseContainer
         STCheck::paramCheck($userDb, 1, "STDatabase");
         
         $this->database= $userDb;
-        STBaseContainer::__construct($name, $bodyClass);
+        STBaseContainer::__construct($name, $userDb, $bodyClass);
     }
     public function setLoginMaskDescription(string $description)
     {

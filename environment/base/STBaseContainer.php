@@ -113,7 +113,7 @@ abstract class STBaseContainer extends BodyTag implements STContainerTempl
 	 */
 	protected $aCssLinks= array();
 
-	function __construct($name, &$container, $bodyClass= "body_content")
+	function __construct($name, &$container= null, $bodyClass= "body_content")
 	{
 	    global $global_first_objectContainerName,
 	           $global_array_all_exist_stobjectcontainers;
@@ -121,14 +121,17 @@ abstract class STBaseContainer extends BodyTag implements STContainerTempl
 	    if(STCheck::isDebug())
 	    {
             STCheck::param($name, 0, "string");
-            STCheck::param($container, 1, "STObjectContainer");
+            STCheck::param($container, 1, "STBaseContainer", "null");
             STCheck::param($bodyClass, 2, "string");
     	    STCheck::echoDebug("container", "create new container-object ".get_class($this)."(<b>$name</b>)");
 	    }
 
 		$this->name= $name;
-		if($container->name != $this->name)
+		if( isset($container) && 
+		    $container->name != $this->name )
+		{
 		    $this->parentContainer= &$container;
+		}
 		$this->oMsg= new STMessageHandling(get_class($this)); // <-- not implemented jet by STObjectContainer
 		Tag::alert(isset($global_array_all_exist_stobjectcontainers[$name]),
 					"STBaseContainer::STBaseContainer(\"$name\"",
