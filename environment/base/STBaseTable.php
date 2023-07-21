@@ -588,13 +588,79 @@ class STBaseTable
 	    if(!$bSet)
 	        $this->aPreDefinde[$action][$alias][]= $flag;
 	}
-	function accessBy($clusters, $action= STLIST, $toAccessInfoString= "", $customID= null)
+	/**
+	 * user will be forward to login page
+	 * if he has no access to cluster
+	 *
+	 * @param string $cluster access cluster name
+	 * @param string $action action can be set to:<br />
+	 *                         <table>
+	 *                             <tr>
+	 *                                 <td>
+	 *                                     STALLDEF
+	 *                                 </td><td>-</td>
+	 *                                     for all actions (default)
+	 *                                 <td>
+	 *                                 </td>
+	 *                             </tr>
+	 *                             <tr>
+	 *                                 <td>
+	 *                                     STLIST
+	 *                                 </td><td>-</td>
+	 *                                 <td>
+	 *                                     show only the content of table
+	 *                                 </td>
+	 *                             </tr>
+	 *                             <tr>
+	 *                                 <td>
+	 *                                     STINSERT
+	 *                                 </td><td>-</td>
+	 *                                 <td>
+	 *                                     insert somthing into table
+	 *                                 </td>
+	 *                             </tr>
+	 *                             <tr>
+	 *                                 <td>
+	 *                                     STUPDATE
+	 *                                 </td><td>-</td>
+	 *                                 <td>
+	 *                                     update row of table
+	 *                                 </td>
+	 *                             </tr>
+	 *                             <tr>
+	 *                                 <td>
+	 *                                     STDELETE
+	 *                                 </td><td>-</td>
+	 *                                 <td>
+	 *                                     delete row of table
+	 *                                 </td>
+	 *                             </tr>
+	 *                         </table>
+	 *                       if no action be set, only the third description string,
+	 *                       action will be also the default (STALLDEF)
+	 * @param string $sInfoString description of cluster for logging table
+	 * @param int $customID custom id for logging table if need
+	 */
+	public function accessBy($clusters, $action= STALLDEF, $toAccessInfoString= "", int $customID= null)
 	{
-		Tag::paramCheck($clusters, 1, "string");
-		Tag::paramCheck($action, 2, "string");
-		Tag::paramCheck($toAccessInfoString, 3, "string", "empty(string)");
-		Tag::paramCheck($customID, 4, "int", "null");
-
+	    STCheck::param($clusters, 0, "string", "array");
+	    STCheck::param($action, 1, "string", "int");
+	    STCheck::param($toAccessInfoString, 2, "string", "empty(string)", "int");
+	    
+	    if( $action != STALLDEF &&
+	        $action != STLIST &&
+	        $action != STINSERT &&
+	        $action != STUPDATE &&
+	        $action != STDELETE    )
+	    {
+	        $sInfoString= $action;
+	        $action= STALLDEF;
+	    }
+	    if(is_integer($toAccessInfoString))
+	    {
+	        $customID= $sInfoString;
+	        $sInfoString= "";
+	    }
 		if($action==STADMIN)
 		{
 			$this->accessBy($clusters, STINSERT, $toAccessInfoString, $customID);
@@ -611,9 +677,10 @@ class STBaseTable
 		}
 		if(!is_array($this->asAccessIds[$action]))
 			$this->asAccessIds[$action]= array();
-		$this->asAccessIds[$action]["cluster"]= $clusters;
-		$this->asAccessIds[$action]["accessString"]= $toAccessInfoString;
-		$this->asAccessIds[$action]["customID"]= $customID;
+		$this->asAccessIds[$action][]= array( "cluster" => $clusters,
+		                                      "action" => $action,
+		                                      "accessString" => $toAccessInfoString,
+		                                      "customID" => $customID                 );
 	}
 	function clearAccess()
 	{
@@ -621,25 +688,15 @@ class STBaseTable
 	}
 	function getAccessCluster($action)
 	{
-		Tag::paramCheck($action, 1, "check",	$action===STALLDEF || $action===STLIST || $action===STINSERT ||
-												$action===STUPDATE || $action===STDELETE,
-												"STALLDEF", "STLIST", "STINSERT", "STUPDATE", "STDELETE");
-
-		$aRv= null;
-		if(isset($this->asAccessIds[$action]["cluster"]))
-			$aRv= $this->asAccessIds[$action]["cluster"];
-/*		if($action===STLIST)
-		{// if action is STLIST set also the STISERT, STUPDATE and STDELETE clusters
-			$clusters= array_merge($clusters, $this->asAccessIds[STINSERT]);
-			$clusters= array_merge($clusters, $this->asAccessIds[STUPDATE]);
-			$clusters= array_merge($clusters, $this->asAccessIds[STDELETE]);
-		}else*/
-		if(	!isset($aRv) &&
-			isset($this->asAccessIds[STLIST]["cluster"])	)
-		{// else if no cluster for given action set
-		 // get the clusters for STLIST
-			$aRv= $this->asAccessIds[STLIST]["cluster"];
-		}
+		STCheck::paramCheck($action, 1, "check",    $action===STALLDEF || $action===STLIST || $action===STINSERT ||
+												    $action===STUPDATE || $action===STDELETE,
+												    "STALLDEF", "STLIST", "STINSERT", "STUPDATE", "STDELETE");
+												
+		$aRv= array();
+		if(isset($this->asAccessIds[STALLDEF]))
+		    $aRv= $this->asAccessIds[STALLDEF];
+	    if(isset($this->asAccessIds[$action]))
+	        $aRv= $this->asAccessIds[$action];
 		if( STUserSession::sessionGenerated()
 		    and
 			count($this->sAcessClusterColumn) )
@@ -3557,25 +3614,41 @@ class STBaseTable
 	{
 		return $this->sFirstAction;
 	}
-	function hasAccess($action= STALLDEF, $makeError= false)
+	/**
+	 * whether current user has acces to table
+	 *
+	 * @param string $action permisson for this action, if not set from current action
+	 * @param boolean $loginOnFail if set goto by fault to login page (default:false)
+	 * @return boolean whether user has access, if no session defined alway true
+	 */
+	function hasAccess($action= STALLDEF, $loginOnFail= false)
 	{
-		STCheck::paramCheck($action, 1, "check",	$action===STALLDEF || $action===STLIST || $action===STINSERT ||
-													$action===STUPDATE || $action===STDELETE || $action===STCHOOSE,
+	    STCheck::paramCheck($action, 1, "check",	$action===STALLDEF || $action===STLIST || $action===STINSERT ||
+													$action===STUPDATE || $action===STDELETE || $action==STCHOOSE,
 													"STALLDEF", "STCHOOSE", "STLIST", "STINSERT", "STUPDATE", "STDELETE");
-		STCheck::paramCheck($makeError, 2, "bool");
-
+		STCheck::paramCheck($loginOnFail, 2, "bool");
+		
 		if(!STSession::sessionGenerated())
-			return true;
-
-		$instance= &STSession::instance();
+		    return true;
+		    
 		if($action===STCHOOSE)
-			$action= STLIST;
-		$clusters= $this->getAccessCluster($action);
-		$infoString= $this->getAccessInfoString($action);
-		$customID= $this->getAccessCustomID($action);
-		$access= true;
-		if(isset($clusters))
-			$access= $instance->hasAccess($clusters, $infoString, $customID, $action, $makeError);
+		    $action= STLIST;
+		    
+	    $instance= &STUserSession::instance();
+	    if(!isset($action))
+	        $action= $this->getAction();
+        $clusters= $this->getAccessCluster($action);
+        
+        $access= true;
+        foreach($clusters as $aCluster)
+        {
+            $accessString= $aCluster['accessString'];
+            if(trim($accessString) == "")
+                $accessString= "access to table ".$this->getName()." on action $action";
+            $access=  $instance->hasAccess($aCluster['cluster'], $accessString, $aCluster['customID'], $loginOnFail);
+            if(!$access)
+                return false;
+        }
 
 		if(STCheck::isDebug())
 		{

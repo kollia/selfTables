@@ -57,6 +57,7 @@ class STDbSessionHandler implements SessionHandlerInterface
         }
         $this->sUsingFunctions.= " &#160;found session was ".(time() - $res["ses_time"])." seconds alive<br>\n";
         $this->sUsingFunctions.= " &#160;session <b>OK</b>, return <b>all</b> session variables<br>\n";
+        $this->sUsingFunctions.= " cockie session hold $lifetime seconds<br />\n";
         //$this->sUsingFunctions.= " &#160;-------------------------------------------------------------------------------------<br />";
         //$this->sUsingFunctions.= " &#160;".print_r($res["ses_value"], true)."<br>";
         //$this->sUsingFunctions.= " &#160;-------------------------------------------------------------------------------------<br />";

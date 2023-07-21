@@ -241,7 +241,7 @@ class STSession
 	public static function allowUrlSession()
 	{
 	    STCheck::echoDebug("session", "Enabling to allow session variables set also in <b>URL</b>");
-	    ini_set("session.use_only_cookies", "0");
+	    //ini_set("session.use_only_cookies", "0");
 	}
 	function isLoggedIn()
 	{
@@ -282,11 +282,11 @@ class STSession
 	 */
 	public function hasAccess($authoricationCluster, $toAccessInfoString= null, $customID= null, $action= STALLDEF, $gotoLoginMask= false)
 	{
-		STCheck::paramCheck($authoricationCluster, 1, "string", "array");
-		STCheck::paramCheck($toAccessInfoString, 2, "string", "", "null");
-		STCheck::paramCheck($customID, 3, "string", "int", "null");
-		STCheck::paramCheck($action, 4, "bool", "string");
-		STCheck::paramCheck($gotoLoginMask, 5, "bool");
+		STCheck::param($authoricationCluster, 0, "string", "array");
+		STCheck::param($toAccessInfoString, 1, "string", "empty(string)", "null");
+		STCheck::param($customID, 2, "string", "int", "null");
+		STCheck::param($action, 3, "bool", "string");
+		STCheck::param($gotoLoginMask, 4, "bool");
 
 		if(is_bool($action))
 		{
@@ -381,6 +381,11 @@ class STSession
 		}
 		$cluster_membership= $this->getSessionVar("ST_CLUSTER_MEMBERSHIP");
 		$staction= "unknown action";
+		$logincluster= false;
+		if(is_string($authoricationCluster))
+		    $clusters= array( $authoricationCluster );
+	    else
+	        $clusters= $authoricationCluster;
 		/**/if( Tag::isDebug("user") )
 		{
 			$sAccess= $toAccessInfoString;
@@ -405,7 +410,8 @@ class STSession
 				$staction= "STALLDEF";
 			elseif($action==STADMIN)
 				$staction= "STADMIN";
-			STCheck::echoDebug("user", "entering hasAccess(<b><em>&quot;".htmlspecialchars( $authoricationCluster )."&quot;</b>, ".$sAccess.", ".$sID.", ".$staction."</em>)");
+			$space= STCheck::echoDebug("user", "entering hasAccess(&lt;follow clusters&gt;, ".$sAccess.", ".$sID.", ".$staction."</em>)");
+			st_print_r($authoricationCluster, 1, $space);
 		}
 		// alex 09/10/2005:	User muss nicht eingeloggt sein
 		//					um auf Projekte zugriff zu haben
@@ -415,11 +421,6 @@ class STSession
 			$this->gotoLoginMask(0);
 			exit;
 		}*/
-		$logincluster= false;
-		if(is_string($authoricationCluster))
-		    $clusters= array( $authoricationCluster );
-		else
-		    $clusters= $authoricationCluster;
 		if(typeof($this, "STUserSession"))
 		{
 		    // if searching for ONLINE-Cluster, ONLINE exist only as group,

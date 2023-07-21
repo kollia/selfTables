@@ -362,9 +362,13 @@ class STCheck
 				{
 					if($args[2]=="check")
 						$types= "defined as ";
-					for($n= $begin; $n<($c-1); $n++)
-					    $types.= "'".$args[$n]."', ";
-					$types= substr($types, 0, strlen($types)-2)." or '".$args[$c-1]."'";
+					if($c > ($begin+1))
+					{
+    					for($n= $begin; $n<($c-1); $n++)
+    					    $types.= "'".$args[$n]."', ";
+    					$types= substr($types, 0, strlen($types)-2)." or '";
+					}
+    				$types.= $args[$c-1]."'";
 				}
 				if(is_string($param))
 					$param= "\"".$param."\"";

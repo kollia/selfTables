@@ -34,7 +34,7 @@ class STSessionSiteCreator extends STSiteCreator
    			$this->userManagement->registerSession();
 			if($this->sUserLoginMask)
 				$this->userManagement->setUserLoginMask($this->sUserLoginMask);
-   		$this->userManagement->verifyLogin();
+   		    $this->userManagement->verifyLogin();
 		}
 	function setUserLoginMask($address)
 	{
@@ -49,19 +49,86 @@ class STSessionSiteCreator extends STSiteCreator
 		{
 			$this->aUserAccessCluster[]= $cluster;
 		}
-		function accessBy($clusters, $forTable= "-all", $access= STACCESS)
+		/**
+		 * user will be forward to login page
+		 * if he has no access to cluster
+		 *
+		 * @param string $cluster access cluster name
+		 * @param string $action action can be set to:<br />
+		 *                         <table>
+		 *                             <tr>
+		 *                                 <td>
+		 *                                     STALLDEF
+		 *                                 </td><td>-</td>
+		 *                                     for all actions (default)
+		 *                                 <td>
+		 *                                 </td>
+		 *                             </tr>
+		 *                             <tr>
+		 *                                 <td>
+		 *                                     STLIST
+		 *                                 </td><td>-</td>
+		 *                                 <td>
+		 *                                     show only the content of table
+		 *                                 </td>
+		 *                             </tr>
+		 *                             <tr>
+		 *                                 <td>
+		 *                                     STINSERT
+		 *                                 </td><td>-</td>
+		 *                                 <td>
+		 *                                     insert somthing into table
+		 *                                 </td>
+		 *                             </tr>
+		 *                             <tr>
+		 *                                 <td>
+		 *                                     STUPDATE
+		 *                                 </td><td>-</td>
+		 *                                 <td>
+		 *                                     update row of table
+		 *                                 </td>
+		 *                             </tr>
+		 *                             <tr>
+		 *                                 <td>
+		 *                                     STDELETE
+		 *                                 </td><td>-</td>
+		 *                                 <td>
+		 *                                     delete row of table
+		 *                                 </td>
+		 *                             </tr>
+		 *                         </table>
+		 *                       if no action be set, only the third description string,
+		 *                       action will be also the default (STALLDEF)
+		 * @param string $sInfoString description of cluster for logging table
+		 * @param int $customID custom id for logging table if need
+		 */
+		public function accessBy(string $cluster, $action= STALLDEF, $sInfoString= "", int $customID= null)
 		{
-			if(!isset($this->aAccessClusters[$forTable]))
-				$this->aAccessClusters[$forTable]= array();
-			$this->aAccessClusters[$forTable][$access]= $clusters;
+		    STCheck::param($action, 1, "string", "int");
+		    STCheck::param($action, 2, "string", "int");
+		    
+		    if( $action != STALLDEF &&
+		        $action != STLIST &&
+		        $action != STINSERT &&
+		        $action != STUPDATE &&
+		        $action != STDELETE    )
+		    {
+		        $sInfoString= $action;
+		        $action= STALLDEF;
+		    }
+		    if(is_integer($sInfoString))
+		    {
+		        $customID= $sInfoString;
+		        $sInfoString= "";
+		    }
+		    
+		    if(!$sInfoString)
+		        $sInfoString= "acces to container ".$this->getDisplayName()."(".$this->name.")";
+	        $this->aAccessClusters[$action][]= array(	"cluster"	=>	$cluster,
+                                    		            "action"    =>  $action,
+                                    		            "info"		=>	$sInfoString,
+                                    		            "customID"	=>	$customID		);
 		}
-		// alex 06/05/2005:	funktion access ausdokumnentiert
-		//					da ja das hasAccess, welches ich heraufholte,
-		//					schon existierte.
-		/*function access($clusterString, $toAccessInfoString= "", $customID= null)
-		{
-			return $this->userManagement->hasAccess($clusterString, $toAccessInfoString, $customID, true);
-		}*/
 		function hasAccess($clusters)
 		{
         	Tag::alert(!$this->userManagement, "STUserSiteCreator::hasAccess()",

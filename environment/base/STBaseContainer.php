@@ -1688,81 +1688,126 @@ abstract class STBaseContainer extends BodyTag implements STContainerTempl
 	public function getAccessCluster($action)
 	{
 	    $aRv= array();
-	    foreach($this->aAccessClusters as $cluster)
-	    {
-	        if( $cluster['action'] == $action ||
-	            (   $cluster['action'] == STADMIN &&
-	                (   $action == STINSERT ||
-	                    $action == STUPDATE ||
-	                    $action == STDELETE    )       )   )
-	        {
-	            $aRv[]= $cluster;
-	        }
-	    }
+	    if(isset($this->aAccessClusters[STALLDEF]))
+	        $aRv= $this->aAccessClusters[STALLDEF];
+        if(isset($this->aAccessClusters[$action]))
+            $aRv= $this->aAccessClusters[$action];
 	    return $aRv;
 	}
 	public function checkPermission()
 	{
+	    $this->hasAccess(/*action unknown*/null, /*loginOnFail*/true);
+	    $action= $this->getAction();
+	    $table= $this->getTable();
+	    if(isset($table))
+	        $table->hasAccess($action, /*loginOnFail*/true);
+	}
+	/**
+	 * whether current user has acces to container
+	 * 
+	 * @param string $action permisson for this action, if not set from current action
+	 * @param boolean $loginOnFail if set goto by fault to login page (default:false)
+	 * @return boolean whether user has access, if no session defined alway true
+	 */
+	public function hasAccess($action= null, $loginOnFail= false) : bool
+	{
 	    if( !StCheck::isDebug("useExtern") &&
-	        STSession::sessionGenerated())
+	        STSession::sessionGenerated()      )
 	    {
 	        $instance= &STUserSession::instance();
-	        $logString= "access to ".$this->getName();
-	        $clusterString= "";
-	        $action= $this->getAction();
-	        switch($action)
-	        {
-	            case "STLIST":
-	                $customID= 1;
-	                break;
-	            case "STINSERT":
-	                $customID= 2;
-	                break;
-	            case "STUPDATE":
-	                $customID= 3;
-	                break;
-	            case "STDELETE":
-	                $customID= 4;
-	                break;
-	            default:
-	                $customID= 0;
-	        }
-	        $clusters= $this->getAccessCluster($action);
-	        foreach($clusters as $aCluster)
-	        {
-	            if($action != STLIST)
-	                $instance->hasAccess($aCluster['cluster'], $aCluster['info'], $customID, true);
-	            $clusterString.= $aCluster['cluster'].",";
-	        }
-	        $allTables= $this->getTables();
-	        foreach($allTables as $table)
-	        {
-	            $clusters= $table->getAccessCluster($action);
-	            if(isset($clusters))
-	                $clusterString.= $clusters.",";
-	        }
-	        if($clusterString != "")
-	        {
-	            $clusterString= substr($clusterString, 0, -1);
-	            if(STCheck::isDebug())
-	            {
-    	            $msg[]= "follow clusters for container '".$this->getName()."' by action >> $action << be set:";
-    	            $msg[]= "    '$clusterString'";
-    	            STCheck::echoDebug("access", $msg);
-	            } 
-    	        $instance->hasAccess($clusterString, $logString, $customID, true);
-	        }
+	        if(!isset($action))
+	            $action= $this->getAction();
+            $clusters= $this->getAccessCluster($action);
+            foreach($clusters as $aCluster)
+            {
+                $access=  $instance->hasAccess($aCluster['cluster'], $aCluster['info'], $aCluster['customID'], $loginOnFail);
+                if(!$access)
+                    return false;
+            }
+            return true;
 	    }
+	    return true;
 	}
-	function accessBy($cluster, $action= STLIST, $sInfoString= "", $customID= null)
+	/**
+	 * user will be forward to login page
+	 * if he has no access to cluster
+	 * 
+	 * @param string $cluster access cluster name
+	 * @param string $action action can be set to:<br /> 
+	 *                         <table>
+	 *                             <tr>
+	 *                                 <td>
+	 *                                     STALLDEF
+	 *                                 </td><td>-</td>
+	 *                                     for all actions (default)
+	 *                                 <td>
+	 *                                 </td>
+	 *                             </tr>
+	 *                             <tr>
+	 *                                 <td>
+	 *                                     STLIST
+	 *                                 </td><td>-</td>
+	 *                                 <td>
+	 *                                     show only the content of table
+	 *                                 </td>
+	 *                             </tr>
+	 *                             <tr>
+	 *                                 <td>
+	 *                                     STINSERT
+	 *                                 </td><td>-</td>
+	 *                                 <td>
+	 *                                     insert somthing into table
+	 *                                 </td>
+	 *                             </tr>
+	 *                             <tr>
+	 *                                 <td>
+	 *                                     STUPDATE
+	 *                                 </td><td>-</td>
+	 *                                 <td>
+	 *                                     update row of table
+	 *                                 </td>
+	 *                             </tr>
+	 *                             <tr>
+	 *                                 <td>
+	 *                                     STDELETE
+	 *                                 </td><td>-</td>
+	 *                                 <td>
+	 *                                     delete row of table
+	 *                                 </td>
+	 *                             </tr>
+	 *                         </table>
+	 *                       if no action be set, only the third description string,
+	 *                       action will be also the default (STALLDEF)
+	 * @param string $sInfoString description of cluster for logging table
+	 * @param int $customID custom id for logging table if need
+	 */
+	public function accessBy(string $cluster, $action= STALLDEF, $sInfoString= "", int $customID= null)
 	{
+	    STCheck::param($action, 1, "string", "int");
+	    STCheck::param($sInfoString, 2, "string", "empty(string)", "int");
+	    
+	    if( $action != STALLDEF &&
+            $action != STLIST &&
+	        $action != STINSERT &&
+	        $action != STUPDATE &&
+	        $action != STDELETE    )
+	    {
+	        $sInfoString= $action;
+	        $action= STALLDEF;
+	    }
+	    if(is_integer($sInfoString))
+	    {
+	        $customID= $sInfoString;
+	        $sInfoString= "";
+	    }
+	    
 		if(!$sInfoString)
 			$sInfoString= "acces to container ".$this->getDisplayName()."(".$this->name.")";
-		$this->aAccessClusters[]= array(	"cluster"	=>	$cluster,
-		                                    "action"    =>  $action,
-											"info"		=>	$sInfoString,
-											"customID"	=>	$customID		);
-	}
+		$this->aAccessClusters[$action][]= array(	"cluster"	=>	$cluster,
+        		                                    "action"    =>  $action,
+        											"info"		=>	$sInfoString,
+        											"customID"	=>	$customID		);
+	}	
 		function hasContainerAccess($makeError= false)
 		{
 			Tag::echoDebug("access", "function <b>hasContainerAccess()</b> to container \"".$this->name."\" ?");

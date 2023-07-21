@@ -25,8 +25,6 @@ class STUserSiteCreator extends STSessionSiteCreator
 	}
 	function initSession($userDb= null)
 	{
-		global	$PHP_SELF;
-
 		Tag::alert(!$userDb&&!$this->db, "STUserSiteCreator::initSession()",
 									"before invoke initSession() without DB set DB with setMainContainer()");
 		if($userDb)
@@ -39,7 +37,11 @@ class STUserSiteCreator extends STSessionSiteCreator
 			$this->userDb= &$this->db;
 
 		if(!STSession::sessionGenerated())
+		{
+		    $bSessionGenerated= false;
 			STUserSession::init($this->userDb, $this->sUserTablePrefix);
+		}else
+		    $bSessionGenerated= true;
    		$this->userManagement= &STUserSession::instance();
 
 		if($this->bDoInstall)
@@ -47,6 +49,8 @@ class STUserSiteCreator extends STSessionSiteCreator
 			$this->bDoInstall= false;
 			STSiteCreator::install();
 		}
+		if($bSessionGenerated)
+		    return;
 		$this->userManagement->registerSession();
 		$project= $this->getProjectID();
 		$this->userManagement->verifyLogin($project);
@@ -65,7 +69,6 @@ class STUserSiteCreator extends STSessionSiteCreator
 		$queryTable= &$this->userDb->getTable("Query");
 		STQueryString::setQueryTable($queryTable, $nrColumn, $pathColumn);
 		STQueryString::globaly_noStgetNr(session_name());
-		$param= new STQueryString();
 		Tag::echoDebug("user", "table for querystring is be set");
 		// alex 02/05/2005:	entfernt, da var $startPage ja nicht gesetzt wird
 		//$this->setStartPage($this->userManagement->getStartPage());
@@ -92,56 +95,44 @@ class STUserSiteCreator extends STSessionSiteCreator
 		{
 			return $this->userManagement;
 		}
-		function authorisationBy($authorisation, $forTable= "-all", $access= ACCESS)
-		{
-			if(!isset($this->aAuthorisation[$forTable]))
-				$this->aAuthorisation[$forTable]= array();
-			$this->aAuthorisation[$forTable][$access]= $authorisation;
-		}
-		function accessBy($clusters, $forTable= "-all", $access= STACCESS)
-		{
-			if(!isset($this->aAccessClusters[$forTable]))
-				$this->aAccessClusters[$forTable]= array();
-			$this->aAccessClusters[$forTable][$access]= $clusters;
-		}
-		// alex 06/05/2005:	funktion access ausdokumnentiert
-		//					da ja das hasAccess, welches ich heraufholte,
-		//					schon existierte.
-		/*function access($clusterString, $toAccessInfoString= "", $customID= null)
-		{
-			return $this->userManagement->hasAccess($clusterString, $toAccessInfoString, $customID, true);
-		}*/
-		function hasAccess($clusters, $toAccessInfoString= "", $customID= null, $makeError= false, $action= STALLDEF)
+		function hasAccess($clusters, $toAccessInfoString= "", $customID= null, $action= STALLDEF, $makeError= false)
 		{
 			Tag::alert(!$this->userManagement, "STUserSiteCreator::hasAccess()",
 											"you must invoke before this function initSession()");
-			Tag::paramCheck($clusters, 1, "string", "array");
-			Tag::paramCheck($toAccessInfoString, 2, "string", "empty(string)", "null");
-			Tag::paramCheck($customID, 3, "int", "null");
+			Tag::param($clusters, 0, "string", "array");
+			Tag::param($toAccessInfoString, 1, "string", "empty(string)", "null");
+			Tag::param($customID, 2, "int", "null");
 
 			if(is_string($clusters))
-				return $this->userManagement->hasAccess($clusters, $toAccessInfoString, $customID, $makeError, $action);
+				return $this->userManagement->hasAccess($clusters, $toAccessInfoString, $customID, $action, $makeError);
 
-			//st_print_r($clusters);
-			$bOk= false;
 			foreach($clusters as $cluster)
 			{
 			    if( is_String($cluster)
 					    and
 							$cluster!==""        )
 					{
-				      if(!$this->userManagement->hasAccess($cluster, $toAccessInfoString, $customID, $makeError, $action))
+				      if(!$this->userManagement->hasAccess($cluster, $toAccessInfoString, $customID, $action, $makeError))
 					        return false;
-				      $bOk= true;
 					}
 			}
-			/*if(!$bOk)
-			{// if no cluster in the array
-			 // ask for allAdmin, if the $makeError is true
-			 // to logout
-			    $this->userManagement->hasAccess("allAdmin", $toAccessInfoString, $customID, $makeError);
-			}*/
 			return true;
+		}
+		protected function checkPermission()
+		{
+		    $this->initSession();
+		    if(isset($this->aAccessClusters[STALLDEF]))
+		    {
+		        foreach($this->aAccessClusters[STALLDEF] as $cluster)
+		            $this->hasAccess($cluster['cluster'], $cluster['info'], $cluster['customID'], STALLDEF, /*loginByFault*/true);
+		    }
+		    $action= $this->getAction();
+		    if(isset($this->aAccessClusters[$action]))
+		    {
+		        foreach($this->aAccessClusters[$action] as $cluster)
+		            $this->hasAccess($cluster['cluster'], $cluster['info'], $cluster['customID'], STALLDEF, /*loginByFault*/true);
+		    }		        
+		    $this->tableContainer->checkPermission();
 		}
 }
 

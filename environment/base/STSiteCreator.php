@@ -313,11 +313,9 @@ class STSiteCreator extends HtmlTag
 									"columnAlign"=>$align,
 									"buttonId"=>$buttonId		);
 	}
-		function execute($onError= onErrorMessage)
+		public function execute($onError= onErrorMessage)
 		{
-			global	$HTTP_GET_VARS,
-					$HTTP_POST_VARS,
-					$HTTP_SERVER_VARS;
+			global	$HTTP_GET_VARS;
 
 			Tag::alert($this->tableContainer==null, "STDbSiteCreator::execute()",
 								"befor execute set container in constructor or with ::setMainContainer()");
@@ -347,6 +345,8 @@ class STSiteCreator extends HtmlTag
 				if($db !== NULL)
 				    $this->db= &$db;//&$container->getDatabase();			
 			}
+			// check access to SideCreator, Container, and Tables
+			$this->checkPermission();
 			if(is_array($this->logoutButton))
 				$this->tableContainer->showLogoutButton(	$this->logoutButton["buttonName"],
 															$this->logoutButton["columnAlign"],
@@ -415,7 +415,6 @@ class STSiteCreator extends HtmlTag
 			$result= $msgHandling->getMessageId();
 			if($result=="NOERROR")
 			{
-			    $this->tableContainer->checkPermission();
 			    $result= $this->tableContainer->execute($this, $onError);
 				$msgHandling->setMessageContent($result);
 				$msgHandling->setMessageId($result);
