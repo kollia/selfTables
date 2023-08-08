@@ -345,8 +345,6 @@ class STSiteCreator extends HtmlTag
 				if($db !== NULL)
 				    $this->db= &$db;//&$container->getDatabase();			
 			}
-			// check access to SideCreator, Container, and Tables
-			$this->checkPermission();
 			if(is_array($this->logoutButton))
 				$this->tableContainer->showLogoutButton(	$this->logoutButton["buttonName"],
 															$this->logoutButton["columnAlign"],

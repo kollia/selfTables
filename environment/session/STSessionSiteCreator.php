@@ -337,7 +337,7 @@ class STSessionSiteCreator extends STSiteCreator
 			}
 		}
 		function execute($additionalText= "")
-		{    
+		{
 		    $tableName= $this->getTableName();
 		    if($tableName)
 		        $table= &$this->tableContainer->getTable($tableName);
@@ -353,6 +353,8 @@ class STSessionSiteCreator extends STSiteCreator
     				$this->accessTable($table, $action, $additionalText);
 			}
 			
+			// check access to SideCreator, Container, and Tables
+			$this->checkPermission();
 			return STSiteCreator::execute();
 		}
 		/**
