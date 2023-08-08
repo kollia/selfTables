@@ -118,6 +118,26 @@ class STSession
 		    return $global_selftable_session_class_instance[0]->sessionRegistered;
 		return false;
 	}
+	/**
+	 * set lifetime of session.<br />
+	 * Method only set <code>session.gc_maxlifetime</code> which is used
+	 * for lifetime if session is written as file on harddisk and use this
+	 * also for lifetime written inside database.
+	 * 
+	 * @param int $seconds set new lifetime (default 1440 seconds). If not set, return only current lifetime.
+	 * @return int|false return current or new lifetime, or if not can set false
+	 */
+	static public function lifetime(int $seconds= null)
+	{
+	    if(isset($seconds))
+	    {
+	        $seconds= ini_set("session.gc_maxlifetime", $seconds);
+	    }else
+	    {
+	        $seconds= ini_get("session.gc_maxlifetime");
+	    }
+	    return $seconds;
+	}
 	function startPage($url)
 	{
 		if($url)
@@ -196,14 +216,24 @@ class STSession
 		    //          if third parameter of session_set_cookie_params() is value null, not a null String "",
 		    //          session_start() do not work
 		    //          and otherwise also when correct (set only 2 parameters) time changing not works ???
-		    session_set_cookie_params( 60*5, '/');		    
-    		$bSetSession= session_start();
+		    //session_set_cookie_params( 60*5, '/');
+		    if(STCheck::isDebug("session"))
+		    {
+    		    echo "<hr>";
+    		    STCheck::echoDebug("session", "start session");
+		    }
+		    $bSetSession= session_start();
+		    if(STCheck::isDebug("session"))
+		    {
+    		    STCheck::echoDebug("session", "session was started");
+    		    echo "<hr>";
+		    }
     		STCheck::end_outputBuffer();
     		$this->sessionRegistered= true;
 		}else
 		{
 		    $bSetSession= false;
-		    STCheck::echoDebug("session", "session was set before, do not start session again");
+		    STCheck::echoDebug("session", "<b>session was set before,</b> do not start session again");
 		}
 		
 	    if( STCheck::isDebug("user") ||

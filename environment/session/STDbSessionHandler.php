@@ -30,51 +30,69 @@ class STDbSessionHandler implements SessionHandlerInterface
     public function read(string $sessionId) : string
     {
         $this->sUsingFunctions.= "read('$sessionId')<br>";
-        $lifetime= ini_get("session.cookie_lifetime");
+        $lifetime= ini_get("session.gc_maxlifetime");
         $oSessionTable= $this->database->getTable("Sessions");
         $oSelector= new STDbSelector($oSessionTable);
+        $oSelector->select("Sessions", "ses_id");
         $oSelector->select("Sessions", "ses_value");
         $oSelector->select("Sessions", "ses_time");
         $oSelector->where("ses_id='".$this->database->real_escape_string($sessionId)."'");
-        $oSelector->execute();
-        $res= $oSelector->getRowResult();
+        $count= $oSelector->execute();
+        $res= $oSelector->getResult();
         if($oSelector->getErrorId() != 0)
         {
             STCheck::warning(true, "cannot read session from database: ".$oSelector->getErrorString());
             return false;
         }
-        if(isset($res["ses_value"]))
+        $rowNr= 0;
+        foreach($res as $row)
+        {
+            if($row['ses_id'] == $sessionId)
+                break;
+            $rowNr++;
+        }
+        if(STCheck::isDebug())
+        {
+            showLine();
+            echo "count of selected sessions are $count<br>";
+            st_print_r($res,4);
+        }
+        if($count > 0)
+            $this->sUsingFunctions.= " &#160;cookie session hold $lifetime seconds<br />\n";
+        if(isset($res[$rowNr]["ses_value"]))
             $this->existID= $sessionId;
-        if( !isset($res["ses_value"]) ||
-            (time() - $res["ses_time"]) > $lifetime )
+        if( !isset($res[$rowNr]["ses_value"]) ||
+            (time() - $res[$rowNr]["ses_time"]) > $lifetime )
         {
             $this->sUsingFunctions.= " &#160;do not found session";
-            if(isset($res["ses_time"]))
-                $this->sUsingFunctions.= ", was ".(time() - $res["ses_time"] - $lifetime)." seconds to old";
+            if(isset($res[$rowNr]["ses_time"]))
+                $this->sUsingFunctions.= ", was ".(time() - $res[$rowNr]["ses_time"] - $lifetime)." seconds to old";
             $this->sUsingFunctions.= "<br>";
             $this->sUsingFunctions.= " return <b>false</b><br>\n";
             return false;
         }
-        $this->sUsingFunctions.= " &#160;found session was ".(time() - $res["ses_time"])." seconds alive<br>\n";
+        $this->sUsingFunctions.= " &#160;found session was ".(time() - $res[$rowNr]["ses_time"])." seconds alive<br>\n";
         $this->sUsingFunctions.= " &#160;session <b>OK</b>, return <b>all</b> session variables<br>\n";
-        $this->sUsingFunctions.= " cockie session hold $lifetime seconds<br />\n";
         //$this->sUsingFunctions.= " &#160;-------------------------------------------------------------------------------------<br />";
-        //$this->sUsingFunctions.= " &#160;".print_r($res["ses_value"], true)."<br>";
+        //$this->sUsingFunctions.= " &#160;".print_r($res[$rowNr]["ses_value"], true)."<br>";
         //$this->sUsingFunctions.= " &#160;-------------------------------------------------------------------------------------<br />";
-        if(false)
+        if(STCheck::isDebug("session"))
         {
-            // toDo: decode of session string
-            if(isset($res["ses_value"]['ST_USER']))
-                $user= $res["ses_value"]['ST_USER'];
-            else
-                $user= "Unknown";
-            if(isset($res["ses_value"]['ST_LOGGED_IN']))
-                $loggedin= $res["ses_value"]['ST_LOGGED_IN'];
-            else
-                $loggedin= "false";
-            $this->sUsingFunctions.= " &#160;user $user is $loggedin<br />";
+            session_decode($res[$rowNr]["ses_value"]);
+            st_print_r($_SESSION);
         }
-        return $res["ses_value"];
+        if(isset($_SESSION['ST_USER']))
+            $user= "user: ".$_SESSION['ST_USER'];
+        else
+            $user= "Unknown User";
+        if( isset($_SESSION['ST_LOGGED_IN']) &&
+            $_SESSION['ST_LOGGED_IN'] > 0       )
+        {
+            $loggedin= "logged in";
+        }else
+            $loggedin= "not logged in";
+        $this->sUsingFunctions.= " &#160;user $user $loggedin<br />";
+        return $res[$rowNr]["ses_value"];
             
     }
     public function write(string $sessionId, string $data) : bool
