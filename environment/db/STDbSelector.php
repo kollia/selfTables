@@ -819,20 +819,15 @@ class STDbSelector extends STDbTable implements STContainerTempl
 		}
 		public function getErrorString() : string
 		{
-			return $this->errorMessage;
+		    $sqlErrorMessage= $this->errorMessage;
+		    return $sqlErrorMessage;
 		}
 		/*protected*/function setSqlError($sqlResult)
 		{
   			if(!is_array($sqlResult))
   			{
-  				$sqlErrorMessage= $this->db->getError();
-  				$this->errorID= $this->db->errno();
-				if($this->db->errno()!=0)
-				{//
-					$messageId= "SQLERROR_".$this->db->errno();
-					$this->errorID= $messageId;
-  					$this->errorMessage= $sqlErrorMessage;
-				}
+  			    $this->errorID= $this->db->errno();
+  			    $this->errorMessage= $this->db->getError();
   			}
 		}
 		function getStatement($limit= null, $withAlias= null)

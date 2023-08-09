@@ -212,7 +212,8 @@ class STMessageHandling // implements STMessageHandlingInterface <- ab version 5
 				if($this->onError==onErrorMessage)
 				{
 				    STCheck::echoDebug("STMessageHandling", "add javascript:alert() message to the scripts");
-				    $string= preg_replace("/'/", "\\'", $string);
+				    // 13/07/2023 kolli: implement backslach before apostrophe now only if not done before
+				    $string= preg_replace("/[^\\\]'/", "\\'", $string);
 					$this->addScripts(array("alert('$string');"), $scripts, $javaScript);
 				}
 			}else

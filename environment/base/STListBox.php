@@ -2369,7 +2369,8 @@ class STListBox extends STBaseBox
 					$indexTd= new ColumnTag(TD);
 						$index= &$this->getIndexTable();
 						$indexTd->addObj($index);
-						$indexTd->addObj($this->msg->getMessageEndScript());
+						$script= $this->msg->getMessageEndScript();
+						$indexTd->addObj($script);
 					$indexTr->addObj($indexTd);
 				$this->addObj($indexTr);
 				return $this->msg->getMessageId();

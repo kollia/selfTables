@@ -801,8 +801,9 @@ class STDbTable extends STBaseTable
 	        $mainTable= $this;	// alex 24/05/2005:	nur wenn der erste Aufruf für Haupttabelle getätigt wird
                     	        //					muss zur kontrolle bei einem STDbSelector
                     	        //					die Haupttabelle als dritter Parameter mitgegeben werden
-                    	        
-        $statement= $this->getSelectStatement($aliasTables, $bFromIdentifications);
+	        
+	    $aSubstitutionTables= array();
+	    $statement= $this->getSelectStatement($aliasTables, $aSubstitutionTables, $bFromIdentifications);
         // implement tables which are joined from user
         if(count($joinTables))
             $aliasTables= array_merge($aliasTables, $joinTables);
@@ -815,8 +816,8 @@ class STDbTable extends STBaseTable
             st_print_r($aliasTables, 1, $space);
             STCheck::echoDebug("db.statements", "need follow <b>select</b> statement: $statement");
         }
-        $this->newWhereCreation($aliasTables);        
-        $tableStatement= $this->getTableStatement($aliasTables);
+        $this->newWhereCreation($aliasTables, $aSubstitutionTables);        
+        $tableStatement= $this->getTableStatement($aliasTables, $aSubstitutionTables);
         STCheck::echoDebug("db.statements", "need follow aditional <b>table</b> statement: $tableStatement");
         $statement.= " $tableStatement";
         
@@ -827,7 +828,7 @@ class STDbTable extends STBaseTable
         // first parameter in function is no reference
         // but it comes back the changed values
         $bufferWhere= $this->oWhere;
-        $whereStatement= $this->getWhereStatement("where", $aliasTables);
+        $whereStatement= $this->getWhereStatement("where", $aliasTables, $aSubstitutionTables);
         if(STCheck::isDebug("db.statements"))
         {
             if(trim($whereStatement) == "")
@@ -903,9 +904,10 @@ class STDbTable extends STBaseTable
 	 * create part of sql select statement
 	 * 
 	 * @param array $aTableAlias array of all exist alias for tables exist, which gives back all alias which needed
+	 * @param array $aSubstitutionTables array of correct table names which are point to him self or an used table
 	 * @param bool $bUseIdentifications whether should use for the first select only the identification columns
 	 */
-	private function getSelectStatement(array &$aTableAlias, bool $bUseIdentifications)
+	private function getSelectStatement(array &$aTableAlias, array &$aSubstitutionTables, bool $bUseIdentifications)
 	{
 	    if(isset($this->aStatement['select']))
 	    {
@@ -924,7 +926,8 @@ class STDbTable extends STBaseTable
 	    $statement= "select ";
 	    if($this->isDistinct())
 	        $statement.= "distinct ";
-	    $statement.= $this->getSelectStatementA(!$bUseIdentifications, $this, $aTableAlias);
+	    $aliasTable= $aTableAlias[$this->getName()];
+	    $statement.= $this->getSelectStatementA(!$bUseIdentifications, $this, $aliasTable, $aTableAlias, $aSubstitutionTables);
 	    $this->aStatement['select']= $statement;
 	    $this->aStatement['selectAlias']= $aTableAlias;
 	    return $statement;
@@ -936,9 +939,11 @@ class STDbTable extends STBaseTable
 	 *                           (testing by main-table is same then own object not possible,
 	 *                            because the own object/table can also be an foreignKey-table)
 	 * @param STDbTable $oMainTable object of the first table from which all other are drawn
+	 * @param string $sUseAliasForOwnTable alias name for current table.<br />necassary for table point to him self
 	 * @param array $aTableAlias array of all exist alias for tables exist, which gives back all alias which needed
+	 * @param array $aSubstitutionTables array of correct table names which are point to him self or an used table
 	 */
-	private function getSelectStatementA(bool $bFirstSelect, STDbTable $oMainTable, array &$aTableAlias)
+	private function getSelectStatementA(bool $bFirstSelect, STDbTable $oMainTable, string $sUseAliasForOwnTable, array &$aTableAlias, array &$aSubstitutionTables)
 	{
 	    $aUseAliases= array();
 	    $singleStatement= "";
@@ -979,12 +984,14 @@ class STDbTable extends STBaseTable
                 st_print_r($aTableAlias, 2, $space);
             }
         }
-        $aShowTypes= $this->showTypes;
+        //$aShowTypes= $this->showTypes;
         $aliasCount= count($aTableAlias);
+        $columnNr= 0;
         foreach($aNeededColumns as $column)
-        {// loop the array for all exist columns
-            
+        {// loop the array for all exist columns            
             $columnName= $column["column"];
+            STCheck::echoDebug("db.statements.select", "run for ".++$columnNr.". column $columnName inside table '{$this->getName()}'");
+            
             $preg= array();
             if(preg_match("/(.+)\\((.+)\\)/", $columnName, $preg))
             {
@@ -1016,7 +1023,6 @@ class STDbTable extends STBaseTable
             
             if($aliasCount>1)
             {
-                $bCheckFk= false;
                 $fkTableName= null;
                 if( (   !typeof($oMainTable, "STDbSelector") &&
                         isset($column['type']) && // <- otherwise field is PK for update or delete inside STListBox
@@ -1025,7 +1031,6 @@ class STDbTable extends STBaseTable
                         (   !isset($oMainTable->abOrigChoice["select"]) ||
                             $oMainTable->abOrigChoice["select"] == "true"   )   )    )
                 {
-                    $bCheckFk= true;
                     // alex 24/05/2005:	if table is an existing foreign Key
                     //                  and the current/main table an STDbSelector,
                     //                  than check whether a table version exist in the selector.
@@ -1033,18 +1038,18 @@ class STDbTable extends STBaseTable
                     // alex 24/02/2023: now search only for foreign keys when inside an STDbSelector container
                     //                  no extra choice was made
                     $fkTableName= $this->getFkTableName($column["column"]);
-                    if(STCheck::isDebug() && $fkTableName)
+                    if(STCheck::isDebug() && isset($fkTableName))
+                    {
                         STCheck::echoDebug("db.statements.select", "from ".get_class($this)." ".$this->getName()." for column ".$column["column"]." is Fk-Table \"".$fkTableName."\"");
+                    }
                 }
                 if(	!$fkTableName ) // if no FK table exist, the column can only be from the current table
                 {
-                    $aliasTable= $aTableAlias[$column["table"]];
-                    if(	!$bFirstSelect &&
-                        $aliasTable=="t1"	)
+                    if($column['table'] == $this->getName())
                     {
-                        $aliasTable= "t".($aliasCount+1);
-                        $aTableAlias["self.".$column["table"]]= $aliasTable;
-                    }
+                        $aliasTable= $sUseAliasForOwnTable;
+                    }else
+                        $aliasTable= $aTableAlias[$column["table"]];
                     $aUseAliases[$aTableAlias[$column['table']]]= $column['table'];
                     $singleStatement.= $columnName;
                     if($this->sqlKeyword($column["column"]) != false)
@@ -1068,8 +1073,25 @@ class STDbTable extends STBaseTable
                     }
                 }else
                 {
+                    $newAlias= null;
                     STCheck::echoDebug("db.statements.select", "");
                     STCheck::echoDebug("db.statements.select", "need column from foreign table");
+                    if( $fkTableName == $this->getName() ||
+                        array_search($fkTableName, $aUseAliases) !== false  )
+                    {
+                        $subTableName= $fkTableName."_sub";
+                        $count= 0;
+                        do{
+                            $count++;
+                            $newName= "$subTableName$count";
+                        }while( array_search($newName, $aTableAlias) !== false ||
+                            array_search($newName, $aUseAliases) !== false      );
+                        $subTableName= $newName;
+                        $newAlias= "t".count($aTableAlias);
+                        $aTableAlias[$subTableName]= $newAlias;
+                        $aUseAliases[$newAlias]= $subTableName;
+                        $aSubstitutionTables[$subTableName]= $fkTableName;
+                    }
                     //$oOther= $this->FK[$fkTableName]["table"]->container->getTable;
                     $containerName= $this->getFkContainerName($column["column"]);
                     //$container= &STBaseContainer::getContainer($containerName);
@@ -1079,7 +1101,11 @@ class STDbTable extends STBaseTable
                     //				in him can be deleted an column or identif-column
                     $oOther= $this->getTable($fkTableName, $containerName);
                     $allAliases= $aTableAlias;
-                    $fkStatement= $oOther->getSelectStatementA(/*firstSelect*/false, $oMainTable, $allAliases);
+                    if(isset($newAlias))
+                        $aliasTable= $newAlias;
+                    else
+                        $aliasTable= $aTableAlias[$fkTableName];
+                    $fkStatement= $oOther->getSelectStatementA(/*firstSelect*/false, $oMainTable, $aliasTable, $allAliases, $aSubstitutionTables);
                     //create new using alaises
                     foreach($allAliases as $tabName=>$a)
                         $aUseAliases[$aTableAlias[$tabName]]= $tabName;
@@ -1162,16 +1188,16 @@ class STDbTable extends STBaseTable
             $space= STCheck::echoDebug("db.statements.aliases", "need follow tables inside select-statement");
             st_print_r($aTableAlias, 1, $space);
         }
-        if( count($aTableAlias) <= 1 &&
-            $oMainTable == $this        )
+        if( $oMainTable == $this &&
+            (count($aTableAlias) + count($aSubstitutionTables)) <= 1    )
         {
             $statement= $singleStatement;
         }
         $statement= substr($statement, 0, strlen($statement)-1);
-        Tag::echoDebug("db.statements.select", "createt statement is \"".$statement."\"");
+        STCheck::echoDebug("db.statements.select", "createt statement is \"".$statement."\"");
         return $statement;
 	}
-	private function getTableStatement(array &$aTableAlias)
+	private function getTableStatement(array &$aTableAlias, array $aSubstitutionTables)
 	{
 	    if(isset($this->aStatement['table']))
 	    {
@@ -1197,12 +1223,12 @@ class STDbTable extends STBaseTable
 	    $maked= array();
 	    $maked[$this->Name]= "finished";
 	    $statement.= " as ".$aTableAlias[$this->Name]." ";
-	    $statement.= $this->getTableStatementA($this, $aTableAlias, $maked, /*first access*/true);
+	    $statement.= $this->getTableStatementA($this, $aTableAlias, $maked, $aSubstitutionTables, /*first access*/true);
 	    $this->aStatement['table']= $statement;
 	    $this->aStatement['tableAlias']= $aTableAlias;
 	    return $statement;
 	}
-	private function getTableStatementA(STDbTable $oMainTable, array &$aTableAlias, array &$maked, bool $bFirstAccess= false)
+	private function getTableStatementA(STDbTable $oMainTable, array &$aTableAlias, array &$maked, array $aSubstitutionTables, bool $bFirstAccess= false)
 	{
 	    if(STCheck::isDebug())
 	    {
@@ -1235,8 +1261,8 @@ class STDbTable extends STBaseTable
 		$ownTableAlias= $aTableAlias[$oTable->getName()];
 		
     	if($bFirstAccess)
-    	   $this->db->searchJoinTables($aTableAlias);
-    	$fk= $oTable->getForeignKeys();	
+    	    $this->db->searchJoinTables($aTableAlias, $aSubstitutionTables);
+    	$fk= $oTable->getForeignKeys();
     	if( STCheck::isDebug("db.statements.table") )
         {
         	$exist= count($fk);
@@ -1253,26 +1279,36 @@ class STDbTable extends STBaseTable
     	{
     		foreach($content as $join)
     		{
-    			$sTableName= $oTable->getName();
-    			$bNeedColumn= false;
+    			//$sTableName= $oTable->getName();
+    			$bNeedFkColumn= false;
     			foreach($aNeededColumns as $aColumn)
     			{
     				if(	$join["own"]==$aColumn["column"]
     					and
     					!isset($maked[$table])				)
-    				{// Abfrage ob die Spalten mit FK auch ben�tigt werden
-    					$bNeedColumn= true;
+    				{// Query whether the FK column is required
+    					$bNeedFkColumn= true;
     					break;
     				}
     			}
-    			if(	$bNeedColumn===false &&
+    			$sSubstitutionTable= "";
+    			$sMakeSubstitutionAlias= "";
+    			if(	$bNeedFkColumn===false &&
     				isset($aTableAlias[$table]) &&
-    				!isset($maked[$table])          )
+    				(   !isset($maked[$table]) ||
+    				    (   in_array($table, $aSubstitutionTables) &&
+    				        !isset($maked[array_search($table, $aSubstitutionTables)])   )   )  )
     			{// wenn die FK Spalte nicht in den ben�tigten Spalten ist,
     			 // das objekt aber vom Typ STDbSelector ist (wobei die FK-Spalten nicht aufgelistet werden)
     			 // und die Tabelle in den Aliases ist,
     			 // wird sie doch f�r den join ben�tigt
-    			 	$bNeedColumn= true;
+    			    if( isset($maked[$table]) &&
+    			        in_array($table, $aSubstitutionTables)   )
+    			    {
+    			        $sSubstitutionTable= array_search($table, $aSubstitutionTables);
+    			        $sMakeSubstitutionAlias= $aTableAlias[$sSubstitutionTable];
+    			    }
+    			 	$bNeedFkColumn= true;
     			}
     			if(STCheck::isDebug("db.statements"))
     			{
@@ -1280,24 +1316,26 @@ class STDbTable extends STBaseTable
     			        $debugtype= "db.statements.table";
     			    else
     			        $debugtype= "db.statements.where";
-    				if($bNeedColumn===false)
+    				if($bNeedFkColumn===false)
     				{
     					$debugString= "do not need foreign key from column ".$join["own"]." to table ".$table." for statement";
-    					STCheck::echoDebug("db.statements.table", $debugString);
+    					STCheck::echoDebug($debugtype, $debugString);
     					if(isset($maked[$table]))
-    					    STCheck::echoDebug("db.statements.table", "join was inserted before");
+    					    STCheck::echoDebug($debugtype, "join was inserted before");
     				}elseif(!isset($aTableAlias[$table]))
-    				    STCheck::echoDebug("db.statements.table", "no such table $table for column ".$join["own"]." in createt Alias-Array");
+    				    STCheck::echoDebug($debugtype, "no such table $table for column ".$join["own"]." in createt Alias-Array");
     				else
     				{
-    				    STCheck::echoDebug("db.statements.table", "need foreign key from column ".$join["own"]." to table ".$table.
-    												" for select statement from container ".$oTable->container->getName());
+    				    $asSubstitution= "";
+    				    if($sSubstitutionTable != "")
+    				        $asSubstitution= "as $sSubstitutionTable substitution ";
+    				    STCheck::echoDebug($debugtype, "need foreign key from column ".$join["own"]." to table $table $asSubstitution".
+    												"for select statement from container ".$oTable->container->getName());
     				}
     			}
-    			if(	$bNeedColumn
-    				and
+    			if(	$bNeedFkColumn &&
     				isset($aTableAlias[$table])	)
-    			{
+    			{// add foreign key statement inside on-clause with join type (inner/left/right join)
     			    if(isset($this->aJoinOverTables[$table]))
     			        $joinArt= $this->db->getSqlJoinStatementLinkName($this->aJoinOverTables[$table]);
 			        else
@@ -1314,14 +1352,11 @@ class STDbTable extends STBaseTable
     				}
     
     
-    				if(isset($maked[$table]))						// wenn der join innerhalb der gleichen Tabelle ist
+    				if($sMakeSubstitutionAlias != "")				// wenn der join innerhalb der gleichen Tabelle ist
     				{												// darf der AliasName nicht der gleiche sein
-    					$sTableAlias= $aTableAlias["self.".$table];	// (zb. t1.parentID=t1.ID) weil die eigene Tabelle
-    					if(!isset($sTableAlias))					// nochmals im Join angegeben werden muss
-    					{											// also zb. t1.parentID=t5.ID
-    						$sTableAlias= "t".(count($aTableAlias)+1);
-    						$aTableAlias["self.".$table]= $sTableAlias;
-    					}
+    				    $sTableAlias= $sMakeSubstitutionAlias;    	// (zb. t1.parentID=t1.ID) weil die eigene Tabelle
+    					                               				// nochmals im Join angegeben werden muss
+    																// also zb. t1.parentID=t5.ID
     				}else
     					$sTableAlias= $aTableAlias[$table];
     
@@ -1332,13 +1367,17 @@ class STDbTable extends STBaseTable
     				}
     				$where= $ownTableAlias.".".$join["own"];
     				$where.= "=".$sTableAlias.".".$join["other"];
-      				$statement.= " join ".$database.$table." as ".$sTableAlias;
+      				$statement.= " join ".$database.$table." as ";
+      				if($sMakeSubstitutionAlias != "")
+      				    $statement.= $sMakeSubstitutionAlias;
+      				else
+      				    $statement.= $sTableAlias;
       				$statement.= " on ".$where;
       				if(STCheck::isDebug())
       				{
       				    STCheck::echoDebug("db.statements.table", "make ".$joinArt." join to table ".$database.$table.
       				        " with alias-name ".$sTableAlias);
-      				    STCheck::echoDebug("db.statements.where", "add foreign in on-clause \"$where\"");
+      				    STCheck::echoDebug("db.statements.where", "add foreign key in on-clause \"$where\"");
       				}
       				
       				if(0)
@@ -1356,18 +1395,22 @@ class STDbTable extends STBaseTable
         				    $fromTable= $oTable->getTable($join['table']->Name);
       				}else
       				    $fromTable= $oTable->getTable($join['table']->Name);
-    			    $statement.= $fromTable->addJoinLimitationByQuery($aTableAlias);
-    				$whereStatement= $fromTable->getWhereStatement("on", $fromTable, $aTableAlias);
-    				if($whereStatement)
-    				{
-    				    if(!preg_match("/^[ \t]*and/", $whereStatement))
-    				        $whereStatement= "and $whereStatement";
-    					$statement.= " ".$whereStatement;
-    					STCheck::echoDebug("db.statements.table", "get on condition '$whereStatement' from table '".$fromTable->getName()."(".$fromTable->ID.")'");
-    				}
+      				if($sSubstitutionTable == "")
+      				{// do not add query limitation by a substitution table point to him self
+      				    // toDo: how is possible to add where clauses for tables point to him self and need this anybody  
+      				    $statement.= $fromTable->addJoinLimitationByQuery($aTableAlias);
+      				    $whereStatement= $fromTable->getWhereStatement("on", $fromTable, $aTableAlias, $aSubstitutionTables);
+      				    if($whereStatement)
+      				    {
+      				        if(!preg_match("/^[ \t]*and/", $whereStatement))
+      				            $whereStatement= "and $whereStatement";
+      				            $statement.= " ".$whereStatement;
+      				            STCheck::echoDebug("db.statements.table", "get on condition '$whereStatement' from table '".$fromTable->getName()."(".$fromTable->ID.")'");
+      				    }
+      				}
     				if($oMainTable->getName() != $fromTable->getName())
     				{
-        				$whereStatement= $oMainTable->getWhereStatement("on", $fromTable, $aTableAlias);
+    				    $whereStatement= $oMainTable->getWhereStatement("on", $fromTable, $aTableAlias, $aSubstitutionTables);
         				if($whereStatement)
         				{
         				    if(!preg_match("/^[ \t]*and/", $whereStatement))
@@ -1377,16 +1420,20 @@ class STDbTable extends STBaseTable
         				}
     				}
     
-    				if(!isset($maked[$table]))
+    				if($sSubstitutionTable != "")
+    				    $makedTable= $sSubstitutionTable;
+				    else
+				        $makedTable= $table;
+				    if(!isset($maked[$makedTable]))
     				{// debug-Versuch f�r komplikationen -> bitte auch member-Variable counter am Funktionsanfang aktivieren
     				 //			if($this->counter==4){
     				 //				echo "$statement OK".$this->counter;exit;}else $this->counter++;
     
-    					$maked[$table]= "finished";
-    					$statement.= $fromTable->getTableStatementA($oMainTable, $aTableAlias, $maked);
+    				    $maked[$makedTable]= "finished";
+    					$statement.= $fromTable->getTableStatementA($oMainTable, $aTableAlias, $maked, $aSubstitutionTables);
     					Tag::echoDebug("db.statements.table", "back in table <b>".$oTable->getName()."</b>");
     				}
-    			}// end of if(	$bNeedColumn && isset($aTableAlias[$table])	)
+    			}// end of if(	$bNeedFkColumn && isset($aTableAlias[$table])	)
        		}//end of foreach($content)
     	}// end of foreach($fk)
     
@@ -1449,8 +1496,8 @@ class STDbTable extends STBaseTable
 													" with alias-name ".$sTableAlias);
 					}
 					$statement.= $BackTable->addJoinLimitationByQuery($aTableAlias);
-					$statement.= $oBackTable->getTableStatementA($oMainTable, $aTableAlias, $maked);
-					$whereStatement= $BackTable->getWhereStatement("on", $BackTable, $aTableAlias);
+					$statement.= $oBackTable->getTableStatementA($oMainTable, $aTableAlias, $maked, $aSubstitutionTables);
+					$whereStatement= $BackTable->getWhereStatement("on", $BackTable, $aTableAlias, $aSubstitutionTables);
 					if($whereStatement)
 					{
 					    if(!preg_match("/^[ \t]*and/", $whereStatement))
@@ -1460,7 +1507,7 @@ class STDbTable extends STBaseTable
 					}
 					if($oMainTable->getName() != $sBackTableName)
 					{
-					    $whereStatement= $oMainTable->getWhereStatement("on", $BackTable, $aTableAlias);
+					    $whereStatement= $oMainTable->getWhereStatement("on", $BackTable, $aTableAlias, $aSubstitutionTables);
 					    if($whereStatement)
 					    {
 					        if(!preg_match("/^[ \t]*and/", $whereStatement))
@@ -1473,10 +1520,15 @@ class STDbTable extends STBaseTable
 				unset($BackTable);
 			}// end of if($join)
 		}// end of foreach($oTable->aBackJoin)
-		    
+		
 		if( $bFirstAccess &&
-		    count($maked) < count($aTableAlias)   )
+		    count($maked) < (count($aTableAlias) - count($aSubstitutionTables))   )
 		{
+		    showLine();
+		    st_print_r($aTableAlias);
+		    st_print_r($maked);
+		    st_print_r($aSubstitutionTables);
+		    echo "$statement<br>";
 		    if(STCheck::isDebug("db.statements.table"))
 		    {
 		        $space= STCheck::echoDebug("db.statements.table", "need select for tables:");
@@ -1517,7 +1569,7 @@ class STDbTable extends STBaseTable
 		        STCheck::echoDebug("db.statements.table", "table found needed tables:");
 		        st_print_r($accessFoundTable, 20, $space);
 		    }
-		    echo __FILE__.__LINE__."<br>";
+		    showLine();
 		    echo "accessFoundTable:";
 		    st_print_r($accessFoundTable,20);
 		    $foundAccessOver= array();
@@ -1562,7 +1614,7 @@ class STDbTable extends STBaseTable
 		    }
 		    if(STCheck::isDebug())
 		    {
-		        echo __FILE__.__LINE__."<br>";
+		        showLine();
 		        echo "statement:$statement<br>";
 		        $bTableDebug= STCheck::isDebug("db.statements.table");
 		        STCheck::debug("db.statements.table");
@@ -1655,7 +1707,7 @@ class STDbTable extends STBaseTable
 	    }
 	    return $aRv;
 	}
-	/*private*/function newWhereCreation(array $aliases= null)
+	/*private*/function newWhereCreation(array $aliases= null, array $aSubstitutionTables= null)
 	{
 	    $oWhere= $this->getWhere();
 	    if(isset($oWhere))
@@ -1664,7 +1716,11 @@ class STDbTable extends STBaseTable
 	    {
     	    foreach($aliases as $tableName=>$alias)
     	    {
-    	        $table= $this->getTable($tableName);
+    	        if(isset($aSubstitutionTables[$tableName]))
+    	            $searchTableName= $aSubstitutionTables[$tableName];
+    	        else
+    	            $searchTableName= $tableName;
+    	        $table= $this->getTable($searchTableName);
     	        $table->newWhereCreation();
     	    }
 	    }
@@ -1676,16 +1732,32 @@ class STDbTable extends STBaseTable
 	 * @param string $condition for which clause ('where' or 'on')
 	 * @param STDbTable|array $from if set codition as 'on' this parameter have to be set
 	 * @param array $aliases array of alias names
+	 * @param array $aSubstitutionTables array of correct table names which are point to him self or an used table
 	 */
-	public function getWhereStatement(string $condition, STDbTable|array $from= null, array $aliases= null)
+	public function getWhereStatement(string $condition, $from= null, array $aliases= null, array $aSubstitutionTables= null)
 	{
+	    $bSetFromAlias= false;
+	    if( !isset($from) ||
+	        typeof($from, "array") )
+	    {
+	        if(typeof($from, "array"))
+	        {
+	            $bSetFromAlias= true;
+	        }
+	        $aSubstitutionTables= $aliases;
+	        $aliases= $from;
+	        if($condition == "on")
+	            STCheck::param($from, 1, "STDbTable");
+	        $from= $this;
+	    }
 	    if(STCheck::isDebug())
 	    {
+	        STCheck::param($from, 1, "array", "STDbTable");
 	        STCheck::param($condition, 0, "check", 
 	            $condition=="on"||$condition=="where"||$condition=="insert"||$condition=="update", 
 	            "'on', 'where', 'insert'", "'update' strings");
-	        if($condition == "on")
-	           STCheck::param($from, 1, "STDbTable");
+            if(isset($aliases))
+                STCheck::param($aSubstitutionTables, 3, "array");
 	           
             if(STCheck::isDebug("db.statements.where"))
             {
@@ -1734,15 +1806,6 @@ class STDbTable extends STBaseTable
 	        if(!isset($aliases))
 	            echo "<br />";
 	    }
-	    $bSetFromAlias= false;
-	    if( !isset($from) ||
-	        typeof($from, "array") )
-	    {
-	        if(typeof($from, "array"))
-	            $bSetFromAlias= true;
-	        $aliases= $from;
-	        $from= $this;
-	    }
 	    $aMade= array();
 	    $statement= "";
 	    $ostwhere= $this->getWhere();
@@ -1757,7 +1820,8 @@ class STDbTable extends STBaseTable
 	    {
 	        foreach($aliases as $tableName=>$alias)
 	        {
-	            if(!in_array($tableName, $aMade))
+	            if( !in_array($tableName, $aMade) &&
+	                !isset($aSubstitutionTables[$tableName])   )
 	            {
 	                $table= $this->getTable($tableName);
 	                if(typeof($table, "STAlaisTable"))

@@ -155,7 +155,7 @@ class STItemBox extends STBaseBox
 		function getJoinArray($aJoins, $post)
 		{
 			global $HTTP_POST_VARS;
-
+			
 	 		$aRv= array();
 	 		// toDo: use this time only from column names
 	 		//       but in the future should also use alias columns
@@ -164,6 +164,29 @@ class STItemBox extends STBaseBox
 			$oTable= $this->asDBTable;
 			Tag::echoDebug("form.join", "make joins for table ".$oTable->getName());
 			$fks= &$oTable->getForeignKeys();
+			if(STCheck::isDebug())
+			{
+    			$bToOwn= false;
+    			foreach($fks as $tableName=>$tableObj)
+    			{
+    			    if($this->asDBTable->Name == $tableName)
+    			    {
+    			        $bToOwn= true;
+    			        break;
+    			    }
+    			}
+    			if($bToOwn)
+    			{
+    			    echo "<br><br>";
+        			showLine();
+        			echo "create join-table from {$this->asDBTable->Name} to him self<br>";
+        			echo "----------------------------------------------------------<br>";
+        			echo "toDo: there query limitations inside where statement<br>";
+        			echo "      see debug('form.join')<br>";
+        			echo "----------------------------------------------------------<br>";
+        			st_print_r($fks,3);
+    			}
+			}
 			if(count($fks))
 			{
 				foreach($fks as $otherTableName=>$content)
@@ -657,6 +680,7 @@ class STItemBox extends STBaseBox
     		$oTable->andWhere($this->where);
     		$where= $oTable->getWhere();
     		Tag::alert(!($where && $where->isModified()), "STItemBox::makeBox()", "no where-clausel defined to display");
+    		STCheck::warning(1, "", "select hole statement from Database with FK Tables");
     		$statement= $oTable->getStatement();
 			$this->db->query($statement, $this->getOnError("SQL"));
 			$result= $this->db->fetch_row(MYSQL_ASSOC, $this->getOnError("SQL"));

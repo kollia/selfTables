@@ -1132,41 +1132,79 @@ abstract class STDatabase extends STObjectContainer
 	    }
 	    return $aRv;
 	}
-	public function searchJoinTables(&$aAliases)
+	public function searchJoinTables(array &$aAliases, array $aSubstitutionTables)
 	{
-	    if(STCheck::isDebug("db.table.fk"))
+	    $newAliases= array();
+	    $substitutionAliases= array();
+	    if(count($aSubstitutionTables))
 	    {
-	        $space= STCheck::echoDebug("db.table.fk", "search join tables where need also for existing tables:");
-	        st_print_r($aAliases, 2, $space);
+	        // do not search for substitution tables
+	        foreach($aAliases as $table => $alias)
+	        {
+	            if(!isset($aSubstitutionTables[$table]))
+	                $newAliases[$table]= $alias;
+	            else
+	                $substitutionAliases[$table]= $alias;
+	        }
+	    }else
+	        $newAliases= $aAliases;
+	    if(STCheck::isDebug())
+	    {
+    	    if(STCheck::isDebug("db.table.fk"))
+    	        $dbg= "db.table.fk";
+    	    else
+    	        $dbg= "db.statements.table";
+    	    if(STCheck::isDebug($dbg))
+    	    {
+    	        $space= STCheck::echoDebug($dbg, "search join tables where need also for existing tables:");
+    	        st_print_r($aAliases, 2, $space);
+    	        echo stTools::getSpaces($space)."structure of tables:<br />";
+    	        st_print_r($this->aTableStructure['struct'], 20, $space);
+    	    }
 	    }
-	    $this->searchJoinTablesR($this->aTableStructure['struct'], $aAliases, false);
-	    if(STCheck::isDebug("db.table.fk"))
+	    $this->searchJoinTablesR($this->aTableStructure['struct'], $newAliases, false);
+	    $aAliases= $newAliases;
+	    if(count($substitutionAliases))
 	    {
-	        $space= STCheck::echoDebug("db.table.fk", "result of joining tables need inside selection-statement:");
-	        st_print_r($aAliases, 2, $space);
+	        // implement back substitution tables
+	        foreach($substitutionAliases as $table => $alias)
+	            $aAliases[$table]= $alias;
+	    }
+	    if(STCheck::isDebug())
+	    {
+	        if(STCheck::isDebug($dbg))
+	        {
+	            $space= STCheck::echoDebug($dbg, "result of joining tables need inside selection-statement:");
+	            st_print_r($aAliases, 2, $space);
+	        }
 	    }
 	}
-	private function searchJoinTablesR($aTableStructure, &$aAliases, $bNeedBefore)
-	{ 
+	private function searchJoinTablesR($aTableStructure, &$aAliases, $bNeedBefore) : array
+	{
 	    $debugFunction= false;
-	    $c= 0;
+	    $branch= array();
 	    if(!is_array($aTableStructure))
-	        return 0;
+	        return array();
 	    foreach($aTableStructure as $tableName=>$fks)
 	    {
 	        if($debugFunction) echo "search for table $tableName<br>";
 	        $needTable= false;
 	        if(isset($aAliases[$tableName]))
 	        {
-	            if($debugFunction) echo " need table $tableName inside statement<br>";
+	            if($debugFunction) echo " <b>need</b> table $tableName inside statement<br>";
 	            $needTable= true;
 	        }
 	        $needBranch= $this->searchJoinTablesR($fks, $aAliases, $needTable);
-	        if($debugFunction) echo " for table $tableName need $needBranch branches<br>";
+	        if($debugFunction) echo " for table $tableName need ".count($needBranch)." branche(s)<br>";
+	        if(count($aAliases) == count($needBranch))
+	        {
+	            if($debugFunction) echo " found all tables, need no more!<br />";
+	            return $needBranch;
+	        }
             if( $needTable ||
-                $needBranch > 1 )
+                count($needBranch) > 1 )
             {
-                $c++;
+                $branch[]= $tableName;
                 if(!$needTable)
                 {
                     $allAliases= $this->getAliasOrder();
@@ -1174,7 +1212,7 @@ abstract class STDatabase extends STObjectContainer
                 }
             }
 	    }	    
-	    return $c;
+	    return $branch;
 	}
 	function getReachedTables($table, $reached= null)
 	{

@@ -50,6 +50,11 @@ class STBaseTable
 	var	$abOrigChoice= array();
 	var	$show= array();
 	/**
+	 * specific GUI display for enums
+	 * @var array
+	 */
+	protected $enumField= array();
+	/**
 	 * pre-defined value-property like an flag in database
 	 * @var array
 	 */
@@ -66,7 +71,7 @@ class STBaseTable
      * inside the statment to reach correct usage
      * @var array
      */
-	private $aJoinOverTables= array();
+	protected $aJoinOverTables= array();
 	/**
 	 * array of tables over which not should joined
 	 * inside the statment to reach correct usage.<br />
@@ -3352,8 +3357,10 @@ class STBaseTable
 	            $limitation= $query->getLimitation($tableName);
 	            foreach($fields as $content)
 	            {
-	                if(isset($limitation[$content['other']]))
-	                {
+	                if( $tableName != $content['table']->getName() &&
+	                    isset($limitation[$content['other']])          )
+	                {// if content['table'] same as $tableName -> table link to his own table
+	                 // and it should have not the same limitation as own table
 	                    $statement.= " and ";
 	                    $statement.= $aAliasTables[$ownTableName].".".$content['own']."=";
 	                    $statement.= "'".$limitation[$content['other']]."'";
