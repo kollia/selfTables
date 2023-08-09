@@ -254,10 +254,14 @@ class STSession
 			echo "<br />";
 			STCheck::echoDebug($debug, "cookies set on host <b>".$_SERVER["HTTP_HOST"]."</b>");
 			st_print_r($HTTP_COOKIE_VARS, 5, $space);
-			STCheck::echoDebug($debug, "session variables are:");
-		    st_print_r($_SESSION, 5, $space);
-		    if($_SESSION == null)
-		        echo "<br /><br />";
+			if(isset($_SESSION))
+			{
+    			STCheck::echoDebug($debug, "session variables are:");
+    		    st_print_r($_SESSION, 5, $space);
+    		    if($_SESSION == null)
+    		        echo "<br /><br />";
+			}else
+			    STCheck::echoDebug($debug, "no session variabes are set");
 		}
   	}
 	function getSessionID()
@@ -938,6 +942,7 @@ class STSession
  			        exit;
  			    }
  			    $this->gotoLoginMask(0);
+ 			    session_destroy();
  			    exit;
  			}
     	}elseif( isset( $HTTP_GET_VARS[ "timeout" ] ) )

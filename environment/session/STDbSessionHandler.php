@@ -31,12 +31,15 @@ class STDbSessionHandler implements SessionHandlerInterface
     {
         $this->sUsingFunctions.= "read('$sessionId')<br>";
         $lifetime= ini_get("session.gc_maxlifetime");
+        $lasttime= time()-$lifetime;
         $oSessionTable= $this->database->getTable("Sessions");
         $oSelector= new STDbSelector($oSessionTable);
         $oSelector->select("Sessions", "ses_id");
         $oSelector->select("Sessions", "ses_value");
         $oSelector->select("Sessions", "ses_time");
         $oSelector->where("ses_id='".$this->database->real_escape_string($sessionId)."'");
+        if(STCheck::isDebug("session"))            
+            $oSelector->orWhere("ses_time>=$lasttime");
         $count= $oSelector->execute();
         $res= $oSelector->getResult();
         if($oSelector->getErrorId() != 0)
@@ -44,23 +47,48 @@ class STDbSessionHandler implements SessionHandlerInterface
             STCheck::warning(true, "cannot read session from database: ".$oSelector->getErrorString());
             return false;
         }
-        $rowNr= 0;
+        $rowNr= -1;
+        $rowCount= 0;
+        STCheck::echoDebug("session");
         foreach($res as $row)
         {
+            if(STCheck::isDebug("session"))
+            {
+                if($row['ses_id'] == $sessionId)
+                    $cur= "*";
+                else
+                    $cur= " ";
+                $session_data= $this->unserialize($row["ses_value"]);
+                if( isset($session_data['ST_LOGGED_IN']) &&
+                    $session_data['ST_LOGGED_IN'] == 1 &&
+                    $row['ses_time'] >= $lasttime       )
+                {
+                    $tm_loggedin= time()-$row['ses_time'];
+                    $tm_min= (int)($tm_loggedin / 60);
+                    $tm_sec= $tm_loggedin - ($tm_min * 60);
+                    $logged= "user <b>".$session_data['ST_USER']."</b> is logged in since ";
+                    if($tm_min > 0)
+                        $logged.= $tm_min." minutes and ";
+                    $logged.= $tm_sec." seconds";
+                }else
+                    $logged= "nobody is logged in";
+                STCheck::echoDebug("session", "session $cur<b>".$row['ses_id']."</b> - $logged");
+            }
             if($row['ses_id'] == $sessionId)
-                break;
-            $rowNr++;
+            {
+                $this->existID= $sessionId;
+                if($row['ses_time'] >= $lasttime)
+                {
+                    $rowNr= $rowCount;
+                    if(!STCheck::isDebug("session"))
+                        break;
+                }
+            }
+            $rowCount++;
         }
-        if(STCheck::isDebug())
-        {
-            showLine();
-            echo "count of selected sessions are $count<br>";
-            st_print_r($res,4);
-        }
+        STCheck::echoDebug("session");
         if($count > 0)
             $this->sUsingFunctions.= " &#160;cookie session hold $lifetime seconds<br />\n";
-        if(isset($res[$rowNr]["ses_value"]))
-            $this->existID= $sessionId;
         if( !isset($res[$rowNr]["ses_value"]) ||
             (time() - $res[$rowNr]["ses_time"]) > $lifetime )
         {
@@ -73,14 +101,6 @@ class STDbSessionHandler implements SessionHandlerInterface
         }
         $this->sUsingFunctions.= " &#160;found session was ".(time() - $res[$rowNr]["ses_time"])." seconds alive<br>\n";
         $this->sUsingFunctions.= " &#160;session <b>OK</b>, return <b>all</b> session variables<br>\n";
-        //$this->sUsingFunctions.= " &#160;-------------------------------------------------------------------------------------<br />";
-        //$this->sUsingFunctions.= " &#160;".print_r($res[$rowNr]["ses_value"], true)."<br>";
-        //$this->sUsingFunctions.= " &#160;-------------------------------------------------------------------------------------<br />";
-        if(STCheck::isDebug("session"))
-        {
-            session_decode($res[$rowNr]["ses_value"]);
-            st_print_r($_SESSION);
-        }
         if(isset($_SESSION['ST_USER']))
             $user= "user: ".$_SESSION['ST_USER'];
         else
@@ -91,7 +111,7 @@ class STDbSessionHandler implements SessionHandlerInterface
             $loggedin= "logged in";
         }else
             $loggedin= "not logged in";
-        $this->sUsingFunctions.= " &#160;user $user $loggedin<br />";
+        $this->sUsingFunctions.= " &#160; $user $loggedin<br />";
         return $res[$rowNr]["ses_value"];
             
     }
@@ -194,6 +214,52 @@ class STDbSessionHandler implements SessionHandlerInterface
             echo $this->sUsingFunctions;
         }
         return true;
+    }
+    public static function unserialize($session_data) {
+        $method = ini_get("session.serialize_handler");
+        switch ($method) {
+            case "php":
+                return self::unserialize_php($session_data);
+                break;
+            case "php_binary":
+                return self::unserialize_phpbinary($session_data);
+                break;
+            default:
+                throw new Exception("Unsupported session.serialize_handler: " . $method . ". Supported: php, php_binary");
+        }
+    }
+    
+    private static function unserialize_php($session_data) {
+        $return_data = array();
+        $offset = 0;
+        while ($offset < strlen($session_data)) {
+            if (!strstr(substr($session_data, $offset), "|")) {
+                throw new Exception("invalid data, remaining: " . substr($session_data, $offset));
+            }
+            $pos = strpos($session_data, "|", $offset);
+            $num = $pos - $offset;
+            $varname = substr($session_data, $offset, $num);
+            $offset += $num + 1;
+            $data = unserialize(substr($session_data, $offset));
+            $return_data[$varname] = $data;
+            $offset += strlen(serialize($data));
+        }
+        return $return_data;
+    }
+    
+    private static function unserialize_phpbinary($session_data) {
+        $return_data = array();
+        $offset = 0;
+        while ($offset < strlen($session_data)) {
+            $num = ord($session_data[$offset]);
+            $offset += 1;
+            $varname = substr($session_data, $offset, $num);
+            $offset += $num;
+            $data = unserialize(substr($session_data, $offset));
+            $return_data[$varname] = $data;
+            $offset += strlen(serialize($data));
+        }
+        return $return_data;
     }
 }
     
