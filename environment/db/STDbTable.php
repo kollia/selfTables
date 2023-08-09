@@ -740,12 +740,22 @@ class STDbTable extends STBaseTable
             $statement.= " ".$this->aStatement['where'];
         return $statement;
 	}
+	/**
+	 * display sql statement string splitted by some keyords
+	 * for better human reading
+	 */
 	public function displayWrappedStatement()
 	{
 	    $array= $this->getWrappedStatement();
 	    foreach($array as $row)
 	        echo "$row<br />";
 	}
+	/**
+	 * get sql statement string splitted by some keyords
+	 * for better human reading
+	 * 
+	 *  @return array Array of sql strings
+	 */
 	public function getWrappedStatement()
 	{
 	    $stats= array(  "show", "select", "update", "delete", "from",
