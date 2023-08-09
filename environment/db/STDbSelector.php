@@ -767,14 +767,14 @@ class STDbSelector extends STDbTable implements STContainerTempl
 			$this->setSqlError($this->SqlResult);
 			$this->search= array();
 			if($this->SqlResult===null)
-				return -1;
+				return $this->getErrorId() * -1;
 			$fields= $this->getSelectedFieldArray();
 			$this->SqlResult= $this->db->orderDate($fields, $this->SqlResult, "need no statement");
 			//echo __file__.__line__."<br />";
 			//echo $statement;
 			$this->db->orderDates(true);
 			$this->SqlResult= $this->db->orderDate($fields, $this->SqlResult);
-			if($bNormal)
+			if(!$bNormal)
 			{
 				$fvalue= array();
 				foreach($this->SqlResult as $key=>$value)
