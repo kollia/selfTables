@@ -12,7 +12,7 @@ class STDbSqlCases
     /**
      * database
      */
-    //var $db;
+    var $db;
     /**
      * current row which can be filled
      * with new content
