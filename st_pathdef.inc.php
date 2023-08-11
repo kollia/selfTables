@@ -6,17 +6,18 @@
 	//        ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 	//
 	//     true		             -  only set to debug and check parameters in some method's (true is an boolean no string)
-	//     query                 -  show incomming query of GET /POST URL's or uploaded FILES
+	//     query                 -  show incomming query of GET, POST URL's or uploaded FILES
     //     query.limitation      -  show manipulation of query for new container or action set
     //     performance           -  show needed performance of time from hole site
     //     db.descriptions       -  show which tables are described on database
-	//     db.statement          -  show created statements of self-Tables
+	//     db.statement          -  show created statements of self-Tables 
 	//     db.statement.from     -  show also trace from were statement was called
 	//     db.statements.from    -  show trace also from where statement was fired to database
 	//     db.statement.time     -  show how long statement need to fetch from database
 	//     db.statement.modify   -  show creation of insert/update statement
     //     db.statement.insert   -  same as db.statement.modify
     //     db.statement.update   -  same as db.statement.modify
+    //     db.main.statement     -  show only created main statment of displayed list table or item box
 	//     db.statements.select  -  show select statement by creation
 	//     db.statements.table   -  show part of table creation statement
 	//     db.statments.where    -  show part of creation by where statement

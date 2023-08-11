@@ -3342,6 +3342,12 @@ class STBaseTable
 	        $query= new STQueryString();
 	        $fks= $this->getForeignKeys();
 	        $limitation= $query->getLimitation($ownTableName);
+	        if(STCheck::isDebug("db.statements.where"))
+	        {
+	            $space= STCheck::echoDebug("db.statements.where", "query limitation of table $ownTableName:");
+	            st_print_r($limitation, 5, $space);
+	            echo "<br />";
+	        }
 	        if( isset($limitation) &&
 	            count($limitation)     )
 	        {// add limitation for allocated table
@@ -3355,9 +3361,19 @@ class STBaseTable
 	        foreach($fks as $tableName=>$fields)
 	        {// add limitation for foreign keys
 	            $limitation= $query->getLimitation($tableName);
+	            if(STCheck::isDebug("db.statements.where"))
+	            {
+	                $space= STCheck::echoDebug("db.statements.where", "from foreign key table $tableName:");
+	                st_print_r($fields, 2, $space);
+	                STCheck::echoDebug("db.statements.where", "is query limitation:");
+	                st_print_r($limitation, 5, $space);
+	                echo "<br />";
+	            }
 	            foreach($fields as $content)
 	            {
-	                if( $tableName != $content['table']->getName() &&
+	                // do not need limitation from own table
+	                // when table points to him self
+	                if( $tableName != $ownTableName &&  
 	                    isset($limitation[$content['other']])          )
 	                {// if content['table'] same as $tableName -> table link to his own table
 	                 // and it should have not the same limitation as own table
