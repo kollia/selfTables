@@ -99,6 +99,7 @@ class STUserProjectManagement extends STBaseContainer
         $selector->select("Project", "Description");//"Description");
         $selector->select("Project", "DateCreation");
         $selector->orderBy("Project", "Name");
+        $selector->allowQueryLimitation(false);
         $selector->execute();
         $result= $selector->getResult();
         
