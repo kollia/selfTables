@@ -3673,7 +3673,7 @@ class STBaseTable
                 return false;
         }
 
-		if(STCheck::isDebug())
+        if(STCheck::isDebug("access"))
 		{
 			if($action==STALLDEF)
 				$staction= "STALLDEF";
@@ -3691,14 +3691,14 @@ class STBaseTable
 			if(is_array($clusters))
 			{
 				foreach($clusters as $cluster)
-					$clusterString.= $cluster.", ";
+					$clusterString.= $cluster['cluster'].", ";
 				$clusterString= substr($clusterString, 0, strlen($clusterString)-2);
 			}else
 				$clusterString= $clusters;
 		}
 		if($access)
 		{
-			if(STCheck::isDebug())
+		    if(STCheck::isDebug("access"))
 			{
 				if($clusterString)
 				{
@@ -3713,8 +3713,8 @@ class STBaseTable
 			return true;
 		}
 
-		if(STCheck::isDebug())
-		STCheck::echoDebug("access", "user in action $staction has <b>no access</b> to table "
+		if(STCheck::isDebug("access"))
+		    STCheck::echoDebug("access", "user in action $staction has <b>no access</b> to table "
 								.$this->Name."(".$this->getDisplayName()
 								.") with Clusters '<i>$clusterString</i>'");
 		return false;

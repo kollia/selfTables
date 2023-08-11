@@ -10,6 +10,10 @@ class STDbSqlCases
      */
     var	$table;
     /**
+     * database
+     */
+    //var $db;
+    /**
      * current row which can be filled
      * with new content
      * @var integer
