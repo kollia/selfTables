@@ -35,15 +35,22 @@ class STUserSiteCreator extends STSessionSiteCreator
 			$this->userDb= &STDbTableContainer::getContainer($dbName);
 		}else
 			$this->userDb= &$this->db;
-
-		if(!STSession::sessionGenerated())
+			
+		$this->userManagement= &STUserSession::instance();
+		if(!isset($this->userManagement))
 		{
 		    $bSessionGenerated= false;
-			STUserSession::init($this->userDb, $this->sUserTablePrefix);
-		}else
-		    $bSessionGenerated= true;
-   		$this->userManagement= &STUserSession::instance();
-
+		    Tag::alert(!isset($this->sUserTablePrefix), "STUserSiteCreator::initSession()",
+		        "you have to invoke method STUserSiteCreator::setPrefixToTables() before initSession()");
+		    STUserSession::init($this->userDb, $this->sUserTablePrefix);
+		    
+		}else if(!STSession::sessionGenerated())
+		    $bSessionGenerated= false;
+	    else
+	        $bSessionGenerated= true;
+	        
+        if($this->userManagement->noRegister)
+            return;
 		if($this->bDoInstall)
 		{
 			$this->bDoInstall= false;

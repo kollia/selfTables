@@ -94,7 +94,7 @@ class STUserSession extends STDbSession
 	 *                           (default parameter null only defined because parameters hase to be compatible with parent object definition)
 	 * @param string $prefix can be the prefix string for tables inside database
 	 */
-	public static function init(&$instance= null, $prefix= null)
+	public static function init(&$instance= null, string $prefix= "")
 	{
 	    STCheck::param($instance, 0, "STDatabase", "STDbSession");
 	    STCheck::param($prefix, 1, "string", "empty(string)");
