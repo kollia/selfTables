@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Generator: Adobe Illustrator 25.2.0, SVG Export Plug-In . SVG Version: 6.00 Build 0)  -->
+<svg version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" x="0px" y="0px"
+	 viewBox="0 0 960 560" enable-background="new 0 0 960 560" xml:space="preserve">
+<g id="Ebene_1">
+	<path fill="#FFFFFF" stroke="#000000" stroke-width="2" stroke-miterlimit="10" d="M506.13,183.04c-0.71,0.1-10.62-0.04-10.62-0.04
+		c-3.89-3.06-5.71-2.8-6.54-1.33c-0.99,1.76-0.56,5.26-0.56,6.89c-0.01,2.98,3.15,5.59,7.06,5.6l7.62,0.03
+		c0.74-0.51,1.67-0.82,2.8-0.82c0.74,0,1.38,0.14,1.95,0.37c0.12-0.03,0.25-0.06,0.38-0.1c-0.56-2.81,1.01-6.13,4.72-6.13
+		c0.14,0,0.27,0.01,0.41,0.02C515.06,173.4,506.83,182.94,506.13,183.04z"/>
+	<path fill="#FFFFFF" stroke="#000000" stroke-width="2" stroke-miterlimit="10" d="M513.58,178c0,3.13-2.32,6-5.19,6h-14.52
+		c-2.87,0-5.19-2.87-5.19-6l0,0c0-3.13,2.32-6,5.19-6h14.52C511.26,172,513.58,174.87,513.58,178L513.58,178z"/>
+	<g>
+		<g>
+			<path fill="none" stroke="#000000" stroke-miterlimit="10" d="M496.44,176.63"/>
+		</g>
+	</g>
+	<rect x="494.24" y="174.44" fill="none" width="15.16" height="9.81"/>
+	
+		<text transform="matrix(1 0 0 1 494.2422 181.9063)" fill="#F7931E" stroke="#29ABE2" stroke-miterlimit="10" font-family="'Rockwell'" font-size="11px">DB</text>
+	<rect x="510.56" y="187.69" fill="none" width="37.69" height="8.56"/>
+	<text transform="matrix(1 0 0 1 510.5625 193.1191)"><tspan x="0" y="0" fill="#F7931E" font-family="'Rockwell'" font-size="8px">self</tspan><tspan x="12.92" y="0" fill="#29ABE2" font-family="'Rockwell-Italic'" font-size="8px">Tables</tspan></text>
+	<path fill="none" stroke="#000000" stroke-width="0.75" stroke-miterlimit="10" d="M508.43,193.95
+		c21.06-0.05,42.13-0.11,63.19-0.16"/>
+</g>
+<g id="Ebene_2">
+</g>
+</svg>
