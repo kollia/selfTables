@@ -59,6 +59,8 @@ class STDbSession extends STSession
         STCheck::param($prefix, 1, "string", "empty(string)");
         
         global $global_selftable_session_class_instance;
+        global $global_dbsession_probability;
+        global $global_dbsession_divisor;
         
         STCheck::alert(isset($global_selftable_session_class_instance[0]),
             "STDbSession::init()", "an session was defined before, cannot define two sessions");
@@ -72,21 +74,23 @@ class STDbSession extends STSession
             $global_selftable_session_class_instance[0]= new STDbSession($instance);
             $desc= STDbTableDescriptions::init($instance);
         }
-          
-        if(STCheck::isDebug())
+         
+        $probability= ini_get("session.gc_probability");
+        if($probability == 0)
+            $global_dbsession_probability= 1;
+        if(STCheck::isDebug("session"))
         {
-            $probability= ini_get("session.gc_probability");
-            if($probability == 0)
-            {
-                ini_set("session.gc_probability", 1);
-                STCheck::echoDebug("session", "garbage collector probability was set befor to 0, set Back to 1");
-            }
             $divisor= ini_get("session.gc_divisor");
-            $lifetime= ini_get("session.cookie_lifetime");
-            $lifetime= ini_get("session.cookie_lifetime");
+            $lifetime= ini_get("session.gc_maxlifetime");
             $msg= array( "garbage collector running $probability/$divisor for every session",
                          "every session holding for $lifetime seconds"                          );
             STCheck::echoDebug("session", $msg);
+            if($probability == 0)
+            {
+                STCheck::echoDebug("session", "garbage collector probability was set to 0, so start own garbage collector");
+                STCheck::echoDebug("session", "own garbage collector running $global_dbsession_probability/$global_dbsession_divisor for every session");
+                STCheck::echoDebug("session");
+            }
         }
         $global_selftable_session_class_instance[0]->defineDatabaseTableDescriptions($desc);
         

@@ -5,6 +5,16 @@ require_once( $_stdbinserter );
 require_once( $_stdbupdater );
 require_once( $_stdbdeleter );
 
+/**
+ * overwrite probability and divisor from php.ini
+ * and start own garbage collector
+ *
+ * @var integer $global_dbsession_probability
+ * @var integer $global_dbsession_devisor
+ */
+$global_dbsession_probability= 0;
+$global_dbsession_divisor= 100;
+
 // session configuration variables
 // https://www.php.net/manual/en/session.configuration.php
 //
@@ -88,7 +98,7 @@ class STDbSessionHandler implements SessionHandlerInterface
         }
         STCheck::echoDebug("session");
         if($count > 0)
-            $this->sUsingFunctions.= " &#160;cookie session hold $lifetime seconds<br />\n";
+            $this->sUsingFunctions.= " &#160;every session should hold $lifetime seconds<br />\n";
         if( !isset($res[$rowNr]["ses_value"]) ||
             (time() - $res[$rowNr]["ses_time"]) > $lifetime )
         {
@@ -124,6 +134,11 @@ class STDbSessionHandler implements SessionHandlerInterface
             echo "          write database SESSION<br />";
             echo "</pre>";
         }
+        
+        global $global_dbsession_probability;
+        global $global_dbsession_divisor;
+        
+        
         $err_msg= "";
         if(STCheck::isDebug("session"))
             $this->sUsingFunctions.= "write('$sessionId', [\$data])<br />";
@@ -168,6 +183,33 @@ class STDbSessionHandler implements SessionHandlerInterface
             return false;
         }
         $this->sUsingFunctions.= " &#160;return <b>true</b><br />";
+        // check for garbage collector
+        if($global_dbsession_probability)
+        {
+            $this->sUsingFunctions.= " &#160; -> try to start own garbage collector<br />";
+            $probabilities= array();
+            for($i= 0; $i < $global_dbsession_probability; $i++)
+                $probabilities[]= rand(1, $global_dbsession_divisor);
+            $random= rand(1, $global_dbsession_divisor);
+            $start= false;
+            foreach($probabilities as $probability)
+            {
+                $this->sUsingFunctions.= " &#160;&#160;&#160;&#160; random/collection $random/$probability";
+                if($random == $probability)
+                {
+                    $this->sUsingFunctions.= " <- was correct<br />";
+                    $start= true;
+                    break;
+                }else
+                    $this->sUsingFunctions.= "<br />";
+            }
+            if($start)
+            {
+                $lifetime= ini_get("session.gc_maxlifetime");
+                $this->gc($lifetime);
+            }else
+                $this->sUsingFunctions.= " &#160;&#160;&#160;&#160; <- was wrong<br />";
+        }
         return true;
     }
     public function destroy(string $sessionId) : bool
@@ -190,17 +232,23 @@ class STDbSessionHandler implements SessionHandlerInterface
             return true;
         }
         $this->sUsingFunctions.= " &#160;return <b>false</b><br />";
+        
         return false;
     }
     public function gc(int $lifetime) : int
     {
-        $this->sUsingFunctions.= "gc() session cleaner on time $lifetime<br>";
+        $time= time() - $lifetime;
+        $this->sUsingFunctions.= " &#160;gc() session cleaner on time $lifetime<br>";
         $oSessionTable= $this->database->getTable("Sessions");
         $del= new STDbDeleter($oSessionTable);
-        $del->where("ses_time < $lifetime");
+        $del->where("ses_time < $time");
         $res= $del->execute();
         if($res == 0)
+        {
+            $this->sUsingFunctions.= " &#160;remove x sessions<br />";
             return 2;// toDo: should return affected rows of deletion
+        }
+        $this->sUsingFunctions.= " &#160;cannot remove sessions <b>ERROR</b> ".$del->getErrorString()."<br />";
         return false;
             
     }
