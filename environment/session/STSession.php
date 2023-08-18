@@ -203,13 +203,6 @@ class STSession
 		// or other places
 		$this->session_storage_place();
 		
-		if($php_session_name)
-		{
-			$this->sessionName= $php_session_name;
-			session_name($php_session_name);
-		}else
-			$this->sessionName= session_name();
-		
 		if(!isset($_SESSION))
 		{
 		    // WARNING: since my last test php version 8.1.2
@@ -264,9 +257,50 @@ class STSession
 			    STCheck::echoDebug($debug, "no session variabes are set");
 		}
   	}
-	function getSessionID()
+  	/**
+  	 * define new session name for url or coockie parameter
+  	 * 
+  	 * @param string $name new name of session
+  	 */
+  	public static function setSessionName(string $name)
+  	{
+  	    session_name($name);
+  	}
+  	/**
+  	 * return current session name
+  	 * 
+  	 * @return string name of session
+  	 */
+  	public static function getSessionName()
+  	{
+  	    return session_name();
+  	}
+  	/**
+  	 * return current session ID when set, 
+  	 * otherwise null
+  	 * 
+  	 * @return string session ID
+  	 */
+  	public static function getSessionID()
 	{
 		return session_id();
+	}
+	/**
+	 * return session parameter with ID
+	 * only if allowUrlSession defined or session.use_only_cookies be 0.
+	 * Otherwise return a null terminated string
+	 * 
+	 * @return string url session parameter with session ID
+	 */
+	public static function getSessionUrlParameter()
+	{
+	    $sRv= "";
+	    if(ini_get("session.use_only_cookies") == 0)
+	    {
+	        $sRv= STSession::getSessionName()."=";
+	        $sRv.= STSession::getSessionID();
+	    }
+	    return $sRv;
 	}
 	/**
 	 * allow session variables defined inside URL<br />
@@ -275,7 +309,7 @@ class STSession
 	public static function allowUrlSession()
 	{
 	    STCheck::echoDebug("session", "Enabling to allow session variables set also in <b>URL</b>");
-	    //ini_set("session.use_only_cookies", "0");
+	    ini_set("session.use_only_cookies", "0");
 	}
 	function isLoggedIn()
 	{
@@ -942,7 +976,6 @@ class STSession
  			        exit;
  			    }
  			    $this->gotoLoginMask(0);
- 			    session_destroy();
  			    exit;
  			}
     	}elseif( isset( $HTTP_GET_VARS[ "timeout" ] ) )

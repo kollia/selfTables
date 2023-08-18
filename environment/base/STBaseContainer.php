@@ -35,12 +35,14 @@ interface STContainerTempl
 
 abstract class STBaseContainer extends BodyTag implements STContainerTempl
 {
-    var $language= "en";
+    var $locale= array( "language"  => 'en',
+                        "nation"    => 'XXX', // <- undefined
+                        "format"    => 'UTF-8'      );
     /**
      * message handling for differnt languages
      * @var STMessageHandling
      */
-    protected $oMsg;
+    protected $msgBox;
     /**
      * array of backbutton addresses
      * for backbutton or container which to go back
@@ -125,14 +127,13 @@ abstract class STBaseContainer extends BodyTag implements STContainerTempl
             STCheck::param($bodyClass, 2, "string");
     	    STCheck::echoDebug("container", "create new container-object ".get_class($this)."(<b>$name</b>)");
 	    }
-
 		$this->name= $name;
 		if( isset($container) && 
 		    $container->name != $this->name )
 		{
 		    $this->parentContainer= &$container;
 		}
-		$this->oMsg= new STMessageHandling(get_class($this)); // <-- not implemented jet by STObjectContainer
+		$this->msgBox= new STMessageHandling(get_class($this)); // <-- not implemented jet by STObjectContainer
 		Tag::alert(isset($global_array_all_exist_stobjectcontainers[$name]),
 					"STBaseContainer::STBaseContainer(\"$name\"",
 					"container \"$name\" already exists");
@@ -144,6 +145,35 @@ abstract class STBaseContainer extends BodyTag implements STContainerTempl
 		}
 		BodyTag::__construct($bodyClass);
 	}	
+	/**
+	 * dummy method to create messages for different languages.<br />
+	 * inside class methods (create(), init(), ...) you get messages from <code>$this->getMessageContent(<message id>)</code><br />
+	 * inside this method depending the <code>$language</code> define messages with <code>this->setMessageContent(<message id>, <message>)</code><br />
+	 * see STMessageHandling
+	 * 
+	 * @param string $language current language like 'en', 'de', ...
+	 */
+	protected function createMessages(string $language)
+	{
+	    // dummy method 
+	}
+	protected function setMessageContent(string $messageID, string $messageContent)
+	{
+	    $this->msgBox->setMessageContent($messageID, $messageContent);
+	}
+	protected function getMessageContent(string $messageID, string $parameters= null) : string
+	{
+	    $paramArray= array();
+	    if(isset($parameters))
+	    {
+    	    $have= func_num_args();
+    	    $args= func_get_args();
+    	    for($count=1; $count<$have; $count++)
+    	        $paramArray[]= $args[$count];
+	    }
+        $this->msgBox->setMessageId($messageID, $paramArray);
+        return $this->msgBox->getMessageContent($messageID);
+	}
 	public function clearFirstObjectContainer()
 	{
 	    global $global_first_objectContainerName;
@@ -446,6 +476,8 @@ abstract class STBaseContainer extends BodyTag implements STContainerTempl
 	}
 	function execute(&$externSideCreator, $onError)
 	{
+	    // create message pool for language
+	    $this->createMessages($this->locale['language'], $this->locale['nation']);
 	    // initial container
 	    $this->initContainer();
 

@@ -1050,17 +1050,16 @@ class STQueryString
 					STCheck::warning(1, "STQueryString::resetParams()", "stget number ".$nr." not be set in table STQuery -> maybe table content be deleted before");
 				unset($HTTP_GET_VARS["stget"]["nr"]);
 			}
-			$session_name= session_name();
 			if(!isset($global_selftables_queryArray))
 			    $global_selftables_queryArray= $HTTP_GET_VARS;
 			$this->param_vars= $global_selftables_queryArray;
-			$session_id= session_id();
-			if($session_id)
+			$session= STSession::getSessionUrlParameter();
+			if($session == "")
 			{
-				$this->update($session_name."=".$session_id);
-					
-			}else
+			    $session_name= STSession::getSessionName();
 			    $this->delete($session_name);
+			}else
+    			$this->update($session);
 		}
 		/**
 		 * synchronize new defined query string

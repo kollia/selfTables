@@ -11,7 +11,7 @@ interface STMessagHandlingInterface
 class STMessageHandling // implements STMessageHandlingInterface <- ab version 5
 {
 		var $sObject; // f�r welches Objekt STMessageHandling ausgef�hrt wird
-		var $aMessageStrings= array();
+		protected $aMessageStrings= array();
 		var	$messageId= "NOERROR";
 		var	$EndScripts= array(); // werden immer am Ende ausgef�hrt
 		var	$ErrorScripts= array(); // werden bei jedem Fehler nach EndScript ausgef�hrt
@@ -56,8 +56,10 @@ class STMessageHandling // implements STMessageHandlingInterface <- ab version 5
 		{
 			$this->messageId= "NOERROR";
 		}
-		function setMessageId(string $messageId, string $newString= null)
+		function setMessageId(string $messageId, $newString= null)
 		{
+		    STCheck::param($newString, 1, "string", "array", "null");
+		    
 			if(Tag::isDebug())
 			{
 				Tag::alert(!isset($this->aMessageStrings[$messageId]), "STMessageHandling::setMessageId()",
@@ -70,6 +72,11 @@ class STMessageHandling // implements STMessageHandlingInterface <- ab version 5
 				return;// damit der erste Fehler erhalten bleibt
 			STCheck::echoDebug("STMessageHandling", "set MessageId: $messageId");
 			$this->messageId= $messageId;
+			if( is_array($newString) &&
+			    empty($newString)        )
+			{
+			    $newString= null;
+			}
 			
 			// alex 2006/01/17:	if an messageId have one or more '@',
 			//					but in function setMessageContent() is not given an Error-String
@@ -79,16 +86,25 @@ class STMessageHandling // implements STMessageHandlingInterface <- ab version 5
 				and
 				$this->aMessageStrings[$messageId]!=="")
 			{//st_print_r($ats);
-				$need= strlen($ats[0]);
-				$have= func_num_args();
+			    $need= strlen($ats[0]);
+			    $paramArray= array();
+				if(is_string($newString))	
+				{
+				    $have= func_num_args();
+				    $args= func_get_args();
+				    for($count=1; $count<$have; $count++)
+				        $paramArray[]= $args[$count];
+				    
+				}elseif(is_array($newString))
+				    $paramArray= $newString;
+				
 				$sMessageString= trim($this->aMessageStrings[$messageId]);
 				$split= preg_split("/@/", $sMessageString);							
-				Tag::alert($need!=($have-1), "STMessageHandling::setMessageID", "function must have ".($need)." params");
+				Tag::alert($need!=$have, "STMessageHandling::setMessageID", "function must have ".($need)." params");
 				
-				$args= func_get_args();
 				$sNewMessageString= $split[0];
-				for($count=1; $count<$have; $count++)
-				    $sNewMessageString.= $args[$count].$split[$count];
+				foreach($paramArray as $param)
+				    $sNewMessageString.= $param.$split[$count];
 				$this->aMessageStrings[$messageId]= $sNewMessageString;
 			}elseif($newString!==null)
 			{// wenn ein Fehler-String herein kommt,
@@ -98,21 +114,23 @@ class STMessageHandling // implements STMessageHandlingInterface <- ab version 5
 				$newString= preg_replace("/'/", "\\'", $newString);
 				$this->aMessageStrings[$messageId]= $newString;
 			}
-  		if(	$onError>noErrorShow &&
-			$onError!=onErrorMessage &&
-			$messageId!="NOERROR" &&
-			$messageId!="BOXDISPLAY"	)
-			{
-  				echo "<br><b>Error ".$messageId.":</b> ".$this->getMessageContent()."<br>";
-			}
-  		if(	$onError==onErrorStop &&
-			$messageId!="NOERROR" &&
-			$messageId!="BOXDISPLAY"	)
-  		{
-  		    STCheck::echoDebug("STMessageHandling", "ERROR handling set to <b>onErrorStop</b> by message ID <b>'$messageId'</b>");
-  			exit;
-  		}
-	}
+      		if(	$onError>noErrorShow &&
+      		    (   STCheck::isDebug() ||
+      		        $onError>onDebugErrorShow   ) &&
+    			$onError!=onErrorMessage &&
+    			$messageId!="NOERROR" &&
+    			$messageId!="BOXDISPLAY"	            )
+    			{
+      				echo "<br><b>Error ".$messageId.":</b> ".$this->getMessageContent()."<br>";
+    			}
+      		if(	$onError==onErrorStop &&
+    			$messageId!="NOERROR" &&
+    			$messageId!="BOXDISPLAY"	)
+      		{
+      		    STCheck::echoDebug("STMessageHandling", "ERROR handling set to <b>onErrorStop</b> by message ID <b>'$messageId'</b>");
+      			exit;
+      		}
+    	}
 		function getMessageId()
 		{
 			Tag::echoDebug("STMessageHandling", "getMessageId: ".$this->messageId);

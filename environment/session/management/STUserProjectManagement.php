@@ -12,10 +12,10 @@ class STUserProjectManagement extends STBaseContainer
      */
     private $image= array();
     private $database= null;
-    private $loginMaskDescription= "Please insert your Access Data:";
+    private $loginMaskDescription= "";
     private $loginMask= null;
     private $accessableProjects= array();
-    private $accessibilityString= "Existing Web-Applications:";
+    private $accessibilityString= "";
     private $accessibilityProjectMask= null;
     private $availableSite= null;
     /**
@@ -35,6 +35,42 @@ class STUserProjectManagement extends STBaseContainer
         
         $this->database= $userDb;
         STBaseContainer::__construct($name, $userDb, $bodyClass);
+    }
+    /**
+     * method to create messages for different languages.<br />
+     * inside class methods (create(), init(), ...) you get messages from <code>$this->getMessageContent(<message id>, <content>, ...)</code><br />
+     * inside this method depending the <code>$language</code> define messages with <code>$this->setMessageContent(<message id>, <message>)</code><br />
+     * see STMessageHandling
+     *
+     * @param string $language current language like 'en', 'de', ...
+     */
+    protected function createMessages(string $language)
+    {
+        STBaseContainer::createMessages($language);
+        if($language == "de")
+        {
+            $this->setMessageContent("loginMaskDescription", "Bitte geben sie hier ihre Benuter-Daten ein:");
+            $this->setMessageContent("accessibilityString", "<h1>Zur Verfügung stehende Webapplikationen:</h1>");
+            $this->setMessageContent("noUserAccess", "mit diesem User-Namen besteht keine Berechtigung");
+            $this->setMessageContent("wrongUserPassword", "Passwort stimmt nicht mit User-Namen &uuml;berein");
+            $this->setMessageContent("multipleUser", "mehrdeutingen Benutzernamen in Datenbank gefunden!");
+            $this->setMessageContent("externalAuthenticationError", "Unbekannter Fehler by externer Autentifizierung!");
+            $this->setMessageContent("noPermission", "Sie haben keinen Zugriff auf diese Daten!");
+            $this->setMessageContent("unknownError@", "Unbekannten Fehler-Code ('@') gefunden!");
+            $this->setMessageContent("doNewLogin", "Bitte melden sie sich mit einem anderen Benutzer-Namen an.");
+            
+        }else // otherwise language have to be english "en"
+        {
+            $this->setMessageContent("loginMaskDescription", "Please insert your Access Data:");
+            $this->setMessageContent("accessibilityString", "<h1>Existing Web-Applications:</h1>");
+            $this->setMessageContent("noUserAccess", "with this user, no permission given");
+            $this->setMessageContent("wrongUserPassword", "password or user name are incorrect");
+            $this->setMessageContent("multipleUser", "multiple User name inside database found!");
+            $this->setMessageContent("externalAuthenticationError", "Unknown error at external authentication!");
+            $this->setMessageContent("noPermission", "you have no permission to this data!");
+            $this->setMessageContent("unknownError@", "<b>UNKNOWN</b> Error type ('@') found!");
+            $this->setMessageContent("doNewLogin", "Please login with an other user.");            
+        }
     }
     public function setLoginMaskDescription(string $description)
     {
@@ -184,12 +220,14 @@ class STUserProjectManagement extends STBaseContainer
         
         $this->createContainer();
         $this->availableSite= array();
+        $this->availableSite['access']= false;
         
         $access= STSession::instance();
         if( isset($access) &&
             $access->isLoggedIn()  )
         {
             $this->availableSite['LoggedIn']= true;
+            $this->availableSite['access']= true;
         }else
             $this->availableSite['LoggedIn']= false;
             
@@ -198,6 +236,14 @@ class STUserProjectManagement extends STBaseContainer
         if(!is_numeric($projectID))
             $projectID= 0;
         $this->availableSite['project']= $projectID;
+        
+        $error= $access->getLoginError();
+        if($error == 0)
+        {
+            $error= $get->getUrlParamValue("ERROR");
+            if(!is_numeric($error))
+                $error= 0;
+        }
         $show= $get->getUrlParamValue("show");
         if( $projectID > 0 &&
             isset($this->accessableProjects[$projectID]) &&
@@ -209,8 +255,14 @@ class STUserProjectManagement extends STBaseContainer
             $this->availableSite['show']= "list";
         elseif(isset($show))
             $this->availableSite['show']= $show;
-        else
+        elseif( !isset($this->accessableProjects[$projectID]))
+        {// user has no access to project, so show login
+            $this->availableSite['show']= "list";
+            $this->availableSite['access']= false;
+            $error= 5;//user has no access to data
+        }else
             $this->availableSite['show']= "project";
+        $this->availableSite['error']= $error;
         return $this->availableSite;
     }
     public function addObj(&$tag, $showWarning = false)
@@ -298,11 +350,6 @@ class STUserProjectManagement extends STBaseContainer
         //st_print_r($available);
         $get= new STQueryString();
         $user= STSession::instance();
-        if( $available['show'] == "project" &&
-            !isset($this->accessableProjects[$available['project']])    )
-        {// user has no access to project, so show login
-            $available['show']= "list";
-        }
         if($available['show'] == "list")
         {
             if(isset($this->image['logo']['img']))
@@ -313,7 +360,19 @@ class STUserProjectManagement extends STBaseContainer
                     $table->cellspacing(0);
                     $table->width("100%");                    
                     $a= new ATag();
-                        $a->href("index.php".$get->getUrlParamString());
+                        $query= $user->getSessionUrlParameter();
+                        if($query != "")
+                            $query= "?".$query;
+                        $userQuery= $get->getUrlParamValue("user");
+                        if(isset($userQuery))
+                        {
+                            $userQuery= "user=".$userQuery;
+                            if($query != "")
+                                $query.= "&".$userQuery;
+                            else
+                                $query= "?".$userQuery;
+                        }
+                        $a->href("index.php".$query);
                         $a->target("_top");
                         $img= new ImageTag();
                             $img->src($this->image['logo']['img']);
@@ -353,7 +412,7 @@ class STUserProjectManagement extends STBaseContainer
                 $this->append($table); 
             }
         }elseif($available['show'] == "navigation")
-        {  
+        {
             $get->delete("show");
             $get->delete("ERROR");
             $get->delete("ProjectID");
@@ -471,7 +530,7 @@ class STUserProjectManagement extends STBaseContainer
                 (   $available['project'] != 0 &&
                     !isset($this->accessableProjects[$available['project']])    )   )   )
         {
-            $this->getLoginMask();  
+            $this->getLoginMask($available);  
             $this->appendObj($this->loginMask);
         }
         if( $available['show'] == "list" &&
@@ -482,7 +541,7 @@ class STUserProjectManagement extends STBaseContainer
         }
         return "NOERROR";
     }
-    private function &getLoginMask() : object
+    private function getLoginErrorString(array $available) : string
     {
         if(isset($this->loginMask))
             return $this->loginMask;
@@ -497,44 +556,43 @@ class STUserProjectManagement extends STBaseContainer
             $onloadTerm.= ".focus()";
             $this->insertAttribute("onload", $onloadTerm);
        
-        $query= new STQueryString();
         $errorString= "";
-        $session= STSession::instance();
-        $error= $session->getLoginError();
-        if( $error == 0 &&
-            $query->defined("ERROR")    )
+        if($available['error'] == 0)
+            return "";
+        $content= null;
+        switch ($available['error'])
         {
-            $error= $query->getUrlParamValue("ERROR");
-        }
-        switch ($error)
-        {
-            case 0:
-                $errorString= "";
-                break;
             case 1:
-                $errorString= "mit diesem User-Namen besteht keine Berechtigung";
+                $errorMsg= "noUserAccess";//mit diesem User-Namen besteht keine Berechtigung";
                 break;
             case 2:
-                $errorString= "Passwort stimmt nicht mit User-Namen &uuml;berein";
+                $errorMsg= "wrongUserPassword";//"Passwort stimmt nicht mit User-Namen &uuml;berein";
                 break;
             case 3:
-                $errorString= "Multiple UserName in LDAP found!";
+                $errorMsg= "multipleUser";//"Multiple UserName in LDAP found!";
                 break;
             case 4:
-                $errorString= "Unknown error in LDAP authentication!";
+                $errorMsg= "externalAuthenticationError";//"Unknown error in LDAP authentication!";
                 break;
             case 5:
-                $errorString= "Sie haben keinen Zugriff auf diese Daten!";
+                $errorMsg= "noPermission";//"Sie haben keinen Zugriff auf diese Daten!";
                 break;
             default:
-                $errorString= "<b>UNKNOWN</b> Error type ($error) found!";
+                $errorMsg= "unknownError@";//<b>UNKNOWN</b> Error type ($error) found!";
+                $content= "$error";
                 break;
         }
-            
-        $Get= new STQueryString();
-        $Get->delete("ERROR");
-        $Get->delete("doLogout");
-        $Get->delete("from");
+        $errorString= $this->getMessageContent($errorMsg, $content);
+        if( $available['error'] == 5 &&
+            $available['LoggedIn'] &&
+            !$available['access']       )
+        {
+            $errorString.= " ".$this->getMessageContent("doNewLogin");
+        }
+        return $errorString;
+    }
+    private function &getLoginMask(array $available) : object
+    {
         //$Get->delete("user");
         $session= STSession::instance();
         $user= $session->getUserName();
@@ -544,7 +602,6 @@ class STUserProjectManagement extends STBaseContainer
         {
             $user= $_GET["user"];
         }
-        $action= $Get->getStringVars();
         
         $div= new DivTag("STLoginDiv");
             $div->add(br());
@@ -558,14 +615,23 @@ class STUserProjectManagement extends STBaseContainer
                 $divx= new DivTag("loginMaskDescription");
                 if(isset($_GET["debug"]))
                 {
+                    $Get= new STQueryString();
+                    $Get->delete("ERROR");
+                    $Get->delete("doLogout");
+                    $Get->delete("from");
+                    $action= $Get->getStringVars();
                     $divx->add("INPUT of form-tag sending to address <b>'$action'</b><br />");
                 }
-                    $divx->add($this->loginMaskDescription);
+                    $maskDescription= $this->loginMaskDescription;
+                    if($maskDescription == "")
+                        $maskDescription= $this->getMessageContent("loginMaskDescription");
+                    $divx->add($maskDescription);
                 $layout->add($divx);
                 $layout->colspan(3);
             
             $layout->nextRow();
-            if($error > 0)
+            $errorString= $this->getLoginErrorString($available);
+            if($errorString != "")
             {
                 $layout->add("&#160;");
                 $layout->add("&#160;");
@@ -576,89 +642,17 @@ class STUserProjectManagement extends STBaseContainer
                 $layout->nextRow();
                     
             }
+            if(!$available['LoggedIn'])
+            {
                 $layout->add("&#160;");
                 $layout->columnWidth("5%");
                 $layout->add("&#160;");
                 $layout->columnWidth("5%");
                 $layout->add("&#160;");
                 $layout->columnWidth("10%");
-                $table= new TableTag("loginTable");
-                    $table->border(0);
-                    $table->cellpadding(0);
-                    $table->cellspacing(0);
-                    //$table->style("border-width:1; border-style:outset; border-darkcolor:#000000; border-lightcolor:#ffffff");
-                    $form= new FormTag();
-                        $form->name("loginform");
-                        $form->action($action);
-                        $form->method("post");
-                        $tr= new RowTag();
-                            $td= new ColumnTag();
-                                $td->width(80);
-                                $td->align("right");
-                                $p= new PTag();
-                                    $p->style("margin-right: 4;");
-                                    $p->add("User Name:&#160; ");
-                                $td->add($p);
-                            $tr->add($td);
-                            $td= new ColumnTag();
-                                $td->width(175);
-                                $input= new InputTag("loginInput");
-                                    $input->type("text");
-                                    $input->name("user");
-                                    $input->maxlen(60);
-                                    $input->size(28);
-                                    $input->tabindex(1);
-                                    if($user == "")
-                                        $input->autofocus();
-                                    $input->value($user);
-                                    $td->add($input);
-                                $tr->add($td);
-                            $td= new ColumnTag();
-                                $td->width(100);
-                                $td->rowspan(2);
-                                $td->valign("top");
-                                $td->align("center");
-                                $p= new PTag();
-                                    $p->style("margin-top:3; margin-left:10");
-                                    $input= new InputTag("myInput");
-                                        $input->type("submit");
-                                        $input->tabindex(3);
-                                        $input->value("Login");
-                                    $p->add($input);
-                                $td->add($p);
-                            $tr->add($td);
-                        $form->add($tr);
-                        $tr= new RowTag();
-                            $td= new  ColumnTag();
-                                $td->width(80);
-                                $td->align("right");
-                                $p= new PTag();
-                                    $p->style("margin-right: 4;");
-                                    $p->add("Password:&#160; ");
-                                $td->add($p);
-                            $tr->add($td);
-                            $td= new  ColumnTag();
-                                $td->width(175);
-                                $input= new InputTag("loginInput");
-                                    $input->type("password");
-                                    $input->name("pwd");
-                                    $input->tabindex(2);
-                                    if($user != "")
-                                        $input->autofocus();
-                                    $input->size(28);
-                                    $input->maxlen(60);
-                                $td->add($input);
-                            $tr->add($td);
-                            $td= new  ColumnTag();
-                                $input= new InputTag();
-                                    $input->type("hidden");
-                                    $input->name("doLogin");
-                                    $input->value(1);
-                                $td->add($input);
-                            $tr->add($td);
-                        $form->add($tr);
-                    $table->add($form);
+                    $table= $this->getLoginFormTable($user);
                 $layout->add($table);
+            }
             $div->add($layout);
             $script= new JavaScriptTag();
                 $inputPos= 0;
@@ -676,6 +670,92 @@ class STUserProjectManagement extends STBaseContainer
         $this->loginMask= $div;
         return $this->loginMask;
     }
+    private function getLoginFormTable(string $user)
+    {
+        $Get= new STQueryString();
+        $Get->delete("ERROR");
+        $Get->delete("doLogout");
+        $Get->delete("from");
+        $action= $Get->getStringVars();
+        
+        $table= new TableTag("loginTable");
+            $table->border(0);
+            $table->cellpadding(0);
+            $table->cellspacing(0);
+            //$table->style("border-width:1; border-style:outset; border-darkcolor:#000000; border-lightcolor:#ffffff");
+            $form= new FormTag();
+                $form->name("loginform");
+                $form->action($action);
+                $form->method("post");
+                $tr= new RowTag();
+                    $td= new ColumnTag();
+                        $td->width(80);
+                        $td->align("right");
+                        $p= new PTag();
+                            $p->style("margin-right: 4;");
+                            $p->add("User Name:&#160; ");
+                        $td->add($p);
+                    $tr->add($td);
+                    $td= new ColumnTag();
+                        $td->width(175);
+                        $input= new InputTag("loginInput");
+                            $input->type("text");
+                            $input->name("user");
+                            $input->maxlen(60);
+                            $input->size(28);
+                            $input->tabindex(1);
+                            if($user == "")
+                                $input->autofocus();
+                            $input->value($user);
+                            $td->add($input);
+                        $tr->add($td);
+                    $td= new ColumnTag();
+                        $td->width(100);
+                        $td->rowspan(2);
+                        $td->valign("top");
+                        $td->align("center");
+                        $p= new PTag();
+                            $p->style("margin-top:3; margin-left:10");
+                            $input= new InputTag("myInput");
+                                $input->type("submit");
+                                $input->tabindex(3);
+                                $input->value("Login");
+                            $p->add($input);
+                        $td->add($p);
+                    $tr->add($td);
+                $form->add($tr);
+                $tr= new RowTag();
+                    $td= new  ColumnTag();
+                        $td->width(80);
+                        $td->align("right");
+                        $p= new PTag();
+                            $p->style("margin-right: 4;");
+                            $p->add("Password:&#160; ");
+                        $td->add($p);
+                    $tr->add($td);
+                    $td= new  ColumnTag();
+                        $td->width(175);
+                        $input= new InputTag("loginInput");
+                            $input->type("password");
+                            $input->name("pwd");
+                            $input->tabindex(2);
+                            if($user != "")
+                                $input->autofocus();
+                            $input->size(28);
+                            $input->maxlen(60);
+                        $td->add($input);
+                    $tr->add($td);
+                    $td= new  ColumnTag();
+                        $input= new InputTag();
+                            $input->type("hidden");
+                            $input->name("doLogin");
+                            $input->value(1);
+                        $td->add($input);
+                    $tr->add($td);
+                $form->add($tr);
+            $table->add($form);  
+        return $table;
+    }
     private function &getAccessibleProjectList() : object
     {
         if(isset($this->accessibilityProjectMask))
@@ -690,9 +770,10 @@ class STUserProjectManagement extends STBaseContainer
                 $table->columnWidth("20%");
                 $p= new PTag();
                     $p->add(br());
-                    $h1= new HTag(1);
-                        $h1->add($this->accessibilityString);
-                    $p->add($h1);
+                    $accessibilityString= $this->accessibilityString;
+                    if($accessibilityString == "")
+                        $accessibilityString= $this->getMessageContent("accessibilityString");
+                    $p->add($accessibilityString);
                 $table->add($p);
                 $table->colspan(2);
             $table->nextRow();
@@ -708,8 +789,9 @@ class STUserProjectManagement extends STBaseContainer
                             $a= new ATag();
                                 $href= "?ProjectID=";
                                 $href.= urlencode( $projectID );
-                                //$href.= "&To";
-                                //$href.= urlencode( $project[ 'Path' ] );
+                                $session= STSession::getSessionUrlParameter();
+                                if($session != "")
+                                    $href.= "&".$session;
                                 $a->href($href);
                                 $a->style("font-size:12pt;font-weight=bold;");
                                 $a->add($project[ 'Name' ]);

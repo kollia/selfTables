@@ -60,25 +60,33 @@ abstract class STObjectContainer extends STBaseContainer
 		$this->db= &$container->getDatabase();
 		STBaseContainer::__construct($name, $container, $bodyClass);
 	}
+	/**
+	 * method to create messages for different languages.<br />
+	 * inside class methods (create(), init(), ...) you get messages from <code>$this->getMessageContent(<message id>, <content>, ...)</code><br />
+	 * inside this method depending the <code>$language</code> define messages with <code>$this->setMessageContent(<message id>, <message>)</code><br />
+	 * see STMessageHandling
+	 *
+	 * @param string $language current language like 'en', 'de', ...
+	 */
 	protected function createMessages(string $language)
 	{
 		if($language == "de")
 		{
-		    $this->oMsg->setMessageContent("INSERT", "einfuegen");
-		    $this->oMsg->setMessageContent("UPDATE", "aktualisierten");
-		    $this->oMsg->setMessageContent("DELETE", "loeschen");
-		    $this->oMsg->setMessageContent("newENTRY", " neuer Eintrag");
-		    $this->oMsg->setMessageContent("DELETE_QUESTION", "wollen Sie diesen Eintrag wirklich löschen?");		    
-		    $this->oMsg->setMessageContent("NOPERMISSION", "Sie haben keine Berechtigung um ein '+action+' durchzuführen!");
+		    $this->setMessageContent("INSERT", "einfügen");
+		    $this->setMessageContent("UPDATE", "aktualisieren");
+		    $this->setMessageContent("DELETE", "löschen");
+		    $this->setMessageContent("newENTRY", " neuer Eintrag");
+		    $this->setMessageContent("DELETE_QUESTION", "wollen Sie diesen Eintrag wirklich löschen?");		    
+		    $this->setMessageContent("NOPERMISSION", "Sie haben keine Berechtigung um die Aktion \''+action+'\' durchzuführen!");
 			
 		}else // otherwise language have to be english "en"
 		{
-			$this->oMsg->setMessageContent("INSERT", "insert");
-			$this->oMsg->setMessageContent("UPDATE", "update");
-			$this->oMsg->setMessageContent("DELETE", "delete");
-			$this->oMsg->setMessageContent("newENTRY", " new Entry");
-			$this->oMsg->setMessageContent("DELETE_QUESTION", "do you want to delete this entry?");
-			$this->oMsg->setMessageContent("NOPERMISSION", "you have no permission to '+action+' this entry!");
+		    $this->setMessageContent("INSERT", "insert");
+		    $this->setMessageContent("UPDATE", "update");
+		    $this->setMessageContent("DELETE", "delete");
+		    $this->setMessageContent("newENTRY", " new Entry");
+		    $this->setMessageContent("DELETE_QUESTION", "do you want to delete this entry?");
+		    $this->setMessageContent("NOPERMISSION", "you have no permission to '+action+' this entry!");
 		}
 	}
 	function describeTables($description)
@@ -810,7 +818,7 @@ abstract class STObjectContainer extends STBaseContainer
 	{
 		Tag::paramCheck($externSideCreator, 1, "STSiteCreator");
 		
-		$this->createMessages($this->language);
+		$this->createMessages($this->locale['language'], $this->locale['nation']);
 		$this->initContainer();
 		$this->oExternSideCreator= &$externSideCreator;
 		$params= new STQueryString();
@@ -1043,7 +1051,7 @@ abstract class STObjectContainer extends STBaseContainer
     						$function->add("if(action=='delete')");
 						if($bDelete)
 						{
-							$function->add("    bOk= confirm('".$this->oMsg->getMessageContent("DELETE_QUESTION")."');");							
+							$function->add("    bOk= confirm('".$this->msgBox->getMessageContent("DELETE_QUESTION")."');");							
 						}
 						if(!$bUpdate)
 						    $function->add("else if(action=='update')");
@@ -1052,7 +1060,7 @@ abstract class STObjectContainer extends STBaseContainer
 						{
 						    $function->add("{");
 						    $function->add("bOk= false;");
-						    $function->add("alert('".$this->oMsg->getMessageContent("NOPERMISSION")."');");
+						    $function->add("alert('".$this->msgBox->getMessageContent("NOPERMISSION")."');");
 						    $function->add("}");
 						}
 							$function->add("if(bOk)");
@@ -1070,7 +1078,7 @@ abstract class STObjectContainer extends STBaseContainer
 					and
 					$updateAccess		)
 				{
-				    $sUpdateLink= $this->oMsg->getMessageContent("UPDATE");
+				    $sUpdateLink= $this->msgBox->getMessageContent("UPDATE");
 					$list->updateLine($PK, $sUpdateLink);
 					$list->link($sUpdateLink, "javascript:selftable_updateDelete('update',$value);");
 				}
@@ -1078,7 +1086,7 @@ abstract class STObjectContainer extends STBaseContainer
 					and
 					$deleteAccess		)
 				{
-				    $sDeleteLink= $this->oMsg->getMessageContent("DELETE");
+				    $sDeleteLink= $this->msgBox->getMessageContent("DELETE");
 					$list->deleteLine($PK, $sDeleteLink);
 					$list->link($sDeleteLink, "javascript:selftable_updateDelete('delete',$value);");
 				}
@@ -1100,7 +1108,7 @@ abstract class STObjectContainer extends STBaseContainer
 
 				$center= new CenterTag();
 					$button= new ButtonTag("newEntry");
-						$button->add($this->oMsg->getMessageContent("newENTRY"));
+						$button->add($this->msgBox->getMessageContent("newENTRY"));
 						$button->onClick("javascript:location='".$this->oExternSideCreator->getStartPage().$params."'");
 					$center->addObj($button);
 					$center->add(br());
@@ -1187,7 +1195,7 @@ abstract class STObjectContainer extends STBaseContainer
 			{
 				$box->table($table);
 				$this->setAllMessagesContent(STINSERT, $box);
-				$head= &$this->getHead($this->oMsg->getMessageContent("newENTRY")." in ".$table->getDisplayName());
+				$head= &$this->getHead($this->msgBox->getMessageContent("newENTRY")." in ".$table->getDisplayName());
 				$result= $box->insert();
 			}else
 			{
@@ -1333,8 +1341,8 @@ abstract class STObjectContainer extends STBaseContainer
   				{
   				    if($checked[STADMIN])
   					{
-  					    $this->oCurrentListTable->callback($this->oMsg->getMessageContent("UPDATE"), "st_list_table_changing_access", STLIST);
-  					    $this->oCurrentListTable->callback($this->oMsg->getMessageContent("DELETE"), "st_list_table_changing_access", STLIST);
+  					    $this->oCurrentListTable->callback($this->msgBox->getMessageContent("UPDATE"), "st_list_table_changing_access", STLIST);
+  					    $this->oCurrentListTable->callback($this->msgBox->getMessageContent("DELETE"), "st_list_table_changing_access", STLIST);
   					}else
   					{
   					    $table->doUpdate(false);
@@ -1343,14 +1351,14 @@ abstract class STObjectContainer extends STBaseContainer
   				}elseif(isset($table->sAcessClusterColumn[STUPDATE]))
   				{
   				    if($checked[STUPDATE])
-  					    $this->oCurrentListTable->callback($this->oMsg->getMessageContent("UPDATE"), "st_list_table_changing_access", STLIST);
+  					    $this->oCurrentListTable->callback($this->msgBox->getMessageContent("UPDATE"), "st_list_table_changing_access", STLIST);
   					else
   					    $table->doUpdate(false);
 
   				}elseif(isset($table->sAcessClusterColumn[STDELETE]))
   				{
   				    if($checked[STDELETE])
-  					    $this->oCurrentListTable->callback($this->oMsg->getMessageContent("DELETE"), "st_list_table_changing_access", STLIST);
+  					    $this->oCurrentListTable->callback($this->msgBox->getMessageContent("DELETE"), "st_list_table_changing_access", STLIST);
   					else
   					    $table->doDelete(false);
   				}
