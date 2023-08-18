@@ -3170,6 +3170,12 @@ class STBaseTable
 	{
 		return $this->aFks;
 	}
+	/**
+	 * get query string limitation
+	 * consider foreign keys
+	 * 
+	 * @return array array of foreign key fields 
+	 */
 	function getForeignKeyModification()
 	{
 	    $query= new STQueryString();
@@ -3236,6 +3242,7 @@ class STBaseTable
                     $end= ":";
                 }
                 $nIntented= STCheck::echoDebug("db.statements.where", "$need foreign Keys from query$end");
+                showBackTrace();
                 if(!empty($fks))
                     st_print_r($fks, 3, $nIntented);
                 elseif(!empty($this->aFks))
