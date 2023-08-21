@@ -1399,7 +1399,7 @@ abstract class STObjectContainer extends STBaseContainer
 		{		    
 		    STCheck::paramCheck($oBox, 2, "STBaseBox");
 		    
-		    $oBox->setLanguage($this->language);
+		    $oBox->setLanguage($this->locale['language'], $this->locale['nation']);
 		    $table= &$oBox->getTable();
 			$tableName= $table->getName();
 			if(isset($this->asError[$action][$tableName]))

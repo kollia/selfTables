@@ -107,7 +107,7 @@ class STListBox extends STBaseBox
 		function createMessages()
 		{
 			STBaseBox::createMessages();
-			if($this->language == "de")
+			if($this->locale['language'] == "de")
 			{
 				$this->msg->setMessageContent("NO_SOLUTION", "zuerst muss die Funktion solution() oder table() aufgerufen werden!");
 				$this->msg->setMessageContent("NO_CHECKONDB", "vor dem display-Aufruf muss der Funktion checkOnDb() ein DB-Statement uebergeben werden");

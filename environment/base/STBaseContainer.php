@@ -35,6 +35,11 @@ interface STContainerTempl
 
 abstract class STBaseContainer extends BodyTag implements STContainerTempl
 {
+    /**
+     * language and format for text messages
+     * and nation for date
+     * @var array
+     */
     var $locale= array( "language"  => 'en',
                         "nation"    => 'XXX', // <- undefined
                         "format"    => 'UTF-8'      );
@@ -216,20 +221,21 @@ abstract class STBaseContainer extends BodyTag implements STContainerTempl
 		return trim($title);
 		
 	}
-	function setLanguage($lang)
+	public function setLanguage(string $lang, string $nation= "XXX")
 	{
-	    STCheck::param($lang, 1, "string");
-	    
-	    if(	$lang != "en" &&
-	        $lang != "de"	)
+	    if(preg_match("/_/", $lang))
 	    {
-	        echo "<b>only follow languages are allowed:</b><br />";
-	        echo "                   en   -   english<br />";
-	        echo "                   de   -   german<br />";
-	        printErrorTrace();
-	        exit;
+	        $split= preg_split("_/", $lang);
+	        $lang= $split[0];
+	        $nation= $split[1];
 	    }
-	    $this->language= $lang;
+	    if(STCheck::warning(   $lang != "en" &&
+	                           $lang != "de"   , "STBaseContainer::setLanguage()", "only en or de currently allowed"))
+	    {
+	        $lang= "en";
+	    }
+	    $this->locale['language']= $lang;
+	    $this->locale['nation']= $nation;
 	}
 	function showLogoutButton($buttonName= "log out", $align= "right", $buttonId= "logoutMainButton")
 	{

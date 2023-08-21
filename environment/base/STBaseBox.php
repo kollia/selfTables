@@ -7,6 +7,14 @@ require_once($_stcallbackclass);
 
 abstract class STBaseBox extends TableTag
 {
+    /**
+     * language and format for text messages
+     * and nation for date
+     * @var array
+     */
+    var $locale= array( "language"  => 'en',
+        "nation"    => 'XXX', // <- undefined
+        "format"    => 'UTF-8'      );
     var	$db;
     /**
      * array of selected result
@@ -42,7 +50,6 @@ abstract class STBaseBox extends TableTag
 		var $uniqueKey;
 		var	$aCallbacks= array();
 		var $where= "";
-		var $language= "en";
 		/**
 		 * defined names for update and delete columns
 		 * @var array
@@ -77,13 +84,25 @@ abstract class STBaseBox extends TableTag
 			if($container==null)
 				$this->msg->setMessageId("NO_DATABASE");
 		}
-		function setLanguage($language)
+		public function setLanguage(string $lang, string $nation= "XXX")
 		{
-			$this->language= $language;
+		    if(preg_match("/_/", $lang))
+		    {
+		        $split= preg_split("_/", $lang);
+		        $lang= $split[0];
+		        $nation= $split[1];
+		    }
+		    if(STCheck::warning(   $lang != "en" &&
+		        $lang != "de"   , "STBaseContainer::setLanguage()", "only en or de currently allowed"))
+		    {
+		        $lang= "en";
+		    }
+		    $this->locale['language']= $lang;
+		    $this->locale['nation']= $nation;
 		}
 		function createMessages()
 		{
-			if($this->language == "de")
+		    if($this->locale['language'] == "de")
 			{
 				$this->msg->setMessageContent("EMPTY_RESULT", "");
 				$this->msg->setMessageContent("NO_DATABASE", "dem Konstruktor von der Klasse $class, muss eine Datenbank mitgegeben werden");
