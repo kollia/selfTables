@@ -65,7 +65,7 @@ class STItemBox extends STBaseBox
 		function createMessages()
 		{
 			STBaseBox::createMessages();
-			if($this->language == "de")
+			if($this->locale['language'] == "de")
 			{
 				$this->aSelectNames["select"]= "&#160;&#160; bitte ausw&auml;hlen &#160;&#160;";
 				$this->aSelectNames["null_entry"]= "&#160;&#160; Eintrag kann NULL sein &#160;&#160;";
