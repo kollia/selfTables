@@ -94,17 +94,25 @@ class STMessageHandling // implements STMessageHandlingInterface <- ab version 5
 				    $args= func_get_args();
 				    for($count=1; $count<$have; $count++)
 				        $paramArray[]= $args[$count];
+				    $have--;
 				    
 				}elseif(is_array($newString))
+				{
 				    $paramArray= $newString;
+				    $have= count($paramArray);
+				}
 				
 				$sMessageString= trim($this->aMessageStrings[$messageId]);
 				$split= preg_split("/@/", $sMessageString);							
 				Tag::alert($need!=$have, "STMessageHandling::setMessageID", "function must have ".($need)." params");
 				
 				$sNewMessageString= $split[0];
+				$count= 1;
 				foreach($paramArray as $param)
+				{
 				    $sNewMessageString.= $param.$split[$count];
+				    $count++;
+				}
 				$this->aMessageStrings[$messageId]= $sNewMessageString;
 			}elseif($newString!==null)
 			{// wenn ein Fehler-String herein kommt,

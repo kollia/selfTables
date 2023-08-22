@@ -59,6 +59,12 @@ class STBaseTable
 	 * @var array
 	 */
 	protected $aPreDefinde= array();
+	/**
+	 * columns for cluster where row should only show
+	 * when user has cluster
+	 * @var array
+	 */
+	protected $aClusterColumns= array();
 	var	$bDisplaySelects= true;
 	var	$bColumnSelects= true; // have the Table columns in select-statement
     private $FK= array();// bug: if in one table be two foreign keys to the same table
@@ -504,6 +510,17 @@ class STBaseTable
 	public function align($aliasName, $value, $tableType= STLIST)
 	{
 	    $this->tdAttribute("align", $value, $tableType, $aliasName);
+	}
+	/**
+	 * pre-define a cluster for every row,
+	 * where the row only be shown if the user has the cluster.<br />
+	 *  
+	 * @param string $aliasName alias or column name where the cluster should be stored 
+	 * @param string $prefix can be the name of an alias or column which be followed of the bracketed primary key 
+	 */
+	public function cluster(string $aliasName, string $prefix= "")
+	{
+	    $this->aClusterColumns[$aliasName]= $prefix;
 	}
 	/**
 	 * define column as must have field, maybe by different actions
