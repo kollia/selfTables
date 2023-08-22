@@ -2450,17 +2450,14 @@ class STItemBox extends STBaseBox
                 if( (   !isset($post[$postColumn]) ||
                         $post[$postColumn]===null ||
                         $post[$postColumn]===""	      ) &&
-                    (   !isset($this->aDisabled[$columns[$field['name']]]) ||
+                    (   !isset($columns[$field['name']]) || // if not set inside $columns, cannot be set inside ->aDisabled
+                        !isset($this->aDisabled[$columns[$field['name']]]) ||
                         $this->aDisabled[$columns[$field['name']]][/*rownr*/0] == false ) &&
                     (   $this->action == STINSERT ||  // if action is STUPDATE and it be a password field
                         $this->action == STDELETE ||  // field can be an null string for no update
                         $this->password != $name  ||  // elsewhere password repetition be defined
                         isset($post['re_$name'])        )   )
-                {  
-                    showLine();
-                    st_print_r($field);
-                    st_print_r($post);
-                    echo "column:$columnName<br>";
+                { 
 					$this->msg->setMessageId("COLUMNNOTFILLED@", $columnName);
                     return false;
                 }
