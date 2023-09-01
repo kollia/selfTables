@@ -680,8 +680,8 @@ class STItemBox extends STBaseBox
     		$oTable->andWhere($this->where);
     		$where= $oTable->getWhere();
     		Tag::alert(!($where && $where->isModified()), "STItemBox::makeBox()", "no where-clausel defined to display");
-    		STCheck::warning(1, "", "select hole statement from Database with FK Tables");
     		$statement= $oTable->getStatement();
+    		STCheck::echoDebug("db.main.statement", $statement);
 			$this->db->query($statement, $this->getOnError("SQL"));
 			$result= $this->db->fetch_row(MYSQL_ASSOC, $this->getOnError("SQL"));
 			$tablePk= $this->asDBTable->getPkColumnName();
@@ -716,9 +716,9 @@ class STItemBox extends STBaseBox
 				{
 					if(STCheck::isDebug("db.main.statement"))
 					{
-						STCheck::echoDebug("db.main.statement", "exist result from db");
 						if(isset($post["STBoxes_action"]))
 						{
+						    STCheck::echoDebug("db.main.statement", "exist result from db");
 							$space= STCheck::echoDebug("db.main.statement", "is new result:");
 							st_print_r($post,2, $space);
 							echo "<br />";

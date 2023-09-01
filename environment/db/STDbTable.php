@@ -1197,7 +1197,7 @@ class STDbTable extends STBaseTable
         STCheck::echoDebug("db.statements.select", "createt statement is \"".$statement."\"");
         return $statement;
 	}
-	private function getTableStatement(array &$aTableAlias, array $aSubstitutionTables)
+	public function getTableStatement(array &$aTableAlias, array $aSubstitutionTables)
 	{
 	    if(isset($this->aStatement['table']))
 	    {
@@ -1677,7 +1677,7 @@ class STDbTable extends STBaseTable
 		STCheck::echoDebug("db.statements.table", "TableStatement - Result from table '".$oTable->getName()."'= '$statement'");
 		return $statement;
 	}
-	private function getWhereAliases() : array
+	public function getWhereAliases() : array
 	{
 	    $aRv= array();
 	    $aliasTables= $this->db->getAliasOrder();
@@ -1736,18 +1736,18 @@ class STDbTable extends STBaseTable
 	 */
 	public function getWhereStatement(string $condition, $from= null, array $aliases= null, array $aSubstitutionTables= null)
 	{
+	    if(STCheck::isDebug() && $condition == "on")
+	        STCheck::param($from, 1, "STDbTable");
 	    $bSetFromAlias= false;
 	    if( !isset($from) ||
 	        typeof($from, "array") )
 	    {
+	        // if $from is an array of alias tables
+	        // shift parameters one back
 	        if(typeof($from, "array"))
-	        {
 	            $bSetFromAlias= true;
-	        }
 	        $aSubstitutionTables= $aliases;
 	        $aliases= $from;
-	        if($condition == "on")
-	            STCheck::param($from, 1, "STDbTable");
 	        $from= $this;
 	    }
 	    if(STCheck::isDebug())
@@ -1808,6 +1808,12 @@ class STDbTable extends STBaseTable
 	    }
 	    $aMade= array();
 	    $statement= "";
+	    if(!is_array($aliases))
+	    {
+	        $whereAliases= $this->getWhereAliases();
+	        if(count($whereAliases) > 1)
+    	        $aliases= $whereAliases;
+	    }
 	    $ostwhere= $this->getWhere();
 	    if(typeof($ostwhere, "STDbWhere"))
 	    {

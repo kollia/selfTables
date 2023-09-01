@@ -48,6 +48,13 @@ class STDbUpdater extends STDbSqlWhereCases
             $space= STCheck::echoDebug("db.statement.update", "update follow values inside database table <b>".$this->table->getName()."</b>");
             st_print_r($result,3, $space);
         }
+        $mainTableAlias= "";
+        $tableAliases= $this->table->getWhereAliases();
+        if(count($tableAliases) > 1)
+        {
+            $mainTableAlias= $tableAliases[$this->table->Name];
+            $mainTableAlias.= ".";
+        }
         $types= $this->read_inFields("type");
         foreach($result as $key => $value)
         {
@@ -60,13 +67,15 @@ class STDbUpdater extends STDbSqlWhereCases
                 STCheck::echoDebug("db.statement.update", "   and value '$value'");
                 echo "<br />";
             }
-            $update_string.= $key."=".$this->add_quotes($types[$key], $value).",";
+            $update_string.= $mainTableAlias.$key."=".$this->add_quotes($types[$key], $value).",";
         }
         $update_string= substr($update_string, 0, strlen($update_string)-1);
+        $tableStatement= $this->table->getTableStatement($tableAliases, array());
+        // remove FROM word from beginning of statement
+        $tableStatement= substr($tableStatement, 5);
         $whereStatement= $this->getWhereStatement($nr);
-        $statement= "UPDATE ".$this->table->Name." set $update_string $whereStatement";
-        
-        STCheck::echoDebug("db.main.statement", $statement);        
+        $statement= "UPDATE $tableStatement set $update_string $whereStatement";
+        STCheck::echoDebug("db.main.statement", $statement);
         STCheck::alert(!preg_match("/where/i", $statement), "STCheck::getUpdateStatement()", "no where usage for update exist");
         return $statement;
 	}
