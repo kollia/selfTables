@@ -178,7 +178,7 @@ class STQueryString
     			}
     			$sRv= $this->createParamString($param_vars, $bEncode);
 				$selector= new OSTDbSelector($global_selftables_query_table["table"]);
-				$selector->modifyForeignKey(false);
+				$selector->allowQueryLimitation(false);
 				$selector->where($global_selftables_query_table["pathColumn"]."='".$sRv."'");
 				$selector->execute();
 				$res= $selector->getRowResult();
@@ -1030,7 +1030,7 @@ class STQueryString
 				$selector= new STDbSelector($global_selftables_query_table["table"]);
 				// by modify foreign key STQueryString is also needed
 				// and so runs in an loop
-				$selector->modifyForeignKey(false);
+				$selector->allowQueryLimitation(false);
 				$selector->where($global_selftables_query_table["nrColumn"]."=".$nr);
 				$selector->execute();
 				$res= $selector->getRowResult();

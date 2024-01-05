@@ -95,7 +95,7 @@ class STDbDeleter extends STDbSqlWhereCases
 	function modifyForeignKey(bool $bModify= true)
 	{
 	    $this->bModify= $bModify;
-		$this->table->modifyForeignKey($bModify);
+		$this->table->allowQueryLimitation($bModify);
 	}
 }
 ?>
