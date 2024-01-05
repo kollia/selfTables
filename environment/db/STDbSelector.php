@@ -452,7 +452,17 @@ class STDbSelector extends STDbTable implements STContainerTempl
 		    $column= $field['column'];
 		    STDbTable::orderByI($tableName, $column, $bASC);
 		}
-		function select(string $tableName, $column= "", $alias= null, $nextLine= true, $add= false)
+		/**
+		 * add column for selection
+		 *
+		 * @param string $tableName name of table
+		 * @param string $column column name from database
+		 * @param string $alias column name should appear from select
+		 * @param boolean $nextLine if <code>false</code> by <code>STItemBox</code> do not show column inside new line
+		 * @param boolean $add whether new column should be added to exist original selection
+		 * @param boolean $addGet if set, adding differ between select- and get-columns, otherwise parameter <code>$add</code> is for both
+		 */
+		public function select(string $tableName, $column= "", $alias= null, $nextLine= true, $add= false, $addGet= Null)
 		{
 			if(STCheck::isDebug())
 			{
@@ -460,7 +470,8 @@ class STDbSelector extends STDbTable implements STContainerTempl
 				STCheck::param($column, 1, "string", "empty(string)");
 				STCheck::param($alias, 2, "string", "bool", "null");
 				STCheck::param($nextLine, 3, "bool");
-				STCheck::param($nextLine, 4, "bool");
+				STCheck::param($add, 4, "bool");
+				STCheck::param($addGet, 5, "bool", "null");
 				STCheck::echoDebug("selector", $this->Name.": select column $column($alias) for table $tableName");
 			}
 			$desc= STDbTableDescriptions::instance($this->db->getDatabaseName());
@@ -506,7 +517,7 @@ class STDbSelector extends STDbTable implements STContainerTempl
 				$this->clearSelects();
 				$this->bClearedByFirstSelect= true;
 			}
-			$this->selectA($tableName, $orgColumn, $alias, $nextLine, $add);
+			$this->selectA($tableName, $orgColumn, $alias, $nextLine, $add, $addGet);
 		}
 		public function preSelect(string $tableName, $columnName, $value= null, $action= null)
 		{
