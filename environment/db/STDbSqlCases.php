@@ -130,7 +130,7 @@ class STDbSqlCases
         {
             $keyword= $this->table->db->keyword($value);
             if($keyword === false)
-                $value= "'".$value."'";
+                $value= $this->table->db->getDelimitedString($value, "string");
         }else // value is not set
             $value= "null";
         return $value;

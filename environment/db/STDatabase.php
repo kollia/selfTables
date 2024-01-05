@@ -2022,6 +2022,14 @@ abstract class STDatabase extends STObjectContainer
 	abstract public function getFieldDelimiter() : array;
 	abstract public function getStringDelimiter() : array;
 	abstract protected function getAllColumnKeyword() : string;
+	/**
+	 * delimit string with quotes
+	 * 
+	 * @param string $content string which should delimited with quotes
+	 * @param string $for for witch type of string the content should be delimited.<br />
+	 * 						for pure strings ('string'), for fields ('field') or functions ('function')
+	 * @param boolean $bRegex whether content should be a regex pattern (exp. for preg_match) (alpha version)
+	 */
 	public function getDelimitedString(string $content, string $for, bool $bRegex= false)
 	{
 	    $sRv= "";
@@ -2062,9 +2070,67 @@ abstract class STDatabase extends STObjectContainer
 	        
 	    }else
 	    {
+			$__showDelimiter= FALSE;
+			if($__showDelimiter)
+			{
+				echo "set __showDelimiter to true on line ".(__LINE__-3)."  of file STDatabase.php<br />";
+				showLine();
+			}
+			if($for == "string")
+			{// now do not know any other cases for escaping delimiter
+				if($__showDelimiter)
+					st_print_r($delimiter, 5);
+				$pattern= $delimiter[0]['open']['delimiter'];
+				if($delimiter[0]['open']['delimiter'] != $delimiter[0]['close']['delimiter'])
+					$pattern.= $delimiter[0]['close']['delimiter'];
+				if(strlen($pattern) > 1)
+					$pattern= "[$pattern]";
+				$pattern= "/(\\\\*)$pattern/";
+				if($__showDelimiter)
+				{
+					echo "pattern:$pattern<br />";
+					echo "for string:$content<br />";
+				};
+				preg_match_all($pattern, $content, $matches, PREG_UNMATCHED_AS_NULL | PREG_OFFSET_CAPTURE);
+				if($__showDelimiter)
+					st_print_r($matches, 5);
+				if(!empty($matches[0]))
+				{// create new escaped content
+					$pos= 0;
+					$newContent= "";
+					foreach($matches[0]	as $match)
+					{
+						$newContent.= substr($content, $pos, $match[1] - $pos);
+						if(strlen($match[0]) % 2 == 1)
+							$newContent.= "\\";
+						$newContent.= $match[0];
+						$pos= $match[1] + strlen($match[0]);
+					}
+					$newContent.= substr($content, $pos);
+					$content= $newContent;
+				}
+				// check also whether an ESC is on end
+				// because it escape the last delimiter for ending string
+				$pattern= "/(\\\\*)$/";
+				if($__showDelimiter)
+				{
+					echo "pattern:$pattern<br />";
+					echo "for string:$content<br />";
+				};
+				preg_match($pattern, $content, $match, PREG_UNMATCHED_AS_NULL);
+				if($__showDelimiter)
+					st_print_r($matches, 5);
+				if(strlen($match[0]) % 2 == 1)
+					$content.= "\\";
+			}
 	        $sRv=  $delimiter[0]['open']['delimiter'];
 	        $sRv.= $content;
 	        $sRv.= $delimiter[0]['close']['delimiter'];
+			if($__showDelimiter)
+			{
+				echo "ending string:$sRv<br />";
+				showBackTrace();
+			}
 	    }
 	    return $sRv;
 	}
