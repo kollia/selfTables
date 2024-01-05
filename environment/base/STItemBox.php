@@ -559,7 +559,7 @@ class STItemBox extends STBaseBox
 				// insert one row with session
     			$statement=  "insert into ".$tableName."(".$table->aAuto_increment["inColumn"];
     			$statement.= ") values('".$table->aAuto_increment["session"]."')";
-    			$this->db->fetch($statement);
+    			$this->db->query($statement);
 				$this->lastInsertID= $this->db->getLastInsertID();
 
 				// select for PK row with session
@@ -1064,8 +1064,8 @@ class STItemBox extends STBaseBox
 							$input->value($columnValue);
 						$td->add($input);
   					}elseif( preg_match("/auto_increment/", $field["flags"]) )
-    				{// wenn das Feld einen auto_increment besitzt,
-						// soll dieses Feld nicht zum �ndern angeboten werden
+    				{	// if the filed is an auto_increment,
+						// it should'nt can be changed
 						$zahl= ""; 
   						if($this->action==STINSERT)
   						{
@@ -1520,7 +1520,7 @@ class STItemBox extends STBaseBox
 		//if(isset($this->aDisabled[$field["name"]]))
 		//	$input->disabled();
 		$td->add($input);
-
+		
 		$input= new InputTag();
 		$input->type("hidden");
 		$input->name("STBoxes_action");
@@ -1645,22 +1645,6 @@ class STItemBox extends STBaseBox
 			$this->action= STUPDATE;
 		}else
 			$this->action= STINSERT;
-	// alex: 06/09/2005: parsen in function table verlegt
-		// alex 02/09/2005:	vor dem Erzeugen des Formulars
-		//					showTypes von der gesezten Tabelle durchparsen
-		//					ob ein Feld auf upload gesetzt ist,
-		//					dann in uploadFields �bernehmen
-		/*if($this->asDBTable)
-		{
-			foreach($this->asDBTable->showTypes as $column=>$showTypes)
-			{
-				foreach($showTypes as $extraField=>$array)
-				{
-					if($extraField=="upload")
-						$this->uploadFields[$column]= $array;
-				}
-			}
-		}*/
 		$result= null;
 		$this->box($this->join, $this->where, $result);
 		$tr= new RowTag();
@@ -1909,30 +1893,48 @@ class STItemBox extends STBaseBox
                     $identification= "";
                     foreach($this->asDBTable->identification as $identifColumn)
                     {
-                    	$identif= $showpost[$identifColumn["column"]];
+						if(!isset($identifColumn['alias']))
+						{
+							$field= $this->asDBTable->findColumnOrAlias($identifColumn["column"]);
+							$aliasColumn= $field['alias'];
+						}else
+							$aliasColumn= $identifColumn["alias"];
+                    	$identif= $showpost[$aliasColumn];
                         $identification.= $identif." - ";
                     }
                     if($identification)
                     	$identification= substr($identification, 0, strlen($identification)-3);
 
-    				$pkValue= $showpost[$this->asDBTable->getPkColumnName()];
-    				if(!$pkValue)
+                    $pkValue= null;
+                    $pkColumn= $this->asDBTable->getPkColumnName();
+                    if(isset($showpost[$pkColumn]))
+    				    $pkValue= $showpost[$pkColumn];
+    				if(!isset($pkValue))
     				{
-    				    $table= $this->asDBTable;
-  						$table->clearSelects();
-  						$table->select($table->getPkColumnName());
-  						$statement= $this->db->getStatement($table);
-  						$pkValue= $this->db->fetch_single($statement);
+    				    //$table= $this->asDBTable;
+  						//$table->clearSelects();
+						$table= new STDbSelector($this->asDBTable);
+  						$table->select($this->asDBTable->getName(), $table->getPkColumnName());
+						if(!$table->execute())
+						{
+							$this->msg->setMessageId("SQLERROR@", $table->getErrorString());
+							return false;
+						}
+						$pkValue= $table->getSingleResult();
     				}
 					$tableName= $this->asDBTable->getDisplayName();
-					//st_print_r($showpost);
    					foreach($this->asDBTable->sAcessClusterColumn as $aColumnCluster)
    					{
-   						if(!$showpost[$aColumnCluster["column"]])
+	   					if(	!isset($showpost[$aColumnCluster["column"]]) ||
+							!$showpost[$aColumnCluster["column"]] ||
+							trim($showpost[$aColumnCluster["column"]]) == ""	)
    						{
 							$infoString= preg_replace("/@/", $identification, $aColumnCluster["info"]);
 
-							$cluster= $showpost[$aColumnCluster["cluster"]];
+							if(isset($showpost[$aColumnCluster["column"]]))
+								$cluster= $showpost[$aColumnCluster["column"]];
+							else
+								$cluster= $aColumnCluster["cluster"];
    							$result= $_instance->createAccessCluster(	$aColumnCluster["parent"],
    																		$cluster,
    																		$infoString,
@@ -2062,6 +2064,8 @@ class STItemBox extends STBaseBox
             	// delete them by an ERROR
             	if(	isset($_instance) &&
             		typeof($_instance, "STUserSession") &&
+					isset($aClusters) &&
+					is_array($aClusters) &&
 					count($aClusters)						)
             	{
             		foreach($aClusters as $key=>$cluster)
@@ -2245,6 +2249,21 @@ class STItemBox extends STBaseBox
         $fields= $this->getFieldArray();//take fields from database
         $aJoins= $this->getJoinArray(array(), $post);//create all content from popup-menues
         $bFieldDefineSelection= false;
+		if($bFieldDefineSelection)
+		{
+			echo "<b>begin definition</b> on line ".(__LINE__-3)."<br />";
+			echo "   by file ".__FILE__."<br />";
+			echo "definde columns inside table: <b>(->table->show)</b><br />";
+			st_print_r($this->asDBTable->show, 3, 10);
+			echo "exist fields: <b>(\$fields)</b><br />";
+			st_print_r($fields,3, 10);
+			echo "existing joins: <b>(\$aJoins)</b><br />";
+			st_print_r($aJoins, 5, 10);
+			echo "created columns: <b>(\$columns)</b><br />";
+			st_print_r($columns  ,3, 10);
+			echo "inncomming post variable: <b>(\$post)</b><br />" ;
+			st_print_r($post, 5, 10);
+		}
         if($this->action==STUPDATE)
         {// check only the changed fields
 			if($this->asDBTable)
@@ -2274,23 +2293,10 @@ class STItemBox extends STBaseBox
 				$this->msg->setMessageId("NOUPDATEROW@", $table);
 				return false;
 			}
-			$bFieldDefineSelection= false;
 			if($bFieldDefineSelection)
 			{
-			    echo "<b>begin definition</b> on line ".(__LINE__-3)."<br />";
-			    echo "   by file ".__FILE__."<br />";
 			    echo "database select: <b>(\$result)</b><br />";
 			    st_print_r($result, 1, 10);
-			    echo "definde columns inside table: <b>(->table->show)</b><br />";
-			    st_print_r($this->asDBTable->show, 3, 10);
-			    echo "exist fields: <b>(\$fields)</b><br />";
-			    st_print_r($fields,3, 10);
-			    echo "existing joins: <b>(\$aJoins)</b><br />";
-			    st_print_r($aJoins, 5, 10);
-			    echo "created columns: <b>(\$columns)</b><br />";
-			    st_print_r($columns  ,3, 10);
-			    echo "inncomming post variable: <b>(\$post)</b><br />" ;
-			    st_print_r($post, 5, 10);
 			}
 			$newResult= array();
 			// retype alias columns into columns from database
@@ -2383,6 +2389,14 @@ class STItemBox extends STBaseBox
             else
                 $columnName= $name;
             $postColumn= preg_replace("/[ \t]/", $this->sReplaceSpaceSign, $columnName);
+			if($bFieldDefineSelection)
+			{
+				echo " fieldName:$name<br>";
+				echo "columnName:$columnName<br>";
+				echo ". postName:$postColumn<br>";
+				echo "from columns:";
+				st_print_r($columns, 3);
+			}
             if( STCheck::isDebug() &&
                 isset($post[$postColumn]) &&
                 (   STCheck::isDebug("show.db.fields") ||
@@ -2649,7 +2663,6 @@ class STItemBox extends STBaseBox
 					if( isset($this->aDisabled[$field["alias"]]) &&
 					    count($this->aDisabled[$field["alias"]])      )
 				{
-				    showLine();
 					$this->aDisabled[$field["alias"]]= array_merge($this->aDisabled[$field["alias"]], $aEnums);
 					return;
 				}

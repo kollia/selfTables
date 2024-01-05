@@ -1,5 +1,6 @@
 <?php
 
+require_once($_stpostarray);
 require_once($_stbasetable);
 
 class STDbTable extends STBaseTable
@@ -17,6 +18,11 @@ class STDbTable extends STBaseTable
 	 * @var object
 	 */
     public $container= null;
+    /**
+     * count of current entrys inside table
+     * @var integer
+     */
+    protected $entryCount= -1;
 	var $aAuto_increment= array(); // um ein Feld mit Autoincrement vor dem eigentlichen Insert zu holen
 	var	$password= array(); // all about to set an password in database
 	/**
@@ -25,6 +31,12 @@ class STDbTable extends STBaseTable
 	 * @var array
 	 */
 	protected $aStatement= array();
+	/**
+	 * columns for cluster where row should only show
+	 * when user has cluster
+	 * @var array
+	 */
+	protected $aClusterColumns= array();
 
 	protected function createFirstOwnTable($Table)
 	{
@@ -187,6 +199,26 @@ class STDbTable extends STBaseTable
 	    return STBaseTable::getColumnName($column);
 	}
 	/**
+	 * return count of entrys inside table
+	 * 
+	 * @return integer count of entrys
+	 */
+	public function getTableEntrys()
+	{
+	    if($this->entryCount > -1)
+	        return $this->entryCount;
+	    	    
+	    $cTab= new STDbSelector($this);
+	    $cTab->count();
+	    //$countStatement= $cTab->getStatement();
+	    $cTab->execute();
+	    $nRv= $cTab->getSingleResult();
+	    if(!isset($nRv))
+	        $nRv= 0;
+	    $this->entryCount= $nRv;
+	    return $nRv;
+	}
+	/**
 	 * inform whether content of parameter is an keyword.
 	 *
 	 * @param string $column content of column
@@ -200,8 +232,17 @@ class STDbTable extends STBaseTable
 	{
 	    return $this->db->keyword($column);
 	}
-	//function select($tableName, $column, $alias= null, $nextLine= true, $add= false)
-	public function select(string $column, $alias= null, $fillCallback= null, $nextLine= null, $add= false)
+	/**
+	 * add column for selection
+	 *
+	 * @param string $column column name from database
+	 * @param string $alias column name should appear from select
+	 * @param string $fillCallback if set, make callback before and after select for given column
+	 * @param boolean $nextLine if <code>false</code> by <code>STItemBox</code> do not show column inside new line
+	 * @param boolean $add whether new column should be added to exist original selection
+	 * @param boolean $addGet if set, adding differ between select- and get-columns, otherwise parameter <code>$add</code> is for both
+	 */
+	public function select(string $column, $alias= null, $fillCallback= null, $nextLine= null, bool $add= false, bool $addGet= null)
 	{
 		if(STCheck::isDebug())
 		{
@@ -209,7 +250,7 @@ class STDbTable extends STBaseTable
 			STCheck::param($fillCallback, 2, "function", "TinyMCE", "bool", "null");
 			STCheck::param($nextLine, 3, "bool", "null");
 			$nParams= func_num_args();
-			STCheck::lastParam(4, $nParams);
+			STCheck::lastParam(6, $nParams);
 		}
 
     	$field= $this->findColumnOrAlias($column);
@@ -224,7 +265,7 @@ class STDbTable extends STBaseTable
 				echo "column '$column not exist in table ".$this->Name.
 											"(".$this->getDisplayName().")";
     	}
-		STBaseTable::select($column, $alias, $fillCallback, $nextLine);
+		STBaseTable::select($column, $alias, $fillCallback, $nextLine, $add, $addGet);
 	}
     function passwordNames($firstName, $secondName, $thirdName= null)
     {
@@ -250,19 +291,19 @@ class STDbTable extends STBaseTable
     }
 	function addAccessClusterColumn($column, $parentCluster, $clusterfColumn, $accessInfoString, $addGroup= true, $action= STALLDEF)
 	{
-		Tag::paramCheck($column, 1, "string");
-		Tag::paramCheck($parentCluster, 2, "string", "null");
-		Tag::paramCheck($accessInfoString, 3, "string", "empty(string)");
-		Tag::paramCheck($clusterfColumn, 4, "string", "null");
-		Tag::paramCheck($addGroup, 5, "boolean");
-		Tag::paramCheck($action, 6, "string", "int");
+		STCheck::param($column, 0, "string");
+		STCheck::param($parentCluster, 0, "string", "null");
+		STCheck::param($clusterfColumn, 2, "string", "null");
+		STCheck::param($accessInfoString, 3, "string", "empty(string)");
+		STCheck::param($addGroup, 4, "boolean");
+		STCheck::param($action, 5, "string", "int");
 		//Tag::paramCheck($parentCluster, 7, "string", "null");
 		Tag::alert(!$this->columnExist($column), "STBaseTable::addAccessClusterColumn()",
 											"column $column not exist in table ".$this->Name.
 											"(".$this->getDisplayName().")", 1);
-		Tag::alert(!$this->columnExist($clusterfColumn), "STBaseTable::addAccessClusterColumn()",
+	/*	Tag::alert(!$this->columnExist($clusterfColumn), "STBaseTable::addAccessClusterColumn()",
 											"column for cluster $clusterfColumn not exist in table ".$this->Name.
-											"(".$this->getDisplayName().")", 1);
+											"(".$this->getDisplayName().")", 1);*/
 
 
 		$this->getColumn($column);
@@ -272,26 +313,26 @@ class STDbTable extends STBaseTable
 		{
 			if($action==STLIST)
 			{
-				$accessInfoString= "berechtigung zum ansehen";
-				$accessInfoString.= " des Eintrages \'@\' in der Tabelle ".$this->getDisplayName();
+				$accessInfoString= "permission to see entry \'@\' ";
+				$accessInfoString.= "in table ".$this->getDisplayName();
 			}elseif($action==STINSERT)
 			{
-				$accessInfoString= "Berechtigung zum erstellen neuer Eintr�ge";
-				$accessInfoString.= " von '\'@\' in der Tabelle ".$this->getDisplayName();
+				$accessInfoString= "permission to create new entry";
+				$accessInfoString.= " of '\'@\' in table ".$this->getDisplayName();
 			}elseif($action==STUPDATE)
 			{
-				$accessInfoString= "Berechtigung zum �ndern der Eintr�ge";
-				$accessInfoString.= " von \'@\' in der Tabelle ".$this->getDisplayName();
+				$accessInfoString= "permission to change entry";
+				$accessInfoString.= " of \'@\' in table ".$this->getDisplayName();
 			}elseif($action==STDELETE)
 			{
-				$accessInfoString= "Berechtigung zum l�schen der Eintr�ge";
-				$accessInfoString.= " von \'@\' in der Tabelle ".$this->getDisplayName();
+				$accessInfoString= "permission to delete entry";
+				$accessInfoString.= " of \'@\' in table ".$this->getDisplayName();
 			}elseif($action==STADMIN)
 			{
-				$accessInfoString= "�nderungs-Berechtigung der Eintr�ge";
-				$accessInfoString.= " von \'@\' in der Tabelle ".$this->getDisplayName();
+				$accessInfoString= "changing-permission for entrys";
+				$accessInfoString.= " of \'@\' in table ".$this->getDisplayName();
 			}else
-				$accessInfoString= "vom Programmierer nicht definierter Zugriff";
+				$accessInfoString= "from developer not defined access";
 		}else
 			$accessInfoString= preg_replace("/'/", $accessInfoString, "\'");
 
@@ -303,51 +344,101 @@ class STDbTable extends STBaseTable
 												"info"=>	$accessInfoString,
 												"group"=>	$addGroup			);
 	}
-	function accessCluster($column, $clusterfColumn, $accessInfoString= "", $addGroup= true, $parentTable= null, $pkValue= null)
+	/**
+	 * pre-define an access cluster for every row,
+	 * where the row only be shown if the user has the cluster.<br />
+	 *  beschreibe für welche Zugriffs Berechtigung der Cluster
+	 * @param string $column column or alias name where the cluster should be stored
+	 * @param string $prefix the prefix can be a column name or alias name of a column,
+	 *                         which is enclosed in curly brackets; any characters can be chosen outside the brackets.
+	 *                         as example: 'AccessCountry_{c:<column-name>}:'.
+	 *                         The prefix will be followd with a count from table entrys.
+	 * @param string $accessInfoString the string which should be written inside logging table
+	 * @param boolean $addGroup whether by creating the cluster, also a group for it should be created
+	 */
+	public function accessCluster(string $column, string $prefix= "", string $accessInfoString= "", $addGroup= true)
 	{
-		STCheck::paramCheck($column, 1, "string");
-		STCheck::paramCheck($clusterfColumn, 2, "string");
-		STCheck::paramCheck($accessInfoString, 3, "string", "empty(string)");
-		STCheck::paramCheck($addGroup, 4, "boolean");
-		STCheck::paramCheck($parentTable, 5, "STBaseTable", "string", "boolean", "null");
-		STCheck::paramCheck($pkValue, 6, "string", "int", "float", "boolean", "null");
-
-		if(is_bool($parentTable))
-		{
-			$addGroup= $parentTable;
-			$parentTable= null;
-		}
-		if(is_bool($pkValue))
-		{
-			$addGroup= $pkValue;
-			$pkValue= null;
-		}
-		$action= STLIST;
-		//st_print_r($this->asAccessIds[$action],2);
-		$parentCluster= $this->asAccessIds[$action]["cluster"];
-		//echo "action:$action<br />";
-		//echo "parentCluster:$parentCluster<br />";
-		if($this->container->currentContainer())	// if the container is not aktual
-		{										// does not need an parent-cluster,
-			if(	!$parentCluster					// because an insert box can not appear
-				or
-				preg_match("/,/", $parentCluster)	)
-			{
-				$parentCluster= $this->container->getLinkedCluster($action, $parentTable, $pkValue);
-			}
-			Tag::alert(!$parentCluster, "STDbTable::accessCluster()", "no parentCluster be set");
-		}
-		$this->addAccessClusterColumn($column, $parentCluster, $clusterfColumn, $accessInfoString, $addGroup, $action);
-		//echo "end of accessCluster in Container ".$this->container->getName()."<br />";
+	    if(STCheck::isDebug())
+	    {
+    		STCheck::param($column, 0, "string");
+    		STCheck::param($prefix, 0, "string");
+    		STCheck::param($accessInfoString, 2, "string", "empty(string)");
+    		STCheck::param($addGroup, 43, "boolean");
+	    }
+        $this->cluster("access", $column, $prefix, $accessInfoString, $addGroup);
 	}
-	function insertCluster($column, $clusterfColumn, $accessInfoString= "", $addGroup= true, $parentTable= null, $pkValue= null)
+	/**
+	 * pre-define an admin cluster for every row,
+	 * where the user can insert/update or delete content inside the linked tabel
+	 * if the user has the cluster.<br />
+	 * @param string $column column or alias name where the cluster should be stored
+	 * @param string $prefix the prefix can be a column name or alias name of a column,
+	 *                         which is enclosed in curly brackets; any characters can be chosen outside the brackets.
+	 *                         as example: 'AccessCountry_{c:<column-name>}:'.
+	 *                         The prefix will be followd with a count from table entrys.
+	 * @param string $accessInfoString the string which be used as Description for cluster
+	 *                                  and will be always written inside logging table.<br />
+	 *                                  The string can be cantain an @ which will be replaced with all
+	 *                                  defined identif-columns
+	 * @param boolean $addGroup whether by creating the cluster, also a group for it should be created
+	 */
+	public function adminCluster(string $column, string $prefix= "", string $accessInfoString= "", $addGroup= true)
 	{
-		STCheck::paramCheck($column, 1, "string");
-		STCheck::paramCheck($clusterfColumn, 2, "string");
-		STCheck::paramCheck($accessInfoString, 3, "string", "empty(string)");
-		STCheck::paramCheck($addGroup, 4, "boolean");
-		STCheck::paramCheck($parentTable, 5, "STBaseTable", "string", "boolean", "null");
-		STCheck::paramCheck($pkValue, 6, "string", "int", "float", "boolean", "null");
+	    if(STCheck::isDebug())
+	    {
+	        STCheck::param($column, 0, "string");
+	        STCheck::param($prefix, 1, "string");
+	        STCheck::param($accessInfoString, 2, "string", "empty(string)");
+	        STCheck::param($addGroup, 3, "boolean");
+	    }
+	    $this->cluster("admin", $column, $prefix, $accessInfoString, $addGroup);
+	}
+	/**
+	 * pre-define a cluster for every row,
+	 * where the row only be shown if the user has the cluster.<br />
+	 *  beschreibe für welche Zugriffs Berechtigung der Cluster 
+	 * @param string $access describe for which permission the cluster should have access.<br />
+	 *                       If this method will be used, by first calling the variable have to be "access"
+	 *                       to see the new inserted entry in the STListBox. If you want that the user
+	 *                       have permission to change anything inside the linked table, fill this variable
+	 *                       with "admin". Than the user in the upper linked STListBox have access to insert,
+	 *                       update or delete new entrys. Also allowed all other entrys by this variable, where
+	 *                       the developer have to handle the cluster permission by his own. He can get the
+	 *                       permissions inside the upper container with the methode <code>getLinkedCluster()</code> 
+	 * @param string $column column or alias name where the cluster should be stored
+	 * @param string $prefix the prefix can be a column name or alias name of a column, 
+	 *                         which is enclosed in curly brackets; any characters can be chosen outside the brackets.
+	 *                         as example: 'AccessCountry_{c:<column-name>}:'.
+	 *                         The prefix will be followd with a count from table entrys.
+	 * @param string $accessInfoString the string which should be written inside logging table
+	 * @param boolean $addGroup whether by creating the cluster, also a group for it should be created
+	 */
+	public function cluster(string $access, string $column, string $prefix= "", string $accessInfoString= "", $addGroup= true, $parentTable= null, $pkValue= null)
+	{
+	    $post= new STPostArray();
+	    if( $post->exist("STBoxes_action") &&
+	        $post->getValue("STBoxes_action") == "make"    )
+	    {
+	        $action= $this->container->getAction();
+    	    if($action == STINSERT)
+    	        $this->insertCluster($access, $column, $prefix, $accessInfoString, $addGroup, $parentTable, $pkValue);
+	    }else
+	    {
+	        $field= $this->findColumnOrAlias($column);
+	    }
+	}
+	protected function insertCluster($access, $column, $prefix, $accessInfoString= "", $addGroup= true, $parentTable= null, $pkValue= null)
+	{
+	    if(STCheck::isDebug())
+	    {
+    	    STCheck::param($access, 0, "string");
+    		STCheck::param($column, 1, "string");
+    		STCheck::param($prefix, 2, "string");
+    		STCheck::param($accessInfoString, 3, "string", "empty(string)");
+    		STCheck::param($addGroup, 4, "boolean");
+    		STCheck::param($parentTable, 5, "STBaseTable", "string", "boolean", "null");
+    		STCheck::param($pkValue, 6, "string", "int", "float", "boolean", "null");
+	    }
 
 		if(is_bool($parentTable))
 		{
@@ -360,117 +451,68 @@ class STDbTable extends STBaseTable
 			$pkValue= null;
 		}
 		$action= STINSERT;
-		$parentCluster= $this->asAccessIds[$action]["cluster"];
+		if(isset($this->asAccessIds[$action]["cluster"]))
+		    $parentCluster= $this->asAccessIds[$action]["cluster"];
+		else
+		    $parentCluster= "";
 		if($this->container->currentContainer())	// if the container is not aktual
 		{										// does not need an parent-cluster,
 			if(	!$parentCluster					// because an insert box can not appear
 				or
 				preg_match("/,/", $parentCluster)	)
 			{
-				$parentCluster= $this->container->getLinkedCluster($action, $parentTable, $pkValue);
+			    if(!isset($parentTable))
+			        $parentTable= $this;
+		        $parentCluster= $this->container->getLinkedCluster($action, $parentTable, $pkValue);
 			}
-			Tag::alert(!$parentCluster, "STDbTable::accessCluster()", "no parentCluster be set");
+			//Tag::alert(!$parentCluster, "STDbTable::accessCluster()", "no parentCluster be set");
+			$preg= $this->splitClusterString($prefix);
+			if(count($preg))
+			{
+			    $post= new STPostArray();
+			    $field= $this->findAliasOrColumn($preg[2][0]);
+			    $begin= substr($prefix, 0, $preg[0][1]);
+			    if($post->exist($field['alias']))
+			        $columnContent= $post->getValue($field['alias']);
+			    elseif($post->exist($field['column']))
+			        $columnContent= $post->getValue($field['column']);
+			    else
+			        $columnContent= "unknownColumnContent";
+			    $end= substr($prefix, $preg[2][1]+strlen($preg[2][0])+1);
+			    $clusterfColumn= $begin.$columnContent.$end;
+				if(STCheck::isDebug())
+				{
+					showLine();
+					echo "by creating dynamic cluster always implement count of table<br>";
+					echo "toDo: implement only when field not unique";
+				}
+			    $tableEntrys= $this->getTableEntrys();
+			    $clusterfColumn.= "[".($tableEntrys+1)."]";
+				$clusterfColumn.= $access;
+			}
+			if($parentCluster == "")
+			    $parentCluster= null;//no parent cluster exist
+			$this->addAccessClusterColumn($column, $parentCluster, $clusterfColumn, $accessInfoString, $addGroup, $action);
 		}
-		$this->addAccessClusterColumn($column, $parentCluster, $clusterfColumn, $accessInfoString, $addGroup, $action);
 	}
-	function updateCluster($column, $clusterfColumn, $accessInfoString= "", $addGroup= true, $parentTable= null, $pkValue= null)
+	private function splitClusterString(string $cluster)
 	{
-		STCheck::paramCheck($column, 1, "string");
-		STCheck::paramCheck($clusterfColumn, 2, "string");
-		STCheck::paramCheck($accessInfoString, 3, "string", "empty(string)");
-		STCheck::paramCheck($addGroup, 4, "boolean");
-		STCheck::paramCheck($parentTable, 5, "STBaseTable", "string", "boolean", "null");
-		STCheck::paramCheck($pkValue, 6, "string", "int", "float", "boolean", "null");
-
-		if(is_bool($parentTable))
-		{
-			$addGroup= $parentTable;
-			$parentTable= null;
-		}
-		if(is_bool($pkValue))
-		{
-			$addGroup= $pkValue;
-			$pkValue= null;
-		}
-		$action= STUPDATE;
-		$parentCluster= $this->asAccessIds[$action]["cluster"];
-		if($this->container->currentContainer())	// if the container is not aktual
-		{										// does not need an parent-cluster,
-			if(	!$parentCluster					// because an insert box can not appear
-				or
-				preg_match("/,/", $parentCluster)	)
-			{
-				$parentCluster= $this->container->getLinkedCluster($action, $parentTable, $pkValue);
-			}
-			Tag::alert(!$parentCluster, "STDbTable::accessCluster()", "no parentCluster be set");
-		}
-		$this->addAccessClusterColumn($column, $parentCluster, $clusterfColumn, $accessInfoString, $addGroup, $action);
-	}
-	function deleteCluster($column, $clusterfColumn, $accessInfoString= "", $addGroup= true, $parentTable= null, $pkValue= null)
-	{
-		STCheck::paramCheck($column, 1, "string");
-		STCheck::paramCheck($clusterfColumn, 2, "string");
-		STCheck::paramCheck($accessInfoString, 3, "string", "empty(string)");
-		STCheck::paramCheck($addGroup, 4, "boolean");
-		STCheck::paramCheck($parentTable, 5, "STBaseTable", "string", "boolean", "null");
-		STCheck::paramCheck($pkValue, 6, "string", "int", "float", "boolean", "null");
-
-		if(is_bool($parentTable))
-		{
-			$addGroup= $parentTable;
-			$parentTable= null;
-		}
-		if(is_bool($pkValue))
-		{
-			$addGroup= $pkValue;
-			$pkValue= null;
-		}
-		$action= STDELETE;
-		$parentCluster= $this->asAccessIds[$action]["cluster"];
-		if($this->container->currentContainer())	// if the container is not aktual
-		{										// does not need an parent-cluster,
-			if(	!$parentCluster					// because an insert box can not appear
-				or
-				preg_match("/,/", $parentCluster)	)
-			{
-				$parentCluster= $this->container->getLinkedCluster($action, $parentTable, $pkValue);
-			}
-			Tag::alert(!$parentCluster, "STDbTable::accessCluster()", "no parentCluster be set");
-		}
-		$this->addAccessClusterColumn($column, $parentCluster, $clusterfColumn, $accessInfoString, $addGroup, $action);
-	}
-	function adminCluster($column, $clusterfColumn, $accessInfoString= "", $addGroup= true, $parentTable= null, $pkValue= null)
-	{
-		STCheck::paramCheck($column, 1, "string");
-		STCheck::paramCheck($clusterfColumn, 2, "string");
-		STCheck::paramCheck($accessInfoString, 3, "string", "empty(string)");
-		STCheck::paramCheck($addGroup, 4, "boolean");
-		STCheck::paramCheck($parentTable, 5, "STBaseTable", "string", "boolean", "null");
-		STCheck::paramCheck($pkValue, 6, "string", "int", "float", "boolean", "null");
-
-		if(is_bool($parentTable))
-		{
-			$addGroup= $parentTable;
-			$parentTable= null;
-		}
-		if(is_bool($pkValue))
-		{
-			$addGroup= $pkValue;
-			$pkValue= null;
-		}
-		$action= STADMIN;
-		$parentCluster= $this->asAccessIds[$action]["cluster"];
-		if($this->container->currentContainer())	// if the container is not aktual
-		{										// does not need an parent-cluster,
-			if(	!$parentCluster					// because an insert box can not appear
-				or
-				preg_match("/,/", $parentCluster)	)
-			{
-				$parentCluster= $this->container->getLinkedCluster($action, $parentTable, $pkValue);
-			}
-			Tag::alert(!$parentCluster, "STDbTable::accessCluster()", "no parentCluster be set");
-		}
-		$this->addAccessClusterColumn($column, $parentCluster, $clusterfColumn, $accessInfoString, $addGroup, $action);
+	    $preg= array();
+	    if(preg_match("/([\\\\]*)\{([^\\\\}]*)\}/", $cluster, $preg, PREG_OFFSET_CAPTURE))
+	    {
+	        if(strlen($preg[1][0]) % 2)
+	        {// maybe the wantet string is "...\\{-{<column>}-}"
+	            $newBeging= $preg[2][1];
+	            $cluster= substr($cluster, $newBeging);
+	            $preg= $this->splitClusterString($cluster);
+	            if(count($preg))
+	            {
+	                foreach($preg as &$area)
+	                    $area[1]+= $newBeging;
+	            }
+	        }
+	    }
+	    return $preg;
 	}
 	function needPkInResult($charColumn, $session= "")
 	{
@@ -495,6 +537,9 @@ class STDbTable extends STBaseTable
 		$this->aAuto_increment["session"]= $session;
 		$this->aAuto_increment["inColumn"]= $charColumn;
 		$this->aAuto_increment["PK"]= $column;
+		
+		st_print_r($this->aAuto_increment);
+		showBackTrace();
 	}
 	/**
 	 * fetch table from database of given or current container
@@ -1524,11 +1569,6 @@ class STDbTable extends STBaseTable
 		if( $bFirstAccess &&
 		    count($maked) < (count($aTableAlias) - count($aSubstitutionTables))   )
 		{
-		    showLine();
-		    st_print_r($aTableAlias);
-		    st_print_r($maked);
-		    st_print_r($aSubstitutionTables);
-		    echo "$statement<br>";
 		    if(STCheck::isDebug("db.statements.table"))
 		    {
 		        $space= STCheck::echoDebug("db.statements.table", "need select for tables:");
@@ -1569,9 +1609,6 @@ class STDbTable extends STBaseTable
 		        STCheck::echoDebug("db.statements.table", "table found needed tables:");
 		        st_print_r($accessFoundTable, 20, $space);
 		    }
-		    showLine();
-		    echo "accessFoundTable:";
-		    st_print_r($accessFoundTable,20);
 		    $foundAccessOver= array();
 		    foreach($accessFoundTable as $firstTable => $reachFirstTable)
 		    {

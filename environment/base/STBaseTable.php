@@ -39,6 +39,13 @@ class STBaseTable
 	var	$identification= array();
 	var	$bDisplayIdentifs= true;
 	/**
+	 * whether user should forward to the next container
+	 * if there only one row exist for access
+	 * and no posibility for insert, update or delete be given
+	 * @var array
+	 */
+	protected $aForward= array();
+	/**
 	 * whether in a selected- or an identifier-columns (from foreign keys)
 	 * selection is from parent table or first table from Database with all columns
 	 * ( key [select, get or identifColumn] is true or non exist )
@@ -59,12 +66,6 @@ class STBaseTable
 	 * @var array
 	 */
 	protected $aPreDefinde= array();
-	/**
-	 * columns for cluster where row should only show
-	 * when user has cluster
-	 * @var array
-	 */
-	protected $aClusterColumns= array();
 	var	$bDisplaySelects= true;
 	var	$bColumnSelects= true; // have the Table columns in select-statement
     private $FK= array();// bug: if in one table be two foreign keys to the same table
@@ -512,17 +513,6 @@ class STBaseTable
 	    $this->tdAttribute("align", $value, $tableType, $aliasName);
 	}
 	/**
-	 * pre-define a cluster for every row,
-	 * where the row only be shown if the user has the cluster.<br />
-	 *  
-	 * @param string $aliasName alias or column name where the cluster should be stored 
-	 * @param string $prefix can be the name of an alias or column which be followed of the bracketed primary key 
-	 */
-	public function cluster(string $aliasName, string $prefix= "")
-	{
-	    $this->aClusterColumns[$aliasName]= $prefix;
-	}
-	/**
 	 * define column as must have field, maybe by different actions
 	 * 
 	 * @param string $column name of column or defined alias column
@@ -714,14 +704,11 @@ class STBaseTable
 												    $action===STUPDATE || $action===STDELETE,
 												    "STALLDEF", "STLIST", "STINSERT", "STUPDATE", "STDELETE");
 												
-		$aRv= array();
-		if(isset($this->asAccessIds[STALLDEF]))
-		    $aRv= $this->asAccessIds[STALLDEF];
+	    $aRv= array();
 	    if(isset($this->asAccessIds[$action]))
-	        $aRv= $this->asAccessIds[$action];
-		if( STUserSession::sessionGenerated()
-		    and
-			count($this->sAcessClusterColumn) )
+	        return $this->asAccessIds[$action];
+		elseif( STUserSession::sessionGenerated() &&
+			    count($this->sAcessClusterColumn)    )
 		{
 		    $session= &STUserSession::instance();
 			$created= $session->getDynamicClusters($this);
@@ -730,53 +717,77 @@ class STBaseTable
 			$nAction= $action;
 			if($action==STLIST)
 				$nAction= STACCESS;
-				if(count($created[$nAction]))
+			if( isset($created[$nAction]) &&
+			    count($created[$nAction])       )
+			{
+			    $clusterstring= "";
+			    foreach($created[$nAction] as $cluster)
 				{
-				    $clusters= "";
-				    foreach($created[$nAction] as $cluster)
-					{
-						if($action==STINSERT)
-						{// if the search is for action STINSERT
-						 // create from the dynamic cluster the parent.
-						 // user must have by STINSERT always the admin access from before
-							if(preg_match("/^(.*)_[^_]+$/", $cluster, $preg))
-								$cluster= $preg[1];
-						}
-						$clusters.= $cluster.",";
+					if($action==STINSERT)
+					{// if the search is for action STINSERT
+					 // create from the dynamic cluster the parent.
+					 // user must have by STINSERT always the admin access from before
+						if(preg_match("/^(.*)_[^_]+$/", $cluster, $preg))
+							$cluster= $preg[1];
 					}
-					$clusters= substr($clusters, 0, strlen($clusters)-1);
-					$aRv= array_merge($aRv, $clusters);
+					$clusterstring.= $cluster.",";
 				}
-				if( (    $action==STINSERT
-				         OR
-						 $action==STUPDATE
-						 OR
-						 $action==STDELETE  )
-				    and
-						count($created[STADMIN])    )
+				$clusterstring= substr($clusterstring, 0, strlen($clusterstring)-1);
+				if(trim($clusterstring) != "")
 				{
-				    if($clusters)
-						    $clusters.= ",";
-				    foreach($created[STADMIN] as $cluster)
-					{
-						if($action==STINSERT)
-						{// if the search is for action STINSERT
-						 // create from the dynamic cluster the parent.
-						 // user must have by STINSERT always the admin access from before
-							if(preg_match("/^(.*)_[^_]+$/", $cluster, $preg))
-								$cluster= $preg[1];
-						}
-						$clusters.= $cluster.",";
+					$clusters= array();
+					$clusters[]= $clusterstring;
+					$clusterObject= array();
+					$clusterObject['cluster']= $clusters;
+					$clusterObject['action']= $action;
+					$clusterObject['accessString']= "";
+					$clusterObject['customID']= null;
+					$aRv[]= $clusterObject;
+				}
+			}
+			if( (   $action==STINSERT ||
+					$action==STUPDATE ||
+					$action==STDELETE      ) &&
+			    isset($created[STADMIN])     &&
+			    count($created[STADMIN])         )
+			{
+			    if($clusterstring)
+					$clusterstring.= ",";
+			    foreach($created[STADMIN] as $cluster)
+				{
+					if($action==STINSERT)
+					{// if the search is for action STINSERT
+					 // create from the dynamic cluster the parent.
+					 // user must have by STINSERT always the admin access from before
+						if(preg_match("/^(.*)_[^_]+$/", $cluster, $preg))
+							$cluster= $preg[1];
 					}
-					$clusters= substr($clusters, 0, strlen($clusters)-1);
-					$aRv= array_merge($aRv, $clusters);
+					$clusterstring.= $cluster.",";
 				}
-				if(STCheck::isDebug())
+				$clusterstring= substr($clusterstring, 0, strlen($clusterstring)-1);
+				if(trim($clusterstring) != "")
 				{
-				    echo "get all access clusters:";
-				    st_print_r($aRv);
-				    showBackTrace();
+					$clusters= array();
+					$clusters[]= $clusterstring;
+					$clusterObject= array();
+					$clusterObject['cluster']= $clusters;
+					$clusterObject['action']= $action;
+					$clusterObject['accessString']= "";
+					$clusterObject['customID']= null;
+					$aRv[]= $clusterObject;
 				}
+			}
+		}
+		if( !count($aRv) &&
+		    isset($this->asAccessIds[STALLDEF])   )
+		{
+		    $aRv= $this->asAccessIds[STALLDEF];
+		}
+		$this->asAccessIds[$action]= $aRv;
+		if(STCheck::isDebug("session"))
+		{
+		    $space= STCheck::echoDebug("session", "all access clusters currently found where returned for action $action:");
+		    st_print_r($this->asAccessIds,5, $space);
 		}
 		return $aRv;
 	}
@@ -1543,7 +1554,17 @@ class STBaseTable
 		//					zum f�llen einer nicht vorhandenen Spalte sein
 		// alex 21/09/2005:	ACHTUNG alias darf keine Funktion sein (auch nicht PHP-function)
 		// alex 06/08/2006: second column alias or third column fillCallback can also be an object from TinyMCE
-		function select(string $column, $alias= null, $fillCallback= null, $nextLine= null, $add= false)
+		/**
+		 * add column for selection
+		 * 
+		 * @param string $column column name from database
+		 * @param string $alias column name should appear from select
+		 * @param string $fillCallback if set, make callback before and after select for given column
+		 * @param boolean $nextLine if <code>false</code> by <code>STItemBox</code> do not show column inside new line
+		 * @param boolean $add whether new column should be added to exist original selection
+		 * @param boolean $addGet if set, adding differ between select- and get-columns, otherwise parameter <code>$add</code> is for both
+		 */
+		public function select(string $column, $alias= null, $fillCallback= null, $nextLine= null, bool $add= false, bool $addGet= null)
 		{
 		    if(STCheck::isDebug())
 		    {
@@ -1553,11 +1574,8 @@ class STBaseTable
     			STCheck::param($nextLine, 4, "bool", "null");
     			STCheck::param($add, 5, "bool");
     			$nParams= func_num_args();
-    			STCheck::lastParam(5, $nParams);
-		    }
-		    
-			if(STCheck::isDebug())
-			{
+    			STCheck::lastParam(6, $nParams);
+    			
 				STCheck::alert(!$this->validColumnContent($column), "STBaseTable::selectA()",
 											"column $column not exist in table ".$this->Name.
 											"(".$this->getDisplayName().")");
@@ -1597,7 +1615,7 @@ class STBaseTable
 			}elseif(!$alias)
 				$alias= $column;
 				
-			$this->selectA($this->Name, $column, $alias, $nextLine, $add);
+			$this->selectA($this->Name, $column, $alias, $nextLine, $add, $addGet);
 			if($fillCallback)
 			{
 				$this->listCallback($fillCallback, $alias);
@@ -1606,7 +1624,7 @@ class STBaseTable
 				$this->deleteCallback($fillCallback, $alias);
 			}
 		}
-		protected function selectA($table, $column, $alias, $nextLine, $add)
+		protected function selectA($table, $column, $alias, $nextLine, $add, $addGet)
 		{
 			if(STCheck::isDebug())
 			{
@@ -1638,6 +1656,16 @@ class STBaseTable
 			{
 			    $this->clearSelectColumns();
 			    $this->abOrigChoice["select"]= false;
+			}
+			if(	(   (   isset($addGet) &&
+    			        !$addGet             ) ||
+    			    (   !isset($addGet) &&
+    			        !$add                )       ) &&
+			    (   !isset($this->abOrigChoice["get"]) ||
+			        $this->abOrigChoice["get"] == true   )   )
+			{
+			    $this->clearGetColumns();
+			    $this->abOrigChoice["get"]= false;
 			}
 			if($alias===null)
 			    $alias= $column;
@@ -2270,8 +2298,11 @@ class STBaseTable
 		    $this->abOrigChoice["select"]= true;
 		    foreach($this->show as $key=>$column)
 		    {
-		        if($column['type'] == "select")
+		        if( isset($column['type']) &&
+		            $column['type'] == "select"   )
+		        {
 		            unset($this->show[$key]);
+		        }
 		    }
 		}
 		function clearNoFkSelects()
@@ -2984,7 +3015,8 @@ class STBaseTable
 	    $this->abOrigChoice['get']= true;
 	    foreach($this->show as $key=>$column)
 	    {
-	        if($column['type'] == "get")
+	        if(	isset($column['type']) &&
+				$column['type'] == "get"	)
 	        {
 	            if( !$this->bIsNnTable ||
 	                substr($column['alias'], 0, 5) != "join@"  )

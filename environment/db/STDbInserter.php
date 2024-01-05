@@ -98,8 +98,6 @@ class STDbInserter extends STDbSqlCases
     		foreach($this->columns as $nr=>$columns)
     		{
         		$statement= $this->getStatement($nr);
-        		//showLine();
-        		//echo "$statement<br>";
     			$db->query($statement, $onError);
     			if($db->errno())
     			{
@@ -174,9 +172,6 @@ class STDbInserter extends STDbSqlCases
     			$error= "";
     			foreach($this->table->sAcessClusterColumn as $column)
     			{
-    			    echo __file__.__LINE__."<br>";
-    			    st_print_r($column,3);
-    			    st_print_r($row);
     				if(!isset($row[$column["column"]]))
     				{
     					if($column["cluster"]!==$pkName)
@@ -186,13 +181,13 @@ class STDbInserter extends STDbSqlCases
     																						" not defined in result for dinamic cluster");
     						$row[$column["column"]]= $column["parent"]."_".$row[$column["cluster"]];
     						$cluster= $row[$column["cluster"]];
-    						echo __file__.__LINE__."<br>";
+    						showLine();
          					$result= $session->createAccessCluster(	$column["parent"],
          															$cluster,
          															$infoString,
       																$tableName,
          					    $column["group"]	);
-         					echo __file__.__LINE__."<br>";
+         					showLine();
     						if($error==="")
     							$error= $result;
     						elseif(	$result!=="NOERROR"

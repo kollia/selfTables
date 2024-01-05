@@ -760,34 +760,8 @@ class STListBox extends STBaseBox
 			 	
 				$needAlwaysIndex= $oTable->needAlwaysIndex();
 				$tableName= $oTable->getName();
-				$countStatement= $this->oSelector->getResultCountStatement();
-				
-				$cTab= new STDbSelector($oTable);
-				$cTab->setStatement($countStatement);
-				
-				// old explicit creation
-/*				$cTab->allowQueryLimitation($oTable->modify());
-				$cTab->clearRekursiveNoFkSelects();
-				$cTab->clearRekursiveGetColumns();
-    			if($this->bGetedSearchboxResult)
-    				$cTab->andWhere($oTable->oSearchBox->getWhere());
-				if($cTab->isDistinct())
-				{// alex 17/10/2006:	ToDo: distinct inside from count
-				 //							it's nessesary to set the table inside of the function
-				 //							and if it is distinct it will be set all columns
-				 //							inside from count from the select-statement
-					$cTab->distinct(false);
-    				$cTab->count("*");//$oTable, "count");
-				}else
-				    $cTab->count("*");
-				if($cTab->isNnTable())// when table is an n to n table
-				    $cTab->noNnTable();// it's nessesary to set the table to no n to n table        */
-    			$cTab->execute();
-    			$nMaxTableRows= $cTab->getSingleResult();
-				if(!isset($nMaxTableRows))
-				    $nMaxTableRows= 0;
-				$this->nMaxTableRows= $nMaxTableRows;
-				if( $nMaxTableRows <= 1 &&
+				$this->nMaxTableRows= $oTable->getTableEntrys();
+				if( $this->nMaxTableRows <= 1 &&
 				    $this->arrangement == STVERTICAL    )
 				{
 				    return $oNumIndex; 
@@ -795,6 +769,7 @@ class STListBox extends STBaseBox
 				//$statement= "select count(*) from ".$tableName;
 				//$nMaxTableRows= $this->db->fetch_single($statement);
 			 }
+			 $nMaxTableRows= $this->nMaxTableRows;
 			if($this->nMaxRowSelect===null)
 				return $oNumIndex;
 			// alex 15/06/2005:	only if $needAlwaysIndex not false
@@ -1395,12 +1370,17 @@ class STListBox extends STBaseBox
 								{// if wished an other value/column inside variable showTapes
 									//st_print_r($table->showTypes, 2);
 									$represent= $table->showTypes["valueColumns"][$createdColumn];
+									
+									showLine();
+									echo "created column:$createdColumn";
+									st_print_r($table->showTypes,2);
+									st_print_r($rowArray);
 									//echo "represent:$represent<br />";
 									if($key==$createdColumn)
 										$createdRepresent= $represent;
 									else
 										$createdRepresent= "###STcolumn".$nDisplayColumn."###_".$represent;
-									//st_print_r($rowArray);
+									
 									$isValue= $rowArray[$createdRepresent];
 								}
 								$newContainer= $table->showTypes[$createdColumn][$extraField];

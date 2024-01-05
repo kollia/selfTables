@@ -694,28 +694,43 @@ class STSession
 	{
 	    if(isset($var5))
 	    {
-	        if($_SESSION[$var1][$var2][$var3][$var4][$var5] == $value)
+	        if(	isset($_SESSION[$var1][$var2][$var3][$var4][$var5]) &&
+				$_SESSION[$var1][$var2][$var3][$var4][$var5] == $value	)
+			{
 	            return true;
+			}
 	        
 	    }else if(isset($var4))
 	    {
-	        if($_SESSION[$var1][$var2][$var3][$var4] == $value)
-	            return true;
+	        if(	isset($_SESSION[$var1][$var2][$var3][$var4]) &&
+				$_SESSION[$var1][$var2][$var3][$var4] == $value	)
+			{
+				return true;
+			}
 	        
 	    }else if(isset($var3))
 	    {
-	        if($_SESSION[$var1][$var2][$var3] == $value)
-	            return true;
+	        if(	isset($_SESSION[$var1][$var2][$var3]) &&
+				$_SESSION[$var1][$var2][$var3] == $value	)
+			{
+				return true;
+			}
 	        
 	    }else if(isset($var2))
 	    {
-	        if($_SESSION[$var1][$var2] == $value)
-	            return true;
+	        if(	isset($_SESSION[$var1][$var2]) &&
+				$_SESSION[$var1][$var2] == $value	)
+			{
+				return true;
+			}
 	        
 	    }else
 	    {
-	        if($_SESSION[$var1] == $value)
-	            return true;
+	        if(	isset($_SESSION[$var1]) &&
+				$_SESSION[$var1] == $value	)
+			{
+				return true;
+			}
 	    }
 	    return false;
 	}

@@ -61,6 +61,7 @@ class STUserSession extends STDbSession
 	var	$allAdminCluster= "allAdmin";
     var $allAdminGroup= "Admin";
 	var	$sGroupTable= "Group";
+	var $sClusterGroupTable= "ClusterGroup";
 
 	// all for own Projects
 	var $projectAccessTable;
@@ -346,25 +347,25 @@ class STUserSession extends STDbSession
 	    $clusters= $this->getSessionVar("ST_USER_DEFINED_VARS", "dynamic", $table->getName());
     	if(!is_array($clusters))
   		{//echo __file__.__line__."<br />";
-   		    //st_print_r($this->sAcessClusterColumn,3);
-  		    $table->clearSelects();
-  		    $table->select($table->getPkColumnName());
+  		    //st_print_r($this->sAcessClusterColumn,3);
+  		    $selector= new STDbSelector($table);
+  		    $selector->clearSelects();
+  		    $selector->select($table->Name, $table->getPkColumnName());
   		    foreach($table->sAcessClusterColumn as	$clusterInfo)
   		    {
-  		        $table->select($clusterInfo["column"]);
-  				$table->andWhere($clusterInfo["column"]." is not null");
-  				$table->andWhere($clusterInfo["column"]."!=''");
+  		        $selector->select($table->Name, $clusterInfo["column"]);
+  		        $selector->andWhere($clusterInfo["column"]." is not null");
+  		        $selector->andWhere($clusterInfo["column"]."!=''");
   		    }
-			$selector= new STDbSelector($table);
 			$selector->execute();
 			$result= $selector->getResult();
 			$clusters= array();
   		    foreach($result as $row)
   		    {
   		        foreach($table->sAcessClusterColumn as	$key=>$clusterInfo)
-  				    {
-  				        $clusters[$clusterInfo["action"]][$row[0]]= $row[$key+1];
-  				    }
+			    {
+			        $clusters[$clusterInfo["action"]][$row[0]]= $row[$key+1];
+			    }
   		    }
   		    $this->setRecursiveSessionVar($clusters, "ST_USER_DEFINED_VARS", "dynamic", $table->getName());
         }
@@ -1308,7 +1309,7 @@ class STUserSession extends STDbSession
 		if($groupID==-1)
 			return "NOGROUPCREATE";
 
-		if(!$this->joinClusterGroup($clusterName, $groupID))
+		if(!$this->joinClusterGroup($clusterName, $clusterName))
 			return "NOGROUPCONNECTCREATE";
 
 		return "NOERROR";
@@ -1488,36 +1489,43 @@ class STUserSession extends STDbSession
 	}
 	function createAccessCluster($parentCluster, &$cluster, $accessInfoString, $sIdentifString, $addGroup= false)
 	{
-		Tag::paramCheck($parentCluster, 1, "string");
-		Tag::paramCheck($cluster, 2, "string");
-		Tag::paramCheck($accessInfoString, 3, "string");
-		Tag::paramCheck($sIdentifString, 4, "string");
-		Tag::paramCheck($addGroup, 5, "bool");
+		STCheck::param($parentCluster, 0, "string", "null");
+		STCheck::param($cluster, 1, "string");
+		STCheck::param($accessInfoString, 2, "string");
+		STCheck::param($sIdentifString, 3, "string");
+		STCheck::param($addGroup, 4, "bool");
 
-		$cluster= $parentCluster."_".$cluster;
+		if(	isset($parentCluster) &&
+			trim($parentCluster) != ""	)
+		{
+			$cluster= $parentCluster."_".$cluster;
+		}
 		return $this->createCluster($cluster, $accessInfoString, $sIdentifString, $addGroup);
 	}
 	// deleteAccessCluster l�scht keine Gruppen,
 	// nur STClusterGroup-eintr�ge
 	function deleteAccessCluster($cluster)
 	{
-		Tag::paramCheck($cluster, 1, "string");
+		STCheck::param($cluster, 0, "string");
 
 		$clusterGroup= $this->container->getTable($this->sClusterGroupTable);
 		$clusterGroup->clearSelects();
 		$clusterGroup->select("ID", "ID");
 		$clusterGroup->select("GroupID", "GroupID");
 		$clusterGroup->clearFks();
-		$clusterGroup->modifyForeignKey(false);
-		$clusterGroup->where($this->asClusterGroupTableColumns["ClusterID"]["column"]."='".$cluster."'");
-		$statement= $clusterGroup->getStatement();
-		$clusterGroupResult= $this->database->fetch($statement, noErrorShow);
+		$clusterGroup->allowQueryLimitation(false);
+		$clusterGroup->where("ClusterID='".$cluster."'");
+		$selector= new STDbSelector($clusterGroup);
+		//$statement= $clusterGroup->getStatement();
+		$selector->execute(noErrorShow);
+		//$clusterGroupResult= $this->database->query($statement, noErrorShow);
+		$clusterGroupResult= $selector->getResult();
 		if(count($clusterGroupResult))
 		{
 		    $deleter= new STDbDeleter($clusterGroup);
 		    $deleter->execute(noErrorShow);
 		}
-		$deleter= new STDbDeleter($this->sClusterTable);
+		$deleter= new STDbDeleter("Cluster");
 		$deleter->where($this->asClusterTableColumns["ID"]["column"]."='".$cluster."'");
 		if($deleter->execute(noErrorShow) !== 0)
 			return "NOCLUSTERDELETE";

@@ -1450,7 +1450,8 @@ abstract class STObjectContainer extends STBaseContainer
 		{
 			// container be the first,
 			// no older linkedTable can be set
-			return null;
+			$null= null;
+			return $null;
 		}
 
 		//search older container in get-params
@@ -1471,11 +1472,23 @@ abstract class STObjectContainer extends STBaseContainer
 	// da diese Methode ein ->getTable aufruft
 	// muss, wenn diese Tabelle nicht angezeigt werden soll,
 	// ein ->doChoice(<Tabelle>, false) aufgerufen werden.
-	function getLinkedCluster($action, $table= null, $pkValue= null)
+	/**
+	 * return cluster for the current entry of table.<br />
+	 * Only when a session defined and the object
+	 * is the current container.
+	 * (da diese Methode ein ->getTable aufruft
+	 *  muss, wenn diese Tabelle nicht angezeigt werden soll,
+	 *  ein ->doChoice(<Tabelle>, false) aufgerufen werden.)
+	 * 
+	 * @param string $action current action
+	 * @param STDbTable|string|null $table 
+	 * @param unknown $pkValue
+	 * @return array if array is empty no cluster from any older linked table exist
+	 */
+	function getLinkedCluster(string $action, $table= null, $pkValue= null)
 	{
-		Tag::paramCheck($action, 1, "string");
-		Tag::paramCheck($table, 2, "STDbTable", "string", "null");
-		STCheck::paramCheck($pkValue, 3, "string", "int", "float", "null");
+		STCheck::paramCheck($table, 1, "STDbTable", "string", "null");
+		STCheck::paramCheck($pkValue, 2, "string", "int", "float", "null");
 
 	    if(!STUserSession::sessionGenerated())
 			return "";
@@ -1488,8 +1501,6 @@ abstract class STObjectContainer extends STBaseContainer
 			if(!$table)
 				return "";
 			$tableName= $table->getName();
-			//echo "container:".$this->getName()."<br />";
-			//echo "older table:".$tableName."<br />";
 		}elseif(!typeof($table, "STDbTable"))
     	{
     	    $desc= STDbTableDescriptions::instance($this->db->getDatabaseName());
@@ -1497,39 +1508,62 @@ abstract class STObjectContainer extends STBaseContainer
     		$table= $this->getTable($tableName);
     	}else
     	    $tableName= $table->getName();
-
+    	 
+    	$pk= $table->getPkColumnName();
     	$session= &STUserSession::instance();
-    	$aAccess= &$session->getDynamicClusters($table);
+    	$aAccess= $session->getDynamicClusters($table);
 		if($pkValue===null)
 		{
-        	$html= new STQueryString();
-        	$vars= $html->getArrayVars();
-        	$vars= $vars["stget"][$tableName];
-        	$pk= $table->getPkColumnName();
-    		if($vars)
-    		{
+		    // search for older table linked from
+        	$query= new STQueryString();
+        	$vars= $query->getArrayVars();
+        	if(isset($vars['stget']['link']['from']))
+        	{
+        	    $lastFromTable= null;
+        	    foreach($vars['stget']['link']['from'] as $count=>$tables)
+        	    {
+        	        if(!is_int($count)) // if $count be from STINSERT or STUPDATE
+        	        {                   // it should be the last entry of array
+        	            break;          // but should not used as last table (is current)
+        	        }
+        	        $lastFromTable= $tables;
+        	    }
+        	    if( isset($lastFromTable) &&
+        	        is_array($lastFromTable)   )
+        	    {
+        	        $fromTable= key($lastFromTable);
+        	        $fromColumn= $lastFromTable[$fromTable];
+        	    }else
+        	    {// current site is not linked from an other table
+        	        // so cannot be access a linked cluster
+        	        return "";
+        	    }
         		$linkedKey= key($vars);
-        		$linkedValue= $vars[$linkedKey];
-    			STCheck::is_error(!$linkedValue, "STObjectContainer::getLinkedCluster()", "reference '".$linkedKey."' to table ".
-    							"'".$tableName."' from older Container, not be set in Url");
-    		}else
-    			STCheck::is_error(!$linkedValue, "STObjectContainer::getLinkedCluster()", "table "."'".$tableName.
+            	$linkedValue= $vars[$linkedKey];
+        		STCheck::is_error(!$linkedValue, "STObjectContainer::getLinkedCluster()", "reference '".$linkedKey."' to table ".
+        							"'".$tableName."' from older Container, not be set in Url");
+        	}
+        	showBackTrace();
+    		STCheck::is_error(!$linkedValue, "STObjectContainer::getLinkedCluster()", "table "."'".$tableName.
     															"' from older Container, not be set in Url");
 		}else
 		{
 			$linkedKey= $pk;
 			$linkedValue= $pkValue;
 		}
-
+		
     	if($linkedKey!=$pk)
     	{
-    	    $table->clearSelects();
-    		$table->select($pk);
-    		$table->where($linkedKey."=".$linkedValue);
-    		$statement= $this->db->getStatement($table);
-    		$linkedValue= $db->fetch_single($statement);
+    	    $selector= new STDbSelector($table);
+    	    $selector->select($table->Name, $pk);
+    	    $selector->where($linkedKey."=".$linkedValue);
+    	    $selector->execute();
+    	    $linkedValue= $selector->getSingleResult();
     	}
-		$cluster= $aAccess[$action][$linkedValue];
+    	$cluster= $aAccess[$action][$linkedValue];
+    	showLine();
+    	echo "getLinkedCluster($pkValue) from table {$tableName}";
+    	st_print_r($table->show, 2);
 
     	return $cluster;
 	}
