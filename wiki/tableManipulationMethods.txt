@@ -1,0 +1,17 @@
+
+both can be set inside STDbTable:
+-----------------------------------------
+
+STListBox manipulation:
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+::aligen()
+::valigen()
+
+STItemBox manipulation:
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+STBaseTable::preSelect()
+STBaseTable::setIBoxBegin()
+STBaseTable::setIBoxEnd()
+STDbTable::cluster()
+STDbTable::accessCluster()
+STDbTable::adminCluster()
