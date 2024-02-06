@@ -34,6 +34,11 @@ class STUserProjectManagement extends STBaseContainer
         STCheck::paramCheck($userDb, 1, "STDatabase");
         
         $this->database= $userDb;
+        $user= STUserSession::instance();        
+        showLine();
+        echo "________________________________________________________________________________________________<br>";
+        echo $userDb->getTableName("Session");
+        //$user->verifyLogin("##StartPage", $_SERVER['SCRIPT_NAME']);
         STBaseContainer::__construct($name, $userDb, $bodyClass);
     }
     /**

@@ -84,13 +84,7 @@ class STDbTableCreator
     function execute()
 	{
         if($this->bCheck)
-  		{
-		if($this->sTable == "MUProject")
-		{
-			echo __file__.__line__."<br>";
-			st_print_r($fields, 2);
-			exit;
-		}
+  		{ 	
 			if($this->db->isTable($this->sTable))
 			{
 				$oTable= &$this->db->getTable($this->sTable);
@@ -119,12 +113,6 @@ class STDbTableCreator
     		}
 
   		}
-		if($this->sTable == "MUProject")
-		{
-			echo __file__.__line__."<br>";
-			st_print_r($fields, 2);
-			exit;
-		}
   		return $this->create();
     }
 		function add($column)
@@ -157,7 +145,7 @@ class STDbTableCreator
 			if(STCheck::isDebug("tableCreator"))
 				$statement.= "\n                               ";
 			$keys= array();
-			echo __FILE__.__LINE__."<br>";
+			showLine();
 			st_print_r($this->asTableColumns,10);
     		foreach($this->asTableColumns as $column=>$content)
     		{
@@ -269,7 +257,7 @@ class STDbTableCreator
 				$statement.= " ENGINE=InnoDb";
 			if(!STCheck::isDebug("db.statement"))
 				STCheck::echoDebug("tableCreator", $statement);
-    		if($this->db->fetch($statement))
+    		if($this->db->query($statement))
 			{
 				$this->db->asExistTableNames[]= $this->sTable;
 				return "NOERROR";

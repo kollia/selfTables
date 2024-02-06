@@ -39,10 +39,30 @@ class STDbSessionHandler implements SessionHandlerInterface
     }
     public function read(string $sessionId) : string
     {
+        if(!$this->database->isDbTable("Session"))
+        {
+            STCheck::echoDebug("install", "Session table do not exist <b>do installation</b> on STUserSideCreator");
+            return "";  
+        }
         $this->sUsingFunctions.= "read('$sessionId')<br>";
         $lifetime= ini_get("session.gc_maxlifetime");
         $lasttime= time()-$lifetime;
-        $oSessionTable= $this->database->getTable("Sessions");
+        try{
+            $oSessionTable= $this->database->getTable("Sessions");
+            if($this->database->errno() == 1146)
+            {
+                STCheck::echoDebug("install", "Session table do not exist <b>do installation</b> on STUserSideCreator");
+                return "";  
+            }
+        }catch(mysqli_sql_exception $ex)
+        {
+            if($ex->getCode() == 1146) // Session table not exist
+            {
+                STCheck::echoDebug("install", "Session table do not exist <b>do installation</b> on STUserSideCreator");
+                return ""; 
+            }
+            throw $ex;
+        }
         $oSelector= new STDbSelector($oSessionTable);
         $oSelector->select("Sessions", "ses_id");
         $oSelector->select("Sessions", "ses_value");

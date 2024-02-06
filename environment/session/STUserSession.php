@@ -154,6 +154,9 @@ class STUserSession extends STDbSession
 	    $this->bDescriptionDefined= true;
 	    STDbSession::defineDatabaseTableDescriptions($dbTableDescription);
 	        
+		showLine();
+		echo "----------------------------<br>";
+		STCheck::debug(true);
         $dbTableDescription->table("Query");
         $dbTableDescription->column("Query", "ID", "BIGINT", /*null*/false);
         $dbTableDescription->primaryKey("Query", "ID");
@@ -290,7 +293,9 @@ class STUserSession extends STDbSession
         $dbTableDescription->column("Log", "Description", "TEXT", /*null*/false);
         $dbTableDescription->column("Log", "DateCreation", "DATETIME", /*null*/false);
         
+		showLine();
         STObjectContainer::install("um_install", "STUM_InstallContainer", "userDb", $_stum_installcontainer);
+		STObjectContainer::install("UserManagement", "STUserManagement", null, $_stusermanagement);
 	}
 	/* fault whether I do not know
 	 static public function sessionGenerated()
@@ -677,6 +682,25 @@ class STUserSession extends STDbSession
 	public function getProjectName()
 	{
 		return $this->project;
+	}
+	/**
+	 * verify project on session management
+	 *  
+	 * @param string|integer $project project as Name like in database, or as project ID<br />
+	 *                                see UserManagement 'existing projects'
+	 * @param string|Tag $login define URL where user can login into system 
+	 *                          (address where STUserProjectManagement defined), or direct login mask as Tag objects 
+	 * @return bool whether user be logged-in
+	 */
+	public function verifyLogin($project, $login= "") : bool
+	{
+	    STCheck::param($project, 0, "int", "string");
+	    STCheck::param($login, 1, "string", "empty(string)", "Tag");
+
+		showLine();
+	    $this->UserLoginMask= $login;
+	    $loggedIn= $this->verifyProject($project);
+	    return $loggedIn;
 	}
 	function hasUserManagementAccess($projectID= null, $addType= addUser)
 	{

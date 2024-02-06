@@ -1548,6 +1548,8 @@ abstract class STObjectContainer extends STBaseContainer
 		$global_array_exist_stobjectcontainer_with_classname[$containerName]= array(	"class"=>$className,
 																						"from"=>$fromContainer,
 																						"source"=>$sourceFile	);
+		showBackTrace();
+		st_print_r($global_boolean_install_objectContainer);
 		if(!$global_boolean_install_objectContainer)
 			return;
 		$bfrom= true;
@@ -1565,7 +1567,7 @@ abstract class STObjectContainer extends STBaseContainer
 		return;
 	}
 	function installContainer()
-	{
+	{showBackTrace();
 		$desc= &STDbTableDescriptions::instance($this->db->getDatabaseName());
 		$desc->installTables($this->db);
 	}

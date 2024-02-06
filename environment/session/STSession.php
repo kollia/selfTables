@@ -869,24 +869,6 @@ class STSession
 			return 1;
 	}
 	/**
-	 * verify project on session management
-	 *  
-	 * @param string|integer $project project as Name like in database, or as project ID<br />
-	 *                                see UserManagement 'existing projects'
-	 * @param string|Tag $login define URL where user can login into system 
-	 *                          (address where STUserProjectManagement defined), or direct login mask as Tag objects 
-	 * @return bool whether user be logged-in
-	 */
-	public function verifyLogin($project, $login) : bool
-	{
-	    STCheck::param($project, 0, "int", "string");
-	    STCheck::param($login, 1, "string", "Tag");
-
-	    $this->UserLoginMask= $login;
-	    $loggedIn= $this->verifyProject($project);
-	    return $loggedIn;
-	}
-	/**
 	 * return error number by fault login, or elsewher 0.<br />
 	 * <table>
 	 *   <tr>

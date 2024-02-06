@@ -151,11 +151,12 @@ abstract class STDatabase extends STObjectContainer
 
 /**
 *  contains all tablenames in the database to which was curently conected
+*  installed from STDbTableCreator
 *
 * @access private
 * @var array string
 */
-	protected	$asExistTableNames= array();
+	public	$asExistTableNames= array();
 	var $lastStatement;
 	var $foreignKey= false;
 	var	$aFieldArrays= array();

@@ -2,7 +2,7 @@
 
 class STUM_InstallContainer extends STObjectContainer
 {
-	function create()
+	protected function create()
 	{
 	    $instance= &STSession::instance();
 	    $domain= $instance->getCustomDomain();
@@ -21,5 +21,17 @@ class STUM_InstallContainer extends STObjectContainer
 		$user->password("Pwd", true);
 		$user->passwordNames("Password", "Repeat password");
 	}
+	
+	/**
+	 * method will be called when container has an action
+	 * to display as STListBox or STItembox
+	 *
+	 * @param string $action current action of container STInsert/STUpdate/STList/STDelete
+	 * @param string $table which table is in action
+	 */
+	 protected function init(string $action, string $table)
+	 {
+		// nothing todo
+	 }
 }
 ?>

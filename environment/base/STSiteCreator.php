@@ -19,6 +19,7 @@ class STSiteCreator extends HtmlTag
 		var	$oMainTable;
 		//deprecated
 		var	$aNoChoise= array();
+		var $bDoInstall= false;
 		var	$uRequireSites= array();
 		var $aNeededVars= array();// Variablen welche auf selbst deffinierter Seite ben�tigt werden
 		var	$aBehindTableIdentif= array();
@@ -759,12 +760,19 @@ class STSiteCreator extends HtmlTag
 	{
 		global	$global_boolean_install_objectContainer;
 
+		$this->bDoInstall= true;
+		showBackTrace();
 		STCheck::debug("install");
 		$bInstalled= false;
 		$containers= STBaseContainer::getAllContainerNames();
+		showLine();
+		echo "containers found:";
+		st_print_r($containers);
 		foreach($containers as $containerName)
 		{
 			$obj= &STBaseContainer::getContainer($containerName);
+			showLine();
+			echo "found for $containerName:";st_print_r($obj,0);
 			if(typeof($obj, "STObjectContainer"))
 			{
 			    STCheck::echoDebug("install", "<b>install</b> container ".get_class($obj)."($containerName)");
@@ -775,7 +783,10 @@ class STSiteCreator extends HtmlTag
 		}
 		if(!$bInstalled)
 			STCheck::echoDebug("install", "no container to install be set");
+		showLine();
 		$global_boolean_install_objectContainer= true;
+		$session= STSession::instance();
+		$session->noRegister();
 	}
 }
 

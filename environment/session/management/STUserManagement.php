@@ -180,6 +180,7 @@ class STUserManagement extends STObjectContainer
 		// create custom domain database entry
 		$domain= $instance->getCustomDomain();
 		
+		showErrorTrace();
     	$projectName= $instance->userManagementProjectName;
     	$project= $this->getTable("Project");
     	$project->clearSelects();

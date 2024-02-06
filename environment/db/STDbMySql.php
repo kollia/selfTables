@@ -234,6 +234,10 @@ class STDbMySql extends STDatabase
 	{
 		return $this->insert_id();
 	}
+	/**
+	 * make query from statement
+	 * and throw exception only when table not exist (ERROR 1146)
+	 */
 	protected function querydb($statement)
 	{
 		global $_st_page_starttime_;
@@ -250,7 +254,9 @@ class STDbMySql extends STDatabase
 		    $this->lastDbResult = $this->conn->query($statement);
 		}catch(mysqli_sql_exception $ex)
 		{
-		    $this->errno();
+		    $errno= $this->errno();
+	//		if($errno == 1146)
+	//			throw $ex;
 		    if(STCheck::isDebug())
 		    {
     		    if(!STCheck::isDebug("db.statement"))

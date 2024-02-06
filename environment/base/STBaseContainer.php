@@ -693,11 +693,16 @@ abstract class STBaseContainer extends BodyTag implements STContainerTempl
 				}
 			}
 		}
+		showLine();
+		echo "search for $containerName:";
 		foreach($global_array_all_exist_stobjectcontainers as $name=>$container)
 		{
 			if($name==$containerName)
 			{
 			    $containerObj= &$global_array_all_exist_stobjectcontainers[$name];
+				showLine();
+				echo "return container $name for $containerName:";
+				st_print_r($containerObj, 0);
 				return $containerObj;
 			}
 		}

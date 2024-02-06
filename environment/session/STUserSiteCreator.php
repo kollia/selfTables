@@ -7,7 +7,6 @@ class STUserSiteCreator extends STSessionSiteCreator
 	var	$sProject;
 	var $nProject;
 	var	$sUserTablePrefix;
-	var	$bDoInstall= false;
 
 	function __construct($projectNameNr, $container= null)
 	{
@@ -51,11 +50,11 @@ class STUserSiteCreator extends STSessionSiteCreator
 	        
         if($this->userManagement->noRegister)
             return;
-		if($this->bDoInstall)
+/*		if($this->bDoInstall)
 		{
 			$this->bDoInstall= false;
 			STSiteCreator::install();
-		}
+		}*/
 		if($bSessionGenerated)
 		    return;
 		$this->userManagement->registerSession();
@@ -77,8 +76,6 @@ class STUserSiteCreator extends STSessionSiteCreator
 		STQueryString::setQueryTable($queryTable, $nrColumn, $pathColumn);
 		STQueryString::globaly_noStgetNr(session_name());
 		Tag::echoDebug("user", "table for querystring is be set");
-		// alex 02/05/2005:	entfernt, da var $startPage ja nicht gesetzt wird
-		//$this->setStartPage($this->userManagement->getStartPage());
 	}
 	function getProjectID()
 	{
