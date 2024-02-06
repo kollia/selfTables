@@ -29,8 +29,8 @@ class STUserSiteCreator extends STSessionSiteCreator
 									"before invoke initSession() without DB set DB with setMainContainer()");
 		if($userDb)
 		{
-			// alex 11/09/2005:	da die DB keine Referenz ist
-			//					diesen aus der liste holen
+			// alex 11/09/2005:	Db name lost because object is no refference
+			//					so take name from original database
 			$dbName= $userDb->getName();
 			$this->userDb= &STDbTableContainer::getContainer($dbName);
 		}else
