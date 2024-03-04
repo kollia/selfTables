@@ -581,13 +581,13 @@ class STDbTable extends STBaseTable
 	    $table= $this->db->getTableName($table);
 	    STBaseTable::noJoinOver($table);
 	}
-	protected function fk($ownColumn, &$toTable, $otherColumn= null, $bInnerJoin= null, $where= null)
+	protected function fk($ownColumn, &$toTable, $otherColumn= null, $join= null, $where= null)
 	{
 		Tag::paramCheck($ownColumn, 1, "string");
 		Tag::paramCheck($toTable, 2, "STBaseTable", "string");
 		Tag::paramCheck($otherColumn, 3, "string", "empty(string)", "null");
-		Tag::paramCheck($bInnerJoin, 4, "check", $bInnerJoin===null || $bInnerJoin==="inner" || $bInnerJoin==="left" || $bInnerJoin==="right",
-											"null", "inner", "left", "right");
+		Tag::paramCheck($join, 4, "check", $join==STINNERJOIN||$join==STLEFTJOIN||$join==STRIGHTJOIN||$join==null,
+															"null", "STINNERJOIN", "STLEFTJOIN", "STRIGHTJOIN");
 		Tag::paramCheck($where, 5, "string", "empty(String)", "STDbWhere", "null");
 		
     	$bOtherDatabase= false;
@@ -608,7 +608,7 @@ class STDbTable extends STBaseTable
     			$toTable= &$this->db->getTable($toTableName);//, false/*bAllByNone*/);
 			Tag::alert(!isset($toTable), "STDbTable::fk()", "second parameter '$toTableName' is no exist table");
     	}
-		STBaseTable::fk($ownColumn, $toTable, $otherColumn, $bInnerJoin, $where);
+		STBaseTable::fk($ownColumn, $toTable, $otherColumn, $join, $where);
 		//st_print_r($this->FK,2);
 		if($bOtherDatabase)
 		{

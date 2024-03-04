@@ -336,10 +336,14 @@ class STCheck
 				$c= count($args);
 				for($n= 2; $n<$c; $n++)
 				{
-					if(preg_match("/^empty\((.+)\)$/i", $args[$n], $preg))
-						$empty[trim($preg[1])]= "empty";
-					else
-						$types[]= $args[$n];
+					if($args[$n] !== null)
+					{
+						if(preg_match("/^empty\((.+)\)$/i", $args[$n], $preg))
+							$empty[trim($preg[1])]= "empty";
+						else
+							$types[]= $args[$n];
+					}else
+						$types[]= "null";
 				}
 				$bError= !typeof($param, $types, $empty, 0);
 				$begin= 2;

@@ -33,6 +33,15 @@ abstract class STObjectContainer extends STBaseContainer
 	var	$oExternSideCreator;
 	var $aBehindTableIdentif= array();
 	var $oCurrentListTable;
+	/**
+	 * whether should container
+	 * show any tables
+	 */
+	private $bShowNoTables= false;
+	/**
+	 * whether has container
+	 * displayed any table
+	 */
 	var $bDisblayedTable= false;
 
 	/**
@@ -59,6 +68,10 @@ abstract class STObjectContainer extends STBaseContainer
 
 		$this->db= &$container->getDatabase();
 		STBaseContainer::__construct($name, $container, $bodyClass);
+	}
+	protected function createMessageContent()
+	{
+		$this->createMessages($this->locale['language'], $this->locale['nation']);
 	}
 	/**
 	 * method to create messages for different languages.<br />
@@ -115,6 +128,13 @@ abstract class STObjectContainer extends STBaseContainer
 	function &needEmptyTable(string $sTableName)
 	{	
 		return $this->needTable($sTableName, /*empty*/true);
+	}
+	/**
+	 * if container on display should show no tables
+	 */
+	public function displayNoTables()
+	{
+		$this->bShowNoTables= true;
 	}
 	/**
 	 * create N to N table with checkboxes which connect between fixTable and joinTable
@@ -180,11 +200,16 @@ abstract class STObjectContainer extends STBaseContainer
         }
         return $table;
 	}
-	public function &getTable(string $tableName= null, string $sContainer= null, bool $bEmpty= false)
+	public function &getTable(string $tableName= null, string|bool $sContainer= null, bool $bEmpty= false)
 	{
 		$nParams= func_num_args();
 		STCheck::lastParam(3, $nParams);
 		
+		if(is_bool($sContainer))
+		{
+			$bEmpty= $sContainer;
+			$sContainer= null;
+		}
 		if( $sContainer != null &&
 		    $sContainer != $this->name )
 		{
@@ -230,7 +255,11 @@ abstract class STObjectContainer extends STBaseContainer
 		$tableName= strtolower($tableName);
 		// ----------------------------------------------------------------------------------------------------
 		
-		
+		if(	$bEmpty &&
+			$this->db->isTable($tableName)	)
+		{
+			STCheck::alert(true, "STObjectContainer::getTable()", "cannot create a STBaseTable with the same name exist in database");
+		}
 		// alex 08/07/2005: die Tabelle wird nun auch ohne Referenz geholt
 		//					�nderungen jetzt ausserhalb m�glich
 		//					und die Tabelle ist dann nicht automatisch in $this->tables eingetragen
@@ -288,7 +317,7 @@ abstract class STObjectContainer extends STBaseContainer
 			}
 		}else
 		{
-		    if($bEmpty)
+		    if(!$this->isTable($tableName))
 		    {
 		        $table= new STBaseTable($tableName);
 		        Tag::echoDebug("table", "created dummy table ".$table->toString()." inside database container <b>".$this->getName()."</b>");
@@ -814,11 +843,11 @@ abstract class STObjectContainer extends STBaseContainer
 
 		return null;
 	}
-	function execute(&$externSideCreator, $onError)
+	public function execute(&$externSideCreator, $onError)
 	{
 		Tag::paramCheck($externSideCreator, 1, "STSiteCreator");
 		
-		$this->createMessages($this->locale['language'], $this->locale['nation']);
+		$this->createMessageContent();
 		$this->initContainer();
 		$this->oExternSideCreator= &$externSideCreator;
 		$params= new STQueryString();
@@ -890,8 +919,11 @@ abstract class STObjectContainer extends STBaseContainer
     		}
 		}
 		$result= STBaseContainer::execute($externSideCreator, $onError);
-		if($result != "NOERROR")
+		if(	$result != "NOERROR" ||
+			$this->bShowNoTables	)
+		{
 		    return $result;
+		}
 		$action= $this->getAction();
 		if($action == "")
 		{
@@ -1533,10 +1565,10 @@ abstract class STObjectContainer extends STBaseContainer
 
     	return $cluster;
 	}
-	static public function install($containerName, $className, $fromContainer= null, $sourceFile= null)
+	static public function predefine($containerName, $className, $fromContainer= null, $sourceFile= null)
 	{
 		global	$global_array_exist_stobjectcontainer_with_classname,
-				$global_boolean_install_objectContainer;
+				$global_boolean_installed_objectContainer;
 
 		STCheck::paramCheck($containerName, 1, "string");
 		STCheck::paramCheck($className, 2, "string");
@@ -1548,9 +1580,8 @@ abstract class STObjectContainer extends STBaseContainer
 		$global_array_exist_stobjectcontainer_with_classname[$containerName]= array(	"class"=>$className,
 																						"from"=>$fromContainer,
 																						"source"=>$sourceFile	);
-		showBackTrace();
-		st_print_r($global_boolean_install_objectContainer);
-		if(!$global_boolean_install_objectContainer)
+		
+		if(!$global_boolean_installed_objectContainer)
 			return;
 		$bfrom= true;
 		if($fromContainer==null)
@@ -1566,11 +1597,10 @@ abstract class STObjectContainer extends STBaseContainer
 		$newContainer->installContainer();
 		return;
 	}
-	function installContainer()
-	{showBackTrace();
-		$desc= &STDbTableDescriptions::instance($this->db->getDatabaseName());
-		$desc->installTables($this->db);
-	}
+	public function installDbTables()
+	{/* dummy method to create explecit tables inside container */}
+	public function installContainer()
+	{/* dummy method */}
 	public function getAccessCluster($action)
 	{
 	    $clusters= STBaseContainer::getAccessCluster($action);

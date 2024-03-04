@@ -1115,37 +1115,76 @@ class STBaseTable
 
 			$this->fk($ownColumn, $toTable, $otherColumn, null, $where);
 		}
-		function innerJoin($ownColumn, &$toTable, $otherColumn= null)
+		/**
+		 * prepare inner join foreign key between tables
+		 * 
+		 * @param string $fromColumn foreign key shows from this column of own table to the other
+		 * @param string|STBaseTable $toTable set foreign key to table of this parameter
+		 * @param string $toColumn foreign key shows from other colum to this column parameter
+		 * @param null $null dummy parameter, only for compatibility with STDbSelector class
+		 */
+		public function join($ownColumn, $toTable, $otherColumn= null, $null= null)
 		{
-			Tag::paramCheck($ownColumn, 1, "string");
-			Tag::paramCheck($toTable, 2, "STBaseTable", "string");
-			Tag::paramCheck($otherColumn, 3, "string", "empty(string)", "null");
-
-			$this->fk($ownColumn, $toTable, $otherColumn, "inner", null);
+			$this->innerJoin($ownColumn, $toTable, $otherColumn, $null);
 		}
-		function leftJoin($ownColumn, $toTable, $otherColumn= null)
+		/**
+		 * prepare inner join foreign key between tables
+		 * 
+		 * @param string $fromColumn foreign key shows from this column of own table to the other
+		 * @param string|STBaseTable $toTable set foreign key to table of this parameter
+		 * @param string $toColumn foreign key shows from other colum to this column parameter
+		 * @param null $null dummy parameter, only for compatibility with STDbSelector class
+		 */
+		public function innerJoin($ownColumn, $toTable, $otherColumn= null, $null= null)
 		{
-			Tag::paramCheck($ownColumn, 1, "string");
-			Tag::paramCheck($toTable, 2, "STBaseTable", "string");
-			Tag::paramCheck($otherColumn, 3, "string", "empty(string)", "null");
+			STCheck::param($ownColumn, 0, "string");
+			STCheck::param($toTable, 1, "STBaseTable", "string");
+			STCheck::param($otherColumn, 2, "string", "empty(string)", "null");
+			STCheck::param($null, 3, null);
 
-			$this->fk($ownColumn, $toTable, $otherColumn, "left", null);
+			$this->fk($ownColumn, $toTable, $otherColumn, STINNERJOIN, null);
 		}
-		function rightJoin($ownColumn, $toTable, $otherColumn= null)
+		/**
+		* prepare left join foreign key between tables
+		* 
+		* @param string $fromColumn foreign key shows from this column of own table to the other
+		* @param string|STBaseTable $toTable set foreign key to table of this parameter
+		* @param string $toColumn foreign key shows from other colum to this column parameter
+		* @param null $null dummy parameter, only for compatibility with STDbSelector class
+		*/
+		public function leftJoin($ownColumn, $toTable, $otherColumn= null, $null= null)
 		{
-			Tag::paramCheck($ownColumn, 1, "string");
-			Tag::paramCheck($toTable, 2, "STBaseTable", "string");
-			Tag::paramCheck($otherColumn, 3, "string", "empty(string)", "null");
+			STCheck::param($ownColumn, 0, "string");
+			STCheck::param($toTable, 1, "STBaseTable", "string");
+			STCheck::param($otherColumn, 2, "string", "empty(string)", "null");
+			STCheck::param($null, 3, null);
 
-			$this->fk($ownColumn, $toTable, $otherColumn, "right", null);
+			$this->fk($ownColumn, $toTable, $otherColumn, STLEFTJOIN, null);
+		}
+		/**
+		* prepare right join foreign key between tables
+		* 
+		* @param string $fromColumn foreign key shows from this column of own table to the other
+		* @param string|STBaseTable $toTable set foreign key to table of this parameter
+		* @param string $toColumn foreign key shows from other colum to this column parameter
+		* @param null $null dummy parameter, only for compatibility with STDbSelector class
+		*/
+		public function rightJoin($ownColumn, $toTable, $otherColumn= null, $null= null)
+		{
+			STCheck::param($ownColumn, 0, "string");
+			STCheck::param($toTable, 1, "STBaseTable", "string");
+			STCheck::param($otherColumn, 2, "string", "empty(string)", "null");
+			STCheck::param($null, 3, null);
+
+			$this->fk($ownColumn, $toTable, $otherColumn, STRIGHTJOIN, null);
 		}
     protected function fk($ownColumn, &$toTable, $otherColumn= null, $join= null, $where= null)
     {// echo "function fk($ownColumn, &$toTable, $otherColumn, $join, $where)<br />";
 		STCheck::param($ownColumn, 0, "string");
 		STCheck::param($toTable, 1, "STBaseTable", "string");
 		STCheck::param($otherColumn, 2, "string", "empty(string)", "null");
-		STCheck::param($join, 3, "check", $join===null || $join==="inner" || $join==="left" || $join==="right",
-											"null", "inner", "left", "right");
+		STCheck::param($join, 3, "check", $join==STINNERJOIN||$join==STLEFTJOIN||$join==STRIGHTJOIN||$join==null,
+											"null", "STINNERJOIN", "STLEFTJOIN", "STRIGHTJOIN");
 		STCheck::param($where, 4, "string", "empty(String)", "STDbWhere", "null");
 	
 		if(typeof($toTable, "STBaseTable"))

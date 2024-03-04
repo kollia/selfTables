@@ -75,22 +75,19 @@ function actionCallback(&$callbackObject, $columnName, $rownum)
 
 class STUserManagement extends STObjectContainer
 {
-    var $userClusterGroup= null;
-    
 	function __construct($name, &$container, $bInstall= false)
 	{
 		STCheck::param($name, 0, "string");
 		STCheck::param($container, 1, "STObjectContainer");	
 		
 		STObjectContainer::__construct($name, $container);
-		$this->userClusterGroup= new STUserClusterGroupManagement("UserClusterGroupManagement", $this->getDatabase());
 	}
 	protected function create()
 	{
 	    $session= &STUserSession::instance();
 	    $this->setDisplayName("Project Management");
-	    $this->db->accessBy($session->usermanagement_AccessCluster, STLIST);
-	    $this->db->accessBy($session->usermanagement_ChangeCluster, STADMIN);
+	    $this->accessBy($session->usermanagement_Project_AccessCluster, STLIST);
+	    $this->accessBy($session->usermanagement_Project_ChangeCluster, STADMIN);
 		//$this->needContainer("projects");
 	    
 	    $domain= $this->getTable("AccessDomain");
@@ -99,8 +96,8 @@ class STUserManagement extends STObjectContainer
 	    
 	    $user= &$this->needTable("User");
 	    $user->setDisplayName("User");
-	    $user->accessBy($session->usermanagement_User_Access, STLIST);
-	    $user->accessBy($session->usermanagement_User_Change, STADMIN);
+	    $user->accessBy($session->usermanagement_User_AccessCluster, STLIST);
+	    $user->accessBy($session->usermanagement_User_ChangeCluster, STADMIN);
 	       
 	    $groups= &$this->needTable("Group");
 	    $groups->setDisplayName("Groups");
@@ -160,7 +157,8 @@ class STUserManagement extends STObjectContainer
 		    $groups->orderBy("Name");
 		    $groups->setMaxRowSelect(50);
 		    
-		    $project->namedLink("Project", $this->userClusterGroup);
+			$userClusterGroup= $this->getContainer("UserClusterGroupManagement");
+		    $project->namedLink("Project", $userClusterGroup);
 		}else
 		{
 			$user->select("Pwd", "Pwd");
@@ -173,83 +171,40 @@ class STUserManagement extends STObjectContainer
 	}
 	function installContainer()
 	{
-		global $HTTP_SERVER_VARS;
-		
 		$instance= &STSession::instance();
 		
 		// create custom domain database entry
 		$domain= $instance->getCustomDomain();
 		
-		showErrorTrace();
-    	$projectName= $instance->userManagementProjectName;
-    	$project= $this->getTable("Project");
-    	$project->clearSelects();
-    	$project->clearIdentifColumns();
-    	$project->clearGetColumns();
-    	$project->select("ID", "ID");
-		$project->where("Name='".$projectName."'");
-    	$selector= new STDbSelector($project);
-    	$selector->execute();
-    	$userManagementID= $selector->getSingleResult();
-    	if($userManagementID)
-    		$instance->projectID= $userManagementID;
-		else
-			$instance->projectID= 1;
-
-		if(!isset($userManagementID))
-		{
-		    $desc= STDbTableDescriptions::instance($this->getDatabase()->getDatabaseName());
-			// fill project-cluster per hand
-			// because no project is inserted
-			// and the system do not found what we want
-			$instance->projectCluster= array(	$desc->getColumnName("Project", "has_access")=>"STUM-Access_".$projectName,
-												$desc->getColumnName("Project", "can_insert")=>"STUM-Insert_".$projectName,
-												$desc->getColumnName("Project", "can_update")=>"STUM-Update_".$projectName,
-												$desc->getColumnName("Project", "can_delete")=>"STUM-Delete_".$projectName	);
-			$project->identifColumn("Name");
-    		$project->accessBy("STUM-Access", STLIST);
-    		$project->accessBy("STUM-Insert", STINSERT);
-    		$project->accessBy("STUM-Update", STUPDATE);
-    		$project->accessBy("STUM-Delete", STDELETE);
-			$inserter= new STDbInserter($project);
-			$inserter->fillColumn("Name", $projectName);
-			$inserter->fillColumn("Path", $HTTP_SERVER_VARS["SCRIPT_NAME"]);
-			$inserter->fillColumn("Description", "Listing and changing of all access permissions at project UserManagement");
-			$inserter->fillColumn("DateCreation", "sysdate()");
-			$inserter->execute();
-
-			$userManagementID= $inserter->getLastInsertID();
-			if($userManagementID!==1)
-			{
-				$instance->projectID= $userManagementID;
-
-				$partition= $this->getTable("Partition");
-				$updater= new STDbUpdater($partition);
-				$updater->update("ProjectID", $userManagementID);
-				$updater->execute();
-
-				$cluster= $this->getTable("Cluster");
-				$updater= new STDbUpdater($cluster);
-				$updater->update("ProjectID", $userManagementID);
-				$where= new STDbWhere("ID like 'STUM-Access%'");
-				$where->orWhere("ID like 'STUM-Insert%'");
-				$where->orWhere("ID like 'STUM-Update%'");
-				$where->orWhere("ID like 'STUM-Delete%'");
-				$updater->where($where);
-				$updater->execute();
-			}
-		}
-		$this->createCluster($instance->usermanagementAccessCluster, "Permission to see all projects inside UserManagement", /*addGroup*/false);
-		$this->createCluster($instance->usermanagementChangeCluster, "Permission to create projects inside  UserManagement", /*addGroup*/false);			
+		$overview= $instance->getDbProjectName("ProjectOverview");
+		$profile= $instance->getDbProjectName("UserProfile");
+		$usermanagement= $instance->getDbProjectName("UserManagement");
+		
+		$this->createCluster($instance->allAdminCluster, $overview, "access to all exist CLUSTERs in every project", /*addGroup*/false);
+		$this->createCluster($instance->profile_ChangeAccessCluster, $profile, "access to own profile data", /*addGroup*/false);
+		$this->createCluster($instance->usermanagement_Project_AccessCluster, $usermanagement, "Permission to see all projects inside UserManagement", /*addGroup*/false);
+		$this->createCluster($instance->usermanagement_Project_ChangeCluster, $usermanagement, "Permission to create projects inside  UserManagement", /*addGroup*/false);
+		$this->createCluster($instance->usermanagement_User_AccessCluster, $usermanagement, "Permission to see all user inside UserManagement", /*addGroup*/false);
+		$this->createCluster($instance->usermanagement_User_ChangeCluster, $usermanagement, "Permission to create/modify user inside UserManagement", /*addGroup*/false);
+		$this->createCluster($instance->usermanagement_Group_AccessCluster, $usermanagement, "Ability to see all permission groups", /*addGroup*/false);
+		$this->createCluster($instance->usermanagement_Group_ChangeCluster, $usermanagement, "Ability to change groups affiliation", /*addGroup*/false);
+		$this->createCluster($instance->usermanagement_Cluster_ChangeCluster, $usermanagement, "Ability to create new clusters for a project", /*addGroup*/false);
+		$this->createCluster($instance->usermanagement_Log_AccessCluster, $usermanagement, "Permission to see all logged affiliations", /*addGroup*/false);
+		
 		 
+    	$this->createGroup($instance->allAdminGroup, $domain['Name']);
     	$this->createGroup($instance->onlineGroup, $domain['Name']);
     	$this->createGroup($instance->loggedinGroup, $domain['Name']);
     	$this->createGroup($instance->usermanagementAccessGroup, $domain['Name']);
     	$this->createGroup($instance->usermanagementAdminGroup, $domain['Name']);
-    	$this->createGroup($instance->allAdminGroup, $domain['Name']);
 		
-    	$this->joinClusterGroup($instance->usermanagementAccessCluster, $instance->usermanagementAccessGroup);
-    	$this->joinClusterGroup($instance->usermanagementChangeCluster, $instance->usermanagementAdminGroup);
+		$this->joinClusterGroup($instance->allAdminCluster, $instance->allAdminGroup);
+		$this->joinClusterGroup($instance->profile_ChangeAccessCluster, $instance->loggedinGroup);
+    	$this->joinClusterGroup($instance->usermanagement_Project_AccessCluster, $instance->usermanagementAccessGroup);
+    	$this->joinClusterGroup($instance->usermanagement_Project_ChangeCluster, $instance->usermanagementAdminGroup);
+		$this->joinClusterGroup($instance->usermanagement_Cluster_ChangeCluster, $instance->usermanagementAdminGroup);
+    	$this->joinClusterGroup($instance->usermanagement_User_AccessCluster, $instance->usermanagementAccessGroup);
+    	$this->joinClusterGroup($instance->usermanagement_User_ChangeCluster, $instance->usermanagementAdminGroup);
 		
 		
 		// select all needed tabels for an join
@@ -271,13 +226,9 @@ class STUserManagement extends STObjectContainer
 		$selector->execute();
 		if(!$selector->getSingleResult())
 		{
-		    $this->createCluster($instance->allAdminCluster, "access to all exist CLUSTERs in every project");
-		    $this->joinClusterGroup($instance->allAdminCluster, $instance->allAdminGroup);
-
 			$db= &$instance->getUserDb();
 			$creator= new STSiteCreator($db);
 			$creator->setMainContainer("um_install");
-			$container= &$creator->getContainer("um_install");
 			//STCheck::debug(false);
 			$result= $creator->execute();
 			if($result=="NOERROR")
@@ -285,6 +236,7 @@ class STUserManagement extends STObjectContainer
 				$desc= &STDbTableDescriptions::instance($this->getDatabase()->getDatabaseName());
 				$userName= $desc->getColumnName("User", "user");
 				$pwd= $desc->getColumnName("User", "Pwd");
+				$container= &$creator->getContainer("um_install");
 				$sqlResult= $container->getResult();
 				$password= $sqlResult[$pwd];
 				$preg= array();
@@ -292,20 +244,21 @@ class STUserManagement extends STObjectContainer
 				$password= $preg[1];
 				$userId= $this->db->getLastInsertID();
 				$this->joinUserGroup($userId, $instance->allAdminGroup);
-				$instance->registerSession();
+				if(!STUserSession::sessionGenerated())
+					$instance->registerSession();
 				$instance->acceptUser($sqlResult[$userName], $password);
-				$instance->setProperties( $userManagementID );
+				$instance->setProperties( $overview );
 			}
 			$creator->display();
 			exit;
-		}
+		}		
+		
 
-
-		$created= $this->createCluster("STUM-UserAccess", "Permission to edit own User-Accounts");
+/*		$created= $this->createCluster("STUM-UserAccess", "Permission to edit own User-Accounts");
 		if($created==="NOERROR")// if Cluster is created, make an join to the LOGGED_IN group.
 			$this->joinClusterGroup("STUM-UserAccess", "LOGGED_IN");// otherwise maybe the admin has changed this
 		$this->createCluster("STUM-UserListAccess", "Permission to see all user");
-		$this->createCluster("STUM-UserListAdmin", "Permission to create, change and delete users");
+		$this->createCluster("STUM-UserListAdmin", "Permission to create, change and delete users");	*/
 	}
 }
 

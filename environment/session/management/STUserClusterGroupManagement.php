@@ -73,15 +73,12 @@ function disableCallback(&$callbackObject, $columnName, $rownum)
 
 class STUserClusterGroupManagement extends STObjectContainer
 {
-    private $clusterGroup;
-    
 	function __construct($name, &$container)
 	{
 		Tag::paramCheck($name, 1, "string");
 		Tag::paramCheck($container, 2, "STObjectContainer");
 		
 		STObjectContainer::__construct($name, $container);
-		$this->clusterGroup= new STClusterGroupAssignment("ClusterGroupAssignment", $this->getDatabase());	
 	}
 	function create()
 	{
@@ -212,11 +209,12 @@ class STUserClusterGroupManagement extends STObjectContainer
     	    //$user_group->preSelect("UserID", $selected, STINSERT);
 	    }
 	  
+		$clusterGroup= $this->getContainer("ClusterGroupAssignment");
 		$cluster= $this->needTable("Cluster");
 		$cluster->select("ProjectID", "Project");
 		$cluster->disabled("Project");
 		$cluster->select("ID", "Cluster");
-		$cluster->namedLink("Cluster", $this->clusterGroup);
+		$cluster->namedLink("Cluster", $clusterGroup);
 		$cluster->select("Description", "Description");
 		$cluster->preSelect("DateCreation", "sysdate()");
 		$cluster->joinOver("Project");

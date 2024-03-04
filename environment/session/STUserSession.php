@@ -17,7 +17,6 @@ class STUserSession extends STDbSession
 	                                       "Name" => "xxx", // <- will be defined inside constructor
         	                               "Prefix" => "*",
         	                               "Description" => "default domain for all User and Groups which have access over this UserManagement"    )   );
-	var	$userManagementProjectName= "UserManagement";
 	
 	// ATTENTION - group name has to be exist inside SQL Group Table
 	/**
@@ -36,22 +35,29 @@ class STUserSession extends STDbSession
 	var $loggedinGroup= "LOGGED_IN";
 	/**
 	 * user has access to all cluster
+	 * from projects and users
 	 * defined for UserManagement
 	 * @var string
 	 */
 	var $usermanagementAccessGroup= "UM_Access";
 	var $usermanagementAdminGroup= "UM_CHANGE";
+	var $usermanagementAvailableProfileGroup= "OwnProfile";
 	/**
 	 * user linked with this cluster
 	 * is administrator and has
 	 * access to all other clusters
 	 * and so also to all projects
 	 * @var string
-	 */
-	var $usermanagement_AccessCluster= "UM_ClusterManagementAccess";
-	var $usermanagement_ChangeCluster= "UM_ClusterManagementCHANGE";
-	var $usermanagement_User_Access= "UM_UserAccess";
-	var $usermanagement_User_Change= "UM_UserCHANGE";
+	 */	
+	var $usermanagement_User_AccessCluster= "UM_UserAccess";
+	var $usermanagement_User_ChangeCluster= "UM_UserCHANGE";
+	var $usermanagement_Project_AccessCluster= "UM_ProjectAccess";
+	var $usermanagement_Project_ChangeCluster= "UM_ProjectCHANGE";
+	var $usermanagement_Group_AccessCluster= "UM_GroupAccess";
+	var $usermanagement_Group_ChangeCluster= "UM_GroupCHANGE";
+	var $usermanagement_Cluster_ChangeCluster= "UM_ClusterCHANGE";
+	var $usermanagement_Log_AccessCluster= "UM_LOGAccess";
+	var $profile_ChangeAccessCluster= "PR_ChangeAccess";
 	/**
 	 * user linked with this cluster
 	 * has administration rights
@@ -73,13 +79,19 @@ class STUserSession extends STDbSession
 	 * @var boolean
 	 */
 	private $bDescriptionDefined= false;
+	/**
+	 * all project names predefined inside STProjectUserSiteCreator
+	 * or any extended class
+	 * @var array of string
+	 */
+	private $dbProjects= array();
 
 	protected function __construct($Db)
 	{
 	    $this->accessDomains[0]['Name']= $this->mainDOMAIN;
 		STDbSession::__construct($Db);
 		STDbSession::storeSessionOnFile(true);
-		$this->bLog= true;		
+		$this->bLog= true;
 
 		$this->aSessionVars[]= "ST_USER";
 		$this->aSessionVars[]= "ST_USERID";
@@ -111,6 +123,49 @@ class STUserSession extends STDbSession
 	       
 	    return STDbSession::init($object, $prefix);
 	}
+    public function setDbProjectName(string $memberVarName, string $dbProjectName)
+    {
+        $this->dbProjects[$memberVarName]= array($dbProjectName => 'x');
+    }
+	public function setDbProjectID(string $dbProjectName, int $dbProjectID)
+	{
+		$bSet= false;
+		foreach($this->dbProjects as &$project)
+		{
+			$name= array_key_first($project);
+			if($name == $dbProjectName)
+			{
+				$project[$name]= $dbProjectID;
+				$bSet= true;
+				break;
+			}
+		}
+		if(!$bSet)
+			$this->dbProjects[$dbProjectName]= array($dbProjectName => $dbProjectID);
+	}
+	public function getDbProjectName(string $memberVarName)
+    {
+		if(isset($this->dbProjects[$memberVarName]))
+			$sRv= array_key_first($this->dbProjects[$memberVarName]);
+		STCheck::alert(!isset($sRv), "STUserSession::getDbProjectName()", "memberVarName '$memberVarName' for project not set inside STProjectSiteCreator", 1);
+        return $sRv;
+    }
+	public function getDbProjectID(string $dbProjectName)
+    {
+		$sRv= null;
+		foreach($this->dbProjects as $project)
+		{
+			$name= array_key_first($project);
+			if($dbProjectName == $name)
+			{
+				$sRv= $project[$name];
+				if($sRv == "x")
+					$sRv= null;
+				break;
+			}
+		}
+        return $sRv;
+    }
 	/**
 	 * set new custom domain.<br />
 	 * have to set inside the constructor of the overloaded class
@@ -146,6 +201,7 @@ class STUserSession extends STDbSession
 	public function defineDatabaseTableDescriptions($dbTableDescription)
 	{
 	    global $_stum_installcontainer;
+		global $_stusermanagement;
 	    
 	    STCheck::paramCheck($dbTableDescription, 1, "STDbTableDescriptions");
 	    
@@ -153,10 +209,7 @@ class STUserSession extends STDbSession
 	        return;
 	    $this->bDescriptionDefined= true;
 	    STDbSession::defineDatabaseTableDescriptions($dbTableDescription);
-	        
-		showLine();
-		echo "----------------------------<br>";
-		STCheck::debug(true);
+
         $dbTableDescription->table("Query");
         $dbTableDescription->column("Query", "ID", "BIGINT", /*null*/false);
         $dbTableDescription->primaryKey("Query", "ID");
@@ -189,7 +242,9 @@ class STUserSession extends STDbSession
         $dbTableDescription->autoIncrement("Project", "ID");
         $dbTableDescription->column("Project", "Name", "varchar(70)", /*null*/false);
         $dbTableDescription->uniqueKey("Project", "Name", 1);
+		$dbTableDescription->column("Project", "sort", "INT", /*null*/false);
         $dbTableDescription->column("Project", "Path", "varchar(255)", /*null*/false);
+        $dbTableDescription->column("Project", "Target", "set('blank','self','top')", /*null*/false);
         $dbTableDescription->column("Project", "Description", "text");
         $dbTableDescription->column("Project", "DateCreation", "datetime", /*null*/false);
  /*       $dbTableDescription->column("Project", "has_access", "varchar(255)", false);
@@ -288,32 +343,11 @@ class STUserSession extends STDbSession
         $dbTableDescription->foreignKey("Log", "UserID", "User", 1);
         $dbTableDescription->column("Log", "ProjectID", "TINYINT", /*null*/false);
         $dbTableDescription->foreignKey("Log", "ProjectID", "Project", 2);
-        $dbTableDescription->column("Log", "Type", "set('ERROR','LOGIN','LOGOUT','ACCESS')", /*null*/false);
+        $dbTableDescription->column("Log", "Type", "set('DEBUG','LOGIN','LOGIN_ERROR','LOGOUT','ACCESS', 'ACCESS_ERROR')", /*null*/false);
         $dbTableDescription->column("Log", "CustomID", "varchar(255)");
         $dbTableDescription->column("Log", "Description", "TEXT", /*null*/false);
-        $dbTableDescription->column("Log", "DateCreation", "DATETIME", /*null*/false);
-        
-		showLine();
-        STObjectContainer::install("um_install", "STUM_InstallContainer", "userDb", $_stum_installcontainer);
-		STObjectContainer::install("UserManagement", "STUserManagement", null, $_stusermanagement);
-	}
-	/* fault whether I do not know
-	 static public function sessionGenerated()
-	 {
-	 /**
-	 * when this function making problems!
-	 * Strict Standards:  Non-static method STSession::sessionGenerated() should not be called statically
-	 * there is also a globaly method global_sessionGenerated() which do the same
-	 *
-	 global $global_selftable_session_class_instance;
-	 
-	 if(	isset($global_selftable_session_class_instance[0]) &&
-	 typeof($global_selftable_session_class_instance[0], "STUserSession")	)
-	 {
-	 return true;
-	 }
-	 return false;
-	 }*/
+        $dbTableDescription->column("Log", "DateCreation", "DATETIME", /*null*/false);        
+	}	
 	function setPrefixToTables($prefix)
 	{
 		STCheck::param($prefix, 0, "string");
@@ -697,7 +731,6 @@ class STUserSession extends STDbSession
 	    STCheck::param($project, 0, "int", "string");
 	    STCheck::param($login, 1, "string", "empty(string)", "Tag");
 
-		showLine();
 	    $this->UserLoginMask= $login;
 	    $loggedIn= $this->verifyProject($project);
 	    return $loggedIn;
@@ -783,7 +816,8 @@ class STUserSession extends STDbSession
 		//$this->makeTableMeans();
 		STSession::setUserProject($ProjectName);
 
-		if($ProjectName==trim("##StartPage"))
+		if( $ProjectName == 0 ||
+			$ProjectName==trim("##StartPage")	)
 		{
 			$this->project= "";
 			$this->projectID= 0;
@@ -821,9 +855,9 @@ class STUserSession extends STDbSession
 			$this->setSessionVar("ST_PROJECTID", $this->projectID);
 		}
 	}
-  	function setProperties($ProjectName= "")
+  	function setProperties(string $ProjectName= "")
   	{
-  	    STCheck::paramCheck($ProjectName, 1, "string");// property shouldn*t be an null string, parameter only be defined for STSession::setProperties()
+  	    // property shouldn*t be an null string, parameter only be defined for STSession::setProperties()
 		/**/Tag::echoDebug("user", "entering STUserSession::setProperties ...");
 
 		$this->setUserProject( $ProjectName );
@@ -903,9 +937,9 @@ class STUserSession extends STDbSession
 		else
 		  $projectCluster= &$oProject;
 		$projectCluster->distinct();
-		$projectCluster->select("Cluster", "ID");
-		$projectCluster->select("Project", "Name");
-		$projectCluster->select("Cluster", "ProjectID");
+		$projectCluster->select("Cluster", "ID", "ID");
+		$projectCluster->select("Project", "Name", "Name");
+		$projectCluster->select("Cluster", "ProjectID", "ProjectID");
 		if( isset($this->userID) &&
 		    $this->userID != -1        )
 		{//$this->$loggedinGroup;
@@ -1013,9 +1047,15 @@ class STUserSession extends STDbSession
         }
         $user= $this->userID;
         if($user===null)
-        	$user= -1;
+		{
+			// if no user defined
+			// user called website was not known
+			// so do not need logging, 
+			// because don't know who had access
+			return;
+		}
         $project= $this->projectID;
-        if($project==null)
+        if($project===null)
         	$project= -1;
         $logTable= &$this->container->getTable("Log");
         $inserter= new STDbInserter($logTable);
@@ -1191,14 +1231,21 @@ class STUserSession extends STDbSession
 			return true;
 		return false;
 	}
-	public function existsDbClusterGroupJoin(string $clusterName, string $groupName)
+	public function existsDbClusterGroupJoin(string $clusterName, string|int $groupIdName)
 	{
 	    $clusterWhere= new STDbWhere();
 	    $clusterWhere->table("Cluster");
 	    $clusterWhere->where("ID='$clusterName'");
-	    $groupWhere= new STDbWhere();
-	    $groupWhere->table("Group");
-	    $groupWhere->orWhere("Name='$groupName'");
+		$groupWhere= new STDbWhere();
+		if(is_numeric($groupIdName))
+		{
+			$groupWhere->table("ClusterGroup");
+			$groupWhere->orWhere("GroupID='$groupIdName'");
+		}else
+		{
+			$groupWhere->table("Group");
+			$groupWhere->orWhere("Name='$groupIdName'");
+		}
 	    
 	    $clustergroup= new STDbSelector($this->container->getTable("ClusterGroup"));
 	    $clustergroup->count();
@@ -1293,7 +1340,7 @@ class STUserSession extends STDbSession
 	        $domainTable->where("Name='".$this->mainDOMAIN."'");
 	        $domainTable->execute(onErrorStop);
 	        $domain['ID']= $domainTable->getSingleResult();
-	        if( $domain['ID'] == -1 )
+	        if( $domain['ID'] == null )
 	        {	            
     	        if($this->createDomain($domain['Name'], $domain['Prefix'], $domain['Description']) == -1)
     	            return null;
@@ -1302,20 +1349,37 @@ class STUserSession extends STDbSession
 	    }
 	    return $domain;
 	}
-	public function createCluster(string $clusterName, string $accessInfoString, bool $addGroup= true) : string
+	public function createCluster(string $clusterName, int|string $projectNameID, string $accessInfoString, bool $addGroup= true) : string
 	{
+		if(is_string($projectNameID))
+		{
+			$projectID= $this->getDbProjectID($projectNameID);
+			if(!isset($projectID))
+			{
+				$oProject= $this->container->getTable("Project");
+				$projectSelector= new STDbSelector($oProject);
+				$projectSelector->select("Project", "ID", "ID");
+				$projectSelector->where("Project", "Name='$projectNameID'");
+				$projectSelector->execute(noErrorShow);
+				$projectID= $projectSelector->getSingleResult();
+				if(STCheck::is_error(!isset($projectID), "STUserSession::createCluster()", "no project '$projectNameID' stored inside database"))
+					return "NOCLUSTERCREATE";
+				$this->setDbProjectID($projectNameID, $projectID);
+			}
+		}else
+			$projectID= $projectNameID;
 	    if(isset($_SESSION))
 	    {
-    	    if($this->doClusterExist($clusterName, $this->getProjectID()))
+    	    if($this->doClusterExist($clusterName, $projectID))
     	        return "NOCLUSTERCREATE";
 	    }elseif($this->existsDbCluster($clusterName))
 	        return "NOCLUSTERCREATE";
-		$this->setExistCluster($clusterName, $this->getProjectID());
+		$this->setExistCluster($clusterName, $projectID);
 		//$partitionId= $this->getPartitionID($sIdentifString);
 		$oCluster= &$this->container->getTable("Cluster");
 		$insert= new STDbInserter($oCluster);
 		$insert->fillColumn("ID", $clusterName);
-		$insert->fillColumn("ProjectID", $this->projectID);
+		$insert->fillColumn("ProjectID", $projectID);
 		$insert->fillColumn("Description", $accessInfoString);
 		//$insert->fillColumn("identification", $partitionId);
 		$insert->fillColumn("DateCreation", "sysdate()");
@@ -1324,7 +1388,7 @@ class STUserSession extends STDbSession
 		//$cluster= $clusterContent["ID"];
 		if($insert->execute(noErrorShow)) //$this->database->fetch($statement, noDebugErrorShow))
 			return "NOCLUSTERCREATE";
-		$this->setRecursiveSessionVar($this->projectID, "ST_CLUSTER_MEMBERSHIP", $clusterName);
+		//$this->setRecursiveSessionVar($this->projectID, "ST_CLUSTER_MEMBERSHIP", $clusterName);
 
 		if(!$addGroup)
 			return "NOERROR";
@@ -1431,25 +1495,41 @@ class STUserSession extends STDbSession
 		$groupID= $this->database->getLastInsertedPk();
 		return $groupID;
 	}
-	public function joinClusterGroup(string $clusterName, string $groupName)
+	public function joinClusterGroup(string $clusterName, string|int $groupIdName)
 	{
 	    // select only whether exist
 	    $cluster= new STDbSelector($this->container->getTable("Cluster"));
 		$cluster->select("Cluster", "ID", "ID");
 		$cluster->where("ID='".$clusterName."'");
 		$cluster->execute();
-		if(STCheck::is_error($cluster->getErrorId(), "STUserSession::joinClusterGroup()", "cluster ".$clusterName." for join to <b>GROUP</b> does not exist", 2))
+		if(STCheck::is_error($cluster->getErrorId(), "STUserSession::joinClusterGroup()", 
+							"cluster '$clusterName' for join to <b>GROUP</b> does not exist", 2))
 		    return -1;
-		    
-	    $grouptable= new STDbSelector($this->container->getTable("Group"));
-	    $grouptable->select("Group", "ID", "ID");
-		$grouptable->where("Name='".$groupName."'");
-		$grouptable->execute();
-		if(STCheck::is_error($grouptable->getErrorId(), "STUserSession::joinClusterGroup()", "group ".$groupName." for join to <b>CLUSTER</b> does not exist", 2))
-		    return -1;
-	    $groupId= $grouptable->getSingleResult();
+		  
+		if(!is_numeric($groupIdName))
+		{
+			$grouptable= new STDbSelector($this->container->getTable("Group"));
+			$grouptable->select("Group", "ID", "ID");
+			$grouptable->where("Name='".$groupIdName."'");
+			$grouptable->execute();
+			if(STCheck::is_error($grouptable->getErrorId(), "STUserSession::joinClusterGroup()", 
+								"group ".$groupIdName." for join to <b>CLUSTER</b> does not exist", 2))
+				return -1;
+			$groupId= $grouptable->getSingleResult();
+			if(!isset($groupId))
+			{
+				echo "<br>joinClusterGroup('$clusterName', $groupIdName)<br>";
+				echo $grouptable->getErrorString()."<br>";
+				echo $grouptable->getStatement()."<br>";
+				showBackTrace();
+			}
+			if(STCheck::is_error(!isset($groupId), "STUserSession::joinClusterGroup()", 
+					"cannot join from cluster '$clusterName' to non exist group '$groupIdName'", 2))
+				return -1;
+		}else
+			$groupId= intval($groupIdName);
 		
-		if($this->existsDbClusterGroupJoin($clusterName, $groupName))
+		if($this->existsDbClusterGroupJoin($clusterName, $groupIdName))
 		    return -1;
 
 		$clusterGroup= $this->container->getTable("ClusterGroup");

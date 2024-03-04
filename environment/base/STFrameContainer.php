@@ -22,7 +22,10 @@ class STFrameContainer extends STBaseContainer
 	}
 	function setFramePath($address)
 	{
-	    if(STCheck::isDebug())
+/*	    existing file check disabled
+		because make problems inside vscode
+		
+		 if(STCheck::isDebug())
 	    {
 	        $bExists= false;
     	    if( substr($address, 0, 7) == "http://" ||
@@ -64,9 +67,7 @@ class STFrameContainer extends STBaseContainer
     	    }
     		STCheck::is_error(!$bExists, "STFrameContainer::STFrameContainer()",
     					"address '$address' do not exists");
-    		if(!$bExists)
-    		    exit;
-	    }
+	    }*/
 		$this->urlAddress[]= $address;
 	}
 	/**

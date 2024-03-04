@@ -33,7 +33,7 @@ function global_sessionGenerated()
 class STSession
 {
 	var $allAdminCluster= "allAdmin"; // user hat zugriff auf alle Bereiche
-	var $isLoggedIn= false;
+	private $isLoggedIn= false;
     var $sessionName = 'PHPSESSID';
 	var $aCluster;
 	var $aExistCluster;
@@ -101,8 +101,6 @@ class STSession
 	{
 		global $global_selftable_session_class_instance;
 
-		Tag::alert(	!isset($global_selftable_session_class_instance[0]), "STSession::instance()",
-								"no session created, invoke first STSession::init()");
 		return $global_selftable_session_class_instance[0];
 	}
 	static function sessionGenerated()
@@ -331,6 +329,7 @@ class STSession
 				$string= "user is not logged, so return false";
 			STCheck::echoDebug("user", $string);
 		}
+		$this->isLoggedIn= true;
 		return $loggedin;
 	}
 	public function needAccess($authorisationString, $toAccessInfoString, $customID= null)
@@ -489,7 +488,8 @@ class STSession
 			$this->gotoLoginMask(0);
 			exit;
 		}*/
-		if(typeof($this, "STUserSession"))
+		if(	typeof($this, "STUserSession") &&
+			is_array($clusters)					)
 		{
 		    // if searching for ONLINE-Cluster, ONLINE exist only as group,
 		    // but user always online, so return true
@@ -506,12 +506,15 @@ class STSession
 		}
 		if(STCheck::isDebug())
 		{
-		    $cluster_exist= $this->getSessionVar("ST_EXIST_CLUSTER");
-			foreach($clusters as $cluster)
+			if(is_array($clusters))
 			{
-				$cluster= trim($cluster);
-				STCheck::warning(!isset($cluster_exist[$cluster]) && !$logincluster, "STSession::access()",
-										"cluster <b>\"</b>".$cluster."<b>\"</b> not exist in database", 1);
+				$cluster_exist= $this->getSessionVar("ST_EXIST_CLUSTER");
+				foreach($clusters as $cluster)
+				{
+					$cluster= trim($cluster);
+					STCheck::warning(!isset($cluster_exist[$cluster]) && !$logincluster, "STSession::access()",
+											"cluster <b>\"</b>".$cluster."<b>\"</b> not exist in database", 1);
+				}
 			}
 		}
 		if(	isset( $cluster_membership[$this->allAdminCluster])
@@ -692,29 +695,36 @@ class STSession
 	}
 	public function isSetRecursiveSessionVar($value, $var1, $var2= null, $var3= null, $var4= null, $var5= null) : bool
 	{
+		if(!$this::sessionGenerated())
+			return false;
 	    if(isset($var5))
 	    {
-	        if($_SESSION[$var1][$var2][$var3][$var4][$var5] == $value)
+	        if(	isset($_SESSION[$var1][$var2][$var3][$var4][$var5]) &&
+				$_SESSION[$var1][$var2][$var3][$var4][$var5] === $value	)
 	            return true;
 	        
 	    }else if(isset($var4))
 	    {
-	        if($_SESSION[$var1][$var2][$var3][$var4] == $value)
+	        if(	isset($_SESSION[$var1][$var2][$var3][$var4]) &&
+				$_SESSION[$var1][$var2][$var3][$var4] === $value	)
 	            return true;
 	        
 	    }else if(isset($var3))
 	    {
-	        if($_SESSION[$var1][$var2][$var3] == $value)
+	        if(	isset($_SESSION[$var1][$var2][$var3]) &&
+				$_SESSION[$var1][$var2][$var3] === $value	)
 	            return true;
 	        
 	    }else if(isset($var2))
 	    {
-	        if($_SESSION[$var1][$var2] == $value)
+	        if(	isset($_SESSION[$var1][$var2]) &&
+				$_SESSION[$var1][$var2] === $value	)
 	            return true;
 	        
 	    }else
 	    {
-	        if($_SESSION[$var1] == $value)
+	        if(	isset($_SESSION[$var1]) &&
+				$_SESSION[$var1] === $value	)
 	            return true;
 	    }
 	    return false;
@@ -778,6 +788,8 @@ class STSession
 	}
 	public function isSetRecursiveArraySessionVar($value, $var1, $var2= null, $var3= null, $var4= null, $var5= null) : bool
 	{
+		if(!$this::sessionGenerated())
+			return false;
 	    if(isset($var5))
 	    {
 	        if( isset($_SESSION[$var1][$var2][$var3][$var4][$var5]) &&
@@ -848,7 +860,7 @@ class STSession
 	{
 	    return $this->getSessionVar("ST_CLUSTER_MEMBERSHIP");
 	}
-	function setProperties($ProjectName= "")
+	function setProperties(string $ProjectName= "")
   	{
 		/**/Tag::echoDebug("user", "entering STSession::setProperties ...");
 		// define Login-Flag
@@ -948,6 +960,7 @@ class STSession
 			isset($HTTP_GET_VARS[ "doLogout" ]))
  		{
  			STCheck::echoDebug("user", "start performing LOGOUT");
+			$this->setSessionVar("ST_CLUSTER_MEMBERSHIP", null);
  			$this->logHimOut(0);
  			if($this->loginSite != "")
  			{
@@ -1042,6 +1055,7 @@ class STSession
   				$loggedin == 1 		)
   			{
   				/**/ STCheck::echoDebug("user", "user <b>logged in</b> return <b>TRUE</b>");
+				$this->isLoggedIn= true;
   			 	return true;
   		 	}else
 			{
@@ -1465,6 +1479,6 @@ class STSession
 	{
     	if(!$this->sLogFile)
         	return;
-		// alex 04/01/2006: toDo: logText in File schreiben
+		// alex 04/01/2006: toDo: write logText into File
 	}
 }

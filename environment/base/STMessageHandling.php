@@ -11,7 +11,8 @@ interface STMessagHandlingInterface
 class STMessageHandling // implements STMessageHandlingInterface <- ab version 5
 {
 		var $sObject; // f�r welches Objekt STMessageHandling ausgef�hrt wird
-		protected $aMessageStrings= array();
+		protected $aMessageStrings= array( "NOERROR" => "no error given" );
+		private $aOrgMessageStrings= array( "NOERROR" => "no error given" );
 		var	$messageId= "NOERROR";
 		var	$EndScripts= array(); // werden immer am Ende ausgef�hrt
 		var	$ErrorScripts= array(); // werden bei jedem Fehler nach EndScript ausgef�hrt
@@ -46,36 +47,111 @@ class STMessageHandling // implements STMessageHandlingInterface <- ab version 5
 		{
 			$this->aMessageStrings[$messageId]= $messageString;
 		}
-		function getMessageContent($messageId= null)
+		function getMessageContent(string $messageId= null, $parameter= null, $outFunc= 2)
 		{
-			if(!$messageId)
-			    $messageId= $this->messageId;
-			return $this->aMessageStrings[$messageId];
+			$paramArray= array();
+			$have= 0;
+			if(isset($parameter))
+			{
+				if(is_string($parameter))
+				{
+					$have= func_num_args();
+					$args= func_get_args();
+					for($count=1; $count<($have-1); $count++)
+						$paramArray[]= $args[$count];
+					if(!is_int($args[$hace-1]))
+					{
+						$paramArray[]= $args[$have-1];
+						$outFunc= 1;
+					}else
+						$outFunc= $count;
+					$have-= 1;
+				}else
+				{
+					$paramArray= $parameter;
+					$have= count($paramArray);
+				}
+				
+			}
+			if(isset($messageId))
+				$sRv= $this->createMessageString($messageId, $paramArray, $outFunc);
+			else
+			    $sRv= $this->aMessageStrings[$this->messageId];
+			return $sRv;
 		}
 		function clearMessageId()
 		{
 			$this->messageId= "NOERROR";
+			$this->aMessageStrings= $this->aOrgMessageStrings;
 		}
-		function setMessageId(string $messageId, $newString= null)
-		{
-		    STCheck::param($newString, 1, "string", "array", "null");
-		    
+		function setMessageId(string $messageId, $parameter= null, $outFunc= 1)
+		{   
 			if(Tag::isDebug())
 			{
-				Tag::alert(!isset($this->aMessageStrings[$messageId]), "STMessageHandling::setMessageId()",
-							"messageid $messageId not be set in content of aMessageStrings");
+				STCheck::param($parameter, 1, "string", "array", "null");
+				STCheck::echoDebug("STMessageHandling", "set MessageId: $messageId");
+				STCheck::alert(!isset($this->aMessageStrings[$messageId]), "STMessageHandling::setMessageId()",
+							"messageid $messageId not be set in content of aMessageStrings", $outFunc);
+			}
+			$paramArray= array();
+			if(isset($parameter))
+			{
+				if(is_string($parameter))
+				{
+					$have= func_num_args();
+					$args= func_get_args();
+					for($count=1; $count<($have-1); $count++)
+						$paramArray[]= $args[$count];
+					if(!is_int($args[$hace-1]))
+					{
+						$paramArray[]= $args[$have-1];
+						$outFunc= 1;
+					}else
+						$outFunc= $count;
+					$have-= 1;
+				}else
+				{
+					$paramArray= $parameter;
+					$have= count($paramArray);
+				}
+				
 			}
 			$onError= $this->onError;
 			if(	$this->messageId!="NOERROR"
 				and
 				$this->messageId!=null)
-				return;// damit der erste Fehler erhalten bleibt
-			STCheck::echoDebug("STMessageHandling", "set MessageId: $messageId");
-			$this->messageId= $messageId;
-			if( is_array($newString) &&
-			    empty($newString)        )
+			{// so that the first error remains
+				return;
+			}
+			$message= $this->createMessageString($messageId, $paramArray, $outFunc+1);
+			if(	$onError>noErrorShow &&
+				(   STCheck::isDebug() ||
+					$onError>onDebugErrorShow   ) &&
+			  $onError!=onErrorMessage &&
+			  $messageId!="NOERROR" &&
+			  $messageId!="BOXDISPLAY"	            )
 			{
-			    $newString= null;
+				echo "<br><b>Error ".$messageId.":</b> ".$this->getMessageContent()."<br>";
+			}
+			if(	$onError==onErrorStop &&
+			  $messageId!="NOERROR" &&
+			  $messageId!="BOXDISPLAY"	)
+			{
+				$space= STCheck::echoDebug("STMessageHandling", "ERROR handling set to <b>onErrorStop</b> by message ID <b>'$messageId'</b>");
+				echo $space.$message;
+				exit;
+			}
+			$this->messageId= $messageId;
+			$this->aMessageStrings[$messageId]= $message;
+		}
+		private function createMessageString(string $messageId, $paramArray= null, $outFunc= 1) : string
+		{
+			STCheck::echoDebug("STMessageHandling", "create message for ID: $messageId");
+			$sRMessage= "";
+			if( is_array($paramArray) &&
+			    empty($paramArray)        )
+			{
+			    $paramArray= null;
 			}
 			
 			// alex 2006/01/17:	if an messageId have one or more '@',
@@ -87,24 +163,11 @@ class STMessageHandling // implements STMessageHandlingInterface <- ab version 5
 				$this->aMessageStrings[$messageId]!=="")
 			{//st_print_r($ats);
 			    $need= strlen($ats[0]);
-			    $paramArray= array();
-				if(is_string($newString))	
-				{
-				    $have= func_num_args();
-				    $args= func_get_args();
-				    for($count=1; $count<$have; $count++)
-				        $paramArray[]= $args[$count];
-				    $have--;
-				    
-				}elseif(is_array($newString))
-				{
-				    $paramArray= $newString;
-				    $have= count($paramArray);
-				}
+				$have= count($paramArray);
 				
 				$sMessageString= trim($this->aMessageStrings[$messageId]);
 				$split= preg_split("/@/", $sMessageString);							
-				Tag::alert($need!=$have, "STMessageHandling::setMessageID", "function must have ".($need)." params");
+				Tag::alert($need!=$have, "STMessageHandling::setMessageID", "function must have ".($need)." params", $outFunc);
 				
 				$sNewMessageString= $split[0];
 				$count= 1;
@@ -113,31 +176,17 @@ class STMessageHandling // implements STMessageHandlingInterface <- ab version 5
 				    $sNewMessageString.= $param.$split[$count];
 				    $count++;
 				}
-				$this->aMessageStrings[$messageId]= $sNewMessageString;
-			}elseif($newString!==null)
-			{// wenn ein Fehler-String herein kommt,
-			 // wird der alte Fehler-Text auf der angegebenen Fehlerbezeichnung �berschrieben
-				$newString= preg_replace("/\n/", " ", $newString);
-				$newString= preg_replace("/\"/", "\\\"", $newString);
-				$newString= preg_replace("/'/", "\\'", $newString);
-				$this->aMessageStrings[$messageId]= $newString;
+				$sRMessage= $sNewMessageString;
+
+			} //elseif($paramArray!==null)
+			{// if an error string is incoming,
+			 // will be overwritten the specified error
+				$sRMessage= trim($this->aMessageStrings[$messageId]);
+				$sRMessage= preg_replace("/\n/", " ", $sRMessage);
+				$sRMessage= preg_replace("/\"/", "\\\"", $sRMessage);
+				$sRMessage= preg_replace("/'/", "\\'", $sRMessage);
 			}
-      		if(	$onError>noErrorShow &&
-      		    (   STCheck::isDebug() ||
-      		        $onError>onDebugErrorShow   ) &&
-    			$onError!=onErrorMessage &&
-    			$messageId!="NOERROR" &&
-    			$messageId!="BOXDISPLAY"	            )
-    			{
-      				echo "<br><b>Error ".$messageId.":</b> ".$this->getMessageContent()."<br>";
-    			}
-      		if(	$onError==onErrorStop &&
-    			$messageId!="NOERROR" &&
-    			$messageId!="BOXDISPLAY"	)
-      		{
-      		    STCheck::echoDebug("STMessageHandling", "ERROR handling set to <b>onErrorStop</b> by message ID <b>'$messageId'</b>");
-      			exit;
-      		}
+			return $sRMessage;
     	}
 		function getMessageId()
 		{

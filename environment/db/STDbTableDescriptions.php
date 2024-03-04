@@ -6,11 +6,21 @@ class STDbTableDescriptions
     protected $dbName;
     protected $aExistTables= array();
     protected $asTableColumns= array();
+	/**
+	 * Whether has database only lower case table names."<br />
+	 * If set to 0, table names are stored as specified and comparisons are case-sensitive.
+	 * If set to 1, table names are stored in lowercase on disk and comparisons are not case-sensitive.
+	 * If set to 2, table names are stored as given but compared in lowercase. 
+	 * This option also applies to database names and table aliases.
+	 * @var int
+	 */
+	private $nLowerCaseTableNames= null;
 
 	protected function __construct(object &$db)
 	{
 	    $this->db= &$db;
 	    $this->dbName= $db->getDatabaseName();
+		$this->nLowerCaseTableNames= $db->hasLowerCaseTableNames();
 	}
 	/**
 	 * create or fetch an table-description instance
@@ -58,8 +68,10 @@ class STDbTableDescriptions
 	{
 		return $this->dbName;
 	}
-	/*public*/function getOrgTableName($name)
+	/*public*/function getOrgTableName(string $name)
 	{
+		if($this->nLowerCaseTableNames == 1)
+			$name= strtolower($name);
 		if(isset($this->aExistTables[$name]))
 			return $name;
 		$lowerCase= strtolower($name);
@@ -73,10 +85,11 @@ class STDbTableDescriptions
 		}
 		return $name;
 	}
-	/*public*/function getTableName($name)
+	/*public*/function getTableName(string $name)
 	{
 		STCheck::param($name, 0, "string");
-		
+		if($this->nLowerCaseTableNames == 1)
+			$name= strtolower($name);
 		if(isset($this->aExistTables))
 		{
 			if(isset($this->aExistTables[$name]))
@@ -104,12 +117,10 @@ class STDbTableDescriptions
 	 * If the table is present in more than one defined db,
 	 * it will be returning the name of the first db.
 	 *
-	 * @public
-	 * @static
 	 * @param string tableName name of the table which should be in the database
 	 * @return string name of the database which having the table
 	 */
-	function getDbNameOfTable($tableName)
+	public static function getDbNameOfTable($tableName)
 	{
 		STCheck::param($tableName, 0, "string");
 
@@ -222,11 +233,18 @@ class STDbTableDescriptions
 	/*protected*/function table(string $tableName)
 	{
 	    STCheck::echoDebug("db.descriptions", "  define description for table '$tableName' inside '".$this->dbName."' database");
+		if($this->nLowerCaseTableNames == 1)
+			$tableName= strtolower($tableName);
 	    $this->aExistTables[$tableName]= array(	"table"=>$tableName,
 												"installed"=>false	);
 	}
 	public function setPrefixToTable(string $prefix, string $tableName)
 	{
+		if($this->nLowerCaseTableNames == 1)
+		{
+			$tableName= strtolower($tableName);
+			$prefix= strtolower($prefix);
+		}
 	    STCheck::echoDebug("db.descriptions", "  set prefix '$prefix' for table '$tableName' inside '".$this->dbName."' database");
 	    STCheck::is_alert(!isset($this->aExistTables[$tableName]), "STDbTableDescription::setPrefixToTable()", "table name '$tableName' does not exist");
 	    	    
@@ -242,12 +260,10 @@ class STDbTableDescriptions
 		foreach($this->aExistTables as $name=>$table)
 		    $this->setPrefixToTable($prefix, $name);
 	}
-	/*protected*/function column($tableName, $column, $type, $null= true)
+	/*protected*/function column(string $tableName, string $column, string $type, bool $null= true)
 	{
-		STCheck::paramCheck($tableName, 1, "string");
-		STCheck::paramCheck($column, 2, "string");
-		STCheck::paramCheck($type, 3, "string");
-		STCheck::paramCheck($null, 4, "bool");
+		if($this->nLowerCaseTableNames == 1)
+			$tableName= strtolower($tableName);
 	    STCheck::is_warning(!$this->aExistTables[$tableName], "STDbTableContainer::column()", "table $tableName does not exist");
 		$params= func_num_args();
 		STCheck::lastParam(4, $params);
@@ -257,28 +273,32 @@ class STDbTableDescriptions
 															"type"=>	  $type,
 															"null"=>		$null	);
 	}
-	/*public*/function notNull($tableName, $column)
+	/*public*/function notNull(string $tableName, string $column)
 	{
+		if($this->nLowerCaseTableNames == 1)
+			$tableName= strtolower($tableName);
 		STCheck::is_warning(!$this->aExistTables[$tableName], "STDbTableContainer::notNull()", "table $tableName does not exist");
 		Tag::alert(!$this->asTableColumns[$tableName][$column], "STDbTableContainer::notNull()", "column $column does not exist in table $tableName");
 
 		$this->asTableColumns[$tableName][$column]["null"]= false;
 	}
-	/*public*/function primaryKey($tableName, $column, $pk= true)
+	/*public*/function primaryKey(string $tableName, string $column, bool $pk= true)
 	{
+		if($this->nLowerCaseTableNames == 1)
+			$tableName= strtolower($tableName);
 		STCheck::is_warning(!$this->aExistTables[$tableName], "STDbTableContainer::primaryKey()", "table $tableName does not exist");
 		Tag::alert(!$this->asTableColumns[$tableName][$column], "STDbTableContainer::primaryKey()", "column $column does not exist in table $tableName");
 
 		$this->asTableColumns[$tableName][$column]["pk"]= $pk;
 	}
-	/*public*/function foreignKey($tableName, $column, $toTable, $identif= 1, $toColumn= null, $type= "RESTRICT")
+	/*public*/function foreignKey(string $tableName, string $column, string $toTable, string|int $identif= 1,
+										string|int $toColumn= null, string $type= "RESTRICT")
 	{
-		STCheck::paramCheck($tableName, 1, "string");
-		STCheck::paramCheck($column, 2, "string");
-		STCheck::paramCheck($toTable, 3, "string");
-		STCheck::paramCheck($identif, 4, "string", "int");
-		STCheck::paramCheck($toColumn, 5, "string", "null");
-		STCheck::paramCheck($type, 6, "string");
+		if($this->nLowerCaseTableNames == 1)
+		{
+			$tableName= strtolower($tableName);
+			$toTable= strtolower($toTable);
+		}
 		STCheck::is_warning(!$this->aExistTables[$tableName], "STDbTableContainer::foreignKey()", "table $tableName does not exist");
 		Tag::alert(!$this->asTableColumns[$tableName][$column], "STDbTableContainer::foreignKey()", "column $column does not exist in table $tableName");
 
@@ -288,10 +308,8 @@ class STDbTableDescriptions
 																"identif"	=>$identif,
 																"type"		=>$type		);
 	}
-	function getForeignKeys($tableName)
+	function getForeignKeys(string $tableName)
 	{
-		STCheck::param($tableName, 0, "string");
-
 		$aRv= array();
 		$tableName= $this->getOrgTableName($tableName);
 		if(	isset($this->aExistTables[$tableName]) &&
@@ -318,10 +336,10 @@ class STDbTableDescriptions
 		}
 		return $aRv;
 	}
-	/*public*/function uniqueKey($tableName, $column, $unique, $uniqueLength= null)
+	/*public*/function uniqueKey(string $tableName, string $column, $unique, $uniqueLength= null)
 	{
-		STCheck::paramCheck($tableName, 1, "string");
-		STCheck::paramCheck($column, 2, "string");
+		if($this->nLowerCaseTableNames == 1)
+			$tableName= strtolower($tableName);
 		STCheck::paramCheck($unique, 3, "string", "int");
 		STCheck::paramCheck($uniqueLength, 4, "null", "int");
 		STCheck::is_warning(!$this->aExistTables[$tableName], "STDbTableContainer::setInTableColumnNotNull()", "table $tableName does not exist");
@@ -336,10 +354,10 @@ class STDbTableDescriptions
 		$this->asTableColumns[$tableName][$column]["udx"]["name"]= $unique;
 		$this->asTableColumns[$tableName][$column]["udx"]["length"]= $uniqueLength;
 	}
-	/*public*/function indexKey($tableName, $column, $index, $indexLength= null)
+	/*public*/function indexKey(string $tableName, string $column, $index, $indexLength= null)
 	{
-		STCheck::paramCheck($tableName, 1, "string");
-		STCheck::paramCheck($column, 2, "string");
+		if($this->nLowerCaseTableNames == 1)
+			$tableName= strtolower($tableName);
 		STCheck::paramCheck($index, 3, "string", "int");
 		STCheck::paramCheck($indexLength, 4, "null", "int");
 		STCheck::is_warning(!$this->aExistTables[$tableName], "STDbTableContainer::setInTableColumnNotNull()", "table $tableName does not exist");
@@ -348,8 +366,10 @@ class STDbTableDescriptions
 		$this->asTableColumns[$tableName][$column]["idx"]["name"]= $index;
 		$this->asTableColumns[$tableName][$column]["idx"]["length"]= $indexLength;
 	}
-	public function autoIncrement($tableName, $column)
+	public function autoIncrement(string $tableName, string $column)
 	{
+		if($this->nLowerCaseTableNames == 1)
+			$tableName= strtolower($tableName);
 		STCheck::is_warning(!$this->aExistTables[$tableName], "STDbTableContainer::setInTableColumnNotNull()", "table $tableName does not exist");
 		Tag::alert(!$this->asTableColumns[$tableName][$column], "STDbTableContainer::setInTableColumnNotNull()", "column $column does not exist in table $tableName");
 
@@ -367,6 +387,8 @@ class STDbTableDescriptions
 	{
 	    STCheck::is_error(!$this->aExistTables[$defined], "STDbTableContainer::updateTable()", "table $defined does not exist");
 
+		if($this->nLowerCaseTableNames == 1)
+			$tableName= strtolower($tableName);
 	    $this->aExistTables[$defined]["table"]= $tableName;
 	    $this->aExistTables[$defined]['addPrefix']= $addPrefix;
 	}
@@ -380,6 +402,8 @@ class STDbTableDescriptions
 	 */
 	public function updateColumn(string $tableName, string $definedColumn, string $column)
 	{
+		if($this->nLowerCaseTableNames == 1)
+			$tableName= strtolower($tableName);
 	    STCheck::is_error(!isset($this->aExistTables[$tableName]), "STDbTableContainer::updateColumn()", "table $tableName does not exist");
 	    STCheck::is_error(!isset($this->asTableColumns[$tableName][$definedColumn]), "STDbTableContainer::updateColumn()", "column $definedColumn does not exist in table $tableName");
 
@@ -438,9 +462,6 @@ class STDbTableDescriptions
 					if(isset($content["fk"]))
 						$oTable->foreignKey($content["column"], $content["fk"]["table"], $content["fk"]["identif"], $content["fk"]["column"], $content["fk"]["type"]);
 				}
-				//echo __FILE__.__LINE__."<br>";
-				//st_print_r($this->aExistTables,5);
-				//st_print_r($this->asTableColumns[$table],3);
 				$oTable->execute();
 				$this->aExistTables[$table]["installed"]= true;
 				Tag::echoDebug("install", "table ".$table." was installed");

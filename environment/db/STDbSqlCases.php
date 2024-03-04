@@ -46,6 +46,7 @@ class STDbSqlCases
         $this->table= clone $oTable;
         $this->db= &$oTable->db;
     }
+    var $fcount= 0;
     protected function fillColumnContent(string $column, $value)
     {
         STCheck::param($value, 1, "string", "empty(string)", "int", "float");

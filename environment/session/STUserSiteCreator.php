@@ -10,6 +10,11 @@ class STUserSiteCreator extends STSessionSiteCreator
 
 	function __construct($projectNameNr, $container= null)
 	{
+		if(typeof($projectNameNr, "STBaseContainer"))
+		{
+			$container= $projectNameNr;
+			$projectNameNr= 0;
+		}
 		STCheck::param($projectNameNr, 0, "string", "int");
 		STCheck::param($container, 1, "STBaseContainer", "null");
 
@@ -17,9 +22,16 @@ class STUserSiteCreator extends STSessionSiteCreator
 		// define also sProject with it,
 		// because by invoke initSession
 		// the function read the name from database
-		$this->sProject= $projectNameNr;
-		if(is_numeric($projectNameNr))
-			$this->nProjectID= $projectNameNr;
+		if($projectNameNr === 0)
+		{
+			$this->nProjectID= 0;
+			$this->sProject= "##StartPage";
+		}else
+		{
+			$this->sProject= $projectNameNr;
+			if(is_numeric($projectNameNr))
+				$this->nProjectID= $projectNameNr;
+		}
 		STSessionSiteCreator::__construct($container);
 	}
 	function initSession($userDb= null)
@@ -50,11 +62,6 @@ class STUserSiteCreator extends STSessionSiteCreator
 	        
         if($this->userManagement->noRegister)
             return;
-/*		if($this->bDoInstall)
-		{
-			$this->bDoInstall= false;
-			STSiteCreator::install();
-		}*/
 		if($bSessionGenerated)
 		    return;
 		$this->userManagement->registerSession();
@@ -79,16 +86,14 @@ class STUserSiteCreator extends STSessionSiteCreator
 	}
 	function getProjectID()
 	{
-		if($this->nProjectID===null)
-			$this->nProjectID= 2;
+		if($this->nProjectID==null)
+		{
+			$sess= STUserSession::instance();
+			$this->nProjectID= $sess->getProjectID();
+		}
 		$this->bAskForProject= true;
 		return $this->nProjectID;
 	}
-/*	function install()
-	{
-		STCheck::warning(STUserSession::sessionGenerated(), "STUserSiteCreator::install()", "invoke this function before initSession()");
-		$this->bDoInstall= true;
-	}*/
 	function setPrefixForUserTables($prefix)
 	{
 		Tag::alert($this->userManagement, "STUserSiteCreator::setPrefixToTables()",

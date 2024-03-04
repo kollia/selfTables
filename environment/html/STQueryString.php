@@ -61,7 +61,7 @@ class STQueryString
 			if($this->param_vars===null)
 				$this->resetParams();
 		}
-		function setQueryTable($table, $nrColumn, $pathColumn)
+		public static function setQueryTable($table, $nrColumn, $pathColumn)
 		{
 			$table->clearSelects();
 			$table->select($nrColumn);
@@ -70,7 +70,7 @@ class STQueryString
 			$global_selftables_query_table["nrColumn"]= $nrColumn;
 			$global_selftables_query_table["pathColumn"]=  $pathColumn;
 		}
-		function isSetQueryTable()
+		public static function isSetQueryTable()
 		{
 			global	$global_selftables_query_table;
 
@@ -235,7 +235,7 @@ class STQueryString
 		 * 
 		 * @param string $queryString query parameter
 		 */
-		function globaly_noStgetNr($queryString)
+		public static function globaly_noStgetNr($queryString)
 		{
 			global	$global_selftables_do_not_allow_sth;
 

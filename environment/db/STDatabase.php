@@ -174,10 +174,19 @@ abstract class STDatabase extends STObjectContainer
 	var	$sNeedAlias= array(); // hier wird eingetragen welches Alias ben�tigt wurde
 	var $aValues= null;
 	var $bHasTables= false;
+	/**
+	 * Whether has database only lower case table names."<br />
+	 * If set to 0, table names are stored as specified and comparisons are case-sensitive.
+	 * If set to 1, table names are stored in lowercase on disk and comparisons are not case-sensitive.
+	 * If set to 2, table names are stored as given but compared in lowercase. 
+	 * This option also applies to database names and table aliases.
+	 * @var int
+	 */
+	private $nLowerCaseTableNames= null;
 
 
 	  /**
-		*  Konstruktor f�r Zugriffs-deffinition
+		*  Construktor for basic access-deffinition
 		*
 		*/
 	function __construct($identifName= "main-menue", $defaultTyp= STSQL_ASSOC, $DBtype= "BLINDDB")
@@ -190,7 +199,7 @@ abstract class STDatabase extends STObjectContainer
 		$this->timePos= array("", "HH", ":", "MM", ":", "SS", "");
 		$this->pregTimeFormat= "/([0-9]{1,2})[., :-]([0-9]{1,2})([., :-]([0-9]{1,2}))?/";
     	// alex 17/05/2005:	class is now extend from STObjectcontainer
-    	//					and must give at second parameter an container
+    	//					and must give at second parameter a container
     	STObjectContainer::__construct($identifName, $this);
     	if( STCheck::isDebug("db.statement.insert") ||
     	    STCheck::isDebug("db.statement.update")    )
@@ -199,6 +208,23 @@ abstract class STDatabase extends STObjectContainer
     	}
     	
   	}
+	/**
+	 * Whether database has lower case table names."<br />
+	 * If set to 0, table names are stored as specified and comparisons are case-sensitive.
+	 * If set to 1, table names are stored in lowercase on disk and comparisons are not case-sensitive.
+	 * If set to 2, table names are stored as given but compared in lowercase. 
+	 * This option also applies to database names and table aliases.
+	 * 
+	 * @return int 0, 1 or 2 whether case-sensitive
+	 */
+	public function hasLowerCaseTableNames()
+	{
+		if(isset($this->nLowerCaseTableNames))
+			return $this->nLowerCaseTableNames;
+		$this->nLowerCaseTableNames= $this->dbHasLowerCaseTableNames();
+		return $this->nLowerCaseTableNames;
+	}
+	abstract protected function dbHasLowerCaseTableNames();
 	static function existDatabaseClassName($className)
 	{
 		if($className==="STDbMySql")
@@ -302,6 +328,11 @@ abstract class STDatabase extends STObjectContainer
 			}
 		}
 		$this->pregDateFormat= substr($pregDateFormat, 0, strlen($pregDateFormat)-7)."$/";
+	}
+	public function installDbTables()
+	{
+		$desc= &STDbTableDescriptions::instance($this->getDatabaseName());
+		$desc->installTables($this->db);
 	}
 	function makeUserTimeFormat($dbtime)
 	{//echo "preg_match(\"/^([0-9]{2}):([0-9]{2}):([0-9]{2})$/\", $dbtime, $preg)<br />";

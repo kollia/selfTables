@@ -81,15 +81,14 @@ class STDbSelector extends STDbTable implements STContainerTempl
 			Tag::alert($this->bAddedFkTables, "STDbSelector::add()", "cannot add an new table, if bevore made ::select to an other");
 
 			if(is_string($table))
+				$table= $this->getTable($table);
+			$sTableName= $table->getName();
+			
+			if(!isset($this->aoToTables[$sTableName]))
 			{
-				$sTableName= $table;
-				$table= $this->getTable($sTableName);
-				//$table= new STDbTable($table, $this->db, $this->onError);
-			}else
-				$sTableName= $table->getName();
-			$this->aoToTables[$sTableName]= &$table;
-			$this->bAddedTabels= true;
-			//$this->FK[$table->getName()]= array("own"=>$ownColumn, "other"=>$otherColumn, "join"=>$join);
+				$this->aoToTables[$sTableName]= &$table;
+				$this->bAddedTabels= true;
+			}
 		}
 		/*protected*/function addFKTables($dbName, &$aDone, $sFromTableName)
 		{
@@ -393,43 +392,101 @@ class STDbSelector extends STDbTable implements STContainerTempl
             //$where->setDatabase($table->db);
             STDbTable::where($where);
 		}
-		function join($columnName, &$oTable, $otherColumn= null)
+		/**
+		 * prepare inner join foreign key between tables
+		 * 
+		 * @param string|STBaseTable $fromTable set foreign key from table of this parameter
+		 * @param string $fromColumn foreign key shows from this column to the other
+		 * @param string|STBaseTable $toTable set foreign key to table of this parameter
+		 *                                    (prototype cannot be set, only for compatibility to STBaseTable)
+		 * @param string $toColumn foreign key shows from other colum to this
+		 */
+		function innerJoin($fromTable, $fromColumn, $toTable= null, $toColumn= null)
 		{
-			$this->innerJoin($columnName, $oTable, $otherColumn);
-		}
-		function innerJoin($columnName, &$oTable, $otherColumn= null)
-		{
-			Tag::paramCheck($columnName, 1, "string");
-			Tag::paramCheck($oTable, 2, "STDbTable");
-			Tag::paramCheck($otherColumn, 3, "string", "null");
+			STCheck::param($fromTable, 0, "StBaseTable", "string");
+			STCheck::param($fromColumn, 1, "string");
+			STCheck::param($toTable, 2, "STBaseTable", "string");
+			STCheck::param($toColumn, 3, "string", "empty(string)", "null");
 
-			$bInnerJoin= true;
-			if(!typeof($oTable, "OSTDbSelector"))
-				$sTable= new OSTDbSelector($oTable);
-			$tableName= $oTable->getName();
-			$this->aoToTables[$tableName]= &$oTable;
-			STDbTable::foreignKeyObj($columnName, $oTable, $otherColumn);
+			if(typeof($fromTable, "STBaseTable"))
+				$fromTable= $fromTable->getName();
+			else
+				$fromTable= $this->getTableName($fromTable);
+			if($fromTable == $this->getName())
+			{
+				STDbTable::innerJoin($fromColumn, $toTable, $toColumn);
+				return;
+			}
+			if(!isset($this->aoToTables[$fromTable]))
+				$this->add($fromTable);
+			if(typeof($this->aoToTables[$fromTable], "STDbSelector"))
+				$this->aoToTables[$fromTable]->innerJoin($fromTable, $fromColumn, $toTable, $toColumn);
+			else
+				$this->aoToTables[$fromTable]->innerJoin($fromColumn, $toTable, $toColumn);
 		}
-		function outerJoin($columnName, $oTable= null, $otherColumn= null)
+		/**
+		 * prepare left join foreign key between tables
+		 * 
+		 * @param string|STBaseTable $fromTable set foreign key from table of this parameter
+		 * @param string $fromColumn foreign key shows from this column to the other
+		 * @param string|STBaseTable $toTable set foreign key to table of this parameter
+		 *                                    (prototype cannot be set, only for compatibility to STBaseTable)
+		 * @param string $toColumn foreign key shows from other colum to this
+		 */
+		function leftJoin($fromTable, $fromColumn, $toTable= null, $toColumn= null)
 		{
-			if($oTable===null)
-				$oTable= $columnName;
-			if(Tag::isDebug())
-  			if(!typeof($oTable, "STDbTable", "string"))
-  			{
-  				echo "<b>ERROR in OSTDbSelector::outerJoin():</b> ";
-					if(func_num_args()==1)
-						echo "1.";
-					else
-						echo "2.";
-  				echo " parameter must be an object of STDbTable or an string";
-  				exit;
-  			}
-			$this->add($oTable);
-			if(is_string($oTable))
-				$oTable= &$this->getTable($oTable);
-			$bInnerJoin= false;
-			STDbTable::foreignKeyObj($columnName, $oTable, $otherColumn);
+			STCheck::param($fromTable, 0, "StBaseTable", "string");
+			STCheck::param($fromColumn, 1, "string");
+			STCheck::param($toTable, 2, "STBaseTable", "string");
+			STCheck::param($toColumn, 3, "string", "empty(string)", "null");
+
+			if(typeof($fromTable, "STBaseTable"))
+				$fromTable= $fromTable->getName();
+			else
+				$fromTable= $this->getTableName($fromTable);
+			if($fromTable == $this->getName())
+			{
+				STDbTable::leftJoin($fromColumn, $toTable, $toColumn);
+				return;
+			}
+			if(!isset($this->aoToTables[$fromTable]))
+				$this->add($fromTable);
+			if(typeof($this->aoToTables[$fromTable], "STDbSelector"))
+				$this->aoToTables[$fromTable]->leftJoin($fromTable, $fromColumn, $toTable, $toColumn);
+			else
+				$this->aoToTables[$fromTable]->leftJoin($fromColumn, $toTable, $toColumn);
+		}
+		/**
+		 * prepare right join foreign key between tables
+		 * 
+		 * @param string|STBaseTable $fromTable set foreign key from table of this parameter
+		 * @param string $fromColumn foreign key shows from this column to the other
+		 * @param string|STBaseTable $toTable set foreign key to table of this parameter
+		 *                                    (prototype cannot be set, only for compatibility to STBaseTable)
+		 * @param string $toColumn foreign key shows from other colum to this
+		 */
+		function rightJoin($fromTable, $fromColumn, $toTable= null, $toColumn= null)
+		{
+			STCheck::param($fromTable, 0, "StBaseTable", "string");
+			STCheck::param($fromColumn, 1, "string");
+			STCheck::param($toTable, 2, "STBaseTable", "string");
+			STCheck::param($toColumn, 3, "string", "empty(string)", "null");
+
+			if(typeof($fromTable, "STBaseTable"))
+				$fromTable= $fromTable->getName();
+			else
+				$fromTable= $this->getTableName($fromTable);
+			if($fromTable == $this->getName())
+			{
+				STDbTable::rightJoin($fromColumn, $toTable, $toColumn);
+				return;
+			}
+			if(!isset($this->aoToTables[$fromTable]))
+				$this->add($fromTable);
+			if(typeof($this->aoToTables[$fromTable], "STDbSelector"))
+				$this->aoToTables[$fromTable]->rightJoin($fromTable, $fromColumn, $toTable, $toColumn);
+			else
+				$this->aoToTables[$fromTable]->rightJoin($fromColumn, $toTable, $toColumn);
 		}
 		public function orderBy($tableName, $column= true, $bASC= true)
 		{

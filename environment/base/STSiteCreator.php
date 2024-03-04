@@ -19,6 +19,11 @@ class STSiteCreator extends HtmlTag
 		var	$oMainTable;
 		//deprecated
 		var	$aNoChoise= array();
+		/**
+		 * shows whether install method
+		 * be called
+		 * @var boolean
+		 */
 		var $bDoInstall= false;
 		var	$uRequireSites= array();
 		var $aNeededVars= array();// Variablen welche auf selbst deffinierter Seite ben�tigt werden
@@ -319,8 +324,15 @@ class STSiteCreator extends HtmlTag
 			global	$HTTP_GET_VARS;
 
 			Tag::alert($this->tableContainer==null, "STDbSiteCreator::execute()",
-								"befor execute set container in constructor or with ::setMainContainer()");
-			
+								"befor execute set container in constructor or with ::setMainContainer()", 1);
+			if(	STCheck::isDebug("install") &&
+				!$this->bDoInstall				)
+			{
+				$className= get_class($this);
+				STCheck::echoDebug("install", "<b>WARNING</b> no {$className}->install() be called before {$className}->execute()");
+			}
+			// create first the container where will be set the maintable / other tables
+			$this->tableContainer->setLanguage($this->sLanguage);
 			if(isset($HTTP_GET_VARS["stget"]))
 				$get_vars= $HTTP_GET_VARS["stget"];
 			if(isset($get_vars["table"]))
@@ -400,8 +412,6 @@ class STSiteCreator extends HtmlTag
 	            STCheck::echoDebug("container", $msg);
 	            echo "<br />";
 			}
-			// create first the container where will be set the maintable / other tables
-			$this->tableContainer->setLanguage($this->sLanguage);
 			//$this->tableContainer->createContainer();
 			if(isset($get_vars["download"]))
 			{
@@ -678,6 +688,11 @@ class STSiteCreator extends HtmlTag
 	{
 		global	$_selftable_first_main_database_name;
 
+		if( $containerName &&
+			$this->tableContainer->getName() == $containerName	)
+		{
+			return $this->tableContainer;
+		}
 		if(	$containerName
 			and
 			!$fromContainer
@@ -741,9 +756,9 @@ class STSiteCreator extends HtmlTag
 		$container= &$this->getContainer();
 		return $container->getAction();
 	}
-	function &getTable($tableName= null)
+	function &getTable(string $tableName= null, string|bool $sContainer= null, bool $bEmpty= false)
 	{
-		return $this->getContainer()->getTable($tableName); 
+		return $this->getContainer()->getTable($tableName, $sContainer, $bEmpty); 
 	}
 	function getTableName()
 	{
@@ -756,23 +771,37 @@ class STSiteCreator extends HtmlTag
 		$this->getContainer();//setzt den $this->tableContainer
 		return $this->tableContainer->getIdentification();
 	}
-	function install()
+	public function install()
 	{
-		global	$global_boolean_install_objectContainer;
-
 		$this->bDoInstall= true;
-		showBackTrace();
-		STCheck::debug("install");
-		$bInstalled= false;
+		$this->installDbTables();
+		$this->installContainer();
+	}
+	protected function installDbTables()
+	{
+		$this->bDoInstall= true;
 		$containers= STBaseContainer::getAllContainerNames();
-		showLine();
-		echo "containers found:";
-		st_print_r($containers);
 		foreach($containers as $containerName)
 		{
 			$obj= &STBaseContainer::getContainer($containerName);
-			showLine();
-			echo "found for $containerName:";st_print_r($obj,0);
+			if(typeof($obj, "STObjectContainer"))
+			{
+			    STCheck::echoDebug("install", "<b>install</b> database tables from container ".get_class($obj)."($containerName)");
+				$obj->installDbTables();
+				STCheck::echoDebug("install", "tables from ".get_class($obj)."($containerName) is installed");
+			}
+		}
+	}
+	protected function installContainer()
+	{
+		$this->bDoInstall= true;
+		global	$global_boolean_installed_objectContainer;
+
+		$bInstalled= false;
+		$containers= STBaseContainer::getAllContainerNames();
+		foreach($containers as $containerName)
+		{
+			$obj= &STBaseContainer::getContainer($containerName);
 			if(typeof($obj, "STObjectContainer"))
 			{
 			    STCheck::echoDebug("install", "<b>install</b> container ".get_class($obj)."($containerName)");
@@ -781,12 +810,9 @@ class STSiteCreator extends HtmlTag
 				STCheck::echoDebug("install", "container ".get_class($obj)."($containerName) is installed");
 			}
 		}
+		$global_boolean_installed_objectContainer= $bInstalled;
 		if(!$bInstalled)
 			STCheck::echoDebug("install", "no container to install be set");
-		showLine();
-		$global_boolean_install_objectContainer= true;
-		$session= STSession::instance();
-		$session->noRegister();
 	}
 }
 

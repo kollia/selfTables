@@ -166,18 +166,32 @@ abstract class STBaseContainer extends BodyTag implements STContainerTempl
 	{
 	    $this->msgBox->setMessageContent($messageID, $messageContent);
 	}
-	protected function getMessageContent(string $messageID, string $parameters= null) : string
+	protected function getMessageContent(string $messageID, string $parameters= null, $outFunc= 2) : string
 	{
-	    $paramArray= array();
-	    if(isset($parameters))
-	    {
-    	    $have= func_num_args();
-    	    $args= func_get_args();
-    	    for($count=1; $count<$have; $count++)
-    	        $paramArray[]= $args[$count];
-	    }
-        $this->msgBox->setMessageId($messageID, $paramArray);
-        return $this->msgBox->getMessageContent($messageID);
+	    $paramArray= array();	   
+		if(isset($parameter))
+		{
+			if(is_string($parameter))
+			{
+				$have= func_num_args();
+				$args= func_get_args();
+				for($count=1; $count<($have-1); $count++)
+					$paramArray[]= $args[$count];
+				if(!is_int($args[$hace-1]))
+				{
+					$paramArray[]= $args[$have-1];
+					$outFunc= 2;
+				}else
+					$outFunc= $count;
+				$have-= 1;
+			}else
+			{
+				$paramArray= $parameter;
+				$have= count($paramArray);
+			}
+			
+		}
+        return $this->msgBox->getMessageContent($messageID, $paramArray, $outFunc);
 	}
 	public function clearFirstObjectContainer()
 	{
@@ -651,9 +665,17 @@ abstract class STBaseContainer extends BodyTag implements STContainerTempl
 		}
 		$global_first_objectContainerName= $container;
 	}
-	public static function &getContainer($containerName= null, string $className= null, string $fromContainer= null) : object
+	/**
+	 * return obj of created container
+	 * 
+	 * @param string|bool §containerName name of container, when parameter not given, method return object of first container,
+	 * 										if parameter a boolean of true, return object can be null if not exist, otherwise the same if not given
+	 * @param string|bool $className name of container class, if parameter a boolean of true, if parameter a boolean of true, return object can be null
+	 */
+	public static function &getContainer($containerName= null, string|bool $className= null, string $fromContainer= null) : object|null
 	{
-		global	$global_first_objectContainerName,
+		global	$global_st_pathdef_inc_location_path,
+				$global_first_objectContainerName,
 				$global_array_all_exist_stobjectcontainers,
 				$global_array_exist_stobjectcontainer_with_classname,
 				$_selftable_first_main_database_name;
@@ -666,7 +688,13 @@ abstract class STBaseContainer extends BodyTag implements STContainerTempl
 		    $bAllowNullObj= $containerName;
 		    $containerName= null;
 		}
-		if(!isset($containerName))
+		if(typeof($className, "bool"))
+		{
+			$bAllowNullObj= $className;
+			$className= null;
+		}
+		if(	!isset($containerName) &&
+			!isset($className)			)
 		{
 			$query= new STQueryString();
 			$containerName= $query->getArrayVars("stget", "container");
@@ -693,18 +721,29 @@ abstract class STBaseContainer extends BodyTag implements STContainerTempl
 				}
 			}
 		}
-		showLine();
-		echo "search for $containerName:";
 		foreach($global_array_all_exist_stobjectcontainers as $name=>$container)
 		{
-			if($name==$containerName)
+			if( isset($containerName) &&
+				$name==$containerName	)
 			{
 			    $containerObj= &$global_array_all_exist_stobjectcontainers[$name];
-				showLine();
-				echo "return container $name for $containerName:";
-				st_print_r($containerObj, 0);
 				return $containerObj;
 			}
+		}
+		// if contianer name not exist
+		// make second search for classname
+		if(isset($className))
+		{
+			foreach($global_array_all_exist_stobjectcontainers as $name=>$container)
+			{
+				if(typeof($container, $className))
+					return $container;
+			}
+		}
+		if($bAllowNullObj)
+		{
+			$null= null;
+			return $null;	
 		}
 		if(	(	!isset($className) ||
 				!$className				) &&
@@ -762,9 +801,12 @@ abstract class STBaseContainer extends BodyTag implements STContainerTempl
 
 		if(isset($global_array_exist_stobjectcontainer_with_classname[$containerName]["source"]))
 		{
-		    //echo __FILE__.__LINE__."<br>";
-			//echo $global_array_exist_stobjectcontainer_with_classname[$containerName]["source"]."<br/>\n";
+			// before add source of new container
+			// add also all global defined variables inside st_pathdef.inc.php
+			require($global_st_pathdef_inc_location_path);
 			require_once($global_array_exist_stobjectcontainer_with_classname[$containerName]["source"]);
+			$containerObj= new $className($containerName, $fromContainer);
+			return $containerObj;
 		}
 
 		$firstDefaultContainer= null;
@@ -774,7 +816,9 @@ abstract class STBaseContainer extends BodyTag implements STContainerTempl
 		    $firstDefaultContainer= $global_array_all_exist_stobjectcontainers[$global_first_objectContainerName];
 		}elseif(!empty($global_array_all_exist_stobjectcontainers))
 		{
-		    $firstDefaultContainerName= reset($global_array_all_exist_stobjectcontainers);
+			showLine();
+			st_print_r($global_array_all_exist_stobjectcontainers);
+		    $firstDefaultContainerName= array_key_first($global_array_all_exist_stobjectcontainers);
 		    $firstDefaultContainer= $global_array_all_exist_stobjectcontainers[$firstDefaultContainerName];
 		}
 		if(isset($firstDefaultContainer))
@@ -1689,22 +1733,18 @@ abstract class STBaseContainer extends BodyTag implements STContainerTempl
 		Tag::deprecated("STDbBaseContainer::getDisplayName()", "STDbTableContainer::getIdentification()");
 		return $this->getDisplayName();
 	}
-	function createCluster($clusterName, $description, $addGroup= true)
+	function createCluster(string $clusterName, int|string $projectNameID, string $description, bool $addGroup= true)
 	{
-		if(STUserSession::sessionGenerated())
-		{
-			$instance= &STUserSession::instance();
-			return $instance->createCluster($clusterName, $description, $addGroup);
-		}
+		$instance= &STUserSession::instance();
+		if(isset($instance))
+			return $instance->createCluster($clusterName, $projectNameID, $description, $addGroup);
 		return false;
 	}
 	function createGroup(string $groupName, string $domainName)
 	{
-		if(STUserSession::sessionGenerated())
-		{
-		    $instance= &STUserSession::instance();
+		$instance= &STUserSession::instance();
+		if(isset($instance))
 			return $instance->createGroup($groupName, $domainName);
-		}
 		return "NOUSERSESSIONEXIST";
 	}
 	function joinUserGroup($user, $group)
@@ -1712,18 +1752,18 @@ abstract class STBaseContainer extends BodyTag implements STContainerTempl
 		STCheck::paramCheck($user, 1, "int", "string");
 		STCheck::paramCheck($group, 2, "int", "string");
 
-		if(STUserSession::sessionGenerated())
+		$instance= &STUserSession::instance();
+		if(isset($instance))
 		{
-			$instance= &STUserSession::instance();
 			return $instance->joinUserGroup($user, $group);
 		}
 		return "NOUSERSESSIONEXIST";
 	}
 	function joinClusterGroup($clusterName, $group)
 	{
-		if(STUserSession::sessionGenerated())
+		$instance= &STUserSession::instance();
+		if(isset($instance))
 		{
-			$instance= &STUserSession::instance();
 			return $instance->joinClusterGroup($clusterName, $group);
 		}
 		return -1;
@@ -1734,7 +1774,7 @@ abstract class STBaseContainer extends BodyTag implements STContainerTempl
 	    if(isset($this->aAccessClusters[STALLDEF]))
 	        $aRv= $this->aAccessClusters[STALLDEF];
         if(isset($this->aAccessClusters[$action]))
-            $aRv= $this->aAccessClusters[$action];
+            $aRv= array_merge($aRv, $this->aAccessClusters[$action]);
 	    return $aRv;
 	}
 	public function checkPermission()

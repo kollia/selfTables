@@ -145,8 +145,6 @@ class STDbTableCreator
 			if(STCheck::isDebug("tableCreator"))
 				$statement.= "\n                               ";
 			$keys= array();
-			showLine();
-			st_print_r($this->asTableColumns,10);
     		foreach($this->asTableColumns as $column=>$content)
     		{
     		    $statement.= $column." ".$content["type"];
@@ -197,9 +195,6 @@ class STDbTableCreator
 				{
 					if($this->db->saveForeignKeys())
 					{
-					    echo __FILE__.__LINE__."<br>";
-					    st_print_r($key,3);
-					    st_print_r($this->asTableColumns, 3);
 						foreach($key as $content)
 						{
 							$statement.= "FOREIGN KEY (";

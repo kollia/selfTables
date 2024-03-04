@@ -1,9 +1,8 @@
-<?php 
+<?php
 
-require_once( $_stobjectcontainer );
-require_once( $_stframecontainer );
+require_once $_stobjectcontainer;
 
-class STUserProjectManagement extends STBaseContainer
+class STProjectOverviewList extends STObjectContainer
 {
     /**
      * definition for default images
@@ -11,140 +10,127 @@ class STUserProjectManagement extends STBaseContainer
      * @var array
      */
     private $image= array();
-    private $database= null;
-    private $loginMaskDescription= "";
-    private $loginMask= null;
-    private $accessableProjects= array();
-    private $accessibilityString= "";
-    private $accessibilityProjectMask= null;
-    private $availableSite= null;
+    /**
+     * content of tags or strings
+     * added into the site
+     */
+    private $addedContent= array();
     /**
      * prefix path add to all projects inside database     * 
      * @var string
      */
     private $prefixPath= "";
     /**
-     * add html tags before execute container
-     * @var array
+     * all exist projects
      */
-    private $addedContent= array();
+    private $accessableProjects= array();
+    private $accessibilityString= null;
+    private $accessibilityProjectMask= null;
     
-    public function __construct(string $name, $userDb, string $bodyClass= "ProjectAccessBody")
+    private $loginMask= null;
+    private $availableSite= null;
+
+    public function __construct(string $name, STObjectContainer &$container, string $bodyClass= "ProjectAccessBody")
     {
-        STCheck::paramCheck($userDb, 1, "STDatabase");
-        
-        $this->database= $userDb;
-        $user= STUserSession::instance();        
-        showLine();
-        echo "________________________________________________________________________________________________<br>";
-        echo $userDb->getTableName("Session");
-        //$user->verifyLogin("##StartPage", $_SERVER['SCRIPT_NAME']);
-        STBaseContainer::__construct($name, $userDb, $bodyClass);
+        STObjectContainer::__construct($name, $container, $bodyClass);
     }
-    /**
-     * method to create messages for different languages.<br />
-     * inside class methods (create(), init(), ...) you get messages from <code>$this->getMessageContent(<message id>, <content>, ...)</code><br />
-     * inside this method depending the <code>$language</code> define messages with <code>$this->setMessageContent(<message id>, <message>)</code><br />
-     * see STMessageHandling
-     *
-     * @param string $language current language like 'en', 'de', ...
-     */
-    protected function createMessages(string $language)
-    {
-        STBaseContainer::createMessages($language);
-        if($language == "de")
-        {
-            $this->setMessageContent("loginMaskDescription", "Bitte geben sie hier ihre Benuter-Daten ein:");
-            $this->setMessageContent("accessibilityString", "<h1>Zur Verfügung stehende Webapplikationen:</h1>");
-            $this->setMessageContent("noUserAccess", "mit diesem User-Namen besteht keine Berechtigung");
-            $this->setMessageContent("wrongUserPassword", "Passwort stimmt nicht mit User-Namen &uuml;berein");
-            $this->setMessageContent("multipleUser", "mehrdeutingen Benutzernamen in Datenbank gefunden!");
-            $this->setMessageContent("externalAuthenticationError", "Unbekannter Fehler by externer Autentifizierung!");
-            $this->setMessageContent("noPermission", "Sie haben keinen Zugriff auf diese Daten!");
-            $this->setMessageContent("unknownError@", "Unbekannten Fehler-Code ('@') gefunden!");
-            $this->setMessageContent("doNewLogin", "Bitte melden sie sich mit einem anderen Benutzer-Namen an.");
-            
-        }else // otherwise language have to be english "en"
-        {
-            $this->setMessageContent("loginMaskDescription", "Please insert your Access Data:");
-            $this->setMessageContent("accessibilityString", "<h1>Existing Web-Applications:</h1>");
-            $this->setMessageContent("noUserAccess", "with this user, no permission given");
-            $this->setMessageContent("wrongUserPassword", "password or user name are incorrect");
-            $this->setMessageContent("multipleUser", "multiple User name inside database found!");
-            $this->setMessageContent("externalAuthenticationError", "Unknown error at external authentication!");
-            $this->setMessageContent("noPermission", "you have no permission to this data!");
-            $this->setMessageContent("unknownError@", "<b>UNKNOWN</b> Error type ('@') found!");
-            $this->setMessageContent("doNewLogin", "Please login with an other user.");            
-        }
-    }
+	/**
+	 * method to create messages for different languages.<br />
+	 * inside class methods (create(), init(), ...) you get messages from <code>$this->getMessageContent(<message id>, <content>, ...)</code><br />
+	 * inside this method depending the <code>$language</code> define messages with <code>$this->setMessageContent(<message id>, <message>)</code><br />
+	 * see STMessageHandling
+	 *
+	 * @param string $language current language like 'en', 'de', ...
+	 */
+	protected function createMessages(string $language)
+	{
+        STObjectContainer::createMessages($language);
+		if($language == "de")
+		{
+		    $this->setMessageContent("LoginMaskDescription", "
+                                                        <h1>
+                                                            Anmeldung: 
+                                                        </h1>
+                                                        <span class='fontBigger'>
+                                                            Bitte melden sie sich mit ihren Konto-Daten an:
+                                                        </span>");
+		    $this->setMessageContent("AccessibilityProjectString", "Zur Verfügung stehende Webapplikationen:");
+			
+		}else // otherwise language have to be english "en"
+		{
+		    $this->setMessageContent("LoginMaskDescription", "
+                                                        <h1>
+                                                            Login: 
+                                                        </h1>
+                                                        <span class='fontBigger'>
+                                                            Please login with your specific account:
+                                                        </span>");
+		    $this->setMessageContent("AccessibilityProjectString", "Existing Webapplikations:");
+		}
+	}
     public function setLoginMaskDescription(string $description)
     {
-        $this->loginMaskDescription= $description;
+        $this->setMessageContent("LoginMaskDescription", $description);
     }
     public function setAccessibilityProjectString(string $string)
     {
         $this->accessibilityString= $string;
     }
-    public function setHomepageLogo(string $address, int $width= null, int $height= 140, string $alt= "DB selftables Homepage")
+    public function addClientRootPath(string $path)
+    {
+        $this->prefixPath= $path;
+    }
+    public function setOverviewLogo(string $address, int $width= null, int $height= 140, string $alt= "DB selftables Homepage")
     {
         $this->image['logo']['img']= $address;
         $this->image['logo']['height']= $height;
         $this->image['logo']['width']= $width;
         $this->image['logo']['alt']= $alt;
     }
-    public function setHomepageBanner(string $address)
+    public function setOverviewBackground(string $address, $wrap= true)
     {
-        $this->image['logo']['banner']= $address;
+        $this->image['logo']['background']= $address;
+        $this->image['logo']['backgroundWrap']= $wrap;
     }
-    public function setNavigationLogo(string $address, int $width= null, int $height= 70)
+    public function setNavigationLogo(string $address, int $width= null, int $height= 70, string $alt= null)
     {
         $this->image['nav']['img']= $address;
         $this->image['nav']['height']= $height;
         $this->image['nav']['width']= $width;
+        if(isset($alt))
+            $this->image['nav']['alt']= $alt;
     }
-    public function setNavigationBanner(string $address)
+    public function setNavigationBackground(string $address, $wrap= true)
     {
-        $this->image['nav']['banner']= $address;
-    }
-    /**
-     * add a prefix path to all projects into database.<br />
-     * this can be used for development where the user
-     * should jump to the development path and not
-     * to the correct original path where the project inside
-     * real-time running
-     * 
-     * @param string $path prefix path add to the normal project path
-     */
-    public function addClientRootPath(string $path)
-    {
-        $this->prefixPath= $path;
-    }
-    public function getDatabase()
-    {
-        return $this->database;
-    }
-    protected function init(string $action, string $table)
-    {
-        
+        $this->image['nav']['background']= $address;
+        $this->image['nav']['backgroundWrap']= $wrap;
     }
     protected function create()
     {
-        //$this->database->verifyLogin("##StartPage");
+        $this->displayNoTables();
+        //$user= $this->needTable("User");
+
+        //$this->db->verifyLogin("##StartPage");
         STCheck::echoDebug("user", "entering ProjectAccess init function...");
-        $cluster= $this->database->getTable("Cluster");
+        $cluster= $this->db->getTable("Cluster");
         $selector= new STDbSelector($cluster);
         $selector->select("Cluster", "ID", "ClusterID");
-        $selector->select("Project", "ID");
-        $selector->select("Project", "Name");
-        $selector->select("Project", "Path");
-        $selector->select("Project", "Description");//"Description");
-        $selector->select("Project", "DateCreation");
-        $selector->orderBy("Project", "Name");
+        $selector->select("Project", "ID", "ID");
+        $selector->select("Project", "Name", "Name");
+        $selector->select("Project", "sort", "sort");
+        $selector->select("Project", "Path", "Path");
+        $selector->select("Project", "Target", "target");
+        $selector->select("Project", "Description", "Description");//"Description");
+        $selector->select("Project", "DateCreation", "DateCreation");
+        $selector->rightJoin("Cluster", "ProjectID", "Project", "ID");
+        $selector->orderBy("Project", "sort, Name");
         $selector->allowQueryLimitation(false);
+        $statement= $selector->getStatement();
         $selector->execute();
         $result= $selector->getResult();
-        
+
         $user= STSession::instance();
+        $projectOverviewContainer= $this->getName();
         if(STCheck::isDebug("user"))
         {
             $msg= "sessionvar ST_LOGGED_IN is ";
@@ -163,31 +149,86 @@ class STUserProjectManagement extends STBaseContainer
             }else
                 st_print_r("<em>NO CLUSTER</em>", 1, $space);
         }
+
+        // sort to groups
+        $sortResult= array();
+        $overviewName= $user->getDbProjectName("ProjectOverview");
         foreach( $result as $row )
         {
+            if($row['Name'] != $overviewName)
+                $sortResult[$row['ID']][]= $row;
+        }
+        // search for access for every project
+        foreach( $sortResult as $aProject )
+        {
+            $access_msg= "Search whether user has access for Project Nr. ".htmlspecialchars( $aProject[0][ 'ID' ] )."): <em>";
+            $access_msg.= "<b> - " .htmlspecialchars( $aProject[0][ 'Name' ] )."</em> - </b>:";
+            $bClusterLessAccess= false;
+            $accessClusters= "";
+            $deniedClusters= "";
+            foreach ($aProject as $row)
+            {
+                if(!isset($row['ClusterID']))
+                    $bClusterLessAccess= true; // no cluster set, in this case project is same as linked with ONLINE cluster
+                elseif($user->hasAccess( $row[ 'ClusterID' ], $access_msg ))
+                    $accessClusters.= $row[ 'ClusterID' ].", ";
+                elseif(STCheck::isDebug())
+                    $deniedClusters.= $row[ 'ClusterID' ].", ";
+            }
+            if($accessClusters != "")
+                $accessClusters= substr($accessClusters, 0, strlen($accessClusters)-2);
+            if($deniedClusters != "")
+                $deniedClusters= substr($deniedClusters, 0, strlen($deniedClusters)-2);
             if(STCheck::isDebug("user"))
                 echo "<br />\n";
-            $access_msg= "Search whether user has access for Project Nr. ".htmlspecialchars( $row[ 'ID' ] )."): <em>";
-            $access_msg.= "<b> - " .htmlspecialchars( $row[ 'Name' ] )."</em> - </b>:";
-            if( $user->hasAccess( $row[ 'ClusterID' ], $access_msg ) )
+            if( $bClusterLessAccess ||
+                $accessClusters != "")
             {
-                if( Tag::isDebug() )
+                if( STCheck::isDebug("user") )
                 {
-                    $msg= "<b>GRANTED</b> (with membership in Cluster(";
-                    $msg.= htmlspecialchars( $row[ 'ClusterID' ] )."))";
-                    STCheck::echoDebug("user", $msg);
+                    $aMsgs= array();
+                    $aMsgs[]= $access_msg;
+                    if($bClusterLessAccess)
+                    {                        
+                        $msg= "<b>GRANTED</b> ";
+                        $msg.= "because no cluster be set (virtual linked with ONLINE cluster)";
+                        $aMsgs[]= $msg;
+                    }
+                    if($accessClusters != "")
+                    {                     
+                        $msg= "<b>GRANTED</b> ";
+                        if($bClusterLessAccess)
+                            $msg.= "also ";
+                        $msg.= "with membership in Cluster(";
+                        $msg.= htmlspecialchars( $accessClusters ).")";
+                        $aMsgs[]= $msg;
+                    }  
+                    STCheck::echoDebug("user", $aMsgs);
                 }
-                $this->accessableProjects[ $row[ 'ID' ] ] =
+                $this->accessableProjects[] =
                                         array(
+                                            'ID'   => $row[ 'ID' ],
                                             'Name' => $row[ 'Name' ],
                                             'Path' => $row[ 'Path' ],
+                                            'Target' => $row[ 'target' ],
                                             'Description' => $row[ 'Description' ],
                                             'DateCreation' => $row[ 'DateCreation' ]	);
-            }else
-                STCheck::echoDebug("user", "<b>DENIED</b>");
+            }elseif(STCheck::isDebug("user"))
+            {
+                $aMsgs= array();
+                $aMsgs[]= $access_msg;
+                $msg= "<b>DENIED</b> because user have no membership in Cluster(";
+                $msg.= htmlspecialchars( $deniedClusters ).")";
+                $aMsgs[]= $msg;
+                STCheck::echoDebug("user", $aMsgs);
+            }
         }
         if( Tag::isDebug("user") ) 
             echo "".$this->toString();
+    }
+    protected function init(string $action, string $table)
+    {
+        
     }
     public function toString()
     {
@@ -196,9 +237,9 @@ class STUserProjectManagement extends STBaseContainer
         $res  = '<table border="0" bgcolor="black" cellpadding="2" cellspacing="1" >';
         $res .= '<tr><td colspan="3" bgcolor="#E0E0E0">Accessable Projects</td></tr>';
         $res .= '<tr><td bgcolor="white">ID</td><td bgcolor="white">description</td><td bgcolor="white">Path</td></tr>';
-        foreach( $this->accessableProjects as $projectID =>$project ){
+        foreach( $this->accessableProjects as $project ){
             $res .= '<tr><td bgcolor="white" colspan="3">'.htmlspecialchars( $project[ 'Name' ] ).'</td></tr>';
-            $res .= '<tr><td bgcolor="white">'.$projectID.'</td>';
+            $res .= '<tr><td bgcolor="white">'.$project['ID'].'</td>';
             $res .= '    <td bgcolor="white">'.htmlspecialchars( $project[ 'Description' ] ).'</td>';
             $res .= '    <td bgcolor="white">'.htmlspecialchars( $project[ 'Path' ] ).'</td>';
             $res .= '</tr>';
@@ -251,7 +292,7 @@ class STUserProjectManagement extends STBaseContainer
         }
         $show= $get->getUrlParamValue("show");
         if( $projectID > 0 &&
-            isset($this->accessableProjects[$projectID]) &&
+            $this->isProjectAvailable($projectID) &&
             (   !isset($show) ||
                 $show == "frame"   )                            )
         {
@@ -260,7 +301,7 @@ class STUserProjectManagement extends STBaseContainer
             $this->availableSite['show']= "list";
         elseif(isset($show))
             $this->availableSite['show']= $show;
-        elseif( !isset($this->accessableProjects[$projectID]))
+        elseif( !$this->isProjectAvailable($projectID) )
         {// user has no access to project, so show login
             $this->availableSite['show']= "list";
             $this->availableSite['access']= false;
@@ -270,31 +311,29 @@ class STUserProjectManagement extends STBaseContainer
         $this->availableSite['error']= $error;
         return $this->availableSite;
     }
+    private function isProjectAvailable(int $projectID) : bool
+    {
+        foreach($this->accessableProjects as $project)
+        {
+            if($project['ID'] === $projectID)
+                return true;
+        }
+        return false;
+    }
     public function addObj(&$tag, $showWarning = false)
     {
         $this->addedContent[]= $tag;
     }
-    protected function getProjectLink(int $projectID) : string
-    {
-        $get= new STQueryString();
-        $debug= $get->getUrlParamValue("debug");
-        $preg= preg_split("/\?/", $this->accessableProjects[$projectID]['Path']);
-        $projectAddress= $preg[0];        
-        if(preg_match("/^\//", $projectAddress))
-            $projectAddress= $this->prefixPath.$projectAddress;
-        $projectQueryString= null;
-        if(isset($preg[1]))
-            $projectQueryString= $preg[1];
-        $projectQuery= new STQueryString($projectQueryString);
-        if(isset($debug))
-            $projectQuery->update("debug=$debug");
-        $projectQuery->delete("ProjectID");
-        $projectAddress.= $projectQuery->getUrlParamString();
-        return $projectAddress;
-    }
     public function execute(&$externSideCreator, $onError)
     {
-        STBaseContainer::execute($externSideCreator, $onError);  
+        $this->createMessageContent();
+        $message= $this->getMessageContent("LoginMaskDescription");
+        if(!isset($this->accessibilityProjectString))
+            $this->setAccessibilityProjectString($this->getMessageContent("AccessibilityProjectString"));
+
+        STObjectContainer::execute($externSideCreator, $onError);
+
+  
         $available= $this->showAvailableSite();
         if( STCheck::isDebug() &&
             (   STCheck::isDebug("user") ||
@@ -307,52 +346,6 @@ class STUserProjectManagement extends STBaseContainer
             st_print_r($available,1, $space);
         }
         
-        if( STCheck::isDebug() &&
-            $available['show'] == "frame"   )
-        {
-            $msg[]= "by output some text before FRAME, HTML FRAME does not work!";
-            $msg[]= "so show available navigation not frame";
-            STCheck::write($msg[0]);
-            $space= STCheck::write($msg[1]) +86;
-            echo "<br>";
-            st_print_r($available, 1, $space);
-            $div= new DivTag();
-                $h1= new H1Tag();
-                    $h1->add("Project: ");
-                    $a= new ATag();
-                        $projectAdr= $this->getProjectLink($available['project']);
-                        $a->href($projectAdr);
-                        $a->add($projectAdr);
-                    $h1->add($a);
-                $div->add($h1);
-            $div->display();
-            $available['show']= "navigation";
-        }
-        if($available['show'] == "frame")
-        {
-            if(isset($this->image['nav']['height']))
-                $firstFrameHeight= $this->image['nav']['height']+5;
-            elseif(isset($this->image['logo']['height']))
-                $firstFrameHeight= $this->image['logo']['height']/2+5;
-            else
-                $firstFrameHeight= 70;
-            $frame= new STFrameContainer();
-            $frame->framesetRows("$firstFrameHeight,*");
-            $frame->setFramePath("?show=navigation&ProjectID=".$available['project']);
-            $frame->setFramePath($this->getProjectLink($available['project']));
-            $result= $frame->execute($externSideCreator, $onError);
-            
-            $this->tag= "frameset";
-            $this->class("STFrame");
-            foreach($frame->inherit as $tag)
-            {
-                STBaseContainer::append($tag);
-            }
-            foreach($frame->aNames as $attribute => $value)
-                $this->insertAttribute($attribute, $value);
-            return $result;
-        }
-        //st_print_r($available);
         $get= new STQueryString();
         $user= STSession::instance();
         if($available['show'] == "list")
@@ -377,7 +370,8 @@ class STUserProjectManagement extends STBaseContainer
                             else
                                 $query= "?".$userQuery;
                         }
-                        $a->href("index.php".$query);
+                        $entryPoint= $externSideCreator->getLoginEntryPointUrl();
+                        $a->href($entryPoint.$query);
                         $a->target("_top");
                         $img= new ImageTag();
                             $img->src($this->image['logo']['img']);
@@ -387,10 +381,11 @@ class STUserProjectManagement extends STBaseContainer
                             $img->alt($this->image['logo']['alt']);
                         $a->add($img);
                     $table->add($a);
-                    if(isset($this->image['logo']['banner']))
+                    if(isset($this->image['logo']['background']))
                     {
-                        $table->columnBackground($this->image['logo']['banner']);
-                        $table->columnHeight($this->image['logo']['height']);
+                        $table->columnBackground($this->image['logo']['background']); 
+                        if(isset($this->image['logo']['height']))                       
+                            $table->columnHeight($this->image['logo']['height']);
                     }
                     if($user->isLoggedIn())
                     {
@@ -406,10 +401,12 @@ class STUserProjectManagement extends STBaseContainer
                                 $b->add("&nbsp;&nbsp;");
                             $div->add($b);
                             $table->add($div);
-                        if(isset($this->image['logo']['banner']))
+                        if(isset($this->image['logo']['background']))
                         {
-                            $table->columnBackground($this->image['logo']['banner']);
-                            $table->columnHeight($this->image['logo']['height']);
+                            $table->columnBackground($this->image['logo']['background']);
+                            if(isset($this->image['logo']['height']))
+                                $table->columnHeight($this->image['logo']['height']);
+
                         }
                         //$table->width("100%");
                         $table->columnAlign("right");
@@ -441,7 +438,8 @@ class STUserProjectManagement extends STBaseContainer
                 $table->cellspacing(0);
                 $table->width("100%");  
                 $a= new ATag();
-                    $a->href("index.php".$get->getUrlParamString());
+                    $entryPoint= $externSideCreator->getLoginEntryPointUrl();
+                    $a->href($entryPoint.$get->getUrlParamString());
                     $a->target("_top");
                     $img= new ImageTag();
                         if(isset($logo['img'])) 
@@ -454,13 +452,15 @@ class STUserProjectManagement extends STBaseContainer
                         $img->alt($logo['alt']);
                     $a->add($img);
                 $table->add($a);
-                if(isset($logo['banner']))
+                if(isset($logo['background']))
                 {
                     //st_print_r($logo);
-                    $table->columnBackground($logo['banner']);
-                    $table->columnHeight($logo['height']);
+                    $table->columnBackground($logo['background']);
+                    if(isset($logo['height']))
+                        $table->columnStyle("background-size: ".$logo['height']);
+                        //  $table->columnHeight($logo['height']);
                 }
-                $navSpan= new SpanTag();
+                $navSpan= new SpanTag("smallBoldFont");
                     $script= new JavaScriptTag();
                         $function= new jsFunction("myOnSubmit", "myTarget");
                             $function->add("top.location.href = myTarget;");
@@ -474,15 +474,19 @@ class STUserProjectManagement extends STBaseContainer
                         $select= new SelectTag();
                             $select->onChange("top.location.href=this.value;");
                             $select->name("mySelect");
-                        foreach( $this->accessableProjects as $projectID => $project )
+                        foreach( $this->accessableProjects as $project )
                         {
-                            $option= new OptionTag();
-                                $get->update("ProjectID=$projectID");
-                                $option->value($get->getUrlParamString());
-                                $option->add($project['Name']);
-                            if($projectID == $available['project'])
-                                $option->selected();
-                            $select->add($option);
+                            if($project['Target'] == "SELF")
+                            {
+                                $projectID= $project['ID'];
+                                $option= new OptionTag();
+                                    $get->update("ProjectID=$projectID");
+                                    $option->value($get->getUrlParamString());
+                                    $option->add($project['Name']);
+                                if($projectID == $available['project'])
+                                    $option->selected();
+                                $select->add($option);
+                            }
                         }
                         $form->add($select);
                         $input= new InputTag("button");
@@ -491,15 +495,17 @@ class STUserProjectManagement extends STBaseContainer
                         $form->add($input);
                     $navSpan->add($form);
                 $table->add($navSpan);
-                if(isset($logo['banner']))
+                if(isset($logo['background']))
                 {
-                    $table->columnBackground($logo['banner']);
-                    $table->columnHeight($logo['height']);
+                    $table->columnBackground($logo['background']);
+                    if(isset($logo['height']))
+                        $table->columnStyle("background-size: ".$logo['height']);
+                        //$table->columnHeight($logo['height']);
                 }
                 $table->columnWidth("100%");
                 $table->columnAlign("center");
                 $table->columnClass("fontSmaller");
-                $table->columnStyle("font-weight:bold;");
+                //$table->columnStyle("font-weight:bold;");
                 $table->columnNowrap();
                 $div= new DivTag();
                 if($available['LoggedIn'])
@@ -533,7 +539,7 @@ class STUserProjectManagement extends STBaseContainer
         if( $available['show'] != "navigation" &&
             (   !$available['LoggedIn'] ||
                 (   $available['project'] != 0 &&
-                    !isset($this->accessableProjects[$available['project']])    )   )   )
+                    !$this->isProjectAvailable($available['project'])    )   )   )
         {
             $this->getLoginMask($available);  
             $this->appendObj($this->loginMask);
@@ -627,9 +633,7 @@ class STUserProjectManagement extends STBaseContainer
                     $action= $Get->getStringVars();
                     $divx->add("INPUT of form-tag sending to address <b>'$action'</b><br />");
                 }
-                    $maskDescription= $this->loginMaskDescription;
-                    if($maskDescription == "")
-                        $maskDescription= $this->getMessageContent("loginMaskDescription");
+                    $maskDescription= $this->getMessageContent("LoginMaskDescription");
                     $divx->add($maskDescription);
                 $layout->add($divx);
                 $layout->colspan(3);
@@ -773,11 +777,11 @@ class STUserProjectManagement extends STBaseContainer
                 $table->cellspacing("2px");
                 $table->add("&#160");
                 $table->columnWidth("20%");
-                $p= new PTag();
+                $p= new PTag("AccessibilityProjects");
                     $p->add(br());
                     $accessibilityString= $this->accessibilityString;
                     if($accessibilityString == "")
-                        $accessibilityString= $this->getMessageContent("accessibilityString");
+                        $accessibilityString= $this->getMessageContent("AccessibilityProjectString");
                     $p->add($accessibilityString);
                 $table->add($p);
                 $table->colspan(2);
@@ -788,16 +792,23 @@ class STUserProjectManagement extends STBaseContainer
                 $table->columnWidth("10%");
                 $divo= new DivTag();
                     $lu= new  st_tableTag("ListTable");
-                    foreach( $this->accessableProjects as $projectID => $project )
+                    foreach( $this->accessableProjects as $project )
                     {
                         $divI= new DivTag();
                             $a= new ATag();
+                            if( $project['Target'] == "SELF" ||
+                                $project['Path'] == "X"         )
+                            {
                                 $href= "?ProjectID=";
-                                $href.= urlencode( $projectID );
+                                $href.= urlencode( $project['ID'] );
                                 $session= STSession::getSessionUrlParameter();
                                 if($session != "")
                                     $href.= "&".$session;
+                            }else
+                                $href= $project['Path'];
+
                                 $a->href($href);
+                                $a->target("_".strtolower($project['Target']));
                                 $a->style("font-size:12pt;font-weight=bold;");
                                 $a->add($project[ 'Name' ]);
                             $divI->add($a);
