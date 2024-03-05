@@ -136,8 +136,6 @@ class STUserManagement extends STObjectContainer
 		$project->select("Path", "URL");
 		$project->preSelect("DateCreation", "sysdate()");
 		$project->orderBy("Name");
-		$statement= $project->getStatement();
-		//$project->align("ID", "right");
 		
 		if($action==STLIST)
 		{
