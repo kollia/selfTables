@@ -740,11 +740,6 @@ abstract class STBaseContainer extends BodyTag implements STContainerTempl
 					return $container;
 			}
 		}
-		if($bAllowNullObj)
-		{
-			$null= null;
-			return $null;	
-		}
 		if(	(	!isset($className) ||
 				!$className				) &&
 			isset($global_array_exist_stobjectcontainer_with_classname[$containerName]["class"])	)
@@ -809,6 +804,11 @@ abstract class STBaseContainer extends BodyTag implements STContainerTempl
 			return $containerObj;
 		}
 
+		if($bAllowNullObj)
+		{
+			$null= null;
+			return $null;	
+		}
 		$firstDefaultContainer= null;
 		if(isset($global_array_all_exist_stobjectcontainers[$global_first_objectContainerName]))
 		{
@@ -1900,18 +1900,21 @@ abstract class STBaseContainer extends BodyTag implements STContainerTempl
 				Tag::echoDebug("access", "no cluster for this container be set, so return true for having access");
 				return true;
 			}
-			if(!STSession::generatedSession())
+			if(!STSession::sessionGenerated())
 			{
 				Tag::echoDebug("access", "no session generated, so return true for having access");
 				return true;
 			}
 			$instance= &STSession::instance();
-			foreach($this->aAccessClusters as $cluster)
+			foreach($this->aAccessClusters as $action => $clusters)
 			{
-				if($instance->hasAccess($cluster["cluster"], $cluster["info"], $cluster["customID"], $makeError))
+				foreach($clusters as $cluster)
 				{
-					Tag::echoDebug("access", "user has <b>access</b> to this container");
-					return true;
+					if($instance->hasAccess($cluster["cluster"], $cluster["info"], $cluster["customID"], $makeError))
+					{
+						STCheck::echoDebug("access", "user has $action-<b>access</b> to this container");
+						return true;
+					}
 				}
 			}
 			Tag::echoDebug("access", "user has <b>no access</b> to this container");
