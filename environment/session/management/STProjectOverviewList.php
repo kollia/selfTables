@@ -447,7 +447,7 @@ class STProjectOverviewList extends STObjectContainer
                 $logo= array();
             
             $table= new st_tableTag();
-                $table->border(1);
+                $table->border(0);
                 $table->cellpadding(0);
                 $table->cellspacing(0);
                 $table->width("100%");  
