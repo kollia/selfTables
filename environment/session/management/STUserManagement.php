@@ -75,11 +75,8 @@ function actionCallback(&$callbackObject, $columnName, $rownum)
 
 class STUserManagement extends STObjectContainer
 {
-	function __construct($name, &$container, $bInstall= false)
+	function __construct(string $name, STObjectContainer &$container)
 	{
-		STCheck::param($name, 0, "string");
-		STCheck::param($container, 1, "STObjectContainer");	
-		
 		STObjectContainer::__construct($name, $container);
 	}
 	protected function create()
@@ -139,6 +136,7 @@ class STUserManagement extends STObjectContainer
 		$project->select("Path", "URL");
 		$project->preSelect("DateCreation", "sysdate()");
 		$project->orderBy("Name");
+		$statement= $project->getStatement();
 		//$project->align("ID", "right");
 		
 		if($action==STLIST)

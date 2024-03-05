@@ -103,7 +103,7 @@ class STSession
 
 		return $global_selftable_session_class_instance[0];
 	}
-	static function sessionGenerated()
+	public static function sessionGenerated()
 	{
 		/**
 		 * when this function making problems!
