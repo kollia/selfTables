@@ -135,6 +135,7 @@ class STProjectUserSiteCreator extends STUserSiteCreator
             if(!isset($loginEntryUrl))
                 $loginEntryUrl= $HTTP_SERVER_VARS["SCRIPT_NAME"];
             $this->sLoginEntryPointUrl= $loginEntryUrl;
+            $instance->startPage($loginEntryUrl);
 
             // set first dummy-container to check whether user is logged-in
             $bLoggedIn= false;
