@@ -383,54 +383,84 @@ class STProjectUserSiteCreator extends STUserSiteCreator
     {
         $this->prefixPath= $path;
     }
-    public function setOverviewLogo(string $address, int $width= null, int $height= 140, string $alt= "DB selftables Homepage")
+    /**
+     * Display an logo in the left upper corner.<br />
+     * For the ProjectOverview-, Login- and Registration- container.
+     * 
+     * @param string $address image file
+     * @param int $width image width (default: auto)
+     * @param int $height image height (default: 140px)
+     * @param string $alt alternative text for image (default: 'DB selfTables Homepage')
+     */
+    public function setOverviewLogo(string $address, int $width= null, int $height= 140, string $alt= "DB selfTables Homepage")
     {
-        $this->image['logo']['img']= $address;
-        $this->image['logo']['height']= $height;
-        $this->image['logo']['width']= $width;
-        $this->image['logo']['alt']= $alt;
         $containerName= $this->tableContainer->getName();
         if( $containerName == $this->aProjects['ProjectOverview']['container'] ||
             $containerName == $this->aProjects['Login']['container'] ||
-            $containerName == $this->aProjects['Registration']['container'] ||
-            $containerName == $this->aProjects['Navigation']['container']           )
+            $containerName == $this->aProjects['Registration']['container']         )
         {
             $this->tableContainer->setOverviewLogo($address, $width, $height, $alt);
         }
     }
-    public function setOverviewBackground(string $address, $wrap= true)
+    /**
+     * Set image as background into body tag.<br />
+     * For the ProjectOverview-, Login- and Registration- container.
+     * 
+     * @param string $address image file
+     * @param bool $repeat whether image should repeat (default: false)
+     */
+    public function setOverviewBackground(string $address, bool $repeat= false)
     {
-        $this->image['logo']['background']= $address;
-        $this->image['logo']['backgroundWrap']= $wrap;
         $containerName= $this->tableContainer->getName();
         if( $containerName == $this->aProjects['ProjectOverview']['container'] ||
             $containerName == $this->aProjects['Login']['container'] ||
-            $containerName == $this->aProjects['Registration']['container'] ||
-            $containerName == $this->aProjects['Navigation']['container']           )
+            $containerName == $this->aProjects['Registration']['container']         )
         {
-            $this->tableContainer->setOverviewBackground($address, $wrap);
+            $this->tableContainer->setOverviewBackground($address, $repeat);
         }
     }
+    /**
+     * Set image as background with same height size after the logo.<br />
+     * For the ProjectOverview-, Login- and Registration- container.
+     * 
+     * @param string $address image file
+     * @param bool $repeat whether image should repeat (default: true)
+     */
+    public function setOverviewBannerBackground(string $address, bool $repeat= true)
+    {
+        $containerName= $this->tableContainer->getName();
+        if( $containerName == $this->aProjects['ProjectOverview']['container'] ||
+            $containerName == $this->aProjects['Login']['container'] ||
+            $containerName == $this->aProjects['Registration']['container']         )
+        {
+            $this->tableContainer->setOverviewBannerBackground($address, $repeat);
+        }
+    }
+    /**
+     * Display an logo in the left upper corner.<br />
+     * Only for the navigation frame.
+     * 
+     * @param string $address image file
+     * @param int $width image width (default: auto)
+     * @param int $height image height (default: 140px)
+     * @param string $alt alternative text for image (default: 'DB selfTables Homepage')
+     */
     public function setNavigationLogo(string $address, int $width= null, int $height= 70, string $alt= null)
     {
-        $this->image['nav']['img']= $address;
-        $this->image['nav']['height']= $height;
-        $this->image['nav']['width']= $width;
-        if(isset($alt))
-            $this->image['nav']['alt']= $alt;
-        else if(isset($this->image['logo']['alt']))
-            $this->image['nav']['alt']= $this->image['logo']['alt'];
-
         if($this->tableContainer->getName() == $this->aProjects['Navigation']['container'])
             $this->tableContainer->setNavigationLogo($address, $width, $height, $alt);
     }
-    public function setNavigationBackground(string $address, $wrap= true)
+    /**
+     * Set image as background with same height size after the logo.<br />
+     * Only for the navigation frame.
+     * 
+     * @param string $address image file
+     * @param bool $repeat whether image should repeat (default: true)
+     */
+    public function setNavigationBannerBackground(string $address, $repeat= true)
     {
-        $this->image['nav']['background']= $address;
-        $this->image['nav']['backgroundWrap']= $wrap;
-        
         if($this->tableContainer->getName() == $this->aProjects['Navigation']['container'])
-            $this->tableContainer->setNavigationBackground($address, $wrap);
+            $this->tableContainer->setNavigationBannerBackground($address, $repeat);
     }
     public function install()
     {

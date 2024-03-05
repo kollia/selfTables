@@ -11,6 +11,10 @@ class BodyTag extends Tag
 		{
 			$this->insertAttribute("bgcolor", $value);
 		}
+		function style($value)
+		{
+			$this->insertAttribute("style", $value);
+		}
 }
 
 ?>

@@ -82,15 +82,22 @@ class STProjectOverviewList extends STObjectContainer
     }
     public function setOverviewLogo(string $address, int $width= null, int $height= 140, string $alt= "DB selftables Homepage")
     {
-        $this->image['logo']['img']= $address;
-        $this->image['logo']['height']= $height;
-        $this->image['logo']['width']= $width;
-        $this->image['logo']['alt']= $alt;
+        $this->image['overview']['img']= $address;
+        $this->image['overview']['height']= $height;
+        $this->image['overview']['width']= $width;
+        $this->image['overview']['alt']= $alt;
     }
-    public function setOverviewBackground(string $address, $wrap= true)
+    public function setOverviewBackground(string $address, $repeat= true)
     {
-        $this->image['logo']['background']= $address;
-        $this->image['logo']['backgroundWrap']= $wrap;
+        $this->image['overview']['background']= $address;
+        $this->image['overview']['background-repeat']= $repeat;
+        $this->image['overview']['background-body']= true;
+    }
+    public function setOverviewBannerBackground(string $address, $repeat= true)
+    {
+        $this->image['overview']['background']= $address;
+        $this->image['overview']['background-repeat']= $repeat;
+        $this->image['overview']['background-body']= false;
     }
     public function setNavigationLogo(string $address, int $width= null, int $height= 70, string $alt= null)
     {
@@ -99,11 +106,13 @@ class STProjectOverviewList extends STObjectContainer
         $this->image['nav']['width']= $width;
         if(isset($alt))
             $this->image['nav']['alt']= $alt;
+        else if(isset($this->image['overview']['alt']))
+            $this->image['nav']['alt']= $this->image['overview']['alt'];
     }
-    public function setNavigationBackground(string $address, $wrap= true)
+    public function setNavigationBannerBackground(string $address, $repeat= true)
     {
         $this->image['nav']['background']= $address;
-        $this->image['nav']['backgroundWrap']= $wrap;
+        $this->image['nav']['background-repeat']= $repeat;
     }
     protected function create()
     {
@@ -350,7 +359,7 @@ class STProjectOverviewList extends STObjectContainer
         $user= STSession::instance();
         if($available['show'] == "list")
         {
-            if(isset($this->image['logo']['img']))
+            if(isset($this->image['overview']['img']))
             {
                 $table= new st_tableTag();
                     $table->border(0);
@@ -374,18 +383,30 @@ class STProjectOverviewList extends STObjectContainer
                         $a->href($entryPoint.$query);
                         $a->target("_top");
                         $img= new ImageTag();
-                            $img->src($this->image['logo']['img']);
-                            $img->height($this->image['logo']['height']);
-                            $img->width($this->image['logo']['width']);
+                            $img->src($this->image['overview']['img']);
+                            $img->height($this->image['overview']['height']);
+                            $img->width($this->image['overview']['width']);
                             $img->border(0);
-                            $img->alt($this->image['logo']['alt']);
+                            $img->alt($this->image['overview']['alt']);
                         $a->add($img);
                     $table->add($a);
-                    if(isset($this->image['logo']['background']))
+                    if(isset($this->image['overview']['background']))
                     {
-                        $table->columnBackground($this->image['logo']['background']); 
-                        if(isset($this->image['logo']['height']))                       
-                            $table->columnHeight($this->image['logo']['height']);
+                        $onBody= false;
+                        if($this->image['overview']['background-body'] == true)
+                            $onBody= true;
+
+                        $styleString= "background-image: url('{$this->image['overview']['background']}');";
+                        if(isset($this->image['overview']['height']))
+                        {
+                            $styleString.= " background-size: auto {$this->image['overview']['height']};";
+                            if($this->image['overview']['background-repeat'] == false)
+                                $styleString.= " background-repeat: no-repeat;";
+                        }
+                        if($onBody)
+                            $this->style($styleString);
+                        else
+                            $table->columnStyle($styleString);
                     }
                     if($user->isLoggedIn())
                     {
@@ -401,13 +422,8 @@ class STProjectOverviewList extends STObjectContainer
                                 $b->add("&nbsp;&nbsp;");
                             $div->add($b);
                             $table->add($div);
-                        if(isset($this->image['logo']['background']))
-                        {
-                            $table->columnBackground($this->image['logo']['background']);
-                            if(isset($this->image['logo']['height']))
-                                $table->columnHeight($this->image['logo']['height']);
-
-                        }
+                        if(isset($this->image['overview']['background']))
+                            $table->columnStyle($styleString);
                         //$table->width("100%");
                         $table->columnAlign("right");
                     }
@@ -421,19 +437,17 @@ class STProjectOverviewList extends STObjectContainer
             //STCheck::debug(TRUE);
             if(isset($this->image['nav']))
                 $logo= $this->image['nav'];
-            elseif(isset($this->image['logo']))
+            elseif(isset($this->image['overview']))
             {
-                $logo= $this->image['logo'];
+                $logo= $this->image['overview'];
                 if(isset($logo['width']))
                     $logo['width']= $logo['width']/2;
                 $logo['height']= $logo['height']/2;
             }else
                 $logo= array();
-            if(!isset($logo['alt']))
-                $logo['alt']= "DB selftables Homepage";
             
             $table= new st_tableTag();
-                $table->border(0);
+                $table->border(1);
                 $table->cellpadding(0);
                 $table->cellspacing(0);
                 $table->width("100%");  
@@ -452,13 +466,17 @@ class STProjectOverviewList extends STObjectContainer
                         $img->alt($logo['alt']);
                     $a->add($img);
                 $table->add($a);
+                $styleString= "";
                 if(isset($logo['background']))
                 {
-                    //st_print_r($logo);
-                    $table->columnBackground($logo['background']);
+                    $styleString= "background-image: url('{$logo['background']}');";
                     if(isset($logo['height']))
-                        $table->columnStyle("background-size: ".$logo['height']);
-                        //  $table->columnHeight($logo['height']);
+                    {
+                        $styleString.= " background-size: auto {$logo['height']};";
+                        if($logo['background-repeat'] == false)
+                            $styleString.= " background-repeat: no-repeat;";
+                    }
+                    $table->columnStyle($styleString);
                 }
                 $navSpan= new SpanTag("smallBoldFont");
                     $script= new JavaScriptTag();
@@ -496,12 +514,7 @@ class STProjectOverviewList extends STObjectContainer
                     $navSpan->add($form);
                 $table->add($navSpan);
                 if(isset($logo['background']))
-                {
-                    $table->columnBackground($logo['background']);
-                    if(isset($logo['height']))
-                        $table->columnStyle("background-size: ".$logo['height']);
-                        //$table->columnHeight($logo['height']);
-                }
+                        $table->columnStyle($styleString);
                 $table->columnWidth("100%");
                 $table->columnAlign("center");
                 $table->columnClass("fontSmaller");

@@ -670,11 +670,58 @@ class STQueryString
 				$aktContainer= STBaseContainer::getContainer($containerName);
 			}
 		}
-		function getValue($valueName)
+		function getValue(string $valueName)
 		{
-			if(isset($this->param_vars[$valueName]))
-				return $this->param_vars[$valueName];
-			return NULL;
+			STCheck::deprecated("STQueryString::getParameterValue()");
+			return $this->getParameterValue($valueName);
+		}
+		/**
+		 * whether the parameter(s) exist in the query
+		 * 
+		 * @param string $arg one ore more parameter strings, like for an array
+		 * @return string whether exist
+		 */
+		public function existParameter(string|array $arg) : bool
+		{
+			if(!is_array($arg))
+				$args= func_get_args();
+			else
+				$args= $arg;
+			return $this->recursiveParameter($this->param_vars, $args);
+		}
+		/**
+		 * return value from query, instead of given parameter(s)
+		 * 
+		 * @param string $arg one ore more parameter strings, like for an array
+		 * @return string value of parameter(s)
+		 */
+		public function getParameterValue(string|array $arg) : string
+		{
+			if(!is_array($arg))
+				$args= func_get_args();
+			else
+				$args= $arg;
+			$value= null;
+			$this->recursiveParameter($this->param_vars, $args, $value);
+			return $value;
+
+		}
+		private function recursiveParameter(array $parameter, array $args, string &$value= null) : bool
+		{
+			if(	!isset($parameter) ||
+				!count($parameter)		)
+			{
+				return false;
+			}
+			$first= array_shift($args);
+			if(isset($parameter[$first]))
+			{
+				if(is_array($parameter[$first]))
+					return $this->recursiveParameter($parameter. $args, $value);
+				$value= $parameter[$first];
+				return true;
+			}
+			return false;
 		}
 		/**
 		 * return limitation of table
