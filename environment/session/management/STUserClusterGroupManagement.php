@@ -65,7 +65,7 @@ function disableCallback(&$callbackObject, $columnName, $rownum)
 {
     $session= STUSerSession::instance();
     $domain= $session->getCustomDomain();
-    if( $callbackObject->sqlResult[$rownum]["domain"] != $domain['ID']              )
+    if( $callbackObject->sqlResult[$rownum]["domain"] != $domain['Name'] )
     {
         $callbackObject->disabled($columnName);
     }
