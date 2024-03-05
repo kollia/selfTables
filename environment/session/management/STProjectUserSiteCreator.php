@@ -300,7 +300,7 @@ class STProjectUserSiteCreator extends STUserSiteCreator
     {
         global $_stum_installcontainer;
         global $_stuserclustergroupmanagement;
-        global $_stclustergroupassignement;
+        global $_stclustergroupassignment;
         foreach($this->aProjects as &$projectObj)
         {
             if( isset($projectObj['source']) &&
@@ -327,7 +327,7 @@ class STProjectUserSiteCreator extends STUserSiteCreator
         }
         $usermanagementDb= $this->aProjects['UserManagement']['container'];
         STObjectContainer::predefine("UserClusterGroupManagement", "STUserClusterGroupManagement", $usermanagementDb, $_stuserclustergroupmanagement);
-        STObjectContainer::predefine("ClusterGroupAssignment", "STClusterGroupAssignment", $usermanagementDb, $_stclustergroupassignement);
+        STObjectContainer::predefine("ClusterGroupAssignment", "STClusterGroupAssignment", $usermanagementDb, $_stclustergroupassignment);
 
         // do not need register projects
         // because registerProject() only store
