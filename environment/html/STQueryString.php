@@ -510,7 +510,7 @@ class STQueryString
 		public function getUrlParamValue(string $parameter)
 		{
 			STCheck::deprecated("STQueryString::getParameterValue()");
-			return $this->getParameterValue($valueName);
+			return $this->getParameterValue($parameter);
 		}
 		private function getArrayValue(/*array*/$param_array, /*array*/$aQuery)
 		{
