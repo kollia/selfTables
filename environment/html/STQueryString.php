@@ -509,9 +509,8 @@ class STQueryString
 		}
 		public function getUrlParamValue(string $parameter)
 		{
-		    if(isset($this->param_vars[$parameter]))
-		        return $this->param_vars[$parameter];
-		    return null;
+			STCheck::deprecated("STQueryString::getParameterValue()");
+			return $this->getParameterValue($valueName);
 		}
 		private function getArrayValue(/*array*/$param_array, /*array*/$aQuery)
 		{
@@ -695,7 +694,7 @@ class STQueryString
 		 * @param string $arg one ore more parameter strings, like for an array
 		 * @return string value of parameter(s)
 		 */
-		public function getParameterValue(string|array $arg) : string
+		public function getParameterValue(string|array $arg) : string|null
 		{
 			if(!is_array($arg))
 				$args= func_get_args();
