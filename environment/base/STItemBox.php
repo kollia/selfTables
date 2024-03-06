@@ -1102,7 +1102,7 @@ class STItemBox extends STBaseBox
 							if(preg_match("/enum/", $field["flags"]))
 							{//wenn Feld einen Enumbesitzt checkbox od. toDo: radiobutton erzeugen
 								$input->name($postColumn);
-								$aEnums= $this->countingEnums($field["name"]);
+								$aEnums= $this->countingEnums($field);
 								if(	isset($this->enumField[$field["name"]]) &&
 									$this->enumField[$field["name"]] == "pull_down"	)
 								{
@@ -1182,8 +1182,6 @@ class STItemBox extends STBaseBox
 								 // Der erste Eintrag im Enum wird als nicht angehakt bezeichnet
 								 	$bSingleEnum= true;
 									$input->type("checkbox");
-									echo __FILE__.__LINE__."<br>";
-									st_print_r($aEnums);
 									$input->value($aEnums[2]);
 									if($columnValue==$aEnums[2])
 										$input->checked();
@@ -1599,11 +1597,13 @@ class STItemBox extends STBaseBox
         }
         return array();
 	}
-	function countingEnums($columnName)
+	function countingEnums(array $field)
 	{
-		$aEnum= $this->getEnums($columnName);
-		$aRv[]= count($aEnum) + 1;
-		$aRv= array_merge($aRv, $aEnum);
+		$nEnums= count($field['enums']);
+		if(!preg_match("/not_null/", $field["flags"]))
+			$nEnums++;
+		$aRv[]= $nEnums;
+		$aRv= array_merge($aRv, $field['enums']);
 		return $aRv;
 	}
 	function columns($columns)
