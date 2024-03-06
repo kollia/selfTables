@@ -269,6 +269,7 @@ class STProjectUserSiteCreator extends STUserSiteCreator
         $selector= new STDbSelector($project);
         $selector->select("Project", "ID", "ID");
         $selector->select("Project", "Name", "Name");
+        $selector->allowQueryLimitation(false);
         if(is_numeric($idOrDbName))
             $selector->where("ID=$idOrDbName");
         else
