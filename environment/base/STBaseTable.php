@@ -50,7 +50,8 @@ class STBaseTable
 	var	$abOrigChoice= array();
 	var	$show= array();
 	/**
-	 * specific GUI display for enums
+	 * Specific GUI display for enums.<br />
+	 * Whether should display as pop-up menu or radio buttons
 	 * @var array
 	 */
 	protected $enumField= array();
@@ -3532,6 +3533,16 @@ class STBaseTable
 	{
 		$field= $this->findAliasOrColumn($aliasName);
 		$this->enumField[$field["column"]]= "pull_down";
+	}
+	/**
+	 * Specific GUI display for enums.<br />
+	 * Whether should display as pop-up menu or radio buttons.
+	 * 
+	 * @return array all columns with specific display mode
+	 */
+	public function getSpecificEnumFields()
+	{
+		return $this->enumField;
 	}
 	// deprecated
     function noInsert()

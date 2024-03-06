@@ -1125,7 +1125,7 @@ class STItemBox extends STBaseBox
 										$option->value("");
 										$input->add($option);
 									}
-									for($n= 1; $n<$aEnums[0]; $n++)
+									for($n= 1; $n<=$aEnums[0]; $n++)
 									{
 										$option= new OptionTag();
 										$option->add($aEnums[$n]);
@@ -1692,13 +1692,12 @@ class STItemBox extends STBaseBox
 	}
 	function table($table, $name= null)
 	{
-		STBaseBox::table($table, $name= null);
+		STBaseBox::table($table, $name);
 		if(typeof($table, "STBaseTable"))
 		{
 			// alex 08/09/2005:	onlyRadioButtons aus der Tabelle uebernehmen
 			// alex 30/10/2013: take enumField from table as onlyRadioButtons 
-			if(isset($table->enumField))
-				$this->enumField= $table->enumField;
+			$this->enumField= $table->getSpecificEnumFields();
 
             // alex 08/08/2005:	f�ge auch callbacks hinzu f�r Selects
             //					die mit popupSelect() deffiniert wurden
