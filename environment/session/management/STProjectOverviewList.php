@@ -128,6 +128,7 @@ class STProjectOverviewList extends STObjectContainer
         $selector->select("Project", "Name", "Name");
         $selector->select("Project", "sort", "sort");
         $selector->select("Project", "Path", "Path");
+        $selector->select("Project", "display", "Display");
         $selector->select("Project", "Target", "target");
         $selector->select("Project", "Description", "Description");//"Description");
         $selector->select("Project", "DateCreation", "DateCreation");
@@ -164,8 +165,11 @@ class STProjectOverviewList extends STObjectContainer
         $overviewName= $user->getDbProjectName("ProjectOverview");
         foreach( $result as $row )
         {
-            if($row['Name'] != $overviewName)
+            if( $row['Name'] != $overviewName &&
+                $row['Display'] != "DISABLED"   )
+            {
                 $sortResult[$row['ID']][]= $row;
+            }
         }
         // search for access for every project
         foreach( $sortResult as $aProject )
