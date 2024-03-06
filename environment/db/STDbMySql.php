@@ -423,7 +423,8 @@ class STDbMySql extends STDatabase
 
 		$flags= array();
 		if( !isset($this->databaseTables[$tableName][$field_offset]["Type"]) ||
-		    !preg_match("/enum\((.+)\)/i", $this->databaseTables[$tableName][$field_offset]["Type"], $flags))
+		    (	!preg_match("/enum\((.+)\)/i", $this->databaseTables[$tableName][$field_offset]["Type"], $flags) &&
+				!preg_match("/set\((.+)\)/i", $this->databaseTables[$tableName][$field_offset]["Type"], $flags)	)	)
 		{
 			return null;
 		}
