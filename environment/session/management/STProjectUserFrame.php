@@ -36,7 +36,7 @@ class STProjectUserFrame extends STFrameContainer
             $firstFrameHeight= 70;
 
         $query= new STQueryString();
-        $projectID= $query->getUrlParamValue("ProjectID");
+        $projectID= $query->getParameterValue("ProjectID");
         if(!isset($projectID))
         {
             // cannot display any projects inside the two frames

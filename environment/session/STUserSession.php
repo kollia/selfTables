@@ -244,7 +244,8 @@ class STUserSession extends STDbSession
         $dbTableDescription->uniqueKey("Project", "Name", 1);
 		$dbTableDescription->column("Project", "sort", "INT", /*null*/false);
         $dbTableDescription->column("Project", "Path", "varchar(255)", /*null*/false);
-        $dbTableDescription->column("Project", "Target", "set('blank','self','top')", /*null*/false);
+		$dbTableDescription->column("Project", "Target", "set('BLANK','SELF','TOP')", /*null*/false, /*default*/"SELF");
+        $dbTableDescription->column("Project", "display", "set('DISABLED','ENABLED')", /*null*/false, /*default*/"ENABLED");
         $dbTableDescription->column("Project", "Description", "text");
         $dbTableDescription->column("Project", "DateCreation", "datetime", /*null*/false);
  /*       $dbTableDescription->column("Project", "has_access", "varchar(255)", false);

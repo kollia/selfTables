@@ -217,12 +217,12 @@ class STDbTable extends STBaseTable
     	{
 			if(STCheck::isDebug())
 			{
-				STCheck::alert(!$this->validColumnContent($column), "STBaseTable::selectA()",
-											"column '$column not exist in table ".$this->Name.
+				STCheck::warning(!$this->validColumnContent($column), "STBaseTable::selectA()",
+											"column '$column' not exist in table ".$this->Name.
 											"(".$this->getDisplayName().")");
-			}else
-				echo "column '$column not exist in table ".$this->Name.
-											"(".$this->getDisplayName().")";
+			}//else
+			//	echo "column '$column' not exist in table ".$this->Name.
+			//								"(".$this->getDisplayName().")";
     	}
 		STBaseTable::select($column, $alias, $fillCallback, $nextLine);
 	}

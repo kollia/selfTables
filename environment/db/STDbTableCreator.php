@@ -15,14 +15,18 @@ class STDbTableCreator
         $this->db= &$database;
     	$this->sTable= $tableName;
     }
-    function column($column, $type, $null= true, $pk= false, $fkToTable= null, $toColumn= null)
+    function column(string $column, string $type, $null= true, $pk= false, $fkToTable= null, $toColumn= null)
     {
         $this->asTableColumns[$column]= array(	"type"=>	$type,
     											"null"=>	$null,
     											"pk"=>		$pk		);
-		if($fkToTable)
+		if(isset($fkToTable))
 			$this->foreignKey($column, $fkToTable, $toColumn);
     }
+	public function default(string $column, $default)
+	{
+		$this->asTableColumns[$column]["default"]= $default;	
+	}
 	/*public*/function notNull($column)
 	{
 		$this->asTableColumns[$column]["null"]= false;
@@ -101,7 +105,7 @@ class STDbTableCreator
   				$add= false;
   				foreach($this->asTableColumns as $column=>$content)
   				{
-  				    if(!$nFields[$column])
+  				    if(!isset($nFields[$column]))
 					{
     				    $this->add($column);
     					$add= true;
@@ -122,7 +126,7 @@ class STDbTableCreator
 			//	st_print_r($this->db->tables["STPartition"]->columns);
 		    $statement= "alter table ".$this->sTable." add ".$column;
 			$statement.= " ".$this->asTableColumns[$column]["type"];
-			if($this->asTableColumn[$column]["pk"])
+			if($this->asTableColumns[$column]["pk"])
 			{
 			    $statement.= " PRIMARY KEY";
 				$this->db->setInTableColumnNewFlags($this->sTable, $column, "PRIMARY KEY");
@@ -132,12 +136,20 @@ class STDbTableCreator
 			    $statement.= " NOT NULL";
 				$this->db->setInTableColumnNewFlags($this->sTable, $column, "NOT NULL");
 			}
-			if($this->asTableColumns[$column]["auto_increment"])
+			if(isset($this->asTableColumns[$column]["auto_increment"]))
 			{
 			    $statement.= " auto_increment";
 				$this->db->setInTableColumnNewFlags($this->sTable, $column, "auto_increment");
 			}
-			$this->db->fetch($statement);
+			if(isset($this->asTableColumns[$column]["default"]))
+			{
+				$statement.= " DEFAULT ";
+				if($this->asTableColumns[$column]["default"] === null)
+					$statement.= "null";
+				else
+					$statement.= "'{$this->asTableColumns[$column]["default"]}'";
+			}
+			$this->db->query($statement);
 		}
 		function create()
 		{
@@ -174,6 +186,14 @@ class STDbTableCreator
 				    if(isset($content["udx"]["length"]))
 				        $aIdx['legth']= $content["udx"]["length"];
 					$keys["udx"][$content["udx"]["name"]][]= $aUdx;
+				}
+				if(isset($content["default"]))
+				{
+					$statement.= " DEFAULT ";
+					if($content["default"] === null)
+						$statement.= "null";
+					else
+						$statement.= "'{$content["default"]}'";
 				}
   				$statement.= ",";
 				if(STCheck::isDebug("tableCreator"))
@@ -247,7 +267,7 @@ class STDbTableCreator
 			else
 				$nMinus= 1;
     		$statement= substr($statement, 0, strlen($statement)-$nMinus);
-    		$statement.= ")";//echo $statement."<br />";
+    		$statement.= ")";
 			if($this->db->saveForeignKeys())
 				$statement.= " ENGINE=InnoDb";
 			if(!STCheck::isDebug("db.statement"))

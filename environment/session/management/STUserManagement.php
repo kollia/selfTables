@@ -132,6 +132,7 @@ class STUserManagement extends STObjectContainer
 		$project->select("Name", "Project");
 		$project->select("Description", "Description");
 		$project->select("ID", "ID");
+		$project->select("display", "Display");
 		$project->align("ID", "center");
 		$project->select("Path", "URL");
 		$project->preSelect("DateCreation", "sysdate()");

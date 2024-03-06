@@ -260,29 +260,22 @@ class STDbTableDescriptions
 		foreach($this->aExistTables as $name=>$table)
 		    $this->setPrefixToTable($prefix, $name);
 	}
-	/*protected*/function column(string $tableName, string $column, string $type, bool $null= true)
+	public function column(string $tableName, string $column, string $type, bool $null= true, $default= null)
 	{
 		if($this->nLowerCaseTableNames == 1)
 			$tableName= strtolower($tableName);
 	    STCheck::is_warning(!$this->aExistTables[$tableName], "STDbTableContainer::column()", "table $tableName does not exist");
 		$params= func_num_args();
-		STCheck::lastParam(4, $params);
+		STCheck::lastParam(5, $params);
 
 		$type= strtoupper($type);
 	    $this->asTableColumns[$tableName][$column]= array(	"column"=>	$column,
 															"type"=>	  $type,
 															"null"=>		$null	);
+		if(isset($default))
+			$this->asTableColumns[$tableName][$column]["default"]= $default;
 	}
-	/*public*/function notNull(string $tableName, string $column)
-	{
-		if($this->nLowerCaseTableNames == 1)
-			$tableName= strtolower($tableName);
-		STCheck::is_warning(!$this->aExistTables[$tableName], "STDbTableContainer::notNull()", "table $tableName does not exist");
-		Tag::alert(!$this->asTableColumns[$tableName][$column], "STDbTableContainer::notNull()", "column $column does not exist in table $tableName");
-
-		$this->asTableColumns[$tableName][$column]["null"]= false;
-	}
-	/*public*/function primaryKey(string $tableName, string $column, bool $pk= true)
+	public function primaryKey(string $tableName, string $column, bool $pk= true)
 	{
 		if($this->nLowerCaseTableNames == 1)
 			$tableName= strtolower($tableName);
@@ -291,7 +284,7 @@ class STDbTableDescriptions
 
 		$this->asTableColumns[$tableName][$column]["pk"]= $pk;
 	}
-	/*public*/function foreignKey(string $tableName, string $column, string $toTable, string|int $identif= 1,
+	public function foreignKey(string $tableName, string $column, string $toTable, string|int $identif= 1,
 										string|int $toColumn= null, string $type= "RESTRICT")
 	{
 		if($this->nLowerCaseTableNames == 1)
@@ -445,12 +438,11 @@ class STDbTableDescriptions
 			    }
 	        	$oTable= new STDbTableCreator($database, $defined["table"]);
 	        	$oTable->check();
-	        	//echo __FILE__.__LINE__."<br>";
-				//st_print_r($this->asTableColumns[$table],10);
-				//echo "for table $table:";
 				foreach($this->asTableColumns[$table] as $content)
 				{
-				    $oTable->column($content["column"], $content["type"], $content["null"]);
+				    $oTable->column($content["column"], $content["type"], $content["null"], );
+					if(isset($content["default"]))
+						$oTable->default($content["column"], $content["default"]);
 				    if(isset($content["auto_increment"]))
 						$oTable->autoIncrement($content["column"]);
 					if(isset($content["idx"]))

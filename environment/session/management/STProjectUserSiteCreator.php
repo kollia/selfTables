@@ -97,8 +97,8 @@ class STProjectUserSiteCreator extends STUserSiteCreator
         global $HTTP_SERVER_VARS;
 
         $query= new STQueryString();
-        $projectID= $query->getUrlParamValue("ProjectID");
-        $show= $query->getUrlParamValue("show");
+        $projectID= $query->getParameterValue("ProjectID");
+        $show= $query->getParameterValue("show");
 
         $this->predefineContainers($container->getName());
 
