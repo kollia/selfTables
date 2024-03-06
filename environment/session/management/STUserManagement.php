@@ -137,8 +137,13 @@ class STUserManagement extends STObjectContainer
 			$project->align("ID", "center");
 		}
 		$project->select("display", "Display");
+		$project->preSelect("display", "ENABLED");
 		if($action != STLIST)
+		{
 			$project->select("Target", "Target");
+			$project->preSelect("Target", "SELF");
+			$project->pullDownMenuByEnum("Target");
+		}
 		$project->select("Path", "URL");
 		$project->preSelect("DateCreation", "sysdate()");
 		$project->orderBy("Name");
