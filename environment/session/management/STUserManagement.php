@@ -131,9 +131,14 @@ class STUserManagement extends STObjectContainer
 		$project= &$this->needTable("Project");
 		$project->select("Name", "Project");
 		$project->select("Description", "Description");
-		$project->select("ID", "ID");
+		if($action == STLIST)
+		{
+			$project->select("ID", "ID");
+			$project->align("ID", "center");
+		}
 		$project->select("display", "Display");
-		$project->align("ID", "center");
+		if($action != STLIST)
+			$project->select("Target", "Target");
 		$project->select("Path", "URL");
 		$project->preSelect("DateCreation", "sysdate()");
 		$project->orderBy("Name");
