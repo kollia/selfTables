@@ -180,78 +180,11 @@ class STProjectUserSiteCreator extends STUserSiteCreator
                 $currentContainer['name']= $this->aProjects['Login']['name'];
             }
 
-        }elseif(!isset($currentContainer))
+        }elseif(!count($currentContainer))
         {
             $currentContainer['container']= $this->aProjects['Registration']['container'];
             $currentContainer['name']= $this->aProjects['Registration']['name'];
         }
-
-/*        if( !isset($projectID) ||
-            $show == "project"      )
-        {
-            if($bCorrectDb)
-            {
-                if(!isset($projectID))
-                {
-                    $bez= $currentContainer['name'];
-                    if(!isset($bez))
-                    {
-                        $bez= $this->aProjects['ProjectOverview']['name'];
-                        $currentContainer['name']= $bez;
-                    }
-                }else
-                    $bez= $projectID;
-                    
-                $res= $this->getDbProjectNameID($container, $bez);
-                if(isset($res))
-                {
-                    if(isset($projectID))
-                        $currentContainer['name']= $res;
-                    else
-                        $projectID= $res;
-                }else
-                {
-                    // does not found root project in db
-                    // maybe ProjectUserManagement not installed
-                    if(STCheck::isDebug())
-                    {
-                        $className= get_class($this);
-                        STCheck::write("ProjectUserManagement isn't correctly installed");
-                        STCheck::write("please use ".$className."->install()");
-                    }
-                    $projectID= $currentContainer['container'];
-                    $bCorrectDb= false;
-                }
-            }else
-            {
-                // no Project table found in database
-                // maybe ProjectUserManagement not installed
-                if(STCheck::isDebug())
-                {
-                    $className= get_class($this);
-                    STCheck::write("ProjectUserManagement tables are not installed on database");
-                    STCheck::write("please use ".$className."->install()");
-                }
-                $projectID= $currentContainer['container'];
-            }
-
-            if(!$instance->isLoggedIn())
-            {
-                $currentContainer['container']= $this->aProjects['Login']['container'];
-                if(isset($this->aProjects['Login']['name']))
-                    $currentContainer['name']= $this->aProjects['Login']['name'];
-                else
-                    $currentContainer['name']= $this->aProjects['ProjectOverview']['name'];
-            }
-            if( $bCorrectDb &&
-                $currentContainer['container'] != $this->aProjects['ProjectOverview']['container'])
-            {
-                // if current container isn't dummy-container which is currently logged-in
-                // verify project now with new container name from database
-                // to logout if no correct permission be set
-                $instance->verifyLogin($currentContainer['name'], $loginEntryUrl);
-            }
-        }*/
 
         
         $containerObj= STObjectContainer::getContainer($currentContainer['container']);

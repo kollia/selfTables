@@ -426,7 +426,7 @@ class STSiteCreator extends HtmlTag
 			{
 			    $result= $this->tableContainer->execute($this, $onError);
 				$msgHandling->setMessageContent($result);
-				$msgHandling->setMessageId($result);
+				$msgHandling->setDummyMessageId($result);
 				$endScript= $msgHandling->getMessageEndScript();
 				$this->tableContainer->appendObj($endScript);
 

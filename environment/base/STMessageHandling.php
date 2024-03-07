@@ -84,7 +84,12 @@ class STMessageHandling // implements STMessageHandlingInterface <- ab version 5
 			$this->messageId= "NOERROR";
 			$this->aMessageStrings= $this->aOrgMessageStrings;
 		}
-		function setMessageId(string $messageId, $parameter= null, $outFunc= 1)
+		public function setDummyMessageId(string $messageId)
+		{
+			$this->messageId= $messageId;
+			$this->aMessageStrings[$messageId]= "";
+		}
+		public function setMessageId(string $messageId, $parameter= null, $outFunc= 1)
 		{   
 			if(Tag::isDebug())
 			{
@@ -102,7 +107,7 @@ class STMessageHandling // implements STMessageHandlingInterface <- ab version 5
 					$args= func_get_args();
 					for($count=1; $count<($have-1); $count++)
 						$paramArray[]= $args[$count];
-					if(!is_int($args[$hace-1]))
+					if(!is_int($args[$have-1]))
 					{
 						$paramArray[]= $args[$have-1];
 						$outFunc= 1;
@@ -147,7 +152,7 @@ class STMessageHandling // implements STMessageHandlingInterface <- ab version 5
 		private function createMessageString(string $messageId, $paramArray= null, $outFunc= 1) : string
 		{
 			STCheck::echoDebug("STMessageHandling", "create message for ID: $messageId");
-			$sRMessage= "";
+
 			if( is_array($paramArray) &&
 			    empty($paramArray)        )
 			{
@@ -158,14 +163,14 @@ class STMessageHandling // implements STMessageHandlingInterface <- ab version 5
 			//					but in function setMessageContent() is not given an Error-String
 			//					the messageId is only for handing over
 			$ats= array();
-			if(	preg_match("/@+$/", $messageId, $ats)
-				and
-				$this->aMessageStrings[$messageId]!=="")
+			$sNewMessageString= $this->aMessageStrings[$messageId];
+			if(	preg_match("/@+$/", $messageId, $ats) ||
+				preg_match("/@/", $sNewMessageString)		)
 			{//st_print_r($ats);
 			    $need= strlen($ats[0]);
 				$have= count($paramArray);
 				
-				$sMessageString= trim($this->aMessageStrings[$messageId]);
+				$sMessageString= trim($sNewMessageString);
 				$split= preg_split("/@/", $sMessageString);							
 				Tag::alert($need!=$have, "STMessageHandling::setMessageID", "function must have ".($need)." params", $outFunc);
 				
@@ -176,17 +181,15 @@ class STMessageHandling // implements STMessageHandlingInterface <- ab version 5
 				    $sNewMessageString.= $param.$split[$count];
 				    $count++;
 				}
-				$sRMessage= $sNewMessageString;
 
-			} //elseif($paramArray!==null)
-			{// if an error string is incoming,
-			 // will be overwritten the specified error
-				$sRMessage= trim($this->aMessageStrings[$messageId]);
-				$sRMessage= preg_replace("/\n/", " ", $sRMessage);
-				$sRMessage= preg_replace("/\"/", "\\\"", $sRMessage);
-				$sRMessage= preg_replace("/'/", "\\'", $sRMessage);
 			}
-			return $sRMessage;
+			// if an error string is incoming,
+			// will be overwritten the specified error
+			$sNewMessageString= trim($sNewMessageString);
+			$sNewMessageString= preg_replace("/\n/", " ", $sNewMessageString);
+			$sNewMessageString= preg_replace("/\"/", "\\\"", $sNewMessageString);
+			$sNewMessageString= preg_replace("/'/", "\\'", $sNewMessageString);
+			return $sNewMessageString;
     	}
 		function getMessageId()
 		{
