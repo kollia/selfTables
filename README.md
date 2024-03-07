@@ -1,2 +1,7 @@
 # DB selfTables
-Automatically creates a table listing of an existing MySql database to navigate between them and insert or edit content
+The goal of this project is for you to design your database table and automatically get a user-friendly GUI interface for all your generated tables in a short time.
+
+This solution can be useful for research if you have written your own specific algorithm that uses data from the database. 
+When first developing, you make your data available via an SQL interface such as phpMyAdmin. After that, if you want to make it usable for other users, you need an interface through which the others can also insert data. In this case, you can link to the generated interface from the DB selfTables from your own project.
+
+Or you just want to collect data for later use or something else. There are many more solutions you can use...
