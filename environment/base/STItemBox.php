@@ -31,7 +31,6 @@ class STItemBox extends STBaseBox
 		var $aSetAlso= array();
 		var $aDisabled= array();
 		var	$aPreSelect= array();
-		var $aEnums= array();
 		var $OKScript= null;
 		var	$sButtonValue;
 		var	$aInputSize= array();
@@ -591,7 +590,7 @@ class STItemBox extends STBaseBox
 		{//st_print_r($HTTP_POST_VARS);
 			foreach($this->asDBTable->columns as $field)
 			{
-				$aEnumns= $this->countingEnums($field["name"]);
+				$aEnumns= $this->countingEnums($field);
 				if(	$aEnumns[0]==2 &&
 					count($aEnumns)==3 &&
 					!isset($HTTP_POST_VARS[$field["name"]])	)
@@ -1575,12 +1574,17 @@ class STItemBox extends STBaseBox
 	function countingAllEnumns()
 	{
 		$space= STCheck::echoDebug("show.db.fields", "counting enums:");
-		$fields= $this->getFieldArray();//hole Felder aus Datenbank
+		$fields= $this->getFieldArray();//hole fields from database
+		$aEnums= array();
 		foreach($fields as $field)
-			$this->countingEnums($field["name"], $field["flags"]);
+		{
+			$enum= $this->countingEnums($field);
+			if($enum[0] > 0)
+				$aEnums[$field['name']]= $enum;
+		}
 		if(STCheck::isDebug("show.db.fields"))
-		    st_print_r($this->aEnums, 2, $space);
-		return $this->aEnums;
+		    st_print_r($aEnums, 2, $space);
+		return $aEnums;
 	}
 	function getEnums($columnName)
 	{
@@ -1599,6 +1603,8 @@ class STItemBox extends STBaseBox
 	}
 	function countingEnums(array $field)
 	{
+		if(!isset($field['enums']))
+			return array(0);
 		$nEnums= count($field['enums']);
 		if(!preg_match("/not_null/", $field["flags"]))
 			$nEnums++;
@@ -1852,8 +1858,11 @@ class STItemBox extends STBaseBox
 					isset($aShowen[$column]) &&
 					$aShowen[$column] === true &&
   					!isset($post[$column])			)	// if the checkbox not set
-				{							 			// and the field is "not null"
-  						$post[$column]= $enum[1];// set the value to the first entry
+				{	
+					$field= $this->asDBTable->findAliasOrColumn($column);
+					STCheck::alert($field['type']=="not found", "STItemBox::box()", "column $column not found inside table {$this->asDBTable->getName()}");
+					if(!isset($post[$field['alias']]))
+						$post[$field['alias']]= $enum[1];// set the value to the first entry
   				}
   			}
   			
@@ -2411,7 +2420,7 @@ class STItemBox extends STBaseBox
 			$enum= 0;
 			if(preg_match("/enum/", $field["flags"]))
 			{
-				$aEnum= $this->countingEnums($field["name"]);
+				$aEnum= $this->countingEnums($field);
 				$enum= $aEnum[0];
 			}
 			if(	$field["type"]=="date"
