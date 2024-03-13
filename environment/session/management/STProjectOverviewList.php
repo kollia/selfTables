@@ -291,7 +291,7 @@ class STProjectOverviewList extends STObjectContainer
             $this->availableSite['LoggedIn']= false;
             
         $get= new STQueryString();
-        $projectID= $get->getUrlParamValue("ProjectID");
+        $projectID= $get->getParameterValue("ProjectID");
         if(!is_numeric($projectID))
             $projectID= 0;
         $this->availableSite['project']= $projectID;
@@ -299,11 +299,11 @@ class STProjectOverviewList extends STObjectContainer
         $error= $access->getLoginError();
         if($error == 0)
         {
-            $error= $get->getUrlParamValue("ERROR");
+            $error= $get->getParameterValue("ERROR");
             if(!is_numeric($error))
                 $error= 0;
         }
-        $show= $get->getUrlParamValue("show");
+        $show= $get->getParameterValue("show");
         if( $projectID > 0 &&
             $this->isProjectAvailable($projectID) &&
             (   !isset($show) ||
@@ -374,7 +374,7 @@ class STProjectOverviewList extends STObjectContainer
                         $query= $user->getSessionUrlParameter();
                         if($query != "")
                             $query= "?".$query;
-                        $userQuery= $get->getUrlParamValue("user");
+                        $userQuery= $get->getParameterValue("user");
                         if(isset($userQuery))
                         {
                             $userQuery= "user=".$userQuery;

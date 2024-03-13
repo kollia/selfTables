@@ -23,15 +23,16 @@ class ScriptTag extends Tag
 		{
 			$this->insertAttribute("language", $value);
 		}
-		function add($tag)
+		function add($tag, int $outFunc= 1)
 		{
-			if(isset($this->aNames["src"]))
+			if(STCheck::isDebug())
 			{
-				echo "\n<br><b>Error</b> ScriptTag::add()<b>:</b> when for an ScriptTag an src attribute is defined";
-				echo "\n<br>                                      nothing should be inside this tag !!!";
-				exit;
+				$msg[]= "when for an ScriptTag an src attribute is defined";
+				$msg[]= "nothing should be inside this tag !!!";
+				STCheck::is_error(isset($this->aNames["src"]), $msg, $outFunc);
+				$outFunc++;
 			}
-			Tag::add($tag);
+			Tag::add($tag, ++$outFunc);
 		}
 		protected function getBevorSubTagString()
 		{

@@ -54,16 +54,43 @@ class STCallbackClass
 		 * or after (<code>false</code>)
 		 * @var boolean
 		 */
-		var $before;
+		public $before= null;
+		/**
+		 * whether routine running for display (<code>true</code>).<br />
+		 * (all STListBox and STItemBox for showing gui element)
+		 * or routine running after user action (display:<code>false</code>) for changing Database
+		 * (STItemBox for INSERT or UPDATE after displaying)
+		 * @var boolean
+		 */
+		public $display= null;
 		var $MessageId;
 		var $joinResult;
-		var	$aUnlink= array(); 	// wenn die Upgelodete Datei nicht gel�scht werden soll
-							// ist hier der Alias-Name der Spalte eingetragen
-		var	$nDisplayColumn= null; 	// wenn die ListTable in mehreren Columns dargestellt wird
-									// wird die DisplayColumn hier gespeichert
-		var $nDisplayColumns= 1; // wieviel Tabellen-Zeilen in einer Zeile dargestellt werdem
-		var $arrangement; // ob die Tabelle bei STLIST horizontal oder vertikal dargestellt wird
-		var $aAcessClusterColumns= array();//die Dynamic-Cluster der Tabelle
+		/**
+		 * if the uploaded file should not be deleted,
+		 * the alias name of the column is entered here
+		 * @var array
+		 */
+		var	$aUnlink= array();
+		/**
+		 * name of current displayed column
+		 * @var string
+		 */
+		var	$sCurrentColumn= null;
+		/**
+		 * number of columns displayed in one row
+		 * @var integer
+		 */  	
+		var $nDisplayColumns= 1;
+		/**
+		 * arrangement of listing table (STListBox)
+		 * whether is horizontal or vertical
+		 * @var enum
+		 */
+		var $arrangement;
+		/**
+		 * all dynamic clusters of table
+		 */
+		var $aAcessClusterColumns= array();
 		var	$aTables;
 		/**
 		 * for debugging, whether sql result was showen the first time
@@ -75,6 +102,11 @@ class STCallbackClass
 		 * @var integer
 		 */
 		private $count= -1;
+		/**
+		 * html content should filled into body tag
+		 * @var array
+		 */
+		private $aHtmlContent= null;
 
 		public function __construct(STDbTable &$table, array $sqlResult)
 		{
@@ -265,7 +297,7 @@ class STCallbackClass
 			{
 				$columnPrefix= "";
 				if($this->nDisplayColumns!=1)
-					$columnPrefix= "###STcolumn".$this->nDisplayColumn."###_";
+					$columnPrefix= "###STcolumn".$this->sCurrentColumn."###_";
 				if($this->arrangement==STVERTICAL)
 				{
 					if(!array_key_exists($columnPrefix.$column, $this->sqlResult))
@@ -313,11 +345,19 @@ class STCallbackClass
 			}
 			//echo "values:";st_print_r($this->sqlResult);
 		}
+		public function addHtmlContent(array|string|Tag $content)
+		{
+			$this->aHtmlContent[]= $content;
+		}
+		public function &getHtmlContent()
+		{
+			return $this->aHtmlContent;
+		}
 		function getValue($column= null, $rownum= null)
 		{
 			//echo "rownum:".$this->rownum." incomming ".$rownum."<br />";
 			//echo "column:".$this->column." incomming ".$column."<br />";
-			//echo "nDisplayColumn:".$this->nDisplayColumn."<br />";
+			//echo "sCurrentColumn:".$this->sCurrentColumn."<br />";
 			//echo "nDisplayColumns:".$this->nDisplayColumns."<br />";
 			if($column===null)
 				$column= $this->column;
@@ -336,7 +376,7 @@ class STCallbackClass
 
 					}else
 						$rownum= $this->rownum;
-					$columnPrefix= "###STcolumn".$this->nDisplayColumn."###_";
+					$columnPrefix= "###STcolumn".$this->sCurrentColumn."###_";
 				}elseif($rownum===null)
 					$rownum= $this->rownum;
 				if($this->arrangement==STVERTICAL)

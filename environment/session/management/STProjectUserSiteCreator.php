@@ -95,7 +95,7 @@ class STProjectUserSiteCreator extends STUserSiteCreator
     public function __construct(STObjectContainer $container, string $dbTablePrefix= null, string $loginEntryUrl= null, string $bodyClass= "ProjectAccessBody")
     {
         global $HTTP_SERVER_VARS;
-
+        
         $query= new STQueryString();
         $projectID= $query->getParameterValue("ProjectID");
         $show= $query->getParameterValue("show");
@@ -174,6 +174,7 @@ class STProjectUserSiteCreator extends STUserSiteCreator
             }
             if(isset($projectID))
                 $bLoggedIn= $instance->verifyLogin($currentContainer['name'], $loginEntryUrl);
+            
             if(!$bLoggedIn)
             {
                 $currentContainer['container']= $this->aProjects['Login']['container'];
@@ -184,10 +185,15 @@ class STProjectUserSiteCreator extends STUserSiteCreator
         {
             $currentContainer['container']= $this->aProjects['Registration']['container'];
             $currentContainer['name']= $this->aProjects['Registration']['name'];
+        }elseif(STCheck::isDebug() &&
+                $currentContainer['container'] == $this->aProjects['ProjectFrame']['container'] )
+        {
+            STCheck::doNotOutputObBuffer();
+            STCheck::debug(false);
         }
 
         
-        $containerObj= STObjectContainer::getContainer($currentContainer['container']);
+        $containerObj= STObjectContainer::getContainer($currentContainer['container']);        
         STUserSiteCreator::__construct($projectID, $containerObj);
     }
     /**
@@ -460,12 +466,9 @@ class STProjectUserSiteCreator extends STUserSiteCreator
             // have to be first installed
             return false;
         }
-    	$project->clearSelects();
-    	$project->clearIdentifColumns();
-    	$project->clearGetColumns();
-    	$project->select("ID", "ID");
-		$project->where("Name='".$projectName."'");
     	$selector= new STDbSelector($project);
+        $selector->select("Project", "ID", "ID");
+		$selector->where("Project", "Name='".$projectName."'");
     	$selector->execute();
     	$userManagementID= $selector->getSingleResult();
 		if(!isset($userManagementID))

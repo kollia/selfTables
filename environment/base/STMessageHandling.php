@@ -163,6 +163,11 @@ class STMessageHandling // implements STMessageHandlingInterface <- ab version 5
 			//					but in function setMessageContent() is not given an Error-String
 			//					the messageId is only for handing over
 			$ats= array();
+			if(STCheck::warning(!isset($this->aMessageStrings[$messageId]),"STMessageHandling::createMessageString()",
+									"no message-ID '$messageId' for MessageHandling be set")							)
+			{
+				return "";
+			}
 			$sNewMessageString= $this->aMessageStrings[$messageId];
 			if(	preg_match("/@+$/", $messageId, $ats) ||
 				preg_match("/@/", $sNewMessageString)		)

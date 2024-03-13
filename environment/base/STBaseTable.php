@@ -2038,7 +2038,10 @@ class STBaseTable
 						$field["len"]= $keyword['len'];
 					}else
 						$field= $this->getColumnContent($content["column"]);
-					$field["name"]= $content["alias"];
+					if(isset($content["alias"]))
+						$field["name"]= $content["alias"];
+					else
+						$field["name"]= $content["column"];
 					$fields[]= $field;
 				}
 			}

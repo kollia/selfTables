@@ -28,6 +28,11 @@ class STItemBox extends STBaseBox
 		var $pwdEncoded;
 		var $uploadFields= array();
 		var	$aDropDowns= array(); // extra gesetzte dorpDownSelects
+		/**
+		 * specific enum fields
+		 * @var array
+		 */
+		private $enumField= array();
 		var $aSetAlso= array();
 		var $aDisabled= array();
 		var	$aPreSelect= array();
@@ -635,8 +640,10 @@ class STItemBox extends STBaseBox
 			$form->enctype("multipart/form-data");
 		}
 		
+		$display= false;
 		if(!isset($post["STBoxes_action"]))
 		{
+			$display= true;
 		    // change field names into column names
 		    $newPost= array();
 		    foreach($post as $key=>$value)
@@ -653,6 +660,7 @@ class STItemBox extends STBaseBox
 		}
 		$oCallbackClass= new STCallbackClass($this->asDBTable, $post);
 		$oCallbackClass->action= $this->action;
+		$oCallbackClass->display= $display;
 		$oCallbackClass->before= true;
 		$oCallbackClass->rownum= 0;
 		$oCallbackClass->sqlResult= $post;
@@ -728,6 +736,17 @@ class STItemBox extends STBaseBox
 				}
 				// for UPDATE need callback for where clausel
 				$this->makeCallback($this->action, $oCallbackClass, STUPDATE, 0);
+				$impl= $oCallbackClass->getHtmlContent();
+				if(isset($impl))
+				{
+					$rowtag= new RowTag();
+						$coltag= new ColumnTag(TD);
+							$coltag->addObj($impl);
+							$coltag->colspan(5);
+							$coltag->align("center");
+						$rowtag->addObj($coltag);
+					$this->addObj($rowtag);
+				}
 				//echo "ErrorString:";st_print_r($sErrorString);echo "<br />";
 				//echo "callbackResult:";st_print_r($oCallbackClass->sqlResult);
 				
@@ -1677,7 +1696,16 @@ class STItemBox extends STBaseBox
 				
 		$message= $this->msg->getMessageId();
 
+		$query= new STPostArray();		
+		if( $query->exist("STBoxes_action") &&
+			$query->getValue("STBoxes_action") == "make")
+		{
+			$display= false;
+		}else
+			$display= true;
+
 		$oCallbackClass= new STCallbackClass($this->asDBTable, $this->aResult);
+		$oCallbackClass->display= $display;
 		$oCallbackClass->before= false;
 		$oCallbackClass->rownum= 0;
 		$oCallbackClass->MessageId= $message;
@@ -1746,6 +1774,7 @@ class STItemBox extends STBaseBox
         global	$HTTP_POST_VARS,
 				$HTTP_POST_FILES;
 
+		$post= new STPostArray();
 		$query= new STQueryString();
 		$get= $query->getArrayVars();
 		
@@ -1755,10 +1784,17 @@ class STItemBox extends STBaseBox
 		 * @var array $insert_content
 		 */
 		$insert_content= array();
+		
+		if( $post->exist("STBoxes_action") &&
+			$post->getValue("STBoxes_action") == "make")
+		{
+			$display= false;
+		}else
+			$display= true;
+
 		$aSetAlso= $this->asDBTable->aSetAlso;
 		if( $this->action==STINSERT &&
-		    isset($HTTP_POST_VARS['STBoxes_action']) &&
-		    $HTTP_POST_VARS['STBoxes_action'] == "make"  )
+		    $display == false  			)
 		{
 		    // alex 03/08/2005:	set additional all fields
 		    //					which incomming by query limitation
@@ -1822,7 +1858,7 @@ class STItemBox extends STBaseBox
 		//					from array_merge, because from the second
 		//					the first will be replaced
 		$post= array_merge($this->aSetAlso, $HTTP_POST_VARS);
-		
+
 		// 14/02/2012 alex:	for all variables geted with no content,
 		// 					set variable to null
 		// 					because this variable shouldn't insert
@@ -1834,8 +1870,14 @@ class STItemBox extends STBaseBox
 		//					realy empty
 		foreach($post as $column=>$content)
 		{
-			if($content === "")
+			if(	$content === "" &&
+				(	!isset($this->password) ||
+					(	$column != $this->password &&
+						$column != "re_{$this->password}" &&
+						$column != "old_{$this->password}"		)	)	)
+			{
 				unset($post[$column]);
+			}
 		}
 		$bError= false;
         if( isset($post["STBoxes_action"]) &&
@@ -1875,8 +1917,10 @@ class STItemBox extends STBaseBox
 			    $showpost= array_merge($insert_content, $post);
 			else
 			    $showpost= $post;
+
 			// alle callbacks welche vom Anwender gesetzt wurden durchlaufen
 			$oCallbackClass= new STCallbackClass($this->asDBTable, $showpost);
+			$oCallbackClass->display= $display;
 			$oCallbackClass->before= true;
 			$oCallbackClass->rownum= 0;
 			$oCallbackClass->MessageId= "PREPARE";
@@ -2242,7 +2286,7 @@ class STItemBox extends STBaseBox
     function checkFields(&$post)
     {
         STCheck::echoDebug("show.db.fields", "check for correct input:");
-        
+
 		$table= $this->asDBTable;
 		if(!$table)
 		{
@@ -2369,8 +2413,12 @@ class STItemBox extends STBaseBox
     					    //$post[$f['column']]= "";
 					    }
     					$newFields[]= $field;
-					}else if($bFieldDefineSelection)
-					    STCheck::write("field is a password, so input from user is optional");
+					}else
+					{
+
+						if($bFieldDefineSelection)
+					    	STCheck::write("field is a password, so input from user is optional");
+					}
 				}else if($bFieldDefineSelection)
 				    STCheck::write("do not exist inside database select and not incomming post");
 				if($bFieldDefineSelection)
@@ -2470,168 +2518,157 @@ class STItemBox extends STBaseBox
                     return false;
                 }
             }
-            if(	isset($post[$postColumn])
-            	&&
-            	$post[$postColumn] !== ""
-            	&&
-            	$field["type"] == "int"
-				&&
-				!preg_match("/auto_increment/", $field["flags"])	)
+			if(isset($post[$postColumn]))
 			{
-				if(	!is_numeric(trim($post[$postColumn]))
-					||
-					preg_match("/[.]/", $post[$postColumn])	)
+				if(	$post[$postColumn] !== ""
+					&&
+					$field["type"] == "int"
+					&&
+					!preg_match("/auto_increment/", $field["flags"])	)
 				{
-					$this->msg->setMessageId("NOINTEGER@", $columnName);
-					return false;
-				}
-			}elseif(isset($post[$postColumn])
-	            	&&
-	            	$post[$postColumn] !== ""
-	            	&&
-	            	$field["type"] == "real")
-			{
-				if(!is_numeric(trim($post[$postColumn])))
-				{
-					$this->msg->setMessageId("NOFLOAT@", $columnName);
-					return false;
-				}
-			}elseif(isset($post[$postColumn])
-	            	&&
-	            	$post[$postColumn] !== ""
-	            	&&
-	            	$field["type"] == "string")
-			{
-				if(strlen($post[$postColumn]) > $field["len"])
-				{
-					$this->msg->setMessageId("TOLONGSTRING@@", $columnName, $field["len"]);
-					return false;
-				}
-			}
-			if( (	preg_match("/primary_key/", $field["flags"])
-				 	or
-				 	preg_match("/unique_key/", $field["flags"])	)
-				and
-				!preg_match("/auto_increment/", $field["flags"])		)
-			{
-				$value= $post[$postColumn];
-				if(is_string($value))
-					$value= "'$value'";
-				$statement= "select $name from $table where $name=$value";
-				if(!$this->db->fetch_single($statement))
-					$this->setSqlError(null);
-				else
-				{//echo $postColumn."<br />";
-					$this->msg->setMessageId("COLUMNVALUEEXIST@", $columnName);
-					return false;
-				}
-			}
-				// alex	07/04/2005:	ereg auf preg_match ge�ndert
-				//					und wenn nach dem Wort 'multiple_key'
-				//					keine Spalte gefunden wird ist es die aktuelle,
-				//					sowie var $aFounded gel�scht (wird nirgends gebraucht)
-				if( preg_match("/(multiple_key)\(([^()]*)\)?/", $field["flags"], $ereg))
-				{//echo $field["flags"]."<br />";st_print_r($ereg);
-					//$aFounded[]= $ereg[1];
-					if(!trim($ereg[2]))
-						$ereg[2]= $field["name"];
-					$aNames= preg_split("/ /", $ereg[2]);
-					$where= "";
-					foreach($aNames as $unique)
+					if(	!is_numeric(trim($post[$postColumn]))
+						||
+						preg_match("/[.]/", $post[$postColumn])	)
 					{
-						if($where)
-							$where.= " and ";
-						$value= $post[$unique];
-						if(is_string($value))
-							$value= "'$value'";
-						$where.= "$unique=$value";
+						$this->msg->setMessageId("NOINTEGER@", $columnName);
+						return false;
 					}
-					$statement= "select $name from $table where $where";
-					if(!$this->db->fetch_single($statement))
-						$this->setSqlError(null);
-					else
+				}elseif($post[$postColumn] !== ""
+						&&
+						$field["type"] == "real")
+				{
+					if(!is_numeric(trim($post[$postColumn])))
 					{
-						$names= array();
-						$values= array();
-						foreach($aNames as $unique)
-						{
-							$column= $columns[$unique];
-							if($column)
-							{
-								$names[]= $column;
-								$value= $post[$unique];
-								if(is_string($value))
-									$value= "'$value'";
-								$values[]= $value;
-							}
-						}
-						if(count($names)==1)
-						{
-							$this->msg->setMessageId("COLUMNVALUEEXIST@", $columnName);
-							return false;
-						}
-						$error= "";
-						for($n= 0; $n<(count($names)-1); $n++)
-						{
-							if($error)
-								$error.= ", ";
-							$error.= $names[$n]."(".$values[$n].")";
-						}
-						$lastNr= count($names)-1;
-						$this->msg->setMessageId("COMBICOLUMNVALUEEXIST@@", $error, $names[$lastNr]."(".$values[$lastNr].")");
+						$this->msg->setMessageId("NOFLOAT@", $columnName);
+						return false;
+					}
+				}elseif(
+						$post[$postColumn] !== ""
+						&&
+						$field["type"] == "string")
+				{
+					if(strlen($post[$postColumn]) > $field["len"])
+					{
+						$this->msg->setMessageId("TOLONGSTRING@@", $columnName, $field["len"]);
 						return false;
 					}
 				}
-				if($name==$this->password)
-				{// if the field is an password
-				 // should be made an check whether new password and repitition be the same
-				 // and also whether the old password was inserted
-				 // only when action is STUPDATE and the array of passwordNames are three 
-				 // are three
-				 	if(	$this->action==STUPDATE
-						and
-						count($this->passwordNames)>=3	)
-					{
-						if(!$this->asDBTable)
-						{
-    						$statement=  "select * from $table";
-    						$statement.= " where $name=";
-    						if($this->pwdEncoded)
-    							$statement.= "password(";
-    						$statement.= "'".$post["old_".$name]."'";
-    						if($this->pwdEncoded)
-    							$statement.= ")";
-    						$statement.= " and ".$this->where;
-						}else
-						{
-							echo __file__.__line__."<br>";
-							st_print_r($this->asDBTable->oWhere,5);
-							$oTable= $this->asDBTable;
-							$oTable->clearSelects();
-							$oTable->count();
-							$oTable->andWhere($name."=password('".$post["old_".$name]."')");
-							$statement= $this->db->getStatement($this->asDBTable);
-							//echo $statement;exit;
-						}
-						if(!$this->db->fetch_single($statement))
-						{
-							$this->setSqlError(null);
-							$this->msg->setMessageId("WRONGOLDPASSWORD");
-							return false;
-						}
-					}
-				 	if(count($this->passwordNames) >= 2)
-				 	{
-				 	    if( isset($post["re_".$name]) && // if password repetition not be set, password also a null string
-						    $post[$postColumn] != $post["re_".$name]    ) // and for STUPDATE no entry needed
-						{
-							$this->msg->setMessageId("PASSWORDNOTSAME");
-							return false;
-						}
+				if( (	preg_match("/primary_key/", $field["flags"])
+						or
+						preg_match("/unique_key/", $field["flags"])	)
+					and
+					!preg_match("/auto_increment/", $field["flags"])		)
+				{
+					$value= $post[$postColumn];
+					if(is_string($value))
+						$value= "'$value'";
+					$selector= new STDbSelector($this->asDBTable);
+					$selector->select($postColumn);
+					$selector->where("$name=$value");
+					$selector->execute();
+					if(!$selector->getSingleResult())
+						$this->setSqlError(null);
+					else
+					{//echo $postColumn."<br />";
+						$this->msg->setMessageId("COLUMNVALUEEXIST@", $columnName);
+						return false;
 					}
 				}
-				if(isset($post[$postColumn]))
-					$newPost[$name]= $post[$postColumn];
+			}
+			// alex	07/04/2005:	ereg auf preg_match ge�ndert
+			//					und wenn nach dem Wort 'multiple_key'
+			//					keine Spalte gefunden wird ist es die aktuelle,
+			//					sowie var $aFounded gel�scht (wird nirgends gebraucht)
+			if( preg_match("/(multiple_key)\(([^()]*)\)?/", $field["flags"], $ereg))
+			{//echo $field["flags"]."<br />";st_print_r($ereg);
+				//$aFounded[]= $ereg[1];
+				if(!trim($ereg[2]))
+					$ereg[2]= $field["name"];
+				$aNames= preg_split("/ /", $ereg[2]);
+				$where= "";
+				foreach($aNames as $unique)
+				{
+					if($where)
+						$where.= " and ";
+					$value= $post[$unique];
+					if(is_string($value))
+						$value= "'$value'";
+					$where.= "$unique=$value";
+				}
+				$statement= "select $name from $table where $where";
+				if(!$this->db->fetch_single($statement))
+					$this->setSqlError(null);
+				else
+				{
+					$names= array();
+					$values= array();
+					foreach($aNames as $unique)
+					{
+						$column= $columns[$unique];
+						if($column)
+						{
+							$names[]= $column;
+							$value= $post[$unique];
+							if(is_string($value))
+								$value= "'$value'";
+							$values[]= $value;
+						}
+					}
+					if(count($names)==1)
+					{
+						$this->msg->setMessageId("COLUMNVALUEEXIST@", $columnName);
+						return false;
+					}
+					$error= "";
+					for($n= 0; $n<(count($names)-1); $n++)
+					{
+						if($error)
+							$error.= ", ";
+						$error.= $names[$n]."(".$values[$n].")";
+					}
+					$lastNr= count($names)-1;
+					$this->msg->setMessageId("COMBICOLUMNVALUEEXIST@@", $error, $names[$lastNr]."(".$values[$lastNr].")");
+					return false;
+				}
+			}
+			if($name==$this->password)
+			{// if the field is an password
+				// should be made an check whether new password and repitition be the same
+				// and also whether the old password was inserted
+				// only when action is STUPDATE and the array of passwordNames are three 
+				// are three
+				if(	$this->action==STUPDATE
+					and
+					count($this->passwordNames)>=3	)
+				{
+					showLine();
+					st_print_r($this->asDBTable->oWhere,5);
+					$oTable= $this->asDBTable;
+					$oTable->clearSelects();
+					$oTable->count();
+					$oTable->andWhere($name."=password('".$post["old_".$name]."')");
+					$statement= $this->db->getStatement($this->asDBTable);
+					//echo $statement;exit;
+					if(!$this->db->fetch_single($statement))
+					{
+						$this->setSqlError(null);
+						$this->msg->setMessageId("WRONGOLDPASSWORD");
+						return false;
+					}
+				}
+				if(count($this->passwordNames) >= 2)
+				{
+					if( !isset($post["re_".$name]) ||
+						$post[$postColumn] != $post["re_".$name]    )
+					{// if password repetition not be set, password also a null string
+						// and for STUPDATE no entry needed
+						$this->msg->setMessageId("PASSWORDNOTSAME");
+						return false;
+					}
+				}
+			}
+			if(isset($post[$postColumn]))
+				$newPost[$name]= $post[$postColumn];
         }
         //$post= $newPost;
 		//echo __file__.__line__."<br>";
@@ -2696,6 +2733,7 @@ class STItemBox extends STBaseBox
 			}
 			
 			$oCallbackClass= new STCallbackClass($this->asDBTable, array());
+			$oCallbackClass->display= false;
 			$oCallbackClass->before= true;
 			$oCallbackClass->MessageId= "PREPARE";
 			$error= $this->makeCallback(STDELETE, $oCallbackClass, STDELETE, 0);

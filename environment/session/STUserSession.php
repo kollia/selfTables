@@ -280,7 +280,7 @@ class STUserSession extends STDbSession
         $dbTableDescription->column("User", "image", "varchar(255)", /*null*/true);
         $dbTableDescription->column("User", "email", "varchar(100)", /*null*/false);
         $dbTableDescription->column("User", "Pwd", "char(50) binary", /*null*/false);
-        $dbTableDescription->column("User", "NrLogin", "INT UNSIGNED");
+		$dbTableDescription->column("User", "NrLogin", "INT UNSIGNED", /*null*/true, /*default*/0);
         $dbTableDescription->column("User", "LastLogin", "DATETIME");
         $dbTableDescription->column("User", "DateCreation", "DATETIME", /*null*/false);
         

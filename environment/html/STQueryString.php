@@ -692,7 +692,7 @@ class STQueryString
 		 * return value from query, instead of given parameter(s)
 		 * 
 		 * @param string $arg one ore more parameter strings, like for an array
-		 * @return string value of parameter(s)
+		 * @return string value of parameter(s), if parameter not set value is null
 		 */
 		public function getParameterValue(string|array $arg) : string|null
 		{

@@ -22,6 +22,7 @@ $g__STCheck_exit_entry= array();
  */
 $global_activeOutputBuffer= false;
 $global_outputBufferWasErased= false;
+$global_clearOutputBuffer= false;
 /**
  * whether should show tat session set to noRegister
  * @var boolean $global_SESSION_noRegister_SHOWEN
@@ -404,12 +405,20 @@ class STCheck
 				exit();
 			}
 		}
+		public static function doNotOutputObBuffer()
+		{
+			global $global_clearOutputBuffer;
+			$global_clearOutputBuffer= true;
+		}
 		public static function end_outputBuffer()
 		{
 		    global $global_activeOutputBuffer,
-		           $global_outputBufferWasErased;
+		           $global_outputBufferWasErased,
+				   $global_clearOutputBuffer;
 		    
-		    if($global_activeOutputBuffer)
+			if($global_clearOutputBuffer)
+				ob_end_clean();
+			elseif($global_activeOutputBuffer)
 		        ob_end_flush();
 	        $global_activeOutputBuffer= false;
 	        $global_outputBufferWasErased= true;
@@ -533,10 +542,10 @@ class STCheck
 					return;
 				if(count($HTTP_GET_VARS))
 				{
-					echo "incomming <b>QUERY-STRING:</b>";
+					echo "incoming <b>QUERY-STRING:</b>";
 					st_print_r($HTTP_GET_VARS, 20);
 				}else
-					echo "no incomming <b>QUERY-STRING</b><br />";
+					echo "no incoming <b>QUERY-STRING</b><br />";
 				if(count($HTTP_POST_VARS))
 				{
 					$post= $HTTP_POST_VARS;
@@ -547,10 +556,10 @@ class STCheck
 						$len= strlen($post["pwd"]);
 						$post["pwd"]= str_repeat("*", $len);
 					}
-					echo "incomming <b>POST-VARS:</b>";
+					echo "incoming <b>POST-VARS:</b>";
 					st_print_r($post, 20);
 				}else
-					echo "no incomming <b>POST-VARS</b><br />";
+					echo "no incoming <b>POST-VARS</b><br />";
 				if(	Tag::isDebug("cookie")
 					and
 					count($HTTP_COOKIE_VARS)	)
@@ -562,7 +571,7 @@ class STCheck
 				    is_array($HTTP_POST_FILES) &&
 				    count($HTTP_POST_FILES)         )
 				{
-					echo "incomming <b>POST-FILES:</b>";
+					echo "incoming <b>POST-FILES:</b>";
 					st_print_r($HTTP_POST_FILES, 20);
 				}
 				echo "<br />\n";

@@ -275,7 +275,7 @@ abstract class STBaseBox extends TableTag
         						return $errorString;
         					}
 							$bOk= true;
-							break;
+							//break;
     					}
     				}
     				$this->aDisabled[$columnName][$rownum]= $oCallbackClass->argument("disabled", $columnName, 0);

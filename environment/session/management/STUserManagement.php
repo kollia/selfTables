@@ -5,12 +5,12 @@ require_once($_stdbinserter);
 require_once($_stsitecreator);
 require_once($_stuserclustergroupmanagement);
 
-function pwdCallback(STCallbackClass &$callbackObject, $columnName, $rownum)
+function disablePasswordCallback(STCallbackClass &$callbackObject, $columnName, $rownum)
 {
+	//$callbackObject->echoResult();
     if(!$callbackObject->before)
         return;
-        
-    //$callbackObject->echoResult();
+
     $session= STUSerSession::instance();
     $domain= $session->getCustomDomain();
     $table= $callbackObject->getTable();
@@ -20,6 +20,41 @@ function pwdCallback(STCallbackClass &$callbackObject, $columnName, $rownum)
     
     if($domainValue != $domain['Name'])
         $callbackObject->disabled($columnName);
+}
+function checkPasswordCallback(STCallbackClass &$callbackObject, $columnName, $rownum)
+{
+    if(	$callbackObject->display == true ||
+		$callbackObject->before == false	)
+	{
+        return;
+	}
+	$pwd= $callbackObject->getValue("Pwd");
+	if( $callbackObject->action == STUPDATE &&
+		$pwd == ""								)
+	{
+		// can be "" by update when password not changed
+		return;
+	}
+	$table= new st_tableTag(LI);
+		$table->style("background-color:red;");
+		$table->add("password have to be longer than 8 digits");
+		$table->nextRow();
+		$table->add("The password must contain lowercase letters,<br />uppercase letters and numbers");
+	
+	if(strlen($pwd) < 9)
+	{
+		$callbackObject->addHtmlContent($table);
+		return "password have to be longer than 8 digits";
+	}
+	if(	preg_match("/[a-z]/", $pwd) &&
+		preg_match("/[A-Z]/", $pwd) &&
+		preg_match("/[0-9]/", $pwd)	&&
+		!preg_match("/^\*/", $pwd)		)
+	{
+		return;
+	}
+	$callbackObject->addHtmlContent($table);
+	return "The password must contain lowercase letters, uppercase letters and numbers and should not begin with a star ('*')";
 }
 function descriptionCallback(&$callbackObject, $columnName, $rownum)
 {
@@ -119,7 +154,7 @@ class STUserManagement extends STObjectContainer
 	    $user->select("user", "User");
 	    $user->select("FullName", "full qualified name");
 	    $user->select("email", "Email");
-        $user->preSelect("DateCreation", "systemdate()");
+        $user->preSelect("DateCreation", "sysdate()");
 		
 		$groups= &$this->needTable("Group");
 		$groups->select("domain", "Domain");
@@ -171,9 +206,11 @@ class STUserManagement extends STObjectContainer
 			$user->select("Pwd", "Pwd");
 			$user->password("Pwd", true);
 		    $user->passwordNames($newpass, $reppass);
-		    $user->updateCallback("pwdCallback", $newpass);
-		    $user->updateCallback("pwdCallback", $reppass);
-		    $user->updateCallback("pwdCallback", $username);
+		    $user->updateCallback("disablePasswordCallback", $newpass);
+		    $user->updateCallback("disablePasswordCallback", $reppass);
+		    $user->updateCallback("disablePasswordCallback", $username);
+			$user->updateCallback("checkPasswordCallback", $newpass);
+			$user->insertCallback("checkPasswordCallback", $newpass);
 		}
 	}
 	function installContainer()

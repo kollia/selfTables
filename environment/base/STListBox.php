@@ -323,6 +323,7 @@ class STListBox extends STBaseBox
 			{
 			    $callbackClass= new STCallbackClass($this->asDBTable, $this->sqlResult);
 				$callbackClass->indexTable= &$this->oIndexTable;
+				$callbackClass->display= true;
 				$callbackClass->before= true;
 				$callbackClass->aAction= $this->aAction;
 				$anTable= &$this->getTable();
@@ -1102,6 +1103,7 @@ class STListBox extends STBaseBox
 
 			$Rows= &$this->sqlResult;
 			$CallbackClass= new STCallbackClass($this->asDBTable, $Rows);
+			$CallbackClass->display= true;
 			$CallbackClass->before= false;
 			$CallbackClass->nDisplayColumns= $this->asDBTable->nDisplayColumns;
 			$CallbackClass->arrangement= $this->arrangement;

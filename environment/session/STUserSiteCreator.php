@@ -91,7 +91,6 @@ class STUserSiteCreator extends STSessionSiteCreator
 			$sess= STUserSession::instance();
 			$this->nProjectID= $sess->getProjectID();
 		}
-		$this->bAskForProject= true;
 		return $this->nProjectID;
 	}
 	function setPrefixForUserTables($prefix)

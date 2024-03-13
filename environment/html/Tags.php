@@ -214,36 +214,16 @@ class Tag extends STCheck
 		    $displayString.= ">";
 		    return $displayString;
 		}
-		function addBefore($tag)
-		{//echo get_class($tag)."<br />";
-			$showWarning= false;
-			if(Tag::isDebug())
-			{
-				if(	typeof($this, "TableTag")
-					and
-					( 	!typeof($tag, "RowTag", "null")
-						and
-						!typeof($tag, "FormTag", "null")	)	)
-				{
-					STCheck::is_warning(1, "Tag::add()", "in TableTag should be only insert an RowTag");
-					$showWarning= true;
-				}
-				if(	typeof($this, "RowTag")
-					and
-					!typeof($tag, "ColumnTag", "null")	)
-				{
-					STCheck::is_warning(1, "Tag::add()", "in RowTag should be only insert an ColumnTag");
-					$showWarning= true;
-				}
-			}
-			$this->addObjBefore($tag, true);
+		function addBefore(string|Tag|jsFunctionBase|array|null $tag)
+		{
+			$this->addObjBefore($tag, false, 2);
 		}
-		function addObjBefore(&$tag, $showWarning= false)
+		function addObjBefore(string|Tag|jsFunctionBase|array|null &$tag, $bWarningShowed= false, int $outFunc= 1)
 		{//echo get_class($tag)."<br />";
-			$showWarning= false;
+			$bWarningShowed= false;
 			if(	Tag::isDebug()
 				and
-				!$showWarning	)
+				!$bWarningShowed	)
 			{
 				if(	typeof($this, "TableTag")
 					and
@@ -251,15 +231,15 @@ class Tag extends STCheck
 						and
 						!typeof($tag, "FormTag", "null")	)	)
 				{
-					STCheck::is_warning(1, "Tag::add()", "in TableTag should be only insert an RowTag");
-					$showWarning= true;
+					STCheck::is_warning(1, "Tag::add()", "in TableTag should be only insert an RowTag", $outFunc);
+					$bWarningShowed= true;
 				}
 				if(	typeof($this, "RowTag")
 					and
 					!typeof($tag, "ColumnTag", "null")	)
 				{
-					STCheck::is_warning(1, "Tag::add()", "in RowTag should be only insert an ColumnTag");
-					$showWarning= true;
+					STCheck::is_warning(1, "Tag::add()", "in RowTag should be only insert an ColumnTag", $outFunc);
+					$bWarningShowed= true;
 				}
 			}
 			$inherit[]= &$tag;
@@ -277,68 +257,17 @@ class Tag extends STCheck
 		        $str.= "$line<br />";
 	        $this->add($str);
 		}
-		public function add($tag)
-		{//echo get_class($tag)."<br />";
-			$showWarning= false;
-			if(1)
-			{
-				if(	typeof($this, "TableTag")
-					and
-					( 	!typeof($tag, "RowTag", "null")
-						and
-						!typeof($tag, "FormTag", "null")	)	)
-				{
-					STCheck::is_warning(1, "Tag::add()", "in TableTag should be only insert an RowTag", 1);
-					$showWarning= true;
-				}
-				if(	typeof($this, "RowTag")
-					and
-					!typeof($tag, "ColumnTag", "null")	)
-				{
-					STCheck::is_warning(1, "Tag::add()", "in RowTag should be only insert an ColumnTag", 1);
-					$showWarning= true;
-				}
-			}
-			$this->addObj($tag, $showWarning);
-		}		
-		public function addObj(&$tag, $showWarning= false)
+		public function add(string|Tag|jsFunctionBase|array|null $tag, int $outFunc= 1)
 		{
-			if(	Tag::isDebug()
-				and
-				!$showWarning	)
-			{
-				if(	typeof($this, "TableTag")
-					and
-					( 	!typeof($tag, "RowTag", "null")
-						and
-						!typeof($tag, "FormTag", "null")	)	)
-				{
-					STCheck::is_warning(1, "Tag::add()", "in TableTag should be only insert an RowTag");
-				}
-				if(	typeof($this, "RowTag")
-					and
-					!typeof($tag, "ColumnTag", "null")	)
-				{
-					STCheck::is_warning(1, "Tag::add()", "in RowTag should be only insert an ColumnTag");
-				}
-			}
+			$this->addObj($tag, false, 2);
+		}		
+		public function addObj(string|Tag|jsFunctionBase|array|null &$tag, $bWarningShowed= false, int $outFunc= 1)
+		{
 			if($tag==null)
 				return;
-			if(!$this->bEndTag)
-			{
-				echo "\n<br>the tag <b>&lt;";
-				echo $this->tag;
-				echo "&gt;</b> can not inherit a tag</b><br>\n";
-				exit;
-			}
-			$this->inherit[count($this->inherit)]= &$tag;
-		}
-		function addObjBehind($tagName, &$tag, $showWarning= false)
-		{//echo get_class($tag)."<br />";
-			$showWarning= false;
 			if(	Tag::isDebug()
 				and
-				!$showWarning	)
+				!$bWarningShowed	)
 			{
 				if(	typeof($this, "TableTag")
 					and
@@ -346,15 +275,54 @@ class Tag extends STCheck
 						and
 						!typeof($tag, "FormTag", "null")	)	)
 				{
-					STCheck::is_warning(1, "Tag::add()", "in TableTag should be only insert an RowTag");
-					$showWarning= true;
+					STCheck::is_warning(1, "Tag::add()", "in TableTag should be only insert an RowTag", $outFunc);
 				}
 				if(	typeof($this, "RowTag")
 					and
 					!typeof($tag, "ColumnTag", "null")	)
 				{
-					STCheck::is_warning(1, "Tag::add()", "in RowTag should be only insert an ColumnTag");
-					$showWarning= true;
+					STCheck::is_warning(1, "Tag::add()", "in RowTag should be only insert an ColumnTag", $outFunc);
+				}
+			}
+			STCheck::warning(!$this->bEndTag, "the tag <b>&lt;{$this->tag}&gt;</b> can not inherit a tag</b>", $outFunc);
+			$this->addArrayContent($tag);
+		}
+		private function addArrayContent(string|Tag|jsFunctionBase|array|null &$tag)
+		{
+			if(is_array($tag))
+			{
+				foreach($tag as &$content)
+				{
+					if(is_array($content))
+						$this->addArrayContent($content);
+					else
+						$this->inherit[]= &$content;
+				}
+			}else
+				$this->inherit[]= &$tag;
+		}
+		function addObjBehind($tagName, string|Tag|jsFunctionBase|array|null &$tag, $bWarningShowed= false, int $outFunc= 1)
+		{//echo get_class($tag)."<br />";
+			$bWarningShowed= false;
+			if(	Tag::isDebug()
+				and
+				!$bWarningShowed	)
+			{
+				if(	typeof($this, "TableTag")
+					and
+					( 	!typeof($tag, "RowTag", "null")
+						and
+						!typeof($tag, "FormTag", "null")	)	)
+				{
+					STCheck::is_warning(1, "Tag::add()", "in TableTag should be only insert an RowTag", $outFunc);
+					$bWarningShowed= true;
+				}
+				if(	typeof($this, "RowTag")
+					and
+					!typeof($tag, "ColumnTag", "null")	)
+				{
+					STCheck::is_warning(1, "Tag::add()", "in RowTag should be only insert an ColumnTag", $outFunc);
+					$bWarningShowed= true;
 				}
 			}
 			$bInserted= false;
@@ -373,46 +341,22 @@ class Tag extends STCheck
 			$this->inherit= &$inherit;
 		}
 		function addBehind($tagName, $tag)
-		{//echo get_class($tag)."<br />";
-			$showWarning= false;
-			if(Tag::isDebug())
-			{
-				if(	typeof($this, "TableTag")
-					and
-					( 	!typeof($tag, "RowTag", "null")
-						and
-						!typeof($tag, "FormTag", "null")	)	)
-				{
-					STCheck::is_warning(1, "Tag::add()", "in TableTag should be only insert an RowTag");
-					$showWarning= true;
-				}
-				if(	typeof($this, "RowTag")
-					and
-					!typeof($tag, "ColumnTag", "null")	)
-				{
-					STCheck::is_warning(1, "Tag::add()", "in RowTag should be only insert an ColumnTag");
-					$showWarning= true;
-				}
-			}
-			$this->addObjBehind($tagName, $tag, true);
+		{
+			$this->addObjBehind($tagName, $tag, false, 2);
 		}
-	function append($value)
+	function append(string|Tag|jsFunctionBase|array|null $value)
 	{
-		Tag::paramCheck($value, 1, "Tag", "string", "null");
-
 		// take Tag:: and not $this->
 		// because if function addObj is overloaded
 		// the compiler takes the new addObj funktion
-		Tag::addObj($value);
+		Tag::addObj($value, false, 2);
 	}
-	function appendObj(&$value)
+	function appendObj(string|Tag|jsFunctionBase|array|null &$value)
 	{
-		Tag::paramCheck($value, 1, "Tag", "string", "null");
-
 		// take Tag:: and not $this->
 		// because if function addObj is overloaded
 		// the compiler takes the new addObj funktion
-		Tag::addObj($value);
+		Tag::addObj($value, false, 2);
 	}
 		function clear()
 		{

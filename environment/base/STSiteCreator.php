@@ -240,7 +240,6 @@ class STSiteCreator extends HtmlTag
 		{
 			if($this->nProjectID===null)
 				$this->nProjectID= 1;
-			$this->bAskForProject= true;
 			return $this->nProjectID;
 		}
 		function setProjectDisplayName($name)

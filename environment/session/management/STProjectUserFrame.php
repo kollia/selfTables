@@ -55,8 +55,7 @@ class STProjectUserFrame extends STFrameContainer
     {
         global $HTTP_SERVER_VARS;
 
-        $projectID= $query->getUrlParamValue("ProjectID");
-        //$debug= $query->getUrlParamValue("debug");
+        $projectID= $query->getParameterValue("ProjectID");
 
         $project= $this->fromContainer->getTable("Project");
         $selector= new STDbSelector($project);
