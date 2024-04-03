@@ -23,6 +23,12 @@ class STDbMySql extends STDatabase
      */
     protected $mysqlVersion= array();
 	/**
+	 * all allowed data types
+	 * inside database
+	 * @var array
+	 */
+	protected $datatypes= null;
+	/**
 	 * last call of msqli::query
 	 */
 	private $lastDbResult= NULL;
@@ -385,6 +391,15 @@ class STDbMySql extends STDatabase
 			return NULL;
 		return is_object($properties) ? $properties->name : null;
 	}
+	public function field_default($tableName, $field_offset)
+	{
+		if(!isset($this->databaseTables[$tableName]))
+			return null;
+		$table= $this->databaseTables[$tableName];
+		if(!isset($table[$field_offset]['Default']))
+			return null;
+		return $table[$field_offset]['Default'];
+	}
 	public function field_len($tableName, $field_offset)
 	{
 		$properties= $this->getFieldProperties($tableName, $field_offset);
@@ -636,21 +651,15 @@ class STDbMySql extends STDatabase
 	protected function errnodb()
 	{
 		$ern= $this->conn->connect_errno;
-		if(	$ern > 0 ||
-			$this->lastDbResult === NULL	)
-		{
+		if($ern > 0)
 			return $ern;
-		}
 		return $this->conn->errno;
 	}
 	protected function errordb()
 	{
 		$ern= $this->conn->connect_errno;
-		if(	$ern > 0 ||
-			$this->lastDbResult === NULL	)
-		{
-			return $this->conn->connect_error;
-		}
+		if($ern > 0)
+			return $ern;
 		return $this->conn->error;
 	}
 	function solution($statement, $typ= null, $onError= onErrorStop)
@@ -701,7 +710,7 @@ class STDbMySql extends STDatabase
 	}
 	function &getDatatypes()
 	{
-		if($this->datatypes)
+		if(isset($this->datatypes))
 		{
 			return $this->datatypes;
 		}

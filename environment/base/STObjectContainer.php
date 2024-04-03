@@ -69,10 +69,6 @@ abstract class STObjectContainer extends STBaseContainer
 		$this->db= &$container->getDatabase();
 		STBaseContainer::__construct($name, $container, $bodyClass);
 	}
-	protected function createMessageContent()
-	{
-		$this->createMessages($this->locale['language'], $this->locale['nation']);
-	}
 	/**
 	 * method to create messages for different languages.<br />
 	 * inside class methods (create(), init(), ...) you get messages from <code>$this->getMessageContent(<message id>, <content>, ...)</code><br />
@@ -80,9 +76,11 @@ abstract class STObjectContainer extends STBaseContainer
 	 * see STMessageHandling
 	 *
 	 * @param string $language current language like 'en', 'de', ...
+	 * @param string $nation current nation of language like 'US', 'GB', 'AT'. If not defined, default is 'XXX'
 	 */
-	protected function createMessages(string $language)
+	protected function createMessages(string $language, string $nation)
 	{
+		STBaseContainer::createMessages($language, $nation);
 		if($language == "de")
 		{
 		    $this->setMessageContent("INSERT", "einfügen");
@@ -847,9 +845,9 @@ abstract class STObjectContainer extends STBaseContainer
 	{
 		Tag::paramCheck($externSideCreator, 1, "STSiteCreator");
 		
+		$this->oExternSideCreator= &$externSideCreator;
 		$this->createMessageContent();
 		$this->initContainer();
-		$this->oExternSideCreator= &$externSideCreator;
 		$params= new STQueryString();
 		$get_vars= $params->getArrayVars();
 		if(isset($get_vars["stget"]))
@@ -1599,8 +1597,6 @@ abstract class STObjectContainer extends STBaseContainer
 	}
 	public function installDbTables()
 	{/* dummy method to create explecit tables inside container */}
-	public function installContainer()
-	{/* dummy method */}
 	public function getAccessCluster($action)
 	{
 	    $clusters= STBaseContainer::getAccessCluster($action);

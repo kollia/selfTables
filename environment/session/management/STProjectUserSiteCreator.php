@@ -171,6 +171,11 @@ class STProjectUserSiteCreator extends STUserSiteCreator
                         break;
                 }
                 $projectID= $this->getDbProjectNameID($container, $currentContainer['name']);
+                if(!isset($projectID))
+                {
+                    STCheck::warning(1, "STProjectUserSiteCreator::_construct()", "project '{$currentContainer['name']}' inside Project table not exist, maybe UserManagement habe to be installed!");
+                    $bCorrectDb= false;
+                }
             }
             if(isset($projectID))
                 $bLoggedIn= $instance->verifyLogin($currentContainer['name'], $loginEntryUrl);
@@ -192,6 +197,10 @@ class STProjectUserSiteCreator extends STUserSiteCreator
             STCheck::debug(false);
         }
 
+        if(!$bCorrectDb)
+        {// database not correct, usermanagement should be installed
+            $projectID= 0;
+        }
         
         $containerObj= STObjectContainer::getContainer($currentContainer['container']);        
         STUserSiteCreator::__construct($projectID, $containerObj);

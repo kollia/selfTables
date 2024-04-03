@@ -43,8 +43,16 @@ class STMessageHandling // implements STMessageHandlingInterface <- ab version 5
 			}
 			return $onError;
 		}
-		function setMessageContent($messageId, $messageString= "")
+		function setMessageContent($messageId, $messageString= "", int $errOut= 0)
 		{
+			if(	STCheck::isDebug() &&
+				$messageString != ""	)
+			{
+				++$errOut;
+				STCheck::warning(substr_count($messageId, "@") != substr_count($messageString, "@"),
+							"STMessageHandling::setMessageContent()",
+							"The first parameter \$messageId need to have on the end the same count of variable holder '@' than the second parameter", $errOut);
+			}
 			$this->aMessageStrings[$messageId]= $messageString;
 		}
 		function getMessageContent(string $messageId= null, $parameter= null, $outFunc= 2)

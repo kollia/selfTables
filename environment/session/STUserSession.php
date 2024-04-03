@@ -272,14 +272,22 @@ class STUserSession extends STDbSession
         $dbTableDescription->primaryKey("User", "ID");
         $dbTableDescription->autoIncrement("User", "ID");
         $dbTableDescription->column("User", "domain", "TINYINT", /*null*/false);
-        //$dbTableDescription->uniqueKey("User", "domain", 1);
         $dbTableDescription->foreignKey("User", "domain", "AccessDomain");
+		$dbTableDescription->column("User", "active", "set('NO', 'YES')", /*null*/false, /*default*/"NO");
         $dbTableDescription->column("User", "user", "varchar(50)", /*null*/false);
         $dbTableDescription->uniqueKey("User", "user", 1);
-        $dbTableDescription->column("User", "FullName", "varchar(100)", /*null*/true);
-        $dbTableDescription->column("User", "image", "varchar(255)", /*null*/true);
+		$dbTableDescription->column("User", "sex", "set('FEMAIL','MALE','*GENDER','UNKNOWN')", /*null*/false);
+		$dbTableDescription->column("User", "title_prefixed", "set('Dr.','MA','Mag','Dipl. Ing.')", /*null*/true);
+        $dbTableDescription->column("User", "firstname", "varchar(100)", /*null*/true);
+        $dbTableDescription->column("User", "surname", "varchar(100)", /*null*/true);
+		$dbTableDescription->column("User", "title_subsequent", "set('PhD','MSc','BSc')", /*null*/true);
+        //$dbTableDescription->column("User", "image", "varchar(255)", /*null*/true);
         $dbTableDescription->column("User", "email", "varchar(100)", /*null*/false);
-        $dbTableDescription->column("User", "Pwd", "char(50) binary", /*null*/false);
+		// password can be null because different registration methods exists
+        $dbTableDescription->column("User", "Pwd", "char(50) binary", /*null*/true);
+		//$dbTableDescription->column("User", "active", "set('NO', 'YES')", /*null*/false, /*default*/"NO");
+		$dbTableDescription->column("User", "register", "set('CREATED', 'SENDMAIL', 'REGISTERED', 'ACTIVE')",  /*null*/true, /*default*/"CREATED");
+		$dbTableDescription->column("User", "sendingtime", "DATETIME", /*null*/true);
 		$dbTableDescription->column("User", "NrLogin", "INT UNSIGNED", /*null*/true, /*default*/0);
         $dbTableDescription->column("User", "LastLogin", "DATETIME");
         $dbTableDescription->column("User", "DateCreation", "DATETIME", /*null*/false);
@@ -336,6 +344,18 @@ class STUserSession extends STDbSession
         $dbTableDescription->foreignKey("GroupGroup", "Group2ID", "Group", 2);
         $dbTableDescription->column("GroupGroup", "DateCreation", "DATETIME", false); */
         
+		$dbTableDescription->table("Mail");
+		$dbTableDescription->column("Mail", "ID", "INT", /*null*/false);
+        $dbTableDescription->primaryKey("Mail", "ID");
+        $dbTableDescription->autoIncrement("Mail", "ID");
+		$dbTableDescription->column("Mail", "case", "varchar(50)", /*null*/false);
+		$dbTableDescription->uniqueKey("Mail", "case", 1);
+		$dbTableDescription->column("Mail", "description", "varchar(300)", /*null*/false);
+		$dbTableDescription->column("Mail", "subject", "varchar(200)", /*null*/false);
+		$dbTableDescription->column("Mail", "html", "set('NO', 'YES')", /*null*/false, /*default*/"NO");
+		$dbTableDescription->uniqueKey("Mail", "html", 1);
+		$dbTableDescription->column("Mail", "text", "text", /*null*/false);
+
         $dbTableDescription->table("Log");
         $dbTableDescription->column("Log", "ID", "BIGINT UNSIGNED", /*null*/false);
         $dbTableDescription->primaryKey("Log", "ID");

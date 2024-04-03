@@ -514,11 +514,13 @@ class STDbSelector extends STDbTable implements STContainerTempl
 			if(STCheck::isDebug())
 			{
 			    STCheck::param($tableName, 0, "string"); // cannot be an null string
-				STCheck::param($column, 1, "string", "empty(string)");
+				STCheck::param($column, 1, "string");// can be a null string in STDbTable, but not here
 				STCheck::param($alias, 2, "string", "bool", "null");
 				STCheck::param($nextLine, 3, "bool");
 				STCheck::param($nextLine, 4, "bool");
 				STCheck::echoDebug("selector", $this->Name.": select column $column($alias) for table $tableName");
+				$orgName= $this->db->getTableName($tableName);
+				STCheck::warning(!$this->db->isTable($orgName), "STDbSelector::select()", "first parameter '$tableName' isn't any table", 1);
 			}
 			$desc= STDbTableDescriptions::instance($this->db->getDatabaseName());
 			$tableName= $desc->getTableName($tableName);

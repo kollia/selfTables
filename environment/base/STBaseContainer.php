@@ -86,6 +86,11 @@ abstract class STBaseContainer extends BodyTag implements STContainerTempl
 						// null - container is not created
 						// false - container will be created, makes an warning for the calling methode, that can has a wrong result
 						// true - container is created
+	/**
+	 * whether the messages for translation
+	 * be created
+	 */
+	private $bMessagesInstalled= false;
 	var	$bInitialize= null;// wheter the container is initialized
 						// null - container is not initialized
 						// false - container will be initialize
@@ -157,14 +162,23 @@ abstract class STBaseContainer extends BodyTag implements STContainerTempl
 	 * see STMessageHandling
 	 * 
 	 * @param string $language current language like 'en', 'de', ...
+	 * @param string $nation current nation of language like 'US', 'GB', 'AT'. If not defined, default is 'XXX'
 	 */
-	protected function createMessages(string $language)
+	protected function createMessages(string $language, string $nation)
 	{
 	    // dummy method 
 	}
-	protected function setMessageContent(string $messageID, string $messageContent)
+	protected function createMessageContent()
 	{
-	    $this->msgBox->setMessageContent($messageID, $messageContent);
+		if(!$this->bMessagesInstalled)
+		{			
+			$this->createMessages($this->locale['language'], $this->locale['nation']);
+			$this->bMessagesInstalled= true;
+		}
+	}
+	protected function setMessageContent(string $messageID, string $messageContent, int $errOut= 0)
+	{
+	    $this->msgBox->setMessageContent($messageID, $messageContent, ++$errOut);
 	}
 	protected function getMessageContent(string $messageID, string $parameters= null, $outFunc= 2) : string
 	{
@@ -193,6 +207,13 @@ abstract class STBaseContainer extends BodyTag implements STContainerTempl
 		}
         return $this->msgBox->getMessageContent($messageID, $paramArray, $outFunc);
 	}
+	public function doContainerInstallation()
+	{
+		$this->createMessageContent();
+		$this->installContainer();
+	}
+	protected function installContainer()
+	{/* dummy method */}
 	public function clearFirstObjectContainer()
 	{
 	    global $global_first_objectContainerName;
@@ -235,7 +256,7 @@ abstract class STBaseContainer extends BodyTag implements STContainerTempl
 		return trim($title);
 		
 	}
-	public function setLanguage(string $lang, string $nation= "XXX")
+	public function setDefaultLanguage(string $lang, string $nation= "XXX")
 	{
 	    if(preg_match("/_/", $lang))
 	    {
@@ -494,15 +515,19 @@ abstract class STBaseContainer extends BodyTag implements STContainerTempl
 			$container= &STObjectContainer::getContainer($older);
 		return $container;
 	}
-	function execute(&$externSideCreator, $onError)
+	public function setExternSiteCreator(STSiteCreator &$externSiteCreator)
+	{
+		$this->oExternSideCreator= &$externSiteCreator;
+	}
+	function execute(&$externSiteCreator, $onError)
 	{
 	    // create message pool for language
-	    $this->createMessages($this->locale['language'], $this->locale['nation']);
+	    $this->createMessageContent();
 	    // initial container
 	    $this->initContainer();
 
 		$action= $this->getAction();
-		$this->oExternSideCreator= &$externSideCreator;
+		$this->setExternSiteCreator($externSiteCreator);
 		if(!isset($this->bBackButton))
 			$this->bBackButton= $this->oExternSideCreator->bBackButton;
 		if(!$this->backButtonAddress)

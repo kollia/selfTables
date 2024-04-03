@@ -63,7 +63,9 @@ class STProjectUserFrame extends STFrameContainer
         $selector->where("ID=$projectID");
         $selector->execute();
         $projectAddress= $selector->getSingleResult();
-        if($projectAddress == "X")
+        if(!isset($projectAddress))
+            $projectAddress= "";
+        elseif($projectAddress == "X")
             $projectAddress= $HTTP_SERVER_VARS["SCRIPT_NAME"];
     
         if(preg_match("/^\//", $projectAddress))

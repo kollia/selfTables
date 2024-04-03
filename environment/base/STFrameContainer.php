@@ -135,13 +135,13 @@ class STFrameContainer extends STBaseContainer
 		}
 		return "NOERROR";
 	}
-	function add($value)
+	function add(Tag|jsFunctionBase|array|string|null $tag, int $outFunc = 1)
 	{
-		Tag::paramCheck($value, 1, "Tag", "string", "null");
+		Tag::paramCheck($tag, 1, "Tag", "string", "null");
 
-		$this->addObj($value);
+		$this->addObj($tag);
 	}
-	function addObj(&$value, $showWarning = false)
+	function addObj(Tag|jsFunctionBase|array|string|null &$value, $bWarningShowed = false, int $outFunc = 1)
 	{
 		Tag::paramCheck($value, 1, "Tag", "string", "null");
 

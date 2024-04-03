@@ -308,12 +308,12 @@ class STBaseTable
 	    //---------------------------------------------------------------------------------
 	    // foreign keys and backjoins should always same like in first database table
 	    // so make an direct link from copied table
-	    $main= $this->db->getTable($this->Name);
-	    $this->FK= &$main->FK;
-	    $this->aFks= &$main->aFks;
-	    $this->aBackJoin= &$main->aBackJoin;
-	    if(isset($this->oWhere))
-	        $this->oWhere->resetQueryLimitation("own", true);
+		$main= $this->db->getTable($this->Name);
+		$this->FK= &$main->FK;
+		$this->aFks= &$main->aFks;
+		$this->aBackJoin= &$main->aBackJoin;
+		if(isset($this->oWhere))
+			$this->oWhere->resetQueryLimitation("own", true);
 	    //---------------------------------------------------------------------------------
 	    STCheck::increase("table");
 	    if( STCheck::isDebug() &&
@@ -1602,7 +1602,13 @@ class STBaseTable
 											"column $column not exist in table ".$this->Name.
 											"(".$this->getDisplayName().")");
 			}
-			$column= $this->getDbColumnName($column);
+			$dbcolumn= $this->getDbColumnName($column, /*no warn*/-1);
+			if(!isset($dbcolumn))
+			{
+				echo "select $column";
+				st_print_r($this->columns);
+			}
+			$column= $dbcolumn;
 			if(is_bool($alias))
 			{
 				$nextLine= $alias;
@@ -1658,14 +1664,30 @@ class STBaseTable
 			}
 			if(!preg_match("/^count\(.*\)$/i", $column))
 				$this->bOrder= true;
-			$desc= STDbTableDescriptions::instance($this->db->getDatabaseName());
-			$column= $desc->getColumnName($table, $column);// if table is original function must not search
-			$table= $desc->getTableName($table);
+			$bVirtual= false;
+			foreach($this->columns as $field)
+			{
+				if($field['name'] == $column)
+				{
+					if(preg_match("/virtual/", $field['flags']))
+						$bVirtual= true;
+					break;
+				}
+			}
+			if(!$bVirtual)
+			{
+				$desc= STDbTableDescriptions::instance($this->db->getDatabaseName());
+				$column= $desc->getColumnName($table, $column);// if table is original function must not search
+				$table= $desc->getTableName($table);
+			}else
+				$table= null;
 			if(STCheck::isDebug())
 			{
-				if($table===$this->Name)
+				if( !isset($table) ||
+					$table===$this->Name	)
+				{
 					$oTable= &$this;
-				else
+				}else
 					$oTable= &$this->getTable($table);
 				STCheck::alert(!$oTable->validColumnContent($column), "STBaseTable::selectA()",
 											"column $column not exist in table ".$table.
@@ -1714,6 +1736,105 @@ class STBaseTable
 			$aColumn['type']= "select";
 			$aColumn["nextLine"]= $nextLine;
 			$this->show[]= $aColumn;
+		}
+		/**
+		 * remove all added virtual columns before
+		 */
+		public function clearAddedColumns()
+		{
+			// 25/03/2024
+			// toDo: not testet method
+			foreach(array_reverse($this->columns) as $key =>$value )
+			{
+				if(preg_match("/virtual/", $value['flags']))
+					unset($this->columns[$key]);
+			}
+		}
+		/**
+		 * Add new column to table
+		 * 
+		 * @param string $column name of column
+		 * @param string $type type of column
+		 */
+		public function addColumn(string $column, string $type, bool $null= true, $default= null)
+		{
+			$enum_preg= null;
+			$enum= null;
+			if(preg_match("/(ENUM|SET)\((.*)\)/i", $type, $enum_preg))
+			{
+				$type= strtolower($enum_preg[1]);
+				$enum2= preg_split("/[ ,]/", $enum_preg[2]);
+				$enum= array();
+				foreach($enum2 as $r)
+				{
+					$str= trim($r);
+					if($str != "")
+					{
+						$preg= null;
+						if(preg_match("/^['\"](.+)['\"]$/", $str, $preg))
+						{
+							$enum[]= $preg[1];
+						}else
+							$enum[]= $r;
+					}
+				}
+			}
+			if(typeof($this, "STDbTable"))
+			{
+				$db= $this->getDatabase();
+			}else
+				$db= new STDbMariaDb("__STBaseTable::addColumn_test");
+			$types= $db->getDatatypes();
+			$db_type= $types[strtoupper($type)];
+
+			if(STCheck::isDebug())
+			{
+				// create types for parameter check of second parameter
+				// and check whether first parameter column exist before
+				$inType= strtoupper($type);
+				$addStr= "(&lt;values&gt;, ...)";
+				$typestring= "";
+				foreach($types as $key=>$value)
+				{
+					$typestring.= $key;
+					if($key == "SET" || $key == "ENUM")
+						$typestring.= $addStr;
+					$typestring.= ", ";
+				}
+				$typestring= substr($typestring, 0, strlen($typestring)-2);
+				STCheck::param($type, 1, "check", isset($types[$inType]), $typestring);
+				$bExist= false;
+				foreach($this->columns as $exist)
+				{
+					if($exist['name'] == $column)
+					{
+						$bExist= true;
+						break;
+					}
+				}
+				STCheck::param($column, 0, "check", !$bExist, "column other than '$column', column exist inside database table {$this->Name}");
+			}
+			$flags= "virtual ";
+			if(!$null)
+				$flags.= "not_null ";
+			if(isset($enum_preg[1]))
+				$flags.= "enum ";
+			$type= $db_type['type'];
+			if($type == "enum")
+				$type= "string";
+			if(isset($db_type['length']))
+				$length= $db_type['length'];
+			elseif(isset($db_type['max']))
+				$length= $db_type['max'];
+			else
+				$length= null;
+			$entry= array(	"name" =>	$column,
+							"flags" =>	$flags,
+							"type" =>	$type,
+							"len" => 	$length	);
+			if(isset($enum))
+				$entry['enums']= $enum;
+			$this->columns[]= $entry;
 		}
 		/**
 		 * add content of string or HTML-Tags
@@ -2145,11 +2266,9 @@ class STBaseTable
 		 * @param string $alias name of alias column
 		 * @return array
 		 */
-		public function findAliasOrColumn(string $alias)
+		public function findAliasOrColumn(string $alias, int $warnFuncOutput= 1)
 		{
-		    STCheck::param($alias, 0, "string");
-		    
-		    return $this->findColumnAlias($alias, /*firstAlias*/true);
+		    return $this->findColumnAlias($alias, /*firstAlias*/true, $warnFuncOutput);
 		}
 		/**
 		 * search whether column correct database column
@@ -2158,9 +2277,9 @@ class STBaseTable
 		 * @param string $column name of column
 		 * @return array
 		 */
-		public function findColumnOrAlias(string $column)
+		public function findColumnOrAlias(string $column, int $warnFuncOutput= 1)
 		{
-			return $this->findColumnAlias($column, /*firstAlias*/false);
+			return $this->findColumnAlias($column, /*firstAlias*/false, $warnFuncOutput);
 		}
 		/**
 		 * search whether alias is a defined alias name
@@ -3489,7 +3608,6 @@ class STBaseTable
 	        $action= STINSERT;
 	    if(STCheck::isDebug())
 	    {
-	        STCheck::param($columnName, 0, "string");
 	        STCheck::param($value, 1, "string", "int");
 	        STCheck::param($action, 2, "check", $action===null||$action==STINSERT||$action==STUPDATE, "STINSERT", "STUPDATE");
 	    }
@@ -3506,6 +3624,37 @@ class STBaseTable
 			$this->aSetAlso[$columnName][STUPDATE]= $value;
 		}else
  			$this->aSetAlso[$columnName][$action]= $value;
+	}
+	public function getDefaultValue(string $column, $action= STALLDEF)
+	{
+		STCheck::param($action, 2, "check", $action===STALLDEF||$action==STLIST||$action==STINSERT||$action==STUPDATE, "STALLDEF, STLIST, STINSERT", "STUPDATE");
+		
+		$field= $this->findColumnOrAlias($column);
+		$column= $field['column'];
+		if(isset($this->aSetAlso[$column][$action]))
+			return $this->aSetAlso[$column][$action];
+		if(isset($this->aSetAlso[$column][STALLDEF]))
+			return $this->aSetAlso[$column][STALLDEF];
+		$aNotNullField= null;
+		foreach($this->columns as $field)
+		{
+			if($field['name'] == $column)
+			{
+				if(isset($field['default']))
+					return $field['default'];
+				$aNotNullField= $field;
+				if(preg_match("/not_null/", $field['flags']))
+					$bNotNull= true;
+				break;
+			}
+		}
+		if(	isset($aNotNullField) &&
+			preg_match("/not_null/", $aNotNullField['flags']) &&
+			preg_match("/enum/", $aNotNullField['flags'])			)
+		{
+			return $aNotNullField['enums'][0];
+		}
+		return null;
 	}
 	function setAlso($columnName, $value, $action= "All")
 	{

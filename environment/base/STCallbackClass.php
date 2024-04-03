@@ -237,6 +237,17 @@ class STCallbackClass
 		{
 			if(!$this->resultShowen)
 			{
+				if($this->display)
+					echo "callback performed to <b>display</b> box<br />";
+				else
+				{
+					echo "callback was executed <b>";
+					if($this->before)
+						echo "before";
+					else
+						echo "after";
+					echo "</b> changes are made in the database<br />";
+				}
 				$countResult= $this->countSqlResult();
 				if($fromRow===null)
 				{
@@ -353,7 +364,11 @@ class STCallbackClass
 		{
 			return $this->aHtmlContent;
 		}
-		function getValue($column= null, $rownum= null)
+		public function getAllValues() : array
+		{
+			return $this->sqlResult;
+		}
+		public function getValue($column= null, $rownum= null)
 		{
 			//echo "rownum:".$this->rownum." incomming ".$rownum."<br />";
 			//echo "column:".$this->column." incomming ".$column."<br />";

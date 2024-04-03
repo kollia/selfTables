@@ -1045,17 +1045,36 @@ class STDbTable extends STBaseTable
                 }
                 if(	!$fkTableName ) // if no FK table exist, the column can only be from the current table
                 {
-                    if($column['table'] == $this->getName())
-                    {
-                        $aliasTable= $sUseAliasForOwnTable;
-                    }else
-                        $aliasTable= $aTableAlias[$column["table"]];
-                    $aUseAliases[$aTableAlias[$column['table']]]= $column['table'];
-                    $singleStatement.= $columnName;
-                    if($this->sqlKeyword($column["column"]) != false)
-                        $statement.= $columnName;
+					if(!isset($column['table']))
+						$aliasTable= null; // column is virtual
                     else
-                        $statement.= "`".$aliasTable."`.$columnName";
+					{
+						if($column['table'] == $this->getName())
+						{
+							$aliasTable= $sUseAliasForOwnTable;
+						}else
+							$aliasTable= $aTableAlias[$column["table"]];
+						$aUseAliases[$aTableAlias[$column['table']]]= $column['table'];
+					}
+                    
+					if(!isset($column["table"]))
+					{// column is virtual
+						$default= $this->getDefaultValue($column['column']);
+						if(!isset($default))
+							$default= "null";
+						elseif(!is_numeric($default))
+							$default= "'$default'";
+						$statement.= $default;
+						$singleStatement.= $default;
+						
+					}else
+					{
+						$singleStatement.= $columnName;
+						if($this->sqlKeyword($column["column"]) != false)
+							$statement.= $columnName;
+						else
+							$statement.= "`".$aliasTable."`.$columnName";
+					}
                     if(	isset($column["alias"])
                         and
                         $column["column"]!=$column["alias"])
@@ -2163,15 +2182,18 @@ class STDbTable extends STBaseTable
                 $aNeededColumns[$nr]["column"]= $inherit["keyword"]."(".$columnString.")";
             }else
             {
-                if(!isset($needetTables[$content["table"]]))
-                    $needetTables[$content["table"]]= &$this->getTable($content["table"]);
-                if( !$needetTables[$content["table"]]->validColumnContent($column)
-                    and
-                    $column!="*"	)
-                {
-                    // alex 19/09/2005:	rather insert a null column
-                    $aNeededColumns[$nr]["column"]= "(null)";
-                }
+				if(isset($content["table"])) // if table not set, column is virtual
+				{
+					if(!isset($needetTables[$content["table"]]))
+						$needetTables[$content["table"]]= &$this->getTable($content["table"]);
+					if( !$needetTables[$content["table"]]->validColumnContent($column)
+						and
+						$column!="*"	)
+					{
+						// alex 19/09/2005:	rather insert a null column
+						$aNeededColumns[$nr]["column"]= "(null)";
+					}
+				}
             }
         }
 	}

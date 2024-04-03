@@ -114,7 +114,7 @@ class STListBox extends STBaseBox
 				$this->msg->setMessageContent("NO_CHANGING", "beim Checkbox-Abgleich wurde nichts veraendert");
 				$this->msg->setMessageContent("WRONG_INSERT", "falsche Spalten-Angabe in Funktion insert() Spalte");
 				$this->msg->setMessageContent("WRONG_DELETE", "falsche Spalten-Angabe in Funktion delete() Spalte");
-				$this->msg->setMessageContent("SQL_ERROR", "hier kommt der Fehler der SQL-Datenbank hinein");
+				$this->msg->setMessageContent("SQL_ERROR@", "@");//hier kommt der Fehler der SQL-Datenbank hinein");
 				$this->msg->setMessageContent("EMPTY_SEARCHBOX_RESULT", "");
 				$this->msg->setMessageContent("NNTABLEINSERT_MUCH@2", "fuer den neuen Insert der n zu n Table sind zu viele Ergebnisse fuer die Spalte \"@\", im where-statement vorhanden");
 				$this->msg->setMessageContent("NNTABLEINSERT_FAULT@", "fuer den neuen Insert der n zu n Table ist die Spalte \"@\" nicht gesetzt");
@@ -128,7 +128,7 @@ class STListBox extends STBaseBox
 				$this->msg->setMessageContent("NO_CHANGING", "by checkboxing wasn't any changing");
 				$this->msg->setMessageContent("WRONG_INSERT", "wrong number of columns in method insert()");
 				$this->msg->setMessageContent("WRONG_DELETE", "wrong number of columns in method delete()");
-				$this->msg->setMessageContent("SQL_ERROR", "here is the place for the sql-error from database");
+				$this->msg->setMessageContent("SQL_ERROR@", "@");//here is the place for the sql-error from database");
 				$this->msg->setMessageContent("EMPTY_SEARCHBOX_RESULT", "");
 				$this->msg->setMessageContent("NNTABLEINSERT_MUCH@2", "for the new insert of n to n table, exist to much values in column \"@\", of where-statement");
 				$this->msg->setMessageContent("NNTABLEINSERT_FAULT@", "for the new insert of n to n table is column \"@\" not filled");
@@ -534,7 +534,7 @@ class STListBox extends STBaseBox
 					{
     					$sqlErrorMessage= "ERROR($errId): ";
     					$sqlErrorMessage.= $this->oSelector->getErrorString();
-    					$this->msg->setMessageId("SQL_ERROR", $sqlErrorMessage);
+    					$this->msg->setMessageId("SQL_ERROR@", $sqlErrorMessage);
 					}
 
 				}else

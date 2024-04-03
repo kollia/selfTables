@@ -154,10 +154,12 @@ class STUserClusterGroupManagement extends STObjectContainer
 	        $user->select("User", "ID", "ID");
 	        $user->select("User", "domain", "Domain");
 	        $user->select("User", "user", "user");
-	        $user->select("User", "FullName", "full");
+	        $user->select("User", "firstname", "firstname");
+	        $user->select("User", "surname", "surname");
 	        $user->orderBy("User", "domain");
 	        $user->orderBy("User", "user");
-	        $user->orderBy("User", "FullName");
+	        $user->orderBy("User", "surname");
+	        $user->orderBy("User", "firstname");
 	        $user->execute();
 	        $rows= $user->getResult();
 	        $users= array();
@@ -165,7 +167,7 @@ class STUserClusterGroupManagement extends STObjectContainer
 	        {
 	            $field= array();
 	            $field[]= $content['ID'];
-	            $field[]= $content['Domain']." - ".$content['user']." - ".$content['full'];
+	            $field[]= $content['Domain']." - ".$content['user']." - ".$content['firstname']." ".$content['surname'];
 	            $users[]= $field;
 	        }
 	        $post= new STPostArray();

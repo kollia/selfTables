@@ -41,10 +41,11 @@ class STProjectOverviewList extends STObjectContainer
 	 * see STMessageHandling
 	 *
 	 * @param string $language current language like 'en', 'de', ...
+	 * @param string $nation current nation of language like 'US', 'GB', 'AT'. If not defined, default is 'XXX'
 	 */
-	protected function createMessages(string $language)
+	protected function createMessages(string $language, string $nation)
 	{
-        STObjectContainer::createMessages($language);
+        STObjectContainer::createMessages($language, $nation);
 		if($language == "de")
 		{
 		    $this->setMessageContent("LoginMaskDescription", "
@@ -333,7 +334,7 @@ class STProjectOverviewList extends STObjectContainer
         }
         return false;
     }
-    public function addObj(&$tag, $showWarning = false)
+    public function addObj(Tag|jsFunctionBase|array|string|null &$tag, $bWarningShowed = false, int $outFunc = 1)
     {
         $this->addedContent[]= $tag;
     }

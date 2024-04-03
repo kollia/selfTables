@@ -105,7 +105,7 @@ abstract class STBaseBox extends TableTag
 		    if($this->locale['language'] == "de")
 			{
 				$this->msg->setMessageContent("EMPTY_RESULT", "");
-				$this->msg->setMessageContent("NO_DATABASE", "dem Konstruktor von der Klasse $class, muss eine Datenbank mitgegeben werden");
+				$this->msg->setMessageContent("NO_DATABASE", "dem Konstruktor von der Klasse class, muss eine Datenbank mitgegeben werden");
 				$this->msg->setMessageContent("NOERROR", ""); // alle aenderungen wurden mit der Datenbank abgeglichen
 				$this->msg->setMessageContent("SQLERROR", "SQL-Error werden immer zuzueglich mit Nummer ausgegeben, getrennt mit underline '_'");
 				$this->msg->setMessageContent("CALLBACKERROR@", "@"); // hier wird die Fehlermeldung der Callbackfunktion gesetzt
@@ -441,7 +441,7 @@ abstract class STBaseBox extends TableTag
   				$sqlErrorMessage= $db->getError();
 				if($this->db->errno()!=0)
 				{//
-					$messageId= "SQLERROR";//_".$this->db->errno();
+					$messageId= "SQL_ERROR@";//_".$this->db->errno();
   					$this->msg->setMessageId($messageId, $sqlErrorMessage);
 				}
   			}elseif(!isset($sqlResult) || !is_array($sqlResult) || count($sqlResult)===0)

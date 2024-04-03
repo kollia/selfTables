@@ -85,7 +85,7 @@ class STDbTableCreator
     {
         $this->bCheck= true;
     }
-    function execute()
+    function execute() : bool
 	{
         if($this->bCheck)
   		{ 	
@@ -151,15 +151,17 @@ class STDbTableCreator
 			}
 			$this->db->query($statement);
 		}
-		function create()
+		function create() : bool
 		{
-		    $statement= "create table ".$this->sTable."(";
+			$tableName= $this->db->getDelimitedString($this->sTable, "field");
+		    $statement= "create table $tableName(";
 			if(STCheck::isDebug("tableCreator"))
 				$statement.= "\n                               ";
 			$keys= array();
     		foreach($this->asTableColumns as $column=>$content)
     		{
-    		    $statement.= $column." ".$content["type"];
+				$delimitedColumn= $this->db->getDelimitedString($column, "field");
+    		    $statement.= "$delimitedColumn ".$content["type"];
   				if(!$content["null"])
   		        	$statement.= " NOT NULL";
 				if(isset($content['auto_increment']))
@@ -206,7 +208,7 @@ class STDbTableCreator
 				{
 					$statement.= "PRIMARY KEY (";
 					foreach($key as $column)
-						$statement.= $column.",";
+						$statement.= $this->db->getDelimitedString($column, "field").",";
 					$statement= substr($statement, 0, strlen($statement)-1);
 					$statement.= "),";
 					if(STCheck::isDebug("tableCreator"))
@@ -221,14 +223,15 @@ class STDbTableCreator
 							foreach($content as $nr=>$to)
 							{
 								if(is_numeric($nr))
-									$statement.= $to["ownColumn"].",";
+									$statement.= $this->db->getDelimitedString($to["ownColumn"], "field").",";
 							}
 							$statement= substr($statement, 0, strlen($statement)-1);
-							$statement.= ") REFERENCES ".$content["toTable"]."(";
+							$statement.= ") REFERENCES ".$this->db->getDelimitedString($content["toTable"], "field");
+							$statement.= "(";
 							foreach($content as $nr=>$to)
 							{
 								if(is_numeric($nr))
-									$statement.= $to["otherColumn"].",";
+									$statement.= $this->db->getDelimitedString($to["otherColumn"], "field").",";
 							}
 							$statement= substr($statement, 0, strlen($statement)-1);
 							$statement.= "),";
@@ -249,7 +252,7 @@ class STDbTableCreator
 						foreach($columns as $column)
 						{
 							$statement.= $column["column"]."_";
-							$columnString.= $column["column"];
+							$columnString.= $this->db->getDelimitedString($column["column"], "field");
 							if(isset($column["length"]))
 								$columnString.= "(".$column["length"].")";
 							$columnString.= ",";
@@ -275,39 +278,9 @@ class STDbTableCreator
     		if($this->db->query($statement))
 			{
 				$this->db->asExistTableNames[]= $this->sTable;
-				return "NOERROR";
+				return true;
 			}
-			return "SQLERROR";
-
-			/*if(count($extern))
-			{
-    			foreach($extern as $name=>$key)
-    			{
-					$statement= "create ";
-    				if($name==="udx")
-    					$statement.= "UNIQUE INDEX udx_";
-    				else
-    					$statement.= "INDEX idx_";
-    				foreach($key as $identif=>$columns)
-    				{
-    					$columnString= "(";
-    					$statement.= $identif."_";
-    					foreach($columns as $column)
-    					{
-    						$statement.= $column."-";
-    						$columnString.= $column.",";
-    					}
-    					$statement= substr($statement, 0, strlen($statement)-1);
-    					$columnString= substr($columnString, 0, strlen($columnString)-1);
-    					$statement.= " on ".$this->sTable.$columnString.")";
-    					if(STCheck::isDebug("tableCreator"))
-    						$statement.= "\n                               ";
-    				}
-					STCheck::echoDebug("tableCreator", $statement);
-	    			$this->db->fetch($statement);
-    			}
-			}
-    		return "NOERROR";*/
+			return false;
 		}
 }
 

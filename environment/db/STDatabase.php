@@ -1007,6 +1007,7 @@ abstract class STDatabase extends STObjectContainer
 			$name=  $this->field_name($tableName, $n);
 			$type=  $this->field_type($tableName, $n);
 			$len=   $this->field_len($tableName, $n);
+			$default= $this->field_default($tableName, $n);
 			$flags= "";
 			if(!$this->field_NullAllowed($tableName, $n))
 				$flags.= "not_null ";
@@ -1024,7 +1025,7 @@ abstract class STDatabase extends STObjectContainer
 			{
 				$flags.= "enum ";
 			}
-			$aRv[$n]= array("name"=>$name, "flags"=>$flags, "type"=>$type, "len"=>$len);
+			$aRv[$n]= array("name"=>$name, "flags"=>$flags, "type"=>$type, "len"=>$len, "default"=>$default);
 			if(	is_array($enums) &&
 				count($enums) > 0	)
 			{

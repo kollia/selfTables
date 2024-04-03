@@ -10,13 +10,15 @@ class STUM_InstallContainer extends STObjectContainer
 		$this->setFirstTable("User", STINSERT);
 		$user= &$this->needTable("User");
 		$user->setDisplayName("Administrator");
+		$user->select("sex", "Sex");
 		$user->select("user", "Nickname");
-		$user->select("FullName", "Full name");
+		$user->select("firstname", "first Name");
+		$user->select("surname", "Surname");
 		$user->select("email", "Email");
 		$user->select("Pwd");
 		$user->preSelect("domain", $domain['ID']);
 		$user->preSelect("user", "admin");
-		$user->preSelect("FullName", "Administrator");
+		$user->preSelect("surname", "Administrator");
 		$user->preSelect("DateCreation", "sysdate()");
 		$user->password("Pwd", true);
 		$user->passwordNames("Password", "Repeat password");

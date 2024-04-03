@@ -56,7 +56,7 @@ class STDbInserter extends STDbSqlCases
 	    $result= $this->make_sql_values($this->columns[$nr]);
 	    $types= $this->read_inFields("type");
 	    $flags= $this->read_inFields("flags");
-	    $table= $this->table->getName();
+		$table= $this->db->getDelimitedString($this->table->getName(), "field");
 	        
         if(STCheck::isDebug("db.statement.insert"))
         {
@@ -75,7 +75,7 @@ class STDbInserter extends STDbSqlCases
             }
             if(!preg_match("/auto_increment/i", $flags[$key]))
             {
-                $key_string.= "$key,";
+				$key_string.= $this->db->getDelimitedString($key, "field") . ",";
                 $value_string.= $this->add_quotes($types[$key], $value).",";
             }
         }

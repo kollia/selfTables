@@ -7,6 +7,15 @@ require_once($_stdownload);
 
 class STSiteCreator extends HtmlTag
 {
+    /**
+     * language and format for text messages
+     * and nation for date
+     * @var array
+     */
+    var $locale= array( "language"  => 'en',
+                        "nation"    => 'XXX', // <- undefined
+                        "format"    => 'UTF-8'      );
+
 		var	$db;
 		var	$defaultTitles= array();
 		var	$project;
@@ -15,7 +24,6 @@ class STSiteCreator extends HtmlTag
 		var	$chooseTable;
 		var	$startPage= null;
 		var	$sBackButton= "";
-		var $sLanguage= "en";
 		var	$oMainTable;
 		//deprecated
 		var	$aNoChoise= array();
@@ -79,20 +87,10 @@ class STSiteCreator extends HtmlTag
 				}
 			}
 		}
-		function setLanguage($lang)
+		function setDefaultLanguage(string $lang, string $nation= "XXX")
 		{
-			STCheck::param($lang, 1, "string");
-			
-			if(	$lang != "en" &&
-				$lang != "de"	)
-			{
-				echo "<b>only follow languages be allowed:</b><br />";
-				echo "                   en   -   english<br />";
-				echo "                   de   -   german<br />";
-				printErrorTrace();
-				exit;
-			}
-			$this->sLanguage= $lang;
+			$this->locale['language']= $lang;
+			$this->locale['nation']= $nation;
 		}
 		function createMessages($onError)
 		{	
@@ -100,7 +98,7 @@ class STSiteCreator extends HtmlTag
 			$oTable= &$this->tableContainer->getTable();
 			$msgHandling= new STMessageHandling(get_class($this), $onError);
 			
-			if($this->sLanguage == "en")
+			if($this->locale['language'] == "en")
 			{
 				if($this->sBackButton == "")
 					$this->sBackButton= " back ";
@@ -109,7 +107,7 @@ class STSiteCreator extends HtmlTag
 				$msgHandling->setMessageContent("UPDATEACCESSERROR@", "user has no permission to change content inside table @");
 				$msgHandling->setMessageContent("DELETEACCESSERROR@", "user has no permission to delete content from table @");
 				
-			}elseif($this->sLanguage = "de")
+			}elseif($this->locale['language'] = "de")
 			{
 				if($this->sBackButton == "")
 					$this->sBackButton= " zurueck ";
@@ -331,7 +329,7 @@ class STSiteCreator extends HtmlTag
 				STCheck::echoDebug("install", "<b>WARNING</b> no {$className}->install() be called before {$className}->execute()");
 			}
 			// create first the container where will be set the maintable / other tables
-			$this->tableContainer->setLanguage($this->sLanguage);
+			$this->tableContainer->setDefaultLanguage($this->locale['language'], $this->locale['nation']);
 			if(isset($HTTP_GET_VARS["stget"]))
 				$get_vars= $HTTP_GET_VARS["stget"];
 			if(isset($get_vars["table"]))
@@ -804,7 +802,8 @@ class STSiteCreator extends HtmlTag
 			if(typeof($obj, "STObjectContainer"))
 			{
 			    STCheck::echoDebug("install", "<b>install</b> container ".get_class($obj)."($containerName)");
-				$obj->installContainer();
+				$obj->setExternSiteCreator($this);
+				$obj->doContainerInstallation();
 				$bInstalled= true;
 				STCheck::echoDebug("install", "container ".get_class($obj)."($containerName) is installed");
 			}

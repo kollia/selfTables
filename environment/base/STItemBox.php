@@ -660,7 +660,7 @@ class STItemBox extends STBaseBox
 		}
 		$oCallbackClass= new STCallbackClass($this->asDBTable, $post);
 		$oCallbackClass->action= $this->action;
-		$oCallbackClass->display= $display;
+		$oCallbackClass->display= true;//$display;
 		$oCallbackClass->before= true;
 		$oCallbackClass->rownum= 0;
 		$oCallbackClass->sqlResult= $post;
@@ -1002,7 +1002,8 @@ class STItemBox extends STBaseBox
 						// Bezeichnungs-Angabe f�r Felder
 						$td= new ColumnTag(TD);
 						$td->add(br());
-						if($field["type"]!=="getColumn")
+						if( isset($field["type"]) &&
+							$field["type"] !== "getColumn"	)
 						{
 							if($this->password==$name)
 							{// wenn die Schleife auf ein Passwort Stosst
@@ -1104,7 +1105,7 @@ class STItemBox extends STBaseBox
   				 	{
   				 		if(isset($field["name"]))
   				 		{
-							$aliasName= $this->asDBTable->searchByColumn($field["name"]);
+						$aliasName= $this->asDBTable->searchByColumn($field["name"], /* no warning */-1);
 							if(isset($aliasName["alias"]))
 								$mce= &$this->asDBTable->getTinyMCE($aliasName["alias"]);
   				 		}
@@ -1127,11 +1128,13 @@ class STItemBox extends STBaseBox
 									$input= new SelectTag();
 									$input->name($postColumn);
 									$input->size(1);
+									$nEnums= $aEnums[0];
 									if(!isset($this->aSetAlso[$field["name"]]))
 									{
 										$option= new OptionTag();
 										if(!preg_match("/not_null/", $field["flags"]))
 										{
+											--$nEnums;
 											$option->add($this->aSelectNames["null_entry"]);
 											if(	$this->action == STUPDATE &&
 												$columnValue == null	)
@@ -1143,7 +1146,7 @@ class STItemBox extends STBaseBox
 										$option->value("");
 										$input->add($option);
 									}
-									for($n= 1; $n<=$aEnums[0]; $n++)
+									for($n= 1; $n<=$nEnums; $n++)
 									{
 										$option= new OptionTag();
 										$option->add($aEnums[$n]);
@@ -2563,7 +2566,7 @@ class STItemBox extends STBaseBox
 					if(is_string($value))
 						$value= "'$value'";
 					$selector= new STDbSelector($this->asDBTable);
-					$selector->select($postColumn);
+					$selector->select($this->asDBTable->getName(), $field['name']);
 					$selector->where("$name=$value");
 					$selector->execute();
 					if(!$selector->getSingleResult())

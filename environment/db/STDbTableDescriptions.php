@@ -454,8 +454,8 @@ class STDbTableDescriptions
 					if(isset($content["fk"]))
 						$oTable->foreignKey($content["column"], $content["fk"]["table"], $content["fk"]["identif"], $content["fk"]["column"], $content["fk"]["type"]);
 				}
-				$oTable->execute();
-				$this->aExistTables[$table]["installed"]= true;
+				$res= $oTable->execute();
+				$this->aExistTables[$table]["installed"]= $res;
 				Tag::echoDebug("install", "table ".$table." was installed");
 			}
 		}
