@@ -926,7 +926,11 @@ class STDbTable extends STBaseTable
 	    $statement= "select ";
 	    if($this->isDistinct())
 	        $statement.= "distinct ";
-	    $aliasTable= $aTableAlias[$this->getName()];
+		if(isset($aTableAlias[$this->getName()]))
+	    	$aliasTable= $aTableAlias[$this->getName()];
+		else
+			$aliasTable= "uk";	// unknown - maybe table does not exist inside database
+								//			 this can occure when ask for list_table
 	    $statement.= $this->getSelectStatementA(!$bUseIdentifications, $this, $aliasTable, $aTableAlias, $aSubstitutionTables);
 	    $this->aStatement['select']= $statement;
 	    $this->aStatement['selectAlias']= $aTableAlias;

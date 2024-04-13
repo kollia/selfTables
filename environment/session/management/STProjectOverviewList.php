@@ -468,7 +468,8 @@ class STProjectOverviewList extends STObjectContainer
                         if(isset($logo['height']))
                             $img->height($logo['height']);
                         $img->border(0);
-                        $img->alt($logo['alt']);
+                        if(isset($logo['alt']))
+                            $img->alt($logo['alt']);
                     $a->add($img);
                 $table->add($a);
                 $styleString= "";
