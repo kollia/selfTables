@@ -1,6 +1,9 @@
 
 both can be set inside STDbTable:
 -----------------------------------------
+STDbTable::allowQueryLimitation(bool $bModify= true) // do both next commands
+STDbTable::allowFkQueryLimitation(bool $bModify= true)
+STBaseTable::allowQueryLimitationByOwn(bool $bModify= true)
 
 STListBox manipulation:
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
