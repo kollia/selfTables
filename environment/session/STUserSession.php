@@ -1429,9 +1429,7 @@ class STUserSession extends STDbSession
 		$clusterGroupSelector->clearFks();
 		$clusterGroupSelector->allowQueryLimitation(false);
 		$clusterGroupSelector->where("ClusterID='".$fromCluster."'");
-		$statement= $clusterGroupSelector->getStatement();
-		showLine();
-		echo "$statement<br>";
+		//$statement= $clusterGroupSelector->getStatement();
 		$clusterGroupSelector->execute();
 		$clusterGroupResult= $clusterGroupSelector->getSingleArrayResult();
 		if($bWithGroups)
@@ -1459,9 +1457,7 @@ class STUserSession extends STDbSession
 			$clusterGroupCheck->select("ClusterGroup", "ID", "ID");
 			$clusterGroupCheck->clearWhere();
 			$clusterGroupCheck->where("GroupID=$group");
-			$statement= $clusterGroupCheck->getStatement();
-			showLine();
-			echo "$statement<br>";
+			//$statement= $clusterGroupCheck->getStatement();
 			$clusterGroupCheck->execute();
 			$clusterGroupResult= $clusterGroupCheck->getResult();
 			if(empty($clusterGroupResult))
