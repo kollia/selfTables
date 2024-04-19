@@ -49,7 +49,7 @@
     		error_reporting(E_ERROR | E_WARNING | E_PARSE);
     }
     global_debug_definition($__globally_debug_defined);
-
+	
 	//--------------------------------------------------------------------------
 	// set php variables
 	//--------------------------------------------------------------------------
@@ -252,11 +252,13 @@
 		$_stsitecreator=			$_stenvironmenttools_path."/base/STSiteCreator.php";
 		  
 		$_stdatabase=				$_stenvironmenttools_path."/db/STDatabase.php";
+		$_stdbsqlfunctiontemplate=	$_stenvironmenttools_path."/db/STDbSqlFunctionTemplate.php";
 		$_stdbmariadb=              $_stenvironmenttools_path."/db/STDbMariaDB.php";
 		$_stdbmysql=				$_stenvironmenttools_path."/db/STDbMySql.php";
 		$_stdbtable=				$_stenvironmenttools_path."/db/STDbTable.php";
 		$_stdbdeftable=				$_stenvironmenttools_path."/db/STDbDefTable.php";
 		$_stdbwhere=				$_stenvironmenttools_path."/db/STDbWhere.php";
+		$_stdbsqlwherefunctions=	$_stenvironmenttools_path."/db/STDbSqlWhereFunctions.php";
 		$_stdbselector=				$_stenvironmenttools_path."/db/STDbSelector.php";
 		$_stdbinserter=				$_stenvironmenttools_path."/db/STDbInserter.php";
 		$_stdbdefinserter=			$_stenvironmenttools_path."/db/STDbDefInserter.php";

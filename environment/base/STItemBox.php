@@ -1887,7 +1887,7 @@ class STItemBox extends STBaseBox
 				$_instance= null;
 				if(	STUserSession::sessionGenerated()
 					and
-					count($this->asDBTable->sAcessClusterColumn))
+					count($this->asDBTable->sAccessClusterColumn))
 				{
     				$_instance= &STUserSession::instance();
                     $identification= "";
@@ -1923,7 +1923,7 @@ class STItemBox extends STBaseBox
 						$pkValue= $table->getSingleResult();
     				}
 					$tableName= $this->asDBTable->getDisplayName();
-   					foreach($this->asDBTable->sAcessClusterColumn as $aColumnCluster)
+   					foreach($this->asDBTable->sAccessClusterColumn as $aColumnCluster)
    					{
 	   					if(	!isset($showpost[$aColumnCluster["column"]]) ||
 							!$showpost[$aColumnCluster["column"]] ||

@@ -8,6 +8,7 @@ class STUserSiteCreator extends STSessionSiteCreator
 	var $nProject;
 	var	$sUserTablePrefix;
 	var	$bDoInstall= false;
+	var $bAskForProject= false;
 
 	function __construct($projectNameNr, $container= null)
 	{

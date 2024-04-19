@@ -31,12 +31,6 @@ class STDbTable extends STBaseTable
 	 * @var array
 	 */
 	protected $aStatement= array();
-	/**
-	 * columns for cluster where row should only show
-	 * when user has cluster
-	 * @var array
-	 */
-	protected $aClusterColumns= array();
 
 	protected function createFirstOwnTable($Table)
 	{
@@ -164,7 +158,7 @@ class STDbTable extends STBaseTable
 		unset($this->container);
 		$this->container= $oTable->container;
 		$this->onError= $oTable->onError;
-		$this->sAcessClusterColumn= $oTable->sAcessClusterColumn;
+		$this->sAccessClusterColumn= $oTable->sAccessClusterColumn;
 		$this->password= $oTable->password;
 		$this->aStatement= $oTable->aStatement;
 	}
@@ -291,21 +285,35 @@ class STDbTable extends STBaseTable
     }
 	function addAccessClusterColumn($column, $parentCluster, $clusterfColumn, $accessInfoString, $addGroup= true, $action= STALLDEF)
 	{
-		STCheck::param($column, 0, "string");
-		STCheck::param($parentCluster, 0, "string", "null");
-		STCheck::param($clusterfColumn, 2, "string", "null");
-		STCheck::param($accessInfoString, 3, "string", "empty(string)");
-		STCheck::param($addGroup, 4, "boolean");
-		STCheck::param($action, 5, "string", "int");
-		//Tag::paramCheck($parentCluster, 7, "string", "null");
-		Tag::alert(!$this->columnExist($column), "STBaseTable::addAccessClusterColumn()",
-											"column $column not exist in table ".$this->Name.
-											"(".$this->getDisplayName().")", 1);
-	/*	Tag::alert(!$this->columnExist($clusterfColumn), "STBaseTable::addAccessClusterColumn()",
-											"column for cluster $clusterfColumn not exist in table ".$this->Name.
-											"(".$this->getDisplayName().")", 1);*/
+		if(STCheck::isDebug())
+		{
+			STCheck::param($column, 0, "string");
+			STCheck::param($parentCluster, 0, "string", "array", "null");
+			STCheck::param($clusterfColumn, 2, "string", "null");
+			STCheck::param($accessInfoString, 3, "string", "empty(string)");
+			STCheck::param($addGroup, 4, "boolean");
+			STCheck::param($action, 5, "string", "int");
+			//Tag::paramCheck($parentCluster, 7, "string", "null");
+			Tag::alert(!$this->columnExist($column), "STBaseTable::addAccessClusterColumn()",
+												"column $column not exist in table ".$this->Name.
+												"(".$this->getDisplayName().")", 1);
+		/*	Tag::alert(!$this->columnExist($clusterfColumn), "STBaseTable::addAccessClusterColumn()",
+												"column for cluster $clusterfColumn not exist in table ".$this->Name.
+												"(".$this->getDisplayName().")", 1);*/
+		}
 
 
+		if(!isset($clusterfColumn))
+		{
+			$selector= new STDbSelector($this);
+			$selector->select($this->Name, $column, $column);
+			$selector->allowQueryLimitation(true);
+			$statement= $selector->getStatement();
+			$selector->execute();
+			$clusterfString= $selector->getSingleResult();
+			$bCreateCluster= false;
+		}else
+			$bCreateCluster= true;
 		$this->getColumn($column);
 		if($action==STACCESS)
 			$action= STLIST;
@@ -337,12 +345,19 @@ class STDbTable extends STBaseTable
 			$accessInfoString= preg_replace("/'/", $accessInfoString, "\'");
 
 
-		$this->sAcessClusterColumn[]= array(	"action"=>	$action,
+		$this->aSetAlso[$column][STINSERT]= $clusterfColumn;
+		$this->sAccessClusterColumn[]= array(	"action"=>	$action,
 												"column"=>	$column,
 												"parent"=>	$parentCluster,
 												"cluster"=>	$clusterfColumn,
 												"info"=>	$accessInfoString,
-												"group"=>	$addGroup			);
+												"group"=>	$addGroup			);		
+		if( $bCreateCluster &&
+			STUserSession::sessionGenerated()	)
+		{
+			$session= STUserSession::instance();
+			$session->createCluster($clusterfColumn, $accessInfoString, $addGroup);
+		}
 	}
 	/**
 	 * pre-define an access cluster for every row,
@@ -413,21 +428,78 @@ class STDbTable extends STBaseTable
 	 * @param string $accessInfoString the string which should be written inside logging table
 	 * @param boolean $addGroup whether by creating the cluster, also a group for it should be created
 	 */
-	public function cluster(string $access, string $column, string $prefix= "", string $accessInfoString= "", $addGroup= true, $parentTable= null, $pkValue= null)
+	public function cluster(string $access, string $column, string $prefix, string $accessInfoString= "", $addGroup= true)
 	{
-	    $post= new STPostArray();
-	    if( $post->exist("STBoxes_action") &&
-	        $post->getValue("STBoxes_action") == "make"    )
-	    {
-	        $action= $this->container->getAction();
-    	    if($action == STINSERT)
-    	        $this->insertCluster($access, $column, $prefix, $accessInfoString, $addGroup, $parentTable, $pkValue);
-	    }else
-	    {
-	        $field= $this->findColumnOrAlias($column);
-	    }
+		$field= $this->findColumnOrAlias($column);
+
+		if(	$this->container->currentContainer() &&
+			$this->currentTable()					)
+		{
+			$post= new STPostArray();
+			if( $post->exist("STBoxes_action") &&
+				$post->getValue("STBoxes_action") == "make"    )
+			{
+				$action= $this->container->getAction();
+				if($action == STINSERT)
+					$this->insertCluster($access, $field['column'], $prefix, $accessInfoString, $addGroup);
+			}else
+			{
+				$query= new STQueryString();
+				$stget= $query->getUrlParamValue("stget");
+				if(	isset($stget['action']) &&
+					$stget['action'] == STDELETE &&
+					STUserSession::sessionGenerated() &&
+					isset($stget['limit'][$this->Name])	)
+				{
+					$selector= new STDbSelector($this);
+					$selector->select($this->Name, $field['column'], $field['column']);
+					foreach($stget['limit'][$this->Name] as $col=>$val)
+					{
+						$sWhere= "$col=";
+						if(is_numeric($val))
+							$sWhere.= "$val";
+						else
+							$sWhere.= "'$val'";
+						$selector->where($this->Name, $sWhere);
+					}
+					if(!$selector->execute())
+						return;
+					$cluster= $selector->getSingleResult();
+
+					$session= STUserSession::instance();
+					$session->removeCluster($cluster, $addGroup);
+				}
+			}
+		}else
+		{
+			if(STCheck::isDebug())
+			{
+				showLine();
+				echo "toDo: check whether table is in the feature<br>";
+			}
+			$parentCluster= array();
+			$clusterfColumn= null;
+			$this->addAccessClusterColumn($column, $parentCluster, $clusterfColumn, $accessInfoString, $addGroup, $access);
+		}
 	}
-	protected function insertCluster($access, $column, $prefix, $accessInfoString= "", $addGroup= true, $parentTable= null, $pkValue= null)
+	public function currentTable()
+	{
+		$get= new STQueryString();
+		$get= $get->getArrayVars();
+		$tableName= "";
+		if(isset($get["stget"]["table"]))
+			$tableName= $get["stget"]["table"];
+		else
+			$tableName= $this->container->getTableName();
+		if($this->Name==$tableName)
+			return true;
+		return false;
+	}
+	public function getAccessClusterColumns()
+	{
+		return $this->sAccessClusterColumn;
+	}
+	protected function insertCluster($access, $column, $prefix, $accessInfoString= "", $addGroup= true)
 	{
 	    if(STCheck::isDebug())
 	    {
@@ -436,64 +508,63 @@ class STDbTable extends STBaseTable
     		STCheck::param($prefix, 2, "string");
     		STCheck::param($accessInfoString, 3, "string", "empty(string)");
     		STCheck::param($addGroup, 4, "boolean");
-    		STCheck::param($parentTable, 5, "STBaseTable", "string", "boolean", "null");
-    		STCheck::param($pkValue, 6, "string", "int", "float", "boolean", "null");
 	    }
 
-		if(is_bool($parentTable))
-		{
-			$addGroup= $parentTable;
-			$parentTable= null;
-		}
-		if(is_bool($pkValue))
-		{
-			$addGroup= $pkValue;
-			$pkValue= null;
-		}
 		$action= STINSERT;
 		if(isset($this->asAccessIds[$action]["cluster"]))
 		    $parentCluster= $this->asAccessIds[$action]["cluster"];
 		else
 		    $parentCluster= "";
-		if($this->container->currentContainer())	// if the container is not aktual
+		if($this->container->currentContainer())// if container is not the current one,
 		{										// does not need an parent-cluster,
-			if(	!$parentCluster					// because an insert box can not appear
-				or
-				preg_match("/,/", $parentCluster)	)
+			if(!$parentCluster)					// because an insert box can not appear
 			{
 			    if(!isset($parentTable))
 			        $parentTable= $this;
-		        $parentCluster= $this->container->getLinkedCluster($action, $parentTable, $pkValue);
+		        $parentCluster= $this->container->getLinkedCluster($action);
+			}else
+			{ 
+				if(preg_match("/,/", $parentCluster))
+					$parentCluster= preg_split("/,/", $parentCluster);
+				else 
+					$partenCluster= array($parentCluster);
 			}
 			//Tag::alert(!$parentCluster, "STDbTable::accessCluster()", "no parentCluster be set");
-			$preg= $this->splitClusterString($prefix);
-			if(count($preg))
-			{
-			    $post= new STPostArray();
-			    $field= $this->findAliasOrColumn($preg[2][0]);
-			    $begin= substr($prefix, 0, $preg[0][1]);
-			    if($post->exist($field['alias']))
-			        $columnContent= $post->getValue($field['alias']);
-			    elseif($post->exist($field['column']))
-			        $columnContent= $post->getValue($field['column']);
-			    else
-			        $columnContent= "unknownColumnContent";
-			    $end= substr($prefix, $preg[2][1]+strlen($preg[2][0])+1);
-			    $clusterfColumn= $begin.$columnContent.$end;
-				if(STCheck::isDebug())
-				{
-					showLine();
-					echo "by creating dynamic cluster always implement count of table<br>";
-					echo "toDo: implement only when field not unique";
-				}
-			    $tableEntrys= $this->getTableEntrys();
-			    $clusterfColumn.= "[".($tableEntrys+1)."]";
-				$clusterfColumn.= $access;
-			}
+			$clusterfColumn= $this->createDynamicClusterString($access, $prefix, $column);
 			if($parentCluster == "")
 			    $parentCluster= null;//no parent cluster exist
-			$this->addAccessClusterColumn($column, $parentCluster, $clusterfColumn, $accessInfoString, $addGroup, $action);
+			$this->addAccessClusterColumn($column, $parentCluster, $clusterfColumn, $accessInfoString, $addGroup, $access);
 		}
+	}
+	protected function createDynamicClusterString(string $access, string $prefix, string $column, string $value= "")
+	{
+		$preg= $this->splitClusterString($prefix);
+		if(count($preg))
+		{
+			$post= new STPostArray();
+			if($value == "")
+			{// if no value for column is set try to take from post
+				$field= $this->findAliasOrColumn($preg[2][0]);
+				$begin= substr($prefix, 0, $preg[0][1]);
+				if($post->exist($field['alias']))
+					$columnContent= $post->getValue($field['alias']);
+				elseif($post->exist($field['column']))
+					$columnContent= $post->getValue($field['column']);
+				else
+					$columnContent= "unknownColumnContent";
+			}else
+				$columnContent= $value;
+			$end= substr($prefix, $preg[2][1]+strlen($preg[2][0])+1);
+			$sRv= $begin.$columnContent.$end;			
+		}else
+			$sRv= $prefix;
+			
+		//toDo: implement only when field not unique
+		$tableEntrys= $this->getTableEntrys();
+		$sRv.= "[".($tableEntrys+1)."]";
+		$sRv.= $access;
+		return $sRv;
+
 	}
 	private function splitClusterString(string $cluster)
 	{
@@ -2057,15 +2128,42 @@ class STDbTable extends STBaseTable
      * allow modification by every table has an limit in the query string
      * or an foreign key table limit points to own table with also limitation from query
      * 
-     * @param bool $bModify whether should modification enabled or disabled (default:enable[true])
+     * @param bool $bModify whether should modification enabled or disabled
+	 * @return array content of fk and own limitatin by query
 	 */
-	public function allowQueryLimitation($bModify= true)
+	public function allowQueryLimitation(bool|array $modify= null) : array
 	{
-        $this->allowFkQueryLimitation($bModify);
-        $this->allowQueryLimitationByOwn($bModify);
+		if(!isset($modify))
+		{
+			$bfk= null;
+			$bown= null;
+		}elseif(is_bool($modify))
+		{
+			$bfk= $modify;
+			$bown= $modify;
+		}else
+		{
+			if(STCheck::isDebug())
+			{
+				$bOk= true;
+				if(!isset($modify['fk']))
+					$bOk= false;
+				elseif(!isset($modify['own']))
+					$bOk= false;
+				STCheck::param($modify, 0, "check", $bOk, "array of modify need key 'fk' and 'own'");
+			}
+			$bfk= $modify['fk'];
+			$bown= $modify['own'];
+		}
+		$aRv= array();
+        $aRv['fk']= $this->allowFkQueryLimitation($bfk);
+        $aRv['own']= $this->allowQueryLimitationByOwn($bown);
+		return $aRv;
 	}
-	public function allowFkQueryLimitation($bModify= true)
+	public function allowFkQueryLimitation($bModify= null)
 	{
+		if(!isset($bModify))
+			return $this->bModifyFk;
 	    if(STCheck::isDebug("db.statements.where"))
 	    {
 	        if($bModify)
@@ -2079,6 +2177,7 @@ class STDbTable extends STBaseTable
 	    $this->bModifyFk= $bModify;
 	    if($this->bModifiedByQuery)
 	        $this->resetQueryLimitation("fk", $bModify);
+		return $this->bModifyFk;
 	}
 	/**
      * reset modification of query limitation

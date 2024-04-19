@@ -1613,8 +1613,9 @@ class STListBox extends STBaseBox
 								}elseif(Tag::isDebug())
 								{
 									$b= new BTag();
-										$b->add("[no access]");
+										$b->add("[no access] to ");
 									$td->add($b);
+									$td->add($columnValue);
 								}
 							}
 

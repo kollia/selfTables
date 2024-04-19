@@ -416,25 +416,25 @@ abstract class STBaseContainer extends BodyTag implements STContainerTempl
 	{
 		Tag::paramCheck($containerName, 1, "string", "empty(string)");
 
-		$vars= new STQueryString();
-		$vars= $vars->getArrayVars();
-		if(isset($vars["stget"]))
-			$vars= $vars["stget"];
+		$query= new STQueryString();
+		$query= $query->getArrayVars();
+		if(isset($query["stget"]))
+			$query= $query["stget"];
 		else
-			$vars= null;
+			$query= null;
 		if(!$containerName)
 			$containerName= $this->name;
-		while(isset($vars))
+		while(isset($query))
 		{
-			if(	isset($vars["container"]) &&
-				$vars["container"] == $this->name	)
+			if(	isset($query["container"]) &&
+				$query["container"] == $this->name	)
 			{
-				return $vars;
+				return $query;
 			}
-			if(isset($vars["older"]["stget"]))
-				$vars= $vars["older"]["stget"];
+			if(isset($query["older"]["stget"]))
+				$query= $query["older"]["stget"];
 			else
-				$vars= null;
+				$query= null;
 		}
 		return null;
 	}
@@ -465,16 +465,7 @@ abstract class STBaseContainer extends BodyTag implements STContainerTempl
 	}
 	function &getOlderContainer()
 	{
-		/*$oldContainerName= $HTTP_GET_VARS["stget"]["older"]["stget"]["container"];
-		if(!$oldContainerName)
-		{
-
-			if(	$vars["stget"]["container"]
-				and
-				$this->sFirstTableContainerName!=$HTTP_GET_VARS["stget"]["container"]	)
-		{
-			$oldContainerName= $this->sFirstTableContainerName;
-		}*/
+		$container= NULL;
 		$older= $this->getOlderContainerName();
 		if($older)
 			$container= &STObjectContainer::getContainer($older);
@@ -569,13 +560,12 @@ abstract class STBaseContainer extends BodyTag implements STContainerTempl
 			$this->bInitialize= true;
 		}
 	}
-	function currentContainer()
+	public function currentContainer()
 	{
 		$get= new STQueryString();
 		$get= $get->getArrayVars();
 		$containerName= "";
-		if(	isset($get["stget"]) &&
-			isset($get["stget"]["container"])	)
+		if(	isset($get["stget"]["container"])	)
 		{
 			$containerName= $get["stget"]["container"];
 		}

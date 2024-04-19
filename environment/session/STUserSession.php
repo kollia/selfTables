@@ -334,53 +334,70 @@ class STUserSession extends STDbSession
         	$project->select("can_update");
         	$project->select("can_delete");
 			$project->where("ID=".$this->projectID);
-			$selector= new STDbSelector($project);
-			$selector->execute(STSQL_ASSOC, 1);
-			$this->projectCluster= $selector->getRowResult();
+			$clusterGroupSelector= new STDbSelector($project);
+			$clusterGroupSelector->execute(STSQL_ASSOC, 1);
+			$this->projectCluster= $clusterGroupSelector->getRowResult();
 		}
 		return $this->projectCluster;
 	}
-	function getDynamicClusters($table)
+	/**
+	 * Get all dynamic clusters from table
+	 * and store it inside session
+	 * 
+	 * @param STDbTable $table table object from which need
+	 * @return array cluster array as follow as showen<br />
+	 * 					array[action][pk][column]= cluster
+	 * 						action	- allowed permission for cluster
+	 * 								  'access', 'admin' or defined
+	 * 						pk		- primary key of table entry
+	 * 						column	- column name in which cluster stored
+	 * 						cluster	- dynamic cluster for permission
+	 */
+	function getDynamicClusters($table) : array
 	{
 	    Tag::paramCheck($table, 1, "STDbTable");
 
-	    $clusters= $this->getSessionVar("ST_USER_DEFINED_VARS", "dynamic", $table->getName());
-    	if(!is_array($clusters))
-  		{//echo __file__.__line__."<br />";
-  		    //st_print_r($this->sAcessClusterColumn,3);
-  		    $selector= new STDbSelector($table);
-  		    $selector->clearSelects();
-  		    $selector->select($table->Name, $table->getPkColumnName());
-  		    foreach($table->sAcessClusterColumn as	$clusterInfo)
-  		    {
-  		        $selector->select($table->Name, $clusterInfo["column"]);
-  		        $selector->andWhere($clusterInfo["column"]." is not null");
-  		        $selector->andWhere($clusterInfo["column"]."!=''");
-  		    }
-			$selector->execute();
-			$result= $selector->getResult();
+		if(!count($table->sAccessClusterColumn))
+			return array();
+		$clusters= array();
+		$store_in_session= false;
+		if($store_in_session)
+	    	$clusters= $this->getSessionVar("ST_USER_DEFINED_VARS", "dynamic", $table->getName());
+    	if(	!$store_in_session ||
+			!is_array($clusters)	)
+  		{
+			$pkColumn= $table->getPkColumnName();
+  		    $clusterGroupSelector= new STDbSelector($table);
+			$clusterGroupSelector->allowQueryLimitation($table->allowQueryLimitation());
+  		    $clusterGroupSelector->select($table->Name, $pkColumn);
+  		    foreach($table->sAccessClusterColumn as	$clusterInfo)
+  		        $clusterGroupSelector->select($table->Name, $clusterInfo["column"]);
+			$clusterGroupSelector->execute();
+			//$clusterGroupSelector->displayWrappedStatement();
+			$result= $clusterGroupSelector->getResult();
 			$clusters= array();
   		    foreach($result as $row)
   		    {
-  		        foreach($table->sAcessClusterColumn as	$key=>$clusterInfo)
+  		        foreach($table->sAccessClusterColumn as	$key=>$clusterInfo)
 			    {
-			        $clusters[$clusterInfo["action"]][$row[0]]= $row[$key+1];
+			        $clusters[$clusterInfo["action"]][$row[$pkColumn]][$clusterInfo["column"]]= $row[$clusterInfo["column"]];
 			    }
   		    }
-  		    $this->setRecursiveSessionVar($clusters, "ST_USER_DEFINED_VARS", "dynamic", $table->getName());
+			if($store_in_session)
+  		    	$this->setRecursiveSessionVar($clusters, "ST_USER_DEFINED_VARS", "dynamic", $table->getName());
         }
     	return $clusters;
 	}
-	function addDynamicCluster($table, $action, $pkValue, $cluster)
+	function addDynamicCluster(string $cluster)//($table, $action, $pkValue, $permission, $cluster)
 	{
-	    Tag::paramCheck($table, 1, "STDbTable", "string");
+/*	    Tag::paramCheck($table, 1, "STDbTable", "string");
 	    Tag::paramCheck($action, 2, "int", "string");
 	    Tag::paramCheck($pkValue, 3, "int", "string");
 	    Tag::paramCheck($cluster, 4, "string");
 
 		if(typeof($table, "STDbTable"))
 		    $table= $table->getName();
-		$this->setRecursiveSessionVar($cluster, "ST_USER_DEFINED_VARS", "dynamic", $table, $action, $pkValue);
+		$this->setRecursiveSessionVar($cluster, "ST_USER_DEFINED_VARS", "dynamic", $table, $action, $pkValue, $permission);*/
 		$this->setRecursiveSessionVar(true, "ST_EXIST_CLUSTER", $cluster);
 	}
 	function projectColumn($defined, $column, $alias= null)
@@ -636,12 +653,12 @@ class STUserSession extends STDbSession
 	public function getUserData($sqlType= null)
 	{
 	    $user= $this->container->getTable("User");
-	    $selector= new STDbSelector($user);
-	    $selector->where("User", "ID=".$this->getUserID());
-	    $res= $selector->execute();
+	    $clusterGroupSelector= new STDbSelector($user);
+	    $clusterGroupSelector->where("User", "ID=".$this->getUserID());
+	    $res= $clusterGroupSelector->execute();
 	    if($res <= 0)
 	        return $res;
-	    $aRv= $selector->getRowResult($sqlType);
+	    $aRv= $clusterGroupSelector->getRowResult($sqlType);
 		// search correct name inside database
 	    $pwd= $user->searchByColumn("Pwd");
 	    unset($aRv[$pwd['column']]);// toDo: maybe better create new function for STdbSelector "->noSelect()"
@@ -658,11 +675,11 @@ class STUserSession extends STDbSession
 	public function getUserDataList($sqlType= null)
 	{
 	    $user= $this->container->getTable("User");
-	    $selector= new STDbSelector($user);
-	    $res= $selector->execute();
+	    $clusterGroupSelector= new STDbSelector($user);
+	    $res= $clusterGroupSelector->execute();
 	    if($res <= 0)
 	        return $res;
-        $aRv= $selector->getResult($sqlType);
+        $aRv= $clusterGroupSelector->getResult($sqlType);
         $pwd= $user->searchByColumn("Pwd");// search correct name inside database
         foreach($aRv as &$row)
         {// toDo: maybe better create new function for STdbSelector "->noSelect()"
@@ -969,12 +986,12 @@ class STUserSession extends STDbSession
 	function selectGroupID($groupname)
 	{
 		$group= $this->constainer->getTable("Group");
-		$selector= new STDbSelector($group);
-		$selector->select("Group", "ID");
-		$selector->where("Name='$groupname'");
-		$selector->limit(1);
-		$selector->execute();
-		$ID= $selector->getSingleResult();
+		$clusterGroupSelector= new STDbSelector($group);
+		$clusterGroupSelector->select("Group", "ID");
+		$clusterGroupSelector->where("Name='$groupname'");
+		$clusterGroupSelector->limit(1);
+		$clusterGroupSelector->execute();
+		$ID= $clusterGroupSelector->getSingleResult();
 		return $ID;
 	}
 	function writeLog($Type, $customID, $logText)
@@ -1041,22 +1058,22 @@ class STUserSession extends STDbSession
     	    }
 		}
 		$userTable= $this->container->getTable("User");
-		$selector= new STDbSelector($userTable);
-		$selector->clearSelects();
-		$selector->clearGetColumns();
-		$selector->select("User", "ID", "ID");
-		$selector->select("User", "user", "UserName");
-		$selector->select("AccessDomain", "Name", "Domain");
+		$clusterGroupSelector= new STDbSelector($userTable);
+		$clusterGroupSelector->clearSelects();
+		$clusterGroupSelector->clearGetColumns();
+		$clusterGroupSelector->select("User", "ID", "ID");
+		$clusterGroupSelector->select("User", "user", "UserName");
+		$clusterGroupSelector->select("AccessDomain", "Name", "Domain");
 		if(is_string($user))
-			$selector->where("user='".$user."'");
+			$clusterGroupSelector->where("user='".$user."'");
 		else
-			$selector->where("ID=".$user);
+			$clusterGroupSelector->where("ID=".$user);
 		if($domain != "")
 		{
-		    $selector->andWhere("GroupType='$domain'");
+		    $clusterGroupSelector->andWhere("GroupType='$domain'");
 		}
-		$selector->execute();
-		$row= $selector->getResult();
+		$clusterGroupSelector->execute();
+		$row= $clusterGroupSelector->getResult();
 
 		$ID= -1;
 		$groupType= "";
@@ -1154,16 +1171,16 @@ class STUserSession extends STDbSession
 	public function existsDbCluster(string $clusterName)
 	{
 		$cluster= $this->container->getTable("Cluster");
-		$selector= new STDbSelector($cluster);
-		//$selector->clearSelects();
-		$selector->count();
+		$clusterGroupSelector= new STDbSelector($cluster);
+		//$clusterGroupSelector->clearSelects();
+		$clusterGroupSelector->count();
 		
 		$whereObj= new STDbWhere();
-		$whereObj->where($selector->getPkColumnName()."='$clusterName'");
+		$whereObj->where($clusterGroupSelector->getPkColumnName()."='$clusterName'");
 		$whereObj->andWhere("ProjectID=".$this->getProjectID());
-		$selector->where($whereObj);
-		$selector->execute();
-		$exists= $selector->getSingleResult();
+		$clusterGroupSelector->where($whereObj);
+		$clusterGroupSelector->execute();
+		$exists= $clusterGroupSelector->getSingleResult();
 		if($exists)
 			return true;
 		return false;
@@ -1192,18 +1209,18 @@ class STUserSession extends STDbSession
 	    $domain= $this->getDomainID($domainName);
 	    $group= $this->container->getTable("Group");
 	    
-	    $selector= new STDbSelector($group);
-	    $selector->clearSelects();
-	    $selector->count();
+	    $clusterGroupSelector= new STDbSelector($group);
+	    $clusterGroupSelector->clearSelects();
+	    $clusterGroupSelector->count();
 	    
 	    $oWhere= new STDbWhere();
 	    $oWhere->where("Name='$groupName'");
 	    $oWhere->andWhere("domain='$domain'");
 	    $oWhere->table("Group");
 	    
-	    $selector->where($oWhere);
-	    $selector->execute();
-	    $exists= $selector->getSingleResult();	    
+	    $clusterGroupSelector->where($oWhere);
+	    $clusterGroupSelector->execute();
+	    $exists= $clusterGroupSelector->getSingleResult();	    
 	    if($exists)
 	        return true;
 	    return false;
@@ -1222,13 +1239,13 @@ class STUserSession extends STDbSession
   		//$oPartition->accessBy("STUM-Insert", STINSERT);
   		//$oPartition->accessBy("STUM-Update", STUPDATE);
   		$oPartition->accessBy($clusters[$desc->getColumnName("Project", "can_delete")], STDELETE);
-		$selector= new STDbSelector($oPartition);
-		$selector->clearSelects();
-		$selector->select("Partition", $oPartition->getPkColumnName());
-		$selector->where("Name='".$partitionName."'");
-		$selector->andWhere("ProjectID=".$this->projectID);
-		$selector->execute();
-		$id= $selector->getSingleResult();
+		$clusterGroupSelector= new STDbSelector($oPartition);
+		$clusterGroupSelector->clearSelects();
+		$clusterGroupSelector->select("Partition", $oPartition->getPkColumnName());
+		$clusterGroupSelector->where("Name='".$partitionName."'");
+		$clusterGroupSelector->andWhere("ProjectID=".$this->projectID);
+		$clusterGroupSelector->execute();
+		$id= $clusterGroupSelector->getSingleResult();
 		if($id)
 		{
 			$this->nPartition[$partitionName]= $id;
@@ -1313,6 +1330,156 @@ class STUserSession extends STDbSession
 			return "NOGROUPCONNECTCREATE";
 
 		return "NOERROR";
+	}
+	/**
+	 * remove cluster from database
+	 * with all any more unused groups
+	 * 
+	 * @param string $cluster name of cluster
+	 * @param bool $bWithGroup whether should also remove group deamons
+	 * @return string|array array of error strings or 'NOERROR' as string
+	 */
+	public function removeCluster(string $cluster, bool $bWithGroup) : string|array
+	{
+		$saRv= $this->removeClusterGroup($cluster, $bWithGroup);
+		if(!is_string($saRv)) // ERROR
+		{
+			foreach($saRv as $error)
+			{
+				if($error == "NOCLUSTERGROUPREMOVED")
+				{
+					$saRv[]= "NOCLUSTERREMOVED";
+					if($bWithGroup)
+					{
+						$saRv[]= "NOGROUPREMOVED";
+						$saRv[]= "NOUSERGROUPREMOVED";
+					}
+					return $saRv;
+				}
+			}
+		}
+
+		$oCluster= $this->container->getTable("Cluster");
+		$deleter= new STDbDeleter($oCluster);
+		$deleter->where("ID='$cluster'");
+		if($deleter->execute(noErrorShow) !== 0)
+		{
+			$saRv[]= "NOCLUSTERREMOVED";
+			if($bWithGroup)
+			{
+				$saRv[]= "NOGROUPREMOVED";
+				$saRv[]= "NOUSERGROUPREMOVED";
+			}
+			return $saRv;
+		}else
+			$this->removeExistCluster($cluster);
+		return $saRv;// saRv can be NOERROR from removeClusterGroup
+	}
+	public function removeGroup(string|int $group)
+	{
+		$oGroup= $this->container->getTable("Group");
+		if(!is_numeric($group))
+		{
+			$groupSelector= new STDbSelector($oGroup);
+			$groupSelector->select("Group", "ID", "ID");
+			$groupSelector->where("Name='$group'");
+			$groupSelector->execute(noErrorShow);
+			$groupid= $groupSelector->getSingleResult();
+		}else
+		{
+			$groupid= $group;
+			$group= null;
+		}
+		$res= $this->removeUserGroup("group", $groupid);
+		if(!is_string($res))
+		{ // error occured
+			$aRv[]= "NOUSERGROUPREMOVED";
+			$aRv[]= "NOGROUPREMOVED";
+			return $aRv;
+		}
+		$deleter= new STDbDeleter($oGroup);
+		$deleter->where("ID=$groupid");
+		$res= $deleter->execute();
+		if($res != 0)
+			return array( "NOGROUPREMOVED" );
+		return "NOERROR";
+	}
+	public function removeUserGroup(string $whatdef, int $ID) : string
+	{
+		$userGroup= $this->container->getTable("UserGroup");
+		$deleter= new STDbDeleter($userGroup);
+		if($whatdef == "user")
+			$deleter->where("UserIDs=$ID");
+		else
+			$deleter->where("GroupID=$ID");
+		$res= $deleter->execute(noErrorShow);
+		if($res == 0)
+			return "NOERROR";
+		return "DELETIONFAULT";
+	}
+	public function removeClusterGroup(string $fromCluster, bool $bWithGroups) : string|array
+	{
+		//$cluster= $this->container->getTable("Cluster");
+
+		$aRv= array();
+		$clusterGroup= $this->container->getTable("ClusterGroup");
+		$clusterGroupSelector= new STDbSelector($clusterGroup, STSQL_ASSOC, noErrorShow);
+		$clusterGroupSelector->select("ClusterGroup", "ID", "ID");
+		$clusterGroupSelector->select("ClusterGroup", "GroupID", "GroupID");
+		$clusterGroupSelector->clearFks();
+		$clusterGroupSelector->allowQueryLimitation(false);
+		$clusterGroupSelector->where("ClusterID='".$fromCluster."'");
+		$statement= $clusterGroupSelector->getStatement();
+		showLine();
+		echo "$statement<br>";
+		$clusterGroupSelector->execute();
+		$clusterGroupResult= $clusterGroupSelector->getSingleArrayResult();
+		if($bWithGroups)
+			$groupResult= $clusterGroupSelector->getSingleArrayResult("GroupID");
+		else
+			$groupResult= array();
+		if(count($clusterGroupResult))
+		{
+		    $deleter= new STDbDeleter($clusterGroupSelector, STSQL_ASSOC, noErrorShow);
+			$where= new STDbWhere();
+			$where->IN("ID", $clusterGroupResult);
+			$deleter->where($where);
+		    if($deleter->execute() != 0)
+			{
+				$aRv[]= "NOCLUSTERGROUPREMOVED";
+				return $aRv;
+			}
+		}else
+			return array("NOCLUSTERGROUPEXIST");
+		foreach($groupResult as $group)
+		{
+			// all connections from the cluster to the group are severed
+			// now check whether the groups also have a connection to an other cluster
+			$clusterGroupCheck= new STDbSelector($clusterGroup, STSQL_ASSOC, noErrorShow);
+			$clusterGroupCheck->select("ClusterGroup", "ID", "ID");
+			$clusterGroupCheck->clearWhere();
+			$clusterGroupCheck->where("GroupID=$group");
+			$statement= $clusterGroupCheck->getStatement();
+			showLine();
+			echo "$statement<br>";
+			$clusterGroupCheck->execute();
+			$clusterGroupResult= $clusterGroupCheck->getResult();
+			if(empty($clusterGroupResult))
+			{
+				$res= $this->removeGroup($group);
+				if($res != "NOERROR")
+				{
+					if(is_array($res))
+						$aRv= array_merge($aRv, $res);
+					else
+						$aRv[]= $res;
+				}
+			}else
+				$aRv[]= "NOTALLGROUPSREMOVED";
+		}
+		if(empty($aRv))
+			return "NOERROR";
+		return $aRv;
 	}
 	private function getDomainKey(string $domainName)
 	{
@@ -1450,9 +1617,9 @@ class STUserSession extends STDbSession
 			$usertable->clearSelects();
 			$usertable->select("ID", "ID");
 			$usertable->where("user='".$user."'");
-			$selector= new STDbSelector($usertable);
-			$selector->execute();
-			$userId= $selector->getSingleResult();
+			$clusterGroupSelector= new STDbSelector($usertable);
+			$clusterGroupSelector->execute();
+			$userId= $clusterGroupSelector->getSingleResult();
 			if(!userId)
 			{
 				STCheck::is_error(1, "STUserSession::joinUserGroup()", "user ".$user." for join to <b>GROUP</b> does not exist", 1);
@@ -1466,9 +1633,9 @@ class STUserSession extends STDbSession
 			$grouptable->clearSelects();
 			$grouptable->select("ID", "ID");
 			$grouptable->where("Name='".$group."'");
-			$selector= new STDbSelector($grouptable);
-			$selector->execute();
-			$groupId= $selector->getSingleResult();
+			$clusterGroupSelector= new STDbSelector($grouptable);
+			$clusterGroupSelector->execute();
+			$groupId= $clusterGroupSelector->getSingleResult();
 			if(!$groupId)
 			{
 				STCheck::is_error(1, "STUserSession::joinUserGroup()", "group ".$group." for join to <b>USER</b> does not exist", 1);
@@ -1515,11 +1682,11 @@ class STUserSession extends STDbSession
 		$clusterGroup->clearFks();
 		$clusterGroup->allowQueryLimitation(false);
 		$clusterGroup->where("ClusterID='".$cluster."'");
-		$selector= new STDbSelector($clusterGroup);
+		$clusterGroupSelector= new STDbSelector($clusterGroup);
 		//$statement= $clusterGroup->getStatement();
-		$selector->execute(noErrorShow);
+		$clusterGroupSelector->execute(noErrorShow);
 		//$clusterGroupResult= $this->database->query($statement, noErrorShow);
-		$clusterGroupResult= $selector->getResult();
+		$clusterGroupResult= $clusterGroupSelector->getResult();
 		if(count($clusterGroupResult))
 		{
 		    $deleter= new STDbDeleter($clusterGroup);

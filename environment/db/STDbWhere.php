@@ -1,15 +1,9 @@
 <?php
 
+require_once $_stdbsqlwherefunctions;
 
-class STDbWhere
+class STDbWhere extends STDbSqlWhereFunctions
 {
-	/**
-	 * all content of where clausels in an subarray with key named 'array'
-	 * and also the splitet content in an subarray with kea named 'aValues'.<br>
-	 * In the 'array' array also can be rekursive new where clausels (STDbWhere).
-	 * @private
-	 */
-    var $array= array();
  	/**
  	 * for wich table the where clausel be
  	 * @private
@@ -19,12 +13,6 @@ class STDbWhere
      * table object
      */
     private $oTable= null;
-    /**
-     * whether was checked for correct
-     * table names
-     * @var boolean
-     */
-    private $bTableNamesChecked= false;
 	/**
 	 * if the clausel will be add to an other table,
 	 * use this operator
@@ -32,7 +20,14 @@ class STDbWhere
 	 */
     var $sOp;
 	/**
-	 * splitted where claus
+	 * splitted where clause
+	 * current known structure:
+	 * 			array(  'tableName' => array(   'columnName' => [nr?] => array( 'value'
+	 *																			'operator'
+	 * 																			'type'		)	)	)
+	 * should be changed to validComparison() result:
+	 * 			not now dokumented!
+	 * @var array
 	 * @private
 	 */
     var $aValues= array();

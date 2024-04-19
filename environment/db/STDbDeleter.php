@@ -4,7 +4,6 @@ require_once $_stdbsqlwherecases;
 
 class STDbDeleter extends STDbSqlWhereCases
 {
-	private $oWhere= null;
 	private $bModify= true;
 	private $nErrno= 0;
 	/**
@@ -20,18 +19,19 @@ class STDbDeleter extends STDbSqlWhereCases
 	{
 		$db= &$this->table->db;
 		$this->nErrorRowNr= null;
-		$this->table->where(null);
+		//$this->table->where(null);
 		//$table= new STDbTable($this->table);
 		$this->table->modifyQueryLimitation($this->bModify);
-		$fkTables= $db->hasFkEntriesToTable($this->table->getName(), $this->oWhere);
+		$oWhere= $this->getWhereObject(0);
+		$fkTables= $db->hasFkEntriesToTable($this->table->getName(), $oWhere);
+		// reset where object, because it will be modified for more tables (aliasTables)
+		$oWhere->reset();// inside hasFkEntriesToTable() question
 		if($fkTables)
 		{
 		    $this->nErrno= "NODELETE_FK";
 		    $this->aFkLinkTables= $fkTables;
 		    return "NODELETE_FK";
 		}
-		if(isset($this->oWhere))
-		    $this->table->andWhere($this->oWhere);
 	    $statement= $this->getStatement();
 	    $db->query($statement, $onError);
 	    return $db->errno();

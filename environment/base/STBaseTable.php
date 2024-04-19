@@ -151,7 +151,12 @@ class STBaseTable
      */
 	protected $sDeleteLimitation= "true";
 	var $asAccessIds= array();
-	var $sAcessClusterColumn= array(); // in den angegebenen Columns wird ein Cluster f�r den Zugriff gespeichert
+	/**
+	 * columns for cluster where row should only show
+	 * when user has cluster
+	 * @var array
+	 */
+	var $sAccessClusterColumn= array(); // in den angegebenen Columns wird ein Cluster f�r den Zugriff gespeichert
 	var	$aUnlink= array(); 	// wenn die Upgelodete Datei nicht gel�scht werden soll
 							// ist hier der Alias-Name der Spalte eingetragen
 	var	$nDisplayColumns= 1; // in wieviel Hauptspalten die Aufgelistete Tabelle angezeigt werden soll
@@ -708,21 +713,22 @@ class STBaseTable
 	    if(isset($this->asAccessIds[$action]))
 	        return $this->asAccessIds[$action];
 		elseif( STUserSession::sessionGenerated() &&
-			    count($this->sAcessClusterColumn)    )
+			    count($this->sAccessClusterColumn)    )
 		{
 		    $session= &STUserSession::instance();
 			$created= $session->getDynamicClusters($this);
 
 			//echo "achtion:$action<br />";
 			$nAction= $action;
+			$clusters= array();
 			if($action==STLIST)
-				$nAction= STACCESS;
+				$nAction= "access";
 			if( isset($created[$nAction]) &&
 			    count($created[$nAction])       )
 			{
-			    $clusterstring= "";
-			    foreach($created[$nAction] as $cluster)
+			    foreach($created[$nAction] as $acluster)
 				{
+					$cluster= reset($acluster);//key is name of column where stored
 					if($action==STINSERT)
 					{// if the search is for action STINSERT
 					 // create from the dynamic cluster the parent.
@@ -730,13 +736,11 @@ class STBaseTable
 						if(preg_match("/^(.*)_[^_]+$/", $cluster, $preg))
 							$cluster= $preg[1];
 					}
-					$clusterstring.= $cluster.",";
+					if(trim($cluster) != "")
+						$clusters[]= $cluster;
 				}
-				$clusterstring= substr($clusterstring, 0, strlen($clusterstring)-1);
-				if(trim($clusterstring) != "")
+				if(count($clusters))
 				{
-					$clusters= array();
-					$clusters[]= $clusterstring;
 					$clusterObject= array();
 					$clusterObject['cluster']= $clusters;
 					$clusterObject['action']= $action;
@@ -748,27 +752,29 @@ class STBaseTable
 			if( (   $action==STINSERT ||
 					$action==STUPDATE ||
 					$action==STDELETE      ) &&
-			    isset($created[STADMIN])     &&
-			    count($created[STADMIN])         )
+			    isset($created["admin"])     &&
+			    count($created["admin"])         )
 			{
-			    if($clusterstring)
-					$clusterstring.= ",";
-			    foreach($created[STADMIN] as $cluster)
+			    foreach($created["admin"] as $acluster)
 				{
-					if($action==STINSERT)
-					{// if the search is for action STINSERT
-					 // create from the dynamic cluster the parent.
-					 // user must have by STINSERT always the admin access from before
-						if(preg_match("/^(.*)_[^_]+$/", $cluster, $preg))
-							$cluster= $preg[1];
+					$cluster= reset($acluster);
+					if(	isset($cluster) &&
+						trim($cluster) != "" )
+					{
+						if($action==STINSERT)
+						{// if the search is for action STINSERT
+						// create from the dynamic cluster the parent.
+						// user must have by STINSERT always the admin access from before
+							if(preg_match("/^(.*)_[^_]+$/", $cluster, $preg))
+								$cluster= $preg[1];
+						}
+						if(trim($cluster) != "")
+							$clusters[]= $cluster;
 					}
-					$clusterstring.= $cluster.",";
 				}
-				$clusterstring= substr($clusterstring, 0, strlen($clusterstring)-1);
-				if(trim($clusterstring) != "")
+				
+				if(count($clusters))
 				{
-					$clusters= array();
-					$clusters[]= $clusterstring;
 					$clusterObject= array();
 					$clusterObject['cluster']= $clusters;
 					$clusterObject['action']= $action;
@@ -832,8 +838,10 @@ class STBaseTable
 		}
 		return $customID;
 	}
-	public function allowQueryLimitationByOwn($bModify= true)
+	public function allowQueryLimitationByOwn($bModify= null)
 	{
+		if(!isset($bModify))
+			return $this->bLimitOwn;
 	    if(STCheck::isDebug("db.statements.where"))
 	    {
 	        if($bModify)
@@ -846,6 +854,7 @@ class STBaseTable
 	    $this->bLimitOwn= $bModify;
 	    if($this->bModifiedByQuery)
 	        $this->resetQueryLimitation("own", $bModify);
+		return $this->bLimitOwn;
 	}
 	/**
 	 * use also limitation of table from an older container
@@ -3628,11 +3637,11 @@ class STBaseTable
 				return $this->bDynamicAccessIn;
 
 			$checked= array();
-			if( count($this->sAcessClusterColumn)
+			if( count($this->sAccessClusterColumn)
 				and
 				STUserSession::sessionGenerated()   )
 			{
-			    //st_print_r($table->sAcessClusterColumn,2);
+			    //st_print_r($table->sAccessClusterColumn,2);
 			    $session= &STUserSession::instance();
 				$aAccess= &$session->getDynamicClusters($this);
 				if(count($aAccess))
@@ -3645,7 +3654,7 @@ class STBaseTable
 					$bFounded= false;
 					$aktAccess= "";
 					//$accessTo= array();
-    				foreach($this->sAcessClusterColumn as $info)
+    				foreach($this->sAccessClusterColumn as $info)
     				{
     				    if($info["cluster"]!=$aktAccess)
     					{

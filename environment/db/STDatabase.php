@@ -1871,7 +1871,7 @@ abstract class STDatabase extends STObjectContainer
                     $aRv[]= $fkTableName;
 	        }
 		}
-		if(empty($aFkTables))
+		if(empty($aRv))
 		    return false;
 		return $aRv;
 	}

@@ -267,7 +267,7 @@ class STDbSelector extends STDbTable implements STContainerTempl
 				if($oTable)
 				{
 				    $oTable->container= $this;
-				    $oTable->allowQueryLimitation($this->bModifyFk);
+				    $oTable->allowQueryLimitation($this->allowQueryLimitation());
 					$this->aoToTables[$sTableName]= &$oTable;
 				}else
 					unset($this->aoToTables[$sTableName]);
@@ -276,14 +276,14 @@ class STDbSelector extends STDbTable implements STContainerTempl
 			// alex 24/05/2005:	f�r aoToTables als Key den Namen eingef�hrt
 			return $oTable;
 		}
-		public function allowQueryLimitation($bModify= true)
+		public function allowQueryLimitation(bool|array $modify= null) : array
 		{
 		    foreach($this->aoToTables as $table)
 		    {
 		        if($table->Name != $this->Name)
-		            $table->allowQueryLimitation($bModify);
+		            $table->allowQueryLimitation($modify);
 		    }
-		    STDbTable::allowQueryLimitation($bModify);
+		    return STDbTable::allowQueryLimitation($modify);
 		}
 		public function andWhere($table, $where= null)
 		{
@@ -665,9 +665,7 @@ class STDbSelector extends STDbTable implements STContainerTempl
 			}
 			$table->identifColumn($column, $alias);
 		}
-/*		public function allowQueryLimitation($bModify= true)
-		{ $this->oMainTable->allowQueryLimitation($bModify); }
-		public function clearRekursiveNoFkSelects()
+/*		public function clearRekursiveNoFkSelects()
 		{ $this->oMainTable->clearRekursiveNoFkSelects(); }
 		public function clearRekursiveGetColumns()
 		{ $this->oMainTable->clearRekursiveGetColumns(); }
@@ -683,13 +681,21 @@ class STDbSelector extends STDbTable implements STContainerTempl
 		{
 			return $this->SqlResult;
 		}
-		function &getSingleArrayResult()
+		function &getSingleArrayResult(int|string $column= 0)
 		{
+			if(is_integer($column))
+				$columnName= $this->show[$column]['alias'];
+			else
+				$columnName= $column;
 			$result= array();
 			foreach($this->SqlResult as $row)
 			{
-			    reset($row);
-				$result[]= current($row);
+				if($column == 0)
+				{
+					reset($row);
+					$result[]= current($row);
+				}else
+					$result[]= $row[$columnName];
 			}
 			return $result;
 		}

@@ -22,7 +22,10 @@ class STDbSqlWhereCases extends STDbSqlCases
             !isset($this->wheres[$this->nAktRow])   )
         {
             if(is_string($where))
+            {
                 $where= new STDbWhere($where);
+                $where->table($this->table);
+            }
             $this->wheres[$this->nAktRow]= array(   "clause" => $where,
                                                     "operator" => $operator );
         }else
@@ -32,13 +35,22 @@ class STDbSqlWhereCases extends STDbSqlCases
     { $this->where($stwhere, "and"); }
     public function orWhere($stwhere)
     { $this->where($stwhere, "or"); }
-    protected function getWhereStatement(int $nr= 0) : string
+    protected function getWhereObject(int $nr= 0) : STDbWhere
     {
+        if(isset($this->wheres[$nr]['clause']))
+            return $this->wheres[$nr]['clause'];
         if(!isset($this->tableWhere))
         {
             $this->table->modifyQueryLimitation();
             $this->tableWhere= $this->table->getWhere();
         }
+        return $this->tableWhere;
+    }
+    protected function getWhereStatement(int $nr= 0) : string
+    {
+        // create ->tableWhere from current table if not exist
+        $this->getWhereObject($nr);
+
         if(!isset($this->wheres[$nr]))
         {
             STCheck::alert(!isset($this->tableWhere), "STCheck::getUpdateStatement()", "no where usage for update exist");

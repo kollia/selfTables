@@ -451,8 +451,9 @@ class STSession
 		$staction= "unknown action";
 		$logincluster= false;
 		if(is_string($authoricationCluster))
-		    $clusters= array( $authoricationCluster );
-	    else
+		{
+			$clusters= preg_split("/,/", $authoricationCluster, -1, PREG_SPLIT_NO_EMPTY);
+		}else
 	        $clusters= $authoricationCluster;
 		/**/if( Tag::isDebug("user") )
 		{
@@ -690,6 +691,29 @@ class STSession
 	        $_SESSION[$var1]= $value;	        
 	    }
 	}
+	public function removeRecursiveSessionVar($var1, $var2= null, $var3= null, $var4= null, $var5= null)
+	{
+	    if(isset($var5))
+	    {
+	        unset($_SESSION[$var1][$var2][$var3][$var4][$var5]);
+	        
+	    }else if(isset($var4))
+	    {
+	        unset($_SESSION[$var1][$var2][$var3][$var4]);
+	        
+	    }else if(isset($var3))
+	    {
+			unset($_SESSION[$var1][$var2][$var3]);
+	        
+	    }else if(isset($var2))
+	    {
+	        unset($_SESSION[$var1][$var2]);
+	        
+	    }else
+	    {
+	        unset($_SESSION[$var1]);	        
+	    }
+	}
 	public function isSetRecursiveSessionVar($value, $var1, $var2= null, $var3= null, $var4= null, $var5= null) : bool
 	{
 	    if(isset($var5))
@@ -834,6 +858,10 @@ class STSession
 	{
 	    $this->setRecursiveSessionVar($project, "ST_EXIST_CLUSTER", $cluster);
 	}
+	function removeExistCluster($cluster)
+	{
+	    $this->removeRecursiveSessionVar("ST_EXIST_CLUSTER", $cluster);
+	}
 	function doClusterExist($cluster, $project) : bool
 	{
 	    return $this->isSetRecursiveSessionVar($project, "ST_EXIST_CLUSTER", $cluster);
@@ -854,6 +882,10 @@ class STSession
 	    $memberCluster= array("ID"=>$projectID, "project"=>$projectName);
 	    $this->setRecursiveSessionVar($memberCluster, "ST_CLUSTER_MEMBERSHIP", $cluster);
 		$this->aCluster[$cluster]= $memberCluster;
+	}
+	function removeMemberCluster($cluster)
+	{
+	    $this->removeRecursiveSessionVar("ST_CLUSTER_MEMBERSHIP", $cluster);
 	}
 	function getExistClusters()
 	{

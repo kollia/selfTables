@@ -151,7 +151,7 @@ class STDbInserter extends STDbSqlCases
 		$error= "NOERROR";
 		if(	 global_sessionGenerated()
 			and
-			count($this->table->sAcessClusterColumn)	)
+			count($this->table->sAccessClusterColumn)	)
 		{
 			$session= STSession::instance();
 			if(typeof($session, "STUserSession"))
@@ -170,7 +170,7 @@ class STDbInserter extends STDbSqlCases
     			$pkName= $this->table->getPkColumnName();
     			$tableName= $this->table->getDisplayName();
     			$error= "";
-    			foreach($this->table->sAcessClusterColumn as $column)
+    			foreach($this->table->sAccessClusterColumn as $column)
     			{
     				if(!isset($row[$column["column"]]))
     				{

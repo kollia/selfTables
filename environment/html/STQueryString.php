@@ -270,7 +270,7 @@ class STQueryString
 		    $sRv= "";
 		    if(isset($this->param_vars["stget"]["action"]))
 		        $sRv= $this->param_vars["stget"]["action"];
-		        return $sRv;
+		    return $sRv;
 		}
 		function getArrayVars($var= null/*, ...*/)
 		{
