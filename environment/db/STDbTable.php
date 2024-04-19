@@ -314,36 +314,6 @@ class STDbTable extends STBaseTable
 			$bCreateCluster= false;
 		}else
 			$bCreateCluster= true;
-		$this->getColumn($column);
-		if($action==STACCESS)
-			$action= STLIST;
-		if($accessInfoString=="")
-		{
-			if($action==STLIST)
-			{
-				$accessInfoString= "permission to see entry \'@\' ";
-				$accessInfoString.= "in table ".$this->getDisplayName();
-			}elseif($action==STINSERT)
-			{
-				$accessInfoString= "permission to create new entry";
-				$accessInfoString.= " of '\'@\' in table ".$this->getDisplayName();
-			}elseif($action==STUPDATE)
-			{
-				$accessInfoString= "permission to change entry";
-				$accessInfoString.= " of \'@\' in table ".$this->getDisplayName();
-			}elseif($action==STDELETE)
-			{
-				$accessInfoString= "permission to delete entry";
-				$accessInfoString.= " of \'@\' in table ".$this->getDisplayName();
-			}elseif($action==STADMIN)
-			{
-				$accessInfoString= "changing-permission for entrys";
-				$accessInfoString.= " of \'@\' in table ".$this->getDisplayName();
-			}else
-				$accessInfoString= "from developer not defined access";
-		}else
-			$accessInfoString= preg_replace("/'/", $accessInfoString, "\'");
-
 
 		$this->aSetAlso[$column][STINSERT]= $clusterfColumn;
 		$this->sAccessClusterColumn[]= array(	"action"=>	$action,
@@ -435,19 +405,20 @@ class STDbTable extends STBaseTable
 		if(	$this->container->currentContainer() &&
 			$this->currentTable()					)
 		{
+			$action= $this->container->getAction();
 			$post= new STPostArray();
 			if( $post->exist("STBoxes_action") &&
 				$post->getValue("STBoxes_action") == "make"    )
 			{
-				$action= $this->container->getAction();
 				if($action == STINSERT)
 					$this->insertCluster($access, $field['column'], $prefix, $accessInfoString, $addGroup);
 			}else
 			{
+				if($action == STLIST)
+					$this->getColumn($field['column']);
 				$query= new STQueryString();
 				$stget= $query->getUrlParamValue("stget");
-				if(	isset($stget['action']) &&
-					$stget['action'] == STDELETE &&
+				if(	$action == STDELETE &&
 					STUserSession::sessionGenerated() &&
 					isset($stget['limit'][$this->Name])	)
 				{
@@ -530,30 +501,26 @@ class STDbTable extends STBaseTable
 					$partenCluster= array($parentCluster);
 			}
 			//Tag::alert(!$parentCluster, "STDbTable::accessCluster()", "no parentCluster be set");
-			$clusterfColumn= $this->createDynamicClusterString($access, $prefix, $column);
+			$clusterfColumn= $this->createDynamicClusterString($access, $prefix, $column, $accessInfoString);
 			if($parentCluster == "")
 			    $parentCluster= null;//no parent cluster exist
 			$this->addAccessClusterColumn($column, $parentCluster, $clusterfColumn, $accessInfoString, $addGroup, $access);
 		}
 	}
-	protected function createDynamicClusterString(string $access, string $prefix, string $column, string $value= "")
+	protected function createDynamicClusterString(string $access, string $prefix, string $column, string &$accessInfoString= "")
 	{
 		$preg= $this->splitClusterString($prefix);
 		if(count($preg))
 		{
 			$post= new STPostArray();
-			if($value == "")
-			{// if no value for column is set try to take from post
-				$field= $this->findAliasOrColumn($preg[2][0]);
-				$begin= substr($prefix, 0, $preg[0][1]);
-				if($post->exist($field['alias']))
-					$columnContent= $post->getValue($field['alias']);
-				elseif($post->exist($field['column']))
-					$columnContent= $post->getValue($field['column']);
-				else
-					$columnContent= "unknownColumnContent";
-			}else
-				$columnContent= $value;
+			$field= $this->findAliasOrColumn($preg[2][0]);
+			$begin= substr($prefix, 0, $preg[0][1]);
+			if($post->exist($field['alias']))
+				$columnContent= $post->getValue($field['alias']);
+			elseif($post->exist($field['column']))
+				$columnContent= $post->getValue($field['column']);
+			else
+				$columnContent= "unknownColumnContent";
 			$end= substr($prefix, $preg[2][1]+strlen($preg[2][0])+1);
 			$sRv= $begin.$columnContent.$end;			
 		}else
@@ -563,6 +530,38 @@ class STDbTable extends STBaseTable
 		$tableEntrys= $this->getTableEntrys();
 		$sRv.= "[".($tableEntrys+1)."]";
 		$sRv.= $access;
+		if($accessInfoString != "")
+		{
+			if($access=="access")
+				$access= STLIST;
+			if($accessInfoString=="")
+			{
+				if($access==STLIST)
+				{
+					$accessInfoString= "permission to see entry \'@\' ";
+					$accessInfoString.= "in table ".$this->getDisplayName();
+				}elseif($access==STINSERT)
+				{
+					$accessInfoString= "permission to create new entry";
+					$accessInfoString.= " of '\'@\' in table ".$this->getDisplayName();
+				}elseif($access==STUPDATE)
+				{
+					$accessInfoString= "permission to change entry";
+					$accessInfoString.= " of \'@\' in table ".$this->getDisplayName();
+				}elseif($access==STDELETE)
+				{
+					$accessInfoString= "permission to delete entry";
+					$accessInfoString.= " of \'@\' in table ".$this->getDisplayName();
+				}elseif($access==STADMIN)
+				{
+					$accessInfoString= "changing-permission for entrys";
+					$accessInfoString.= " of \'@\' in table ".$this->getDisplayName();
+				}else
+					$accessInfoString= "from developer not defined access";
+			}
+			$accessInfoString= preg_replace("/@/", $columnContent, $accessInfoString);	
+		
+		}
 		return $sRv;
 
 	}
