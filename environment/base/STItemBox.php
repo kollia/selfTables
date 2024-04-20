@@ -1871,10 +1871,10 @@ class STItemBox extends STBaseBox
 					$where= $this->asDBTable->getWhere();
 				}else
 					$where= $this->where;
-			if($this->asDBTable)
-				if($this->action==STUPDATE)
-					Tag::alert(!($where && $where->isModified()), "STItemBox::box()",
-										"no where-clausel defined for update in database");
+				if($this->asDBTable)
+					if($this->action==STUPDATE)
+						Tag::alert(!($where && $where->isModified()), "STItemBox::box()",
+											"no where-clausel defined for update in database");
 			}else
 			    $bError= true;
 
@@ -1915,7 +1915,7 @@ class STItemBox extends STBaseBox
   						//$table->clearSelects();
 						$table= new STDbSelector($this->asDBTable);
   						$table->select($this->asDBTable->getName(), $table->getPkColumnName());
-						if(!$table->execute())
+						if($table->execute() < 0)
 						{
 							$this->msg->setMessageId("SQLERROR@", $table->getErrorString());
 							return false;

@@ -1473,6 +1473,7 @@ abstract class STObjectContainer extends STBaseContainer
 				$tableName= array_key_first($link);
 				if($nTable == $count)
 					break;
+				$tableName= ""; // was wrong table
 				++$count;
 			}
 		}
@@ -1486,7 +1487,7 @@ abstract class STObjectContainer extends STBaseContainer
 	 * @param string $action current action
 	 * @return array if array is empty no cluster from any older linked table exist
 	 */
-	function getLinkedCluster(string $action)
+	function getLinkedCluster(string $action) : array
 	{
 	    if(	!STUserSession::sessionGenerated() ||
     		!$this->currentContainer() ||
@@ -1495,13 +1496,24 @@ abstract class STObjectContainer extends STBaseContainer
     	    return array();
 		}
 
-		showBackTrace();
-		$tableName= $this->getOlderLinkedTableName();
-    	
-		$table= $this->getTable($tableName);
-    	$pk= $table->getPkColumnName();
+		$aRv= array();
+		$deep= 1;
+		$tableName= $this->getOlderLinkedTableName($deep);
+		while($tableName)
+		{
+			$table= $this->getTable($tableName);
+			$clusterColumns= $table->getAccessClusterColumns();
+			$aRv= array_merge($aRv, $clusterColumns);
+			++$deep;
+			$tableName= $this->getOlderLinkedTableName($deep);
+		}
+    	return $aRv;
+		
+/*    	$pk= $table->getPkColumnName();
     	$session= &STUserSession::instance();
     	$aAccess= $session->getDynamicClusters($table);
+		return $aAccess;
+
 		showLine();
 		echo "from table:$tableName<br>";
 		echo "access clusters:";
@@ -1549,7 +1561,7 @@ abstract class STObjectContainer extends STBaseContainer
     	echo "getLinkedCluster($pkValue) from table {$tableName}";
     	st_print_r($table->show, 2);
 
-    	return $cluster;
+    	return $cluster;*/
 	}
 	static public function install($containerName, $className, $fromContainer= null, $sourceFile= null)
 	{

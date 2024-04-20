@@ -310,7 +310,7 @@ class STDbTable extends STBaseTable
 			$selector->allowQueryLimitation(true);
 			$statement= $selector->getStatement();
 			$selector->execute();
-			$clusterfString= $selector->getSingleResult();
+			$clusterfColumn= $selector->getSingleResult();
 			$bCreateCluster= false;
 		}else
 			$bCreateCluster= true;
@@ -326,7 +326,21 @@ class STDbTable extends STBaseTable
 			STUserSession::sessionGenerated()	)
 		{
 			$session= STUserSession::instance();
-			$session->createCluster($clusterfColumn, $accessInfoString, $addGroup);
+			$res= $session->createCluster($clusterfColumn, $accessInfoString, $addGroup);
+			if(	$addGroup &&
+				$res == "NOERROR"	)
+			{
+				foreach($parentCluster as $parent)
+				{
+					if($parent['action'] == "access")
+					{
+						// the created group inside session->createCluster
+						// will be the same as the cluster-name
+						$groupName= $clusterfColumn;
+						$session->joinClusterGroup($parent['cluster'], $groupName);
+					}
+				}
+			}
 		}
 	}
 	/**
@@ -437,8 +451,15 @@ class STDbTable extends STBaseTable
 						return;
 					$cluster= $selector->getSingleResult();
 
+					$toClustersAlso= array();
+					$parentClusters= $this->container->getLinkedCluster($action);
+					foreach($parentClusters as $parent)
+					{
+						if($parent['action'] == "access")
+							$toClustersAlso[]= $parent['cluster'];
+					}
 					$session= STUserSession::instance();
-					$session->removeCluster($cluster, $addGroup);
+					$session->removeCluster($cluster, $toClustersAlso);
 				}
 			}
 		}else
@@ -530,38 +551,36 @@ class STDbTable extends STBaseTable
 		$tableEntrys= $this->getTableEntrys();
 		$sRv.= "[".($tableEntrys+1)."]";
 		$sRv.= $access;
-		if($accessInfoString != "")
-		{
+
 			if($access=="access")
 				$access= STLIST;
 			if($accessInfoString=="")
 			{
 				if($access==STLIST)
 				{
-					$accessInfoString= "permission to see entry \'@\' ";
+					$accessInfoString= "permission to see entry '@' ";
 					$accessInfoString.= "in table ".$this->getDisplayName();
 				}elseif($access==STINSERT)
 				{
 					$accessInfoString= "permission to create new entry";
-					$accessInfoString.= " of '\'@\' in table ".$this->getDisplayName();
+					$accessInfoString.= " of '@' in table ".$this->getDisplayName();
 				}elseif($access==STUPDATE)
 				{
 					$accessInfoString= "permission to change entry";
-					$accessInfoString.= " of \'@\' in table ".$this->getDisplayName();
+					$accessInfoString.= " of '@' in table ".$this->getDisplayName();
 				}elseif($access==STDELETE)
 				{
 					$accessInfoString= "permission to delete entry";
-					$accessInfoString.= " of \'@\' in table ".$this->getDisplayName();
+					$accessInfoString.= " of '@' in table ".$this->getDisplayName();
 				}elseif($access==STADMIN)
 				{
 					$accessInfoString= "changing-permission for entrys";
-					$accessInfoString.= " of \'@\' in table ".$this->getDisplayName();
+					$accessInfoString.= " of '@' in table ".$this->getDisplayName();
 				}else
-					$accessInfoString= "from developer not defined access";
+					$accessInfoString= "permission to '$access' entry '$columnContent' inside ".$this->getDisplayName();
 			}
 			$accessInfoString= preg_replace("/@/", $columnContent, $accessInfoString);	
 		
-		}
 		return $sRv;
 
 	}

@@ -1314,9 +1314,7 @@ class STUserSession extends STDbSession
 		//$insert->fillColumn("identification", $partitionId);
 		$insert->fillColumn("DateCreation", "sysdate()");
 
-		//$statement= $this->database->getInsertStatement($this->sClusterTable, $clusterContent);
-		//$cluster= $clusterContent["ID"];
-		if($insert->execute(noErrorShow)) //$this->database->fetch($statement, noDebugErrorShow))
+		if($insert->execute(onDebugErrorShow))
 			return "NOCLUSTERCREATE";
 		$this->setRecursiveSessionVar($this->projectID, "ST_CLUSTER_MEMBERSHIP", $clusterName);
 
@@ -1336,12 +1334,22 @@ class STUserSession extends STDbSession
 	 * with all any more unused groups
 	 * 
 	 * @param string $cluster name of cluster
-	 * @param bool $bWithGroup whether should also remove group deamons
+	 * @param bool|array $withGroup whether should also remove group deamons.
+	 * 								can also be an array of clusters to which connection can also be removed,
+	 * 								because when group link to an unknown cluster, the group will not be removed
+	 * 								also when command to
 	 * @return string|array array of error strings or 'NOERROR' as string
 	 */
-	public function removeCluster(string $cluster, bool $bWithGroup) : string|array
+	public function removeCluster(string $cluster, bool|array $withGroup) : string|array
 	{
-		$saRv= $this->removeClusterGroup($cluster, $bWithGroup);
+		if(is_array($withGroup))
+		{
+			$bWithGroup= true;
+			
+		}else
+			$bWithGroup= $withGroup;
+		$saRv= $this->removeClusterGroup($cluster, $withGroup);
+		
 		if(!is_string($saRv)) // ERROR
 		{
 			foreach($saRv as $error)
@@ -1417,25 +1425,52 @@ class STUserSession extends STDbSession
 			return "NOERROR";
 		return "DELETIONFAULT";
 	}
-	public function removeClusterGroup(string $fromCluster, bool $bWithGroups) : string|array
+	/**
+	 * remove entrys from table ClusterGroup
+	 * 
+	 * @param string|int $fromClusterGroup	name of cluster or direct group ID.<br>
+	 * 										If variable is an cluster remove all entrys from table ClusterGroup
+	 * 										which link to this cluster. If variable is an group ID
+	 * 										only this ClusterGroup entry will be removed. (variable $withGroups is than not nessasary)
+	 * @param bool|array $withGroup whether should also remove group deamons.
+	 * 								can also be an array of clusters to which connection can also be removed,
+	 * 								because when group link to an unknown cluster, the group will not be removed
+	 * 								also when command to
+	 * @return string|array array of error strings or 'NOERROR' as string
+	 */
+	public function removeClusterGroup(string|int $fromClusterGroup, bool|array $withGroups= false) : string|array
 	{
-		//$cluster= $this->container->getTable("Cluster");
+		if(is_array($withGroups))
+		{
+			$bWithGroups= true;
+			
+		}else
+			$bWithGroups= $withGroups;
 
-		$aRv= array();
 		$clusterGroup= $this->container->getTable("ClusterGroup");
 		$clusterGroupSelector= new STDbSelector($clusterGroup, STSQL_ASSOC, noErrorShow);
-		$clusterGroupSelector->select("ClusterGroup", "ID", "ID");
-		$clusterGroupSelector->select("ClusterGroup", "GroupID", "GroupID");
-		$clusterGroupSelector->clearFks();
-		$clusterGroupSelector->allowQueryLimitation(false);
-		$clusterGroupSelector->where("ClusterID='".$fromCluster."'");
-		//$statement= $clusterGroupSelector->getStatement();
-		$clusterGroupSelector->execute();
-		$clusterGroupResult= $clusterGroupSelector->getSingleArrayResult();
-		if($bWithGroups)
-			$groupResult= $clusterGroupSelector->getSingleArrayResult("GroupID");
-		else
+		if(	is_string($fromClusterGroup) &&
+			!is_numeric($fromClusterGroup)	)
+		{
+			$aRv= array();
+			$clusterGroupSelector->select("ClusterGroup", "ID", "ID");
+			$clusterGroupSelector->select("ClusterGroup", "GroupID", "GroupID");
+			$clusterGroupSelector->clearFks();
+			$clusterGroupSelector->allowQueryLimitation(false);
+			$clusterGroupSelector->where("ClusterID='".$fromClusterGroup."'");
+			//$statement= $clusterGroupSelector->getStatement();
+			$clusterGroupSelector->execute();
+			$clusterGroupResult= $clusterGroupSelector->getSingleArrayResult();
+			if($bWithGroups)
+				$groupResult= $clusterGroupSelector->getSingleArrayResult("GroupID");
+			else
+				$groupResult= array();
+		}else
+		{
 			$groupResult= array();
+			$clusterGroupResult= array();
+			$clusterGroupResult[]= $fromClusterGroup;
+		}
 		if(count($clusterGroupResult))
 		{
 		    $deleter= new STDbDeleter($clusterGroupSelector, STSQL_ASSOC, noErrorShow);
@@ -1455,11 +1490,24 @@ class STUserSession extends STDbSession
 			// now check whether the groups also have a connection to an other cluster
 			$clusterGroupCheck= new STDbSelector($clusterGroup, STSQL_ASSOC, noErrorShow);
 			$clusterGroupCheck->select("ClusterGroup", "ID", "ID");
+			$clusterGroupCheck->select("ClusterGroup", "ClusterID");
 			$clusterGroupCheck->clearWhere();
 			$clusterGroupCheck->where("GroupID=$group");
 			//$statement= $clusterGroupCheck->getStatement();
 			$clusterGroupCheck->execute();
-			$clusterGroupResult= $clusterGroupCheck->getResult();
+			$allClusterGroups= $clusterGroupCheck->getResult();
+			if(is_array($withGroups))
+			{
+				$clusterGroupResult= array();
+				foreach($allClusterGroups as $existing)
+				{
+					if(in_array($existing['ClusterID'], $withGroups))
+						$this->removeClusterGroup($existing['ID']);
+					else
+						$clusterGroupResult[]= $existing;
+				}
+			}else
+				$clusterGroupResult= $allClusterGroups;
 			if(empty($clusterGroupResult))
 			{
 				$res= $this->removeGroup($group);
