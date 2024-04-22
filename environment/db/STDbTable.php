@@ -332,7 +332,7 @@ class STDbTable extends STBaseTable
 			{
 				foreach($parentCluster as $parent)
 				{
-					if($parent['action'] == "access")
+					if($parent['action'] == STLIST)
 					{
 						// the created group inside session->createCluster
 						// will be the same as the cluster-name
@@ -364,7 +364,7 @@ class STDbTable extends STBaseTable
     		STCheck::param($accessInfoString, 2, "string", "empty(string)");
     		STCheck::param($addGroup, 43, "boolean");
 	    }
-        $this->cluster("access", $column, $prefix, $accessInfoString, $addGroup);
+        $this->cluster(STLIST, $column, $prefix, $accessInfoString, $addGroup);
 	}
 	/**
 	 * pre-define an admin cluster for every row,
@@ -390,17 +390,17 @@ class STDbTable extends STBaseTable
 	        STCheck::param($accessInfoString, 2, "string", "empty(string)");
 	        STCheck::param($addGroup, 3, "boolean");
 	    }
-	    $this->cluster("admin", $column, $prefix, $accessInfoString, $addGroup);
+	    $this->cluster(STADMIN, $column, $prefix, $accessInfoString, $addGroup);
 	}
 	/**
 	 * pre-define a cluster for every row,
 	 * where the row only be shown if the user has the cluster.<br />
 	 *  beschreibe für welche Zugriffs Berechtigung der Cluster 
 	 * @param string $access describe for which permission the cluster should have access.<br />
-	 *                       If this method will be used, by first calling the variable have to be "access"
+	 *                       If this method will be used, by first calling the variable have to be STLIST
 	 *                       to see the new inserted entry in the STListBox. If you want that the user
 	 *                       have permission to change anything inside the linked table, fill this variable
-	 *                       with "admin". Than the user in the upper linked STListBox have access to insert,
+	 *                       with STADMIN. Than the user in the upper linked STListBox have access to insert,
 	 *                       update or delete new entrys. Also allowed all other entrys by this variable, where
 	 *                       the developer have to handle the cluster permission by his own. He can get the
 	 *                       permissions inside the upper container with the methode <code>getLinkedCluster()</code> 
@@ -428,8 +428,6 @@ class STDbTable extends STBaseTable
 					$this->insertCluster($access, $field['column'], $prefix, $accessInfoString, $addGroup);
 			}else
 			{
-				if($action == STLIST)
-					$this->getColumn($field['column']);
 				$query= new STQueryString();
 				$stget= $query->getUrlParamValue("stget");
 				if(	$action == STDELETE &&
@@ -455,11 +453,18 @@ class STDbTable extends STBaseTable
 					$parentClusters= $this->container->getLinkedCluster($action);
 					foreach($parentClusters as $parent)
 					{
-						if($parent['action'] == "access")
+						if($parent['action'] == STLIST)
 							$toClustersAlso[]= $parent['cluster'];
 					}
 					$session= STUserSession::instance();
 					$session->removeCluster($cluster, $toClustersAlso);
+				}else
+				{ // action should be STLIST
+					if($action == STLIST)
+						$this->getColumn($field['column']);
+					$parentCluster= array();
+					$clusterfColumn= null;
+					$this->addAccessClusterColumn($column, $parentCluster, $clusterfColumn, $accessInfoString, $addGroup, $access);
 				}
 			}
 		}else
@@ -548,38 +553,50 @@ class STDbTable extends STBaseTable
 			$sRv= $prefix;
 			
 		//toDo: implement only when field not unique
+		$field= $this->getColumnField($field['column']);
 		$tableEntrys= $this->getTableEntrys();
+		// toDo: if field type is unique, do not implement tableEntrys
 		$sRv.= "[".($tableEntrys+1)."]";
-		$sRv.= $access;
+		switch($access)
+		{
+			case STLIST:
+				$sRv.= "access";
+				break;
+			case STADMIN:
+				$sRv.= "admin";
+				break;
+			default:
+				$sRv.= $access;
+				break;
+		}
+		
 
-			if($access=="access")
-				$access= STLIST;
-			if($accessInfoString=="")
+		if($accessInfoString=="")
+		{
+			if($access==STLIST)
 			{
-				if($access==STLIST)
-				{
-					$accessInfoString= "permission to see entry '@' ";
-					$accessInfoString.= "in table ".$this->getDisplayName();
-				}elseif($access==STINSERT)
-				{
-					$accessInfoString= "permission to create new entry";
-					$accessInfoString.= " of '@' in table ".$this->getDisplayName();
-				}elseif($access==STUPDATE)
-				{
-					$accessInfoString= "permission to change entry";
-					$accessInfoString.= " of '@' in table ".$this->getDisplayName();
-				}elseif($access==STDELETE)
-				{
-					$accessInfoString= "permission to delete entry";
-					$accessInfoString.= " of '@' in table ".$this->getDisplayName();
-				}elseif($access==STADMIN)
-				{
-					$accessInfoString= "changing-permission for entrys";
-					$accessInfoString.= " of '@' in table ".$this->getDisplayName();
-				}else
-					$accessInfoString= "permission to '$access' entry '$columnContent' inside ".$this->getDisplayName();
-			}
-			$accessInfoString= preg_replace("/@/", $columnContent, $accessInfoString);	
+				$accessInfoString= "permission to see entry '@' ";
+				$accessInfoString.= "in table ".$this->getDisplayName();
+			}elseif($access==STINSERT)
+			{
+				$accessInfoString= "permission to create new entry";
+				$accessInfoString.= " of '@' in table ".$this->getDisplayName();
+			}elseif($access==STUPDATE)
+			{
+				$accessInfoString= "permission to change entry";
+				$accessInfoString.= " of '@' in table ".$this->getDisplayName();
+			}elseif($access==STDELETE)
+			{
+				$accessInfoString= "permission to delete entry";
+				$accessInfoString.= " of '@' in table ".$this->getDisplayName();
+			}elseif($access==STADMIN)
+			{
+				$accessInfoString= "changing-permission for entrys";
+				$accessInfoString.= " of '@' in table ".$this->getDisplayName();
+			}else
+				$accessInfoString= "permission to '$access' entry '$columnContent' inside ".$this->getDisplayName();
+		}
+		$accessInfoString= preg_replace("/@/", $columnContent, $accessInfoString);	
 		
 		return $sRv;
 

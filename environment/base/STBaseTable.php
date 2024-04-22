@@ -666,6 +666,7 @@ class STBaseTable
 	    
 	    if( $action != STALLDEF &&
 	        $action != STLIST &&
+			$action != STADMIN &&
 	        $action != STINSERT &&
 	        $action != STUPDATE &&
 	        $action != STDELETE    )
@@ -3643,7 +3644,7 @@ class STBaseTable
 			{
 			    //st_print_r($table->sAccessClusterColumn,2);
 			    $session= &STUserSession::instance();
-				$aAccess= &$session->getDynamicClusters($this);
+				$aAccess= $session->getDynamicClusters($this);
 				if(count($aAccess))
 				{
     				//st_print_r($aAccess, 10);

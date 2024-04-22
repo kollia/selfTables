@@ -1334,7 +1334,7 @@ abstract class STObjectContainer extends STBaseContainer
 										//alle Spalten aus der Datenbank holen
 
 			// create rows for dynamic-clustering
-			$checked= $table->createDynamicAccess();
+			$checked= array();//$table->createDynamicAccess();
 			if(count($checked))
 			{
   				if(isset($checked[STADMIN]))
