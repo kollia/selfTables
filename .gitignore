@@ -5,4 +5,4 @@
 *.kate-swp
 org.eclipse.*
 extensions.json
-plugins/email/st_eamil.inc.json
+plugins/email/st_email.inc.json
