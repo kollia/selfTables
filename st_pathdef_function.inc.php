@@ -10,6 +10,7 @@
 	$global_boolean_installed_objectContainer= false;
 	$global_array_exist_stobjectcontainer_with_classname= array();
 	$global_array_all_exist_stobjectcontainers= array();
+    $global_st_plugins= array();
 
 define("STBLINDDB", "STBLINDDB");
 define("MYSQL_NUM", 0x10);
@@ -172,6 +173,21 @@ function remove_document_root_or_include_path($dir)
         }
     }
     return $dir;
+}
+
+/**
+ * add mew plugin module
+ * 
+ * @param string $sub subdirectory name of module under plugins directory
+ */
+function load_pluginModule(string $sub)
+{
+    global $global_st_plugins;
+
+    $file= __DIR__."/plugins/$sub/st_pathdef.inc.php";
+    if(!isset($global_st_plugins[$sub]))
+        require_once($file);
+    return $global_st_plugins[$sub];
 }
 
 ?>

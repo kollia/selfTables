@@ -108,7 +108,7 @@ class STCallbackClass
 		 */
 		private $aHtmlContent= null;
 
-		public function __construct(STDbTable &$table, array $sqlResult)
+		public function __construct(STDbTable &$table, array &$sqlResult)
 		{
 		    $this->table= &$table;
 			$this->container= &$table->container;
@@ -185,6 +185,7 @@ class STCallbackClass
 		        STCheck::param($argument, 0, "check", $argument=="enabled"||$argument=="disabled", 
 		            "enabled", "disabled");
 		    }
+			$column= $this->setColumnToUnderlinedAliasIfNecessary($column);
 		    $bRv= false;
 		    if($argument == "disabled")
 		    {
@@ -202,8 +203,7 @@ class STCallbackClass
 		{
 		    if(!isset($column))
 		        $column= $this->column;
-		    $field= $this->table->findAliasOrColumn($column);
-		    $column= $field['alias'];
+			$column= $this->setColumnToUnderlinedAliasIfNecessary($column);
 		    if(!isset($rownum))
 		        $rownum= $this->rownum;
 		    $bSet= true;
@@ -217,10 +217,12 @@ class STCallbackClass
 		}
 		public function enabled(string $column, int $rownum= null)
 		{
+			$column= $this->setColumnToUnderlinedAliasIfNecessary($column);
 		    $this->setBehavior("enabled", $column, $rownum);
 		}
 		public function disabled(string $column, int $rownum= null)
 		{
+			$column= $this->setColumnToUnderlinedAliasIfNecessary($column);
 		    $this->setBehavior("disabled", $column, $rownum);
 		}
 		function &getWhere()
@@ -292,11 +294,35 @@ class STCallbackClass
 		}
 		public function noUpdate($rownum= null)
 		{
+			if(!isset($this->aAction['update']))
+				return; // method should only for STLIST action
 		    $this->setValue(null, $this->aAction['update'], $rownum);
 		}
 		public function noDelete($rownum= null)
 		{
+			if(!isset($this->aAction['delete']))
+				return; // method should only for STLIST action
 		    $this->setValue(null, $this->aAction['delete'], $rownum);
+		}
+		/**
+		 * currently on April 2024 for action STINSERT or STUPDATE
+		 * name of input-tags are displayed as alias columns with underlines for spaces.
+		 * So do if ask for an column try to change it if necessary
+		 * 
+		 * @param string $column name of column in database
+		 * @return string alias with underline if before exist, otherwise the column
+		 */
+		private function setColumnToUnderlinedAliasIfNecessary(string $column) : string
+		{
+			if(!isset($this->sqlResult[$column]))
+			{
+				$alias= $this->table->setColumnToUnderlinedAlias($column, /*underline*/false);
+				if(!isset($this->sqlResult[$alias]))
+					$alias= preg_replace("/ /", "_", $alias);
+				if(isset($this->sqlResult[$alias]))
+					return $alias;
+			}
+			return $column;
 		}
 		public function setValue($value, $column= null, $rownum= null)
 		{
@@ -331,6 +357,7 @@ class STCallbackClass
 				}
 			}else
 			{
+				$column= $this->setColumnToUnderlinedAliasIfNecessary($column);
     			if(!array_key_exists($column, $this->sqlResult))
     			{// for older versions
     				foreach($this->aTables as $tableName)
@@ -428,6 +455,7 @@ class STCallbackClass
     			}
 				return $this->sqlResult[$rownum][$columnPrefix.$column];
 			}
+			$column= $this->setColumnToUnderlinedAliasIfNecessary($column);
   			if(	is_array($this->sqlResult) &&
   				!array_key_exists($column, $this->sqlResult)	)
   			{// for older versions

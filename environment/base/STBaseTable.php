@@ -99,6 +99,12 @@ class STBaseTable
 	var $bUpdate= true;
 	var	$bDelete= true;
 	/**
+	 * event listener for html input tags
+	 * @var array [column][event]= javascript:function;
+	 */
+	public $aEvents= array();
+	var $aRefresh= array();
+	/**
 	 * 
 	 * @var boolean whether should sort Table, by clicking of one of the head-names 
 	 */
@@ -433,6 +439,22 @@ class STBaseTable
 		if($this->haveColumn($column))
 			return $column;
 		return null;
+	}
+	/**
+	 * currently on April 2024 for action STINSERT or STUPDATE inside STItemBox
+	 * name of input-tags are displayed as alias columns with underlines for spaces.
+	 * (It's an ugly hack I know, but fast enough for now)
+	 * 
+	 * @param string $column name of column in database
+	 * @param bool $bUnderline whether should create an underline instead as space
+	 * @return string alias with underline if before exist, otherwise the column
+	 */
+	public function setColumnToUnderlinedAlias(string $column, bool $bUnderline) : string
+	{
+		$field= $this->findColumnOrAlias($column);
+		if(!$bUnderline)
+			return $field['alias'];
+		return preg_replace("/ /", "_", $field['alias']);
 	}
 	function postToGetTransfer($var /*, ...*/)
 	{
@@ -2325,9 +2347,69 @@ class STBaseTable
 			}
 			return false;
 		}
+		/**
+		 * Add for input tags the onchange event.<br />
+		 * This need also to add some javascript function into the body.
+		 * 
+		 * @param string $column name of column
+		 * @param string $function javascript function name
+		 */
+		public function onFocus(string $column, string|jsFunction $function)
+		{
+			$field= $this->findColumnOrAlias($column);
+			$this->aEvents[$field['column']]['onFocus']= $function;
+		}
+		/**
+		 * Add for input tags the onchange event.<br />
+		 * This need also to add some javascript function into the body.
+		 * 
+		 * @param string $column name of column
+		 * @param string $function javascript function name
+		 */
+		public function onSelect(string $column, string|jsFunction $function)
+		{
+			$field= $this->findColumnOrAlias($column);
+			$this->aEvents[$field['column']]['onSelect']= $function;
+		}
+		/**
+		 * Add for input tags the onchange event.<br />
+		 * This need also to add some javascript function into the body.
+		 * 
+		 * @param string $column name of column
+		 * @param string $function javascript function name
+		 */
+		public function onInput(string $column, string|jsFunction $function)
+		{
+			$field= $this->findColumnOrAlias($column);
+			$this->aEvents[$field['column']]['onInput']= $function;
+		}
+		/**
+		 * Add for input tags the onchange event.<br />
+		 * This need also to add some javascript function into the body.
+		 * 
+		 * @param string $column name of column
+		 * @param string $function javascript function name
+		 */
+		public function onChange(string $column, string|jsFunction $function)
+		{
+			$field= $this->findColumnOrAlias($column);
+			$this->aEvents[$field['column']]['onChange']= $function;
+		}
+		/**
+		 * Add for input tags the onchange event.<br />
+		 * This need also to add some javascript function into the body.
+		 * 
+		 * @param string $column name of column
+		 * @param string $function javascript function name
+		 */
+		public function onBlur(string $column, string|jsFunction $function)
+		{
+			$field= $this->findColumnOrAlias($column);
+			$this->aEvents[$field['column']]['onBlur']= $function;
+		}
 		function onChangeRefresh($column)
 		{
-			$field= $this->findAliasOrColumn($column);
+			$field= $this->findColumnOrAlias($column);
 			$this->aRefreshes[$field["column"]]= "refresh";
 		}
 		function isSelect($columnName, $alias= null)

@@ -42,7 +42,8 @@ abstract class STBaseContainer extends BodyTag implements STContainerTempl
      */
     var $locale= array( "language"  => 'en',
                         "nation"    => 'XXX', // <- undefined
-                        "format"    => 'UTF-8'      );
+                        "format"    => 'UTF-8' ,
+						"changed"	=> false     );
     /**
      * message handling for differnt languages
      * @var STMessageHandling
@@ -171,8 +172,9 @@ abstract class STBaseContainer extends BodyTag implements STContainerTempl
 	protected function createMessageContent()
 	{
 		if(!$this->bMessagesInstalled)
-		{			
-			$this->createMessages($this->locale['language'], $this->locale['nation']);
+		{		
+			$locale= $this->getLanguage();	
+			$this->createMessages($locale['language'], $locale['nation']);
 			$this->bMessagesInstalled= true;
 		}
 	}
@@ -271,6 +273,23 @@ abstract class STBaseContainer extends BodyTag implements STContainerTempl
 	    }
 	    $this->locale['language']= $lang;
 	    $this->locale['nation']= $nation;
+		$this->locale['changed']= true;
+	}
+	/**
+	 * return language from container if changed,
+	 * otherwise from the parent container.
+	 * If no one changed, return the default language structure
+	 * with language 'en' and 'XXX' as nation
+	 * 
+	 * @return struct language
+	 */
+	protected function getLanguage()
+	{
+		if($this->locale['changed'])
+			return $this->locale;
+		if(isset($this->parentContainer))
+			return $this->parentContainer->getLanguage();
+		return $this->locale;
 	}
 	function showLogoutButton($buttonName= "log out", $align= "right", $buttonId= "logoutMainButton")
 	{

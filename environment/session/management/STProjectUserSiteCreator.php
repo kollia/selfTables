@@ -30,6 +30,16 @@ class STProjectUserSiteCreator extends STUserSiteCreator
      */
     var $firstProjectName= "ProjectFrame";
     /**
+     * struct of genaral registration properties.<br />
+     * outsideRegistration - whether an user can also register by him self from outside<br />
+     * adminActivation - whether the administrator need to activate after registration the user
+     * dummyUser - whether is allowed to create an dummy user how have no password and cannot login
+     * @var array
+     */
+    private $registrationProperties= array( 'outsideRegistration' =>    true,
+                                            'adminActivation' =>        false,
+                                            'dummyUser' =>              true    );
+    /**
      * All registered projects.<br />
      * Beginning always with the 'Login' var which point to 'Registration' or 'ProjectOverview'.
      * The project key 'var' have to be always the same than the array key.
@@ -202,7 +212,7 @@ class STProjectUserSiteCreator extends STUserSiteCreator
             $projectID= 0;
         }
         
-        $containerObj= STObjectContainer::getContainer($currentContainer['container']);        
+        $containerObj= STObjectContainer::getContainer($currentContainer['container']); 
         STUserSiteCreator::__construct($projectID, $containerObj);
     }
     /**
@@ -234,6 +244,31 @@ class STProjectUserSiteCreator extends STUserSiteCreator
     {
         return $this->sLoginEntryPointUrl;
     }
+    /**
+     * user should not register by him self from outside
+     */
+    public function noOutsideRegistration()
+    { $this->registrationProperties['outsideRegistration']= false; }
+    /**
+     * Administrator need to have activate user after registration
+     */
+    public function needAdminActivation()
+    {
+        $this->registrationProperties['adminActivation']= true;
+        $this->registrationProperties['dummyUser']= false;
+    }
+    /**
+     * It should be not allowed to create an dummy user
+     * how have no password and cannot login
+     * 
+     * @param bool $bAllow whether should allow an dummy user
+     */
+    public function allowDummyUser(bool $bAllow= true)
+    {
+        $this->registrationProperties['dummyUser']= $bAllow;
+    }
+    public function readRegistrationProperties()
+    { return $this->registrationProperties; }
     public function execute($onError= onErrorMessage)
     {
         if( $this->prefixPath != "" &&
@@ -242,6 +277,12 @@ class STProjectUserSiteCreator extends STUserSiteCreator
                                              )
         {
             $this->addClientRootPath($this->prefixPath);
+        }
+        if(typeof($this->tableContainer, "STUserManagement"))
+        {
+            if($this->registrationProperties['adminActivation'])
+                $this->tableContainer->needAdminActivation();
+            $this->tableContainer->allowDummyUser($this->registrationProperties['dummyUser']);
         }
         STUserSiteCreator::execute($onError);
     }

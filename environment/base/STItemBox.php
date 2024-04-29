@@ -1198,9 +1198,9 @@ class STItemBox extends STBaseBox
 										$input->add($aEnums[$n]);
 									}
 								}else 
-								{// f�r zwei Enum Eintr�ge mit not Null Feld,
-								 // nur eine Checkbox anzeigen.
-								 // Der erste Eintrag im Enum wird als nicht angehakt bezeichnet
+								{// for two enum entries with not null field,
+								 // show only a checkbox.
+								 // The first entry is than the not checked state
 								 	$bSingleEnum= true;
 									$input->type("checkbox");
 									$input->value($aEnums[2]);
@@ -1840,6 +1840,7 @@ class STItemBox extends STBaseBox
 		if(is_array($aSetAlso))
 			foreach($aSetAlso as $column=>$content)
 			{
+				$alias= $this->asDBTable->setColumnToUnderlinedAlias($column, /*underline*/true);
 				foreach($content as $action=>$value)
 				{
 					// alex 01/09/2005:	action kann auch "All" sein
@@ -1848,9 +1849,9 @@ class STItemBox extends STBaseBox
 					if(	(	$action==$this->action
 							or
 							$action=="All"			) &&								
-						!isset($this->aSetAlso[$column])		)
+						!isset($this->aSetAlso[$alias])		)
 					{
-						$this->aSetAlso[$column]= $value;
+						$this->aSetAlso[$alias]= $value;
 					}
 				}
 			}
@@ -1903,11 +1904,10 @@ class STItemBox extends STBaseBox
 					isset($aShowen[$column]) &&
 					$aShowen[$column] === true &&
   					!isset($post[$column])			)	// if the checkbox not set
-				{	
-					$field= $this->asDBTable->findAliasOrColumn($column);
-					STCheck::alert($field['type']=="not found", "STItemBox::box()", "column $column not found inside table {$this->asDBTable->getName()}");
-					if(!isset($post[$field['alias']]))
-						$post[$field['alias']]= $enum[1];// set the value to the first entry
+				{//STCheck::alert($field['type']=="not found", "STItemBox::box()", "column $column not found inside table {$this->asDBTable->getName()}");	
+					$alias= $this->asDBTable->setColumnToUnderlinedAlias($column, /*underline*/true);
+					if(!isset($post[$alias]))
+						$post[$alias]= $enum[1];// set the value to the first entry
   				}
   			}
   			
@@ -2146,10 +2146,33 @@ class STItemBox extends STBaseBox
 			    foreach ($this->sqlResult as $column => $content)
 			    {
 			        $alias= preg_replace("/ /", "_", $columns[$column]);
-			        if( isset($post_vars[$alias]) &&
-			            $post_vars[$alias] !== $content    )
+			        if(isset($post_vars[$alias]))
 			        {
-			            $result[$column]= $post_vars[$alias];
+						if($post_vars[$alias] !== $content)
+			            	$result[$column]= $post_vars[$alias];
+			        }else
+					{// if not set entry maybe was removed
+						$result[$column]= null;//$post_vars[$alias];
+					}
+			    }
+			}
+			//----------------------------------------------------------
+			if(isset($this->sqlResult))
+			{
+			    foreach ($post_vars as $alias => $content)
+			    {					
+					$column= array_search($alias, $columns);
+					if($column === false)
+					{// mostly the underlines are spaces
+					 // not implemented one is space but an second an underline
+						$_alias= preg_replace("/_/", " ", $alias);
+						$column= array_search($_alias, $columns);
+					}
+					if($column === false)
+						$column= $alias;
+			        if(!isset($this->sqlResult[$column]))
+			        {// column was new set from callback
+			            $result[$column]= $content;
 			        }
 			    }
 			}
@@ -2370,6 +2393,25 @@ class STItemBox extends STBaseBox
                     $space= STCheck::write("field: ".$field["name"].":$alias");
             	    st_print_r($f, 1, $space);
                 }
+				
+				if(!isset($post[$alias]))
+				{
+					// if alias not inside post
+					// maybe column was disabled
+					// and take content from db result
+					if(isset($this->aDisabled[$alias]))
+					{
+						foreach ($this->aDisabled[$alias] as $action=>$bSet)
+						{
+							if( $action == 0 || // 0 means action is STINSERT and STUPDATE but no STLIST
+								$action == $this->action     )
+							{
+								$post[$alias]= $result[$alias];
+								break;
+							}
+						}
+					}
+				}
 				if(	isset($post[$alias]))
 				{
 				    if($bFieldDefineSelection)
@@ -2734,8 +2776,9 @@ class STItemBox extends STBaseBox
 			{
 			    $del->where($this->where);
 			}
-			
-			$oCallbackClass= new STCallbackClass($this->asDBTable, array());
+
+			$sqlContent= array();
+			$oCallbackClass= new STCallbackClass($this->asDBTable, $sqlContent);
 			$oCallbackClass->display= false;
 			$oCallbackClass->before= true;
 			$oCallbackClass->MessageId= "PREPARE";

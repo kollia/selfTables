@@ -272,8 +272,7 @@ class STUserSession extends STDbSession
         $dbTableDescription->primaryKey("User", "ID");
         $dbTableDescription->autoIncrement("User", "ID");
         $dbTableDescription->column("User", "domain", "TINYINT", /*null*/false);
-        $dbTableDescription->foreignKey("User", "domain", "AccessDomain");
-		$dbTableDescription->column("User", "active", "set('NO', 'YES')", /*null*/false, /*default*/"NO");
+        $dbTableDescription->foreignKey("User", "domain", "AccessDomain");		
         $dbTableDescription->column("User", "user", "varchar(50)", /*null*/false);
         $dbTableDescription->uniqueKey("User", "user", 1);
 		$dbTableDescription->column("User", "sex", "set('FEMAIL','MALE','*GENDER','UNKNOWN')", /*null*/false);
@@ -286,7 +285,9 @@ class STUserSession extends STDbSession
 		// password can be null because different registration methods exists
         $dbTableDescription->column("User", "Pwd", "char(50) binary", /*null*/true);
 		//$dbTableDescription->column("User", "active", "set('NO', 'YES')", /*null*/false, /*default*/"NO");
-		$dbTableDescription->column("User", "register", "set('CREATED', 'SENDMAIL', 'REGISTERED', 'ACTIVE')",  /*null*/true, /*default*/"CREATED");
+		$dbTableDescription->column("User", "register", "set('CREATED', 'SENDMAIL', 'INACTIVE', 'ACTIVE')",  /*null*/true, /*default*/"CREATED");
+		$dbTableDescription->column("User", "active", "set('NO', 'YES')", /*null*/false, /*default*/"YES");
+		$dbTableDescription->column("User", "regcode", "varchar(100)", /*null*/true);
 		$dbTableDescription->column("User", "sendingtime", "DATETIME", /*null*/true);
 		$dbTableDescription->column("User", "NrLogin", "INT UNSIGNED", /*null*/true, /*default*/0);
         $dbTableDescription->column("User", "LastLogin", "DATETIME");

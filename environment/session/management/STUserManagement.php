@@ -1,46 +1,131 @@
 <?php
 
-//global $_stdbinserter;
+$_email= load_pluginModule("email");
 require_once($_stdbinserter);
 require_once($_stsitecreator);
 require_once($_stuserclustergroupmanagement);
+require_once($_email['stemail']);
 
-function disablePasswordCallback(STCallbackClass &$callbackObject, $columnName, $rownum)
-{
-	//$callbackObject->echoResult();
-    if(!$callbackObject->before)
-        return;
+global $__email_text_cases;
+$__email_text_cases= array(	"HOST",
+							"ADMINISTRATOR_MAIL",
+							"MAIL_CODE",
+							"MAIL_MINUTES",
+							"MAIL_DAYS",
+							"SIGNATURE",
+							"PREFIXED_TITLE",
+							"SUBSEQUENT_TITLE",
+							"FORM_ADDRESS.sex.FEMALE",
+							"FORM_ADDRESS.sex.MALE",
+							"FORM_ADDRESS.sex.*GENDER",
+							"FORM_ADDRESS.sex.UNKNOWN",
+							"OWN_REGISTRATION",
+							"MAIL_REGISTRATION",
+							"ACKNOWLEDGE_INACTIVE",
+							"ACKNOWLEDGE_ACTIVE"				);
 
-    $session= STUSerSession::instance();
-    $domain= $session->getCustomDomain();
-    $table= $callbackObject->getTable();
-    $domainField= $table->findAliasOrColumn("domain");
-    $domainColumn= $domainField['alias'];
-    $domainValue= $callbackObject->getValue($domainColumn);
-    
-    if($domainValue != $domain['Name'])
-        $callbackObject->disabled($columnName);
-}
-function emailCallback(STCallbackClass &$callbackObject, $columnName, $rownum)
+
+function mail_allowNewCaseCallback(STCallbackClass &$callbackObject, $columnName, $rownum)
 {
-	if( $callbackObject->display ||
-		!$callbackObject->before	)
+	if(	$callbackObject->display ||
+		$callbackObject->before == false )
 	{
 		return;
 	}
+	$case= $callbackObject->getValue("case");
+	if(preg_match("/[^_A-ZÜÖÄ]+/", $case))
+		return "for column 'Case' only big letters and underscores allowed";
+}
+function mail_allowRemovingCallback(STCallbackClass &$callbackObject, $columnName, $rownum)
+{
+	if($callbackObject->display)
+	{
+		global $__email_text_cases;
+
+		$case= $callbackObject->getValue("Case");
+		if($case == "MAIL_CODE")
+		{
+			$callbackObject->noUpdate();
+			$callbackObject->noDelete();
+		}elseif(in_array($case, $__email_text_cases))
+		{
+			$callbackObject->noDelete();
+		}
+	}
+}
+function mail_disableColumnCallback(STCallbackClass &$callbackObject, $columnName, $rownum)
+{
+	if($callbackObject->display)
+	{
+		global $__email_text_cases;
+
+		$case= $callbackObject->getValue("case");
+		if(in_array($case, $__email_text_cases))
+		{
+			$callbackObject->disabled("Case");
+			if(	$case != "MAIL_MINUTES" &&
+				$case != "MAIL_DAYS"		)
+			{
+				$callbackObject->disabled("subject");
+			}
+			$html= $callbackObject->getValue("html");
+			if( !isset(($html)) ||
+				$html == "NO"		)
+			{
+				$callbackObject->disabled($columnName);
+			}
+			$callbackObject->disabled("description");
+		}
+	}
+}
+function emailCallback(STCallbackClass &$callbackObject, $columnName, $rownum)
+{
 	//$callbackObject->echoResult();
-	$send= $callbackObject->getValue("send_EMail");
+	if($callbackObject->display)
+		return;
+
+	//$callbackObject->echoResult();
+	$action= $callbackObject->getAction();
+	$send= $callbackObject->getValue("sending");
+	if($callbackObject->before)
+	{// BEFORE any changing of database -------------------------------------------------------------------------------
+		if($action == STINSERT)
+		{// flip ACTIVE handle, because by insert ask whether should create a Dummy user
+		 // and it should revert for active state
+			$active= $callbackObject->getValue("active");
+			if(	isset($active) && // active is dummy user
+				$active == "YES"	)
+			{// write dummy user
+				$callbackObject->setValue("NO", "active");
+			}else
+			{
+				if(	isset($send) &&
+					$send == "yes"	)
+				{// write inactive user for registration (sending EMail)
+					$callbackObject->setValue("NO", "active");
+
+				}else// write active user with password
+					$callbackObject->setValue("YES", "active");
+			}			
+		}
+		if(	isset($send) &&
+			$send == "yes"	)
+		{
+			// create user-code
+			$code= random_int(1000000000, 9999999999);
+			$callbackObject->setValue("SENDMAIL", "register");
+			$callbackObject->setValue($code, "regcode");
+			$callbackObject->setValue("now()", "sendingtime");
+		}
+		return;
+	}
+	// AFTER changing of database -------------------------------------------------------------------------------------
+	$toEmail= $callbackObject->getValue("email");
 	if(	isset($send) &&
 		$send == "yes"	)
 	{
 		$db= $callbackObject->getDatabase();
 		$oUserTable= $callbackObject->getTable();
-
-		// create user-code
-		$pwdField= $oUserTable->searchByColumn("Pwd");
-		$code= random_int(10000000, 99999999);
-		$callbackObject->setValue($code, $pwdField['alias']);
-		$callbackObject->setValue($code, "re_{$pwdField['alias']}");
 
 		// extract column values from post with alias names
 		$dbvalues=  $callbackObject->getAllValues();
@@ -71,13 +156,15 @@ function emailCallback(STCallbackClass &$callbackObject, $columnName, $rownum)
 		$selector->execute();
 		$repl_content= $selector->getResult();
 		$new_replacement= array();
+		$admin_email= "";
 		foreach($repl_content as $row)
 		{
+			if($row['case'] == "ADMINISTRATOR_MAIL")
+				$admin_email= $row['text'];
 			if($row['case'] == "MAIL_REGISTRATION")
 			{
 				$mail_subject= $row['subject'];
 				$mail_text= $row['text'];
-				break;
 			}else
 			{
 				if(preg_match("/\./", $row['case']))
@@ -92,7 +179,12 @@ function emailCallback(STCallbackClass &$callbackObject, $columnName, $rownum)
 					}
 				}else
 				{
-					$row['text']= preg_replace("/\{subject\}/", $row['subject'], $row['text']);
+					if($row['case'] == "MAIL_CODE")
+					{
+						$code= $callbackObject->getValue("regcode");
+						$row['text']= $code;
+					}else
+						$row['text']= preg_replace("/\{subject\}/", $row['subject'], $row['text']);
 					$new_replacement[]= $row;
 				}
 			}
@@ -101,10 +193,36 @@ function emailCallback(STCallbackClass &$callbackObject, $columnName, $rownum)
 		if(preg_match("/\{.*\}/", $mail_subject, $preg))
 			STCheck::warning(true, "usermanagement_email_replacement()", "placeholder '{$preg[0]}' from registration EMail-Text does not exist");
 		usermanagement_email_replacement($mail_text, $new_replacement, $newdbvalue);
+		usermanagement_remove_empty_columns($mail_text, $callbackObject->table);
 		if(preg_match("/\{.*\}/", $mail_text, $preg))
 			STCheck::warning(true, "usermanagement_email_replacement()", "placeholder '{$preg[0]}' from registration EMail-Text does not exist");
-		$line= __LINE__;
-		return "build email '$mail_subject' by STUserManagement callback on line $line";
+		
+		$mail= new STEmail(/*exception*/false);
+		if(	!$mail->init($admin_email) ||
+			!$mail->sendmail($toEmail, $mail_subject, $mail_text)	)
+		{
+			$error= $mail->getErrorString();
+			return $error;
+		}
+	}
+}
+function usermanagement_remove_empty_columns(string &$string, $fromTable)
+{
+	$columns= $fromTable->columns;
+	while(preg_match("/\{(.*)\}/", $string, $preg))
+	{
+		$bFound= false;
+		foreach($columns as $column)
+		{
+			if($preg[1] == $column['name'])
+			{
+				$bFound= true;
+				$string= preg_replace("/".$preg[0]."/", "", $string);
+				break;
+			}
+		}
+		if(!$bFound)
+			break;
 	}
 }
 function usermanagement_email_replacement(string &$string, array $replacement, array $dbreplacement) : int
@@ -143,23 +261,33 @@ function usermanagement_email_replacement(string &$string, array $replacement, a
 	{ // if filled placeholders but now also placeholder exist do again
 	  // but if doesn't filled placeholders but placeholder exist don't do again
 		if($nChanged)
+		{
 			$nChanged+= usermanagement_email_replacement($string, $replacement, $dbreplacement);
+		}
 	}
 	return $nChanged;
 }
 function checkPasswordCallback(STCallbackClass &$callbackObject, $columnName, $rownum)
 {
-	//$callbackObject->echoResult();
     if(	$callbackObject->display == true ||
 		$callbackObject->before == false	)
 	{
         return;
 	}
-	$send= $callbackObject->getValue("send_EMail");
-	if($send == "yes")
+	//$callbackObject->echoResult();
+	$action= $callbackObject->getAction();
+	$active= $callbackObject->getValue("active");
+	$send= $callbackObject->getValue("sending");
+	if(	$send == "yes" ||
+		(	$action == STINSERT &&			// if action is STINSERT
+			$active == "YES"			)	)	// revert "active user" set for dummy user (need no password check)
+	{
+		$callbackObject->setValue("", "Pwd");
+		$callbackObject->setValue("", "re_Pwd");
 		return;
+	}
 	$pwd= $callbackObject->getValue("Pwd");
-	if( $callbackObject->action == STUPDATE &&
+	if( $action == STUPDATE &&
 		$pwd == ""								)
 	{
 		// can be "" by update when password not changed
@@ -185,6 +313,20 @@ function checkPasswordCallback(STCallbackClass &$callbackObject, $columnName, $r
 	}
 	$callbackObject->addHtmlContent($table);
 	return "The password must contain lowercase letters, uppercase letters and numbers and should not begin with a star ('*')";
+}
+function disablePasswordCallback(STCallbackClass &$callbackObject, $columnName, $rownum)
+{
+	//$callbackObject->echoResult();
+    if(!$callbackObject->before)
+        return;
+
+    $session= STUSerSession::instance();
+    $domain= $session->getCustomDomain();
+    $table= $callbackObject->getTable();
+    $domainValue= $callbackObject->getValue("domain");
+    
+    if($domainValue != $domain['Name'])
+        $callbackObject->disabled($columnName);
 }
 function descriptionCallback(&$callbackObject, $columnName, $rownum)
 {
@@ -240,10 +382,39 @@ function actionCallback(&$callbackObject, $columnName, $rownum)
 
 class STUserManagement extends STObjectContainer
 {
+    /**
+     * struct of genaral registration properties.<br />
+     * outsideRegistration - whether an user can also register by him self from outside<br />
+     * adminActivation - whether the administrator need to activate after registration the user
+     * dummyUser - whether is allowed to create an dummy user how have no password and cannot login
+     * @var array
+     */
+    private $registrationProperties= array( 'outsideRegistration' =>    true,
+                                            'adminActivation' =>        false,
+                                            'dummyUser' =>              true    );
+
 	function __construct(string $name, STObjectContainer &$container)
 	{
 		STObjectContainer::__construct($name, $container);
 	}
+    /**
+     * Administrator need to have activate user after registration
+     */
+    public function needAdminActivation()
+    {
+        $this->registrationProperties['adminActivation']= true;
+        $this->registrationProperties['dummyUser']= false;
+    }
+    /**
+     * It should be not allowed to create an dummy user
+     * how have no password and cannot login
+     * 
+     * @param bool $bAllow whether should allow an dummy user
+     */
+    public function allowDummyUser(bool $bAllow= true)
+    {
+        $this->registrationProperties['dummyUser']= $bAllow;
+    }
 	protected function create()
 	{
 	    $session= &STUserSession::instance();
@@ -290,7 +461,13 @@ class STUserManagement extends STObjectContainer
 			$mail->select("subject", "Subject");
 			$mail->select("html", "allow HTML");
 			$mail->select("text", "EMail text");
-		}
+			$mail->insertCallback("mail_allowNewCaseCallback", "case");
+			$mail->updateCallback("mail_disableColumnCallback", "case");
+			$mail->updateCallback("mail_disableColumnCallback", "subject");
+			$mail->updateCallback("mail_disableColumnCallback", "html");
+			$mail->updateCallback("mail_disableColumnCallback", "description");
+		}else
+			$mail->listCallback("mail_allowRemovingCallback", "case");
 
 	    $user= &$this->needTable("User");
 		$user->select("domain", "Domain");
@@ -299,17 +476,26 @@ class STUserManagement extends STObjectContainer
 		$user->select("sex", "Sex");
 		$user->pullDownMenuByEnum("sex");
 		$user->select("user", "Nickname");
+		if($action == STLIST)
+			$user->select("active", "active");
 		$user->select("title_prefixed", "Title");
 		$user->pullDownMenuByEnum("title_prefixed");
 		$user->select("firstname", "first Name");
 		$user->select("surname", "Surname");
 		$user->select("title_subsequent", "Title subsequent");
 		$user->pullDownMenuByEnum("title_subsequent");
-		$user->select("email", "Email");
+		$user->select("email", "Email");		
 		$user->addColumn("sending", "SET('no', 'yes')", /*NULL*/false);
 		if( $action == STINSERT ||
 			$action == STUPDATE	)
 		{
+			if($action == STINSERT)
+			{
+				if($this->registrationProperties['dummyUser'])
+					$user->select("active", "Dummy user");
+				$user->preSelect("active", "NO");
+			}else
+				$user->select("active", "active User");
 			$user->select("sending", "send EMail");
 		}
 		//$user->getColumn("register");
@@ -421,13 +607,13 @@ class STUserManagement extends STObjectContainer
 			$this->setMessageContent("MAIL-SUBSEQUENT_TITLE-text", ", {title_subsequent}");
 			$this->setMessageContent("MAIL-FORM_ADDRESS.sex.FEMALE-description", "Form of address for womans");
 			$this->setMessageContent("MAIL-FORM_ADDRESS.sex.FEMALE-subject", "");
-			$this->setMessageContent("MAIL-FORM_ADDRESS.sex.FEMALE-text", "Sehr geehrte Frau{PREFIXED_TITLE.exist} {surname}{SUBSEQUENT_TITLE.exist}");
+			$this->setMessageContent("MAIL-FORM_ADDRESS.sex.FEMALE-text", "Sehr geehrte Frau {PREFIXED_TITLE.exist} {surname}{SUBSEQUENT_TITLE.exist}");
 			$this->setMessageContent("MAIL-FORM_ADDRESS.sex.MALE-description", "Form of address for mens");
 			$this->setMessageContent("MAIL-FORM_ADDRESS.sex.MALE-subject", "");
-			$this->setMessageContent("MAIL-FORM_ADDRESS.sex.MALE-text", "Sehr geehrter Herr{PREFIXED_TITLE.exist} {surname}{SUBSEQUENT_TITLE.exist}");
+			$this->setMessageContent("MAIL-FORM_ADDRESS.sex.MALE-text", "Sehr geehrter Herr {PREFIXED_TITLE.exist} {surname}{SUBSEQUENT_TITLE.exist}");
 			$this->setMessageContent("MAIL-FORM_ADDRESS.sex.*GENDER-description", "form of address for gender neutral persons");
 			$this->setMessageContent("MAIL-FORM_ADDRESS.sex.*GENDER-subject", "");
-			$this->setMessageContent("MAIL-FORM_ADDRESS.sex.*GENDER-text", "Sehr geehrte(r/s){PREFIXED_TITLE.exist} {surname}{SUBSEQUENT_TITLE.exist}");
+			$this->setMessageContent("MAIL-FORM_ADDRESS.sex.*GENDER-text", "Sehr geehrte(r/s) {PREFIXED_TITLE.exist} {surname}{SUBSEQUENT_TITLE.exist}");
 			$this->setMessageContent("MAIL-FORM_ADDRESS.sex.UNKNOWN-description", "form of address for unknown persons");
 			$this->setMessageContent("MAIL-FORM_ADDRESS.sex.UNKNOWN-subject", "");
 			$this->setMessageContent("MAIL-FORM_ADDRESS.sex.UNKNOWN-text", "Sehr geehrte(r)Frau/Herr {PREFIXED_TITLE.exist} {surname}{SUBSEQUENT_TITLE.exist}");
@@ -447,15 +633,17 @@ class STUserManagement extends STObjectContainer
 														" verwenden Sie diesen mit dem user-code \"{MAIL_CODE}\", ohne Anführungszeichen, als Passwort.\\n".
 														" Der user-code ist {MAIL_DAYS} gültig.\\n\\n".
 														" {SIGNATURE}");
+			$this->setMessageContent("MAIL-ACKNOWLEDGE_INACTIVE-description", "acknowledge before account becoming active");
+			$this->setMessageContent("MAIL-ACKNOWLEDGE_INACTIVE-subject", "Registration auf {HOST}");
 			$this->setMessageContent("MAIL-ACKNOWLEDGE_INACTIVE-text", "{FORM_ADDRESS}!\\n\\n".
-														" Vielen Dank, dass sie sich auf unserer Web-Sitee {HOST} registriert haben.\\n".
+														" Vielen Dank, dass sie sich auf unserer Webseite {HOST} registriert haben.\\n".
 														" Bitte senden sie eine EMail an ADMINISTRATOR_MAIL\\n".
 														" um ihr Konto mit dem Benutzer-Namen '{user}' freizuschalten.\\n\\n".
 														" {SIGNATURE}");
 			$this->setMessageContent("MAIL-ACKNOWLEDGE_ACTIVE-description", "acknowledge for registration");
-			$this->setMessageContent("MAIL-ACKNOWLEDGE_ACTIVE-subject", "Registrierung auf der Web-Seite {HOST}");
+			$this->setMessageContent("MAIL-ACKNOWLEDGE_ACTIVE-subject", "Registrierung auf der Webseite {HOST}");
 			$this->setMessageContent("MAIL-ACKNOWLEDGE_ACTIVE-text", "{FORM_ADDRESS}!\\n\\n".
-														" Vielen Dank, dass sie sich auf unserer Web-Sitee {HOST} registriert haben.\\n".
+														" Vielen Dank, dass sie sich auf unserer Webseite {HOST} registriert haben.\\n".
 														" Ihr Konto mit dem Benutzer '{user}' wurde frei geschalten.\\n\\n".
 														" {SIGNATURE}");
 			
@@ -469,7 +657,7 @@ class STUserManagement extends STObjectContainer
 		    $this->setMessageContent("MAIL-ADMINISTRATOR_MAIL-text", "");
 			$this->setMessageContent("MAIL-MAIL_CODE-description", "generated numeric code when sending emails");
 			$this->setMessageContent("MAIL-MAIL_CODE-subject", "");
-			$this->setMessageContent("MAIL-MAIL_CODE-text", "");
+			$this->setMessageContent("MAIL-MAIL_CODE-text", "{Pwd}");
 			$this->setMessageContent("MAIL-MAIL_MINUTES-description", "how long the created account by own registration should be available");
 			$this->setMessageContent("MAIL-MAIL_MINUTES-subject", "5");
 			$this->setMessageContent("MAIL-MAIL_MINUTES-text", "{subject} minutes");
@@ -487,16 +675,16 @@ class STUserManagement extends STObjectContainer
 			$this->setMessageContent("MAIL-SUBSEQUENT_TITLE-text", ", {title_subsequent}");
 			$this->setMessageContent("MAIL-FORM_ADDRESS.sex.FEMALE-description", "form of address for womans");
 			$this->setMessageContent("MAIL-FORM_ADDRESS.sex.FEMALE-subject", "");
-			$this->setMessageContent("MAIL-FORM_ADDRESS.sex.FEMALE-text", "Dear Mrs.{PREFIXED_TITLE} {surname}{SUBSEQUENT_TITLE}");
+			$this->setMessageContent("MAIL-FORM_ADDRESS.sex.FEMALE-text", "Dear Mrs.{PREFIXED_TITLE.exist} {surname}{SUBSEQUENT_TITLE.exist}");
 			$this->setMessageContent("MAIL-FORM_ADDRESS.sex.MALE-description", "form of address for mens");
 			$this->setMessageContent("MAIL-FORM_ADDRESS.sex.MALE-subject", "");
-			$this->setMessageContent("MAIL-FORM_ADDRESS.sex.MALE-text", "Dear Mr.{PREFIXED_TITLE} {surname}{SUBSEQUENT_TITLE}");
+			$this->setMessageContent("MAIL-FORM_ADDRESS.sex.MALE-text", "Dear Mr.{PREFIXED_TITLE.exist} {surname}{SUBSEQUENT_TITLE.exist}");
 			$this->setMessageContent("MAIL-FORM_ADDRESS.sex.*GENDER-description", "form of address for gender neutral persons");
 			$this->setMessageContent("MAIL-FORM_ADDRESS.sex.*GENDER-subject", "");
-			$this->setMessageContent("MAIL-FORM_ADDRESS.sex.*GENDER-text", "Dear{PREFIXED_TITLE} {surname}{SUBSEQUENT_TITLE}");
+			$this->setMessageContent("MAIL-FORM_ADDRESS.sex.*GENDER-text", "Dear {PREFIXED_TITLE.exist} {surname}{SUBSEQUENT_TITLE.exist}");
 			$this->setMessageContent("MAIL-FORM_ADDRESS.sex.UNKNOWN-description", "form of address for unknown persons");
 			$this->setMessageContent("MAIL-FORM_ADDRESS.sex.UNKNOWN-subject", "");
-			$this->setMessageContent("MAIL-FORM_ADDRESS.sex.UNKNOWN-text", "Dear{PREFIXED_TITLE} {surname}{SUBSEQUENT_TITLE}");
+			$this->setMessageContent("MAIL-FORM_ADDRESS.sex.UNKNOWN-text", "Dear {PREFIXED_TITLE.exist} {surname}{SUBSEQUENT_TITLE.exist}");
 			$this->setMessageContent("MAIL-OWN_REGISTRATION-description", "registration by user (not inside UserManagement)");
 			$this->setMessageContent("MAIL-OWN_REGISTRATION-subject", "Registration on Website {HOST}");
 			$this->setMessageContent("MAIL-OWN_REGISTRATION-text", "{FORM_ADDRESS}!\\n\\n".
@@ -530,8 +718,9 @@ class STUserManagement extends STObjectContainer
 	}
 	protected function installContainer()
 	{
-		$instance= &STSession::instance();
-		
+		global $__email_text_cases;
+
+		$instance= &STSession::instance();		
 		// create custom domain database entry
 		$domain= $instance->getCustomDomain();
 		
@@ -579,6 +768,7 @@ class STUserManagement extends STObjectContainer
 		$selector= new STDbSelector($user);
 		$selector->select("User", "email");
 		$selector->joinOver("Group");
+		$selector->allowQueryLimitation(false);
 		$where= new STDbWhere("ID='".$instance->allAdminCluster."'");
 		//$where->andWhere("domain=$defaultDomainKey");
 		$where->table("Cluster");
@@ -639,22 +829,6 @@ class STUserManagement extends STObjectContainer
 		if(!isset($admin_email))
 			$admin_email= "example@".$_SERVER['HTTP_HOST'];
 
-		$cases= array(	"HOST",
-						"ADMINISTRATOR_MAIL",
-						"MAIL_CODE",
-						"MAIL_MINUTES",
-						"MAIL_DAYS",
-						"SIGNATURE",
-						"PREFIXED_TITLE",
-						"SUBSEQUENT_TITLE",
-						"FORM_ADDRESS.sex.FEMALE",
-						"FORM_ADDRESS.sex.MALE",
-						"FORM_ADDRESS.sex.*GENDER",
-						"FORM_ADDRESS.sex.UNKNOWN",
-						"OWN_REGISTRATION",
-						"MAIL_REGISTRATION",
-						"ACKNOWLEDGE_INACTIVE",
-						"ACKNOWLEDGE_ACTIVE"				);
 		$mail= $this->getTable("Mail");
 		$select= new STDbSelector($mail);
 		$select->allowQueryLimitation(false);
@@ -663,7 +837,7 @@ class STUserManagement extends STObjectContainer
 		$caseRes= $select->getSingleArrayResult();
 		$insert= new STDbInserter($mail);
 
-		foreach($cases as $case)
+		foreach($__email_text_cases as $case)
 		{
 			if(!in_array($case, $caseRes))
 			{

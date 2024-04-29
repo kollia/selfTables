@@ -49,13 +49,16 @@ class STDbSqlCases
     var $fcount= 0;
     protected function fillColumnContent(string $column, $value)
     {
-        STCheck::param($value, 1, "string", "empty(string)", "int", "float");
+        STCheck::param($value, 1, "string", "empty(string)", "null", "int", "float");
         
         $field= $this->table->findColumnOrAlias($column);
         STCheck::alert(($field["type"]=="no found"), "STDbUpdater::update()",
             "column '$column' do not exist inside table ".$this->table->getName(), 2);
-        if(preg_match("/^[ ]*['\"](.*)['\"][ ]*$/", $value, $preg))
+        if( isset($value) && // null value is allowed, make no preg_match
+            preg_match("/^[ ]*['\"](.*)['\"][ ]*$/", $value, $preg) )
+        {
             $value= $preg[1];
+        }
         $this->columns[$this->nAktRow][$field['column']]= $value;
     }
     function fillNextRow()

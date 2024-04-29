@@ -1247,6 +1247,14 @@ class STListBox extends STBaseBox
 					$bDisabled= $CallbackClass->argument("disabled", $columnKey, $rowKey);
 					// aktuelles Feld wird in $columnValue nicht aktualisiert
 					$columnValue= $CallbackClass->sqlResult[$rowKey][$columnKey];
+				}else
+				{
+					// kollia: 08/04/2024
+					// read value from callback not only if callback
+					// defined for columnKey, because
+					// value can also be set in a column before
+					$bDisabled= $CallbackClass->argument("disabled", $columnKey, $rowKey);
+					$columnValue= $CallbackClass->sqlResult[$rowKey][$columnKey];
 				}
 				if($_showColumnProperties)
 				{

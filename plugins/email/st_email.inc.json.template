@@ -1,0 +1,14 @@
+{
+    "PHPMailer": {
+        "CharSet": "UTF-8",
+
+        "SMTPDebug": 8,
+        "SMTPAuth": true,
+        "SMTPSecure": "tls",
+        "SMTPPort": 587,
+
+        "Host": "<Mail-Server>",
+        "Username": "<access user>",
+        "Password": "<access password>"
+    }
+}
