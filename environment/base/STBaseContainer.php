@@ -77,6 +77,13 @@ abstract class STBaseContainer extends BodyTag implements STContainerTempl
 
 	var $aBehindHeadLineButtons= array();
 	var $aBehindProjectIdentif= array();
+	/**
+	 * All html-tags or strings
+	 * which should add least of all tags
+	 * inside body
+	 * @param array $aBodyEndTags
+	 */
+	protected $aBodyEndTags= array();
 
 	var $aNavigationTables= array(); // Alle Tabellen die im Container zusaelich in einem STListBox angezeigt werden sollen
 	var	$getParmNavigation= array(); // alle Parameter die bei einem link aus dem NavigationTable
@@ -566,6 +573,9 @@ abstract class STBaseContainer extends BodyTag implements STContainerTempl
 		}else
 			$this->sBackContainer= $this->getName();
 
+		if(!typeof($this, "STObjectContainer")) // otherwise the endBodyTags will be inserted
+			foreach($this->aBodyEndTags as $tag) // on end of STObjectContainer
+				$this->addObj($tag);
 		if(!isset($this->sBackButton))
 		    $this->sBackButton= $this->oExternSideCreator->sBackButton;
 		return "NOERROR";
@@ -1025,6 +1035,18 @@ abstract class STBaseContainer extends BodyTag implements STContainerTempl
 		if(typeof($tag, "STSearchBox"))
 			$this->asSearchBox[$tag->categoryName]= "exist";
 		$this->aBehindProjectIdentif[]= &$tag;
+	}
+	/**
+	 * Add inserted html-tag or string at least of all tags
+	 * inside body
+	 * 
+	 * @param string|Tag $tag to insert tag or string
+	 */
+	public function addOnBodyEnd(string|Tag $tag)
+	{
+		if(typeof($tag, "STSearchBox"))
+			$this->asSearchBox[$tag->categoryName]= "exist";
+		$this->aBodyEndTags[]= &$tag;
 	}
 	function setMainTable($mainTable)
 	{

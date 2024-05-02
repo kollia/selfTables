@@ -222,7 +222,7 @@ class STCallbackClass
 		}
 		public function disabled(string $column, int $rownum= null)
 		{
-			$column= $this->setColumnToUnderlinedAliasIfNecessary($column);
+			//$column= $this->setColumnToUnderlinedAliasIfNecessary($column);
 		    $this->setBehavior("disabled", $column, $rownum);
 		}
 		function &getWhere()
@@ -308,17 +308,16 @@ class STCallbackClass
 		 * currently on April 2024 for action STINSERT or STUPDATE
 		 * name of input-tags are displayed as alias columns with underlines for spaces.
 		 * So do if ask for an column try to change it if necessary
+		 * (It's an ugly hack I know, but fast enough for now)
 		 * 
 		 * @param string $column name of column in database
 		 * @return string alias with underline if before exist, otherwise the column
 		 */
-		private function setColumnToUnderlinedAliasIfNecessary(string $column) : string
+		public function setColumnToUnderlinedAliasIfNecessary(string $column) : string
 		{
 			if(!isset($this->sqlResult[$column]))
 			{
-				$alias= $this->table->setColumnToUnderlinedAlias($column, /*underline*/false);
-				if(!isset($this->sqlResult[$alias]))
-					$alias= preg_replace("/ /", "_", $alias);
+				$alias= $this->table->defineDocumentItemBoxName($column);
 				if(isset($this->sqlResult[$alias]))
 					return $alias;
 			}

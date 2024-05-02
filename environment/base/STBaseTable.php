@@ -441,19 +441,18 @@ class STBaseTable
 		return null;
 	}
 	/**
+	 * create currently html name used inside a form
 	 * currently on April 2024 for action STINSERT or STUPDATE inside STItemBox
 	 * name of input-tags are displayed as alias columns with underlines for spaces.
 	 * (It's an ugly hack I know, but fast enough for now)
 	 * 
-	 * @param string $column name of column in database
+	 * @param string $column name of column or alias for table
 	 * @param bool $bUnderline whether should create an underline instead as space
 	 * @return string alias with underline if before exist, otherwise the column
 	 */
-	public function setColumnToUnderlinedAlias(string $column, bool $bUnderline) : string
+	public function defineDocumentItemBoxName(string $column) : string
 	{
 		$field= $this->findColumnOrAlias($column);
-		if(!$bUnderline)
-			return $field['alias'];
 		return preg_replace("/ /", "_", $field['alias']);
 	}
 	function postToGetTransfer($var /*, ...*/)
@@ -2054,6 +2053,7 @@ class STBaseTable
 					//$aRv["table"]= $this->Name;
 					$aRv["type"]= "alias";
 					$aRv["get"]= "select";
+					$this->addFkDescription($aRv);
 					//$aRv["alias"]= $field["alias"];
 					return $aRv;
 				}
@@ -2069,6 +2069,7 @@ class STBaseTable
     			    //$aRv["table"]= $this->Name;
 					$aRv["type"]= "alias";
     				$aRv["get"]= "identif";
+					$this->addFkDescription($aRv);
 					//$aRv["alias"]= $column["alias"];
 					//st_print_r($aRv);
     				return $aRv;
@@ -2199,6 +2200,25 @@ class STBaseTable
 			}
 			return $fields;
 		}
+		private function addFkDescription(array &$field)
+		{
+			// WARNING: if $bisColumn not defined as true, go endless into searchByColumn method
+			$bIsColumn= true;
+			$fk= &$this->isForeignKey($field['column'], $bIsColumn);
+			if($fk)
+			{// if the column have a foreign key to an other table
+			 // search for the alias name in the identif-columns from this table
+				$otherTable= $this->getFkTable($field['column'], $bIsColumn);
+
+				$other= $otherTable->searchByIdentifColumn($fk["other"]);
+				if($other)
+				{
+					//$other["column"]= $columnName;
+					$other['join']= $fk['join'];
+					$aRv["fk"]= $other; //return $other;//
+				}
+			}
+		}
 		function searchByColumn($columnName, int $warnFuncOutput= 0)
 		{
 		    if($warnFuncOutput>-1)
@@ -2208,24 +2228,13 @@ class STBaseTable
 			{
 				if($field["column"]==$columnName)
 				{
-				    // WARNING: if $bisColumn not defined as true, go endless into searchByColumn method
-				    $bIsColumn= true;
-					$fk= &$this->isForeignKey($columnName, $bIsColumn);
-					if($fk)
-					{// if the column have a foreign key to an other table
-					 // search for the alias name in the identif-columns from this table
-						$otherTable= $this->getFkTable($columnName, $bIsColumn);
-
-						$other= $otherTable->searchByIdentifColumn($fk["other"]);
-						if($other)
-						{
-							$other["column"]= $columnName;
-							return $other;//$aRv["fk"]= $other;
-						}
-					}
 					$aRv= $field;
+					if(isset($field["type"]))
+						$aRv["get"]= $field["type"];
+					else
+						$aRv["get"]= "select";
 					$aRv["type"]= "column";
-					$aRv["get"]= "select";
+					$this->addFkDescription($aRv);
 					return $aRv;
 				}
 			}
@@ -2243,6 +2252,7 @@ class STBaseTable
         					$aRv["alias"]= $this->Name."@".$columnName;
         					$aRv["type"]= "column";
         					$aRv["get"]= "get";
+							$this->addFkDescription($aRv);
         					return $aRv;
 						}
 					}
@@ -2260,6 +2270,7 @@ class STBaseTable
 						$aRv["alias"]= $columnName;//"unknown";
 						$aRv["type"]= "column";
 						$aRv["get"]= false;
+						$this->addFkDescription($aRv);
 						// do not ask isIdentifColumn(),
 						// because it asks findAliasOrColumn()
 						// and this searchByColumn()

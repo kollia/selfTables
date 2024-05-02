@@ -32,7 +32,7 @@ function mail_allowNewCaseCallback(STCallbackClass &$callbackObject, $columnName
 	{
 		return;
 	}
-	$case= $callbackObject->getValue("case");
+	$case= $callbackObject->getValue("Case");
 	if(preg_match("/[^_A-ZÜÖÄ]+/", $case))
 		return "for column 'Case' only big letters and underscores allowed";
 }
@@ -314,6 +314,27 @@ function checkPasswordCallback(STCallbackClass &$callbackObject, $columnName, $r
 	$callbackObject->addHtmlContent($table);
 	return "The password must contain lowercase letters, uppercase letters and numbers and should not begin with a star ('*')";
 }
+/**
+ * Callback function to disable or enable field columns inside User table.
+ * 
+ * @param STCallbackClass $callbackObject 
+ */
+function disableUserFieldsCallback(STCallbackClass &$callbackObject, $columnName, $rownum)
+{
+	if(!$callbackObject->display)
+		return;
+	
+	$action= $callbackObject->getAction();
+	if($action != STUPDATE)
+		return;
+	//$column= $callbackObject->setColumnToUnderlinedAliasIfNecessary("active", /*underline*/false);
+	$field= $callbackObject->table->searchByColumn("active");
+	if(	$columnName == $field['alias'] &&
+		$callbackObject->getValue("Pwd") == ""	)
+	{
+		$callbackObject->disabled($columnName);
+	}
+}
 function disablePasswordCallback(STCallbackClass &$callbackObject, $columnName, $rownum)
 {
 	//$callbackObject->echoResult();
@@ -322,11 +343,16 @@ function disablePasswordCallback(STCallbackClass &$callbackObject, $columnName, 
 
     $session= STUSerSession::instance();
     $domain= $session->getCustomDomain();
-    $table= $callbackObject->getTable();
+    //$table= $callbackObject->getTable();
     $domainValue= $callbackObject->getValue("domain");
     
-    if($domainValue != $domain['Name'])
+    if(	(	is_string($domainValue) &&
+			$domainValue != $domain['Name']	) ||
+		(	is_numeric($domainValue) &&
+			$domainValue != $domain['ID']	)	)
+	{
         $callbackObject->disabled($columnName);
+	}
 }
 function descriptionCallback(&$callbackObject, $columnName, $rownum)
 {
@@ -484,8 +510,7 @@ class STUserManagement extends STObjectContainer
 		$user->select("surname", "Surname");
 		$user->select("title_subsequent", "Title subsequent");
 		$user->pullDownMenuByEnum("title_subsequent");
-		$user->select("email", "Email");		
-		$user->addColumn("sending", "SET('no', 'yes')", /*NULL*/false);
+		$user->select("email", "Email");	
 		if( $action == STINSERT ||
 			$action == STUPDATE	)
 		{
@@ -495,8 +520,73 @@ class STUserManagement extends STObjectContainer
 					$user->select("active", "Dummy user");
 				$user->preSelect("active", "NO");
 			}else
-				$user->select("active", "active User");
+				$user->select("active", "active User");	
+			$user->addColumn("sending", "SET('no', 'yes')", /*NULL*/false);
 			$user->select("sending", "send EMail");
+
+			$func= new jsFunction("disableFieldsOnClick", "action", "change");
+			$activeColumn= $user->defineDocumentItemBoxName("active");
+			$sendingColumn= $user->defineDocumentItemBoxName("sending");
+			$pwdColumn= $user->defineDocumentItemBoxName("Pwd");
+			$re_pwdColumn= $user->defineDocumentItemBoxName("re_Pwd");
+			$globalset= <<<EOT
+				activeDisabled= document.getElementsByName('$activeColumn')[0].disabled;
+				activeChecked= document.getElementsByName('$activeColumn')[0].checked;
+EOT;
+			$disableContent= <<<EOT
+				active= document.getElementsByName('$activeColumn')[0];
+				sending= document.getElementsByName('$sendingColumn')[0];
+				pwd= document.getElementsByName('$pwdColumn')[0];
+				re_pwd= document.getElementsByName('$re_pwdColumn')[0];
+				
+				if(active.checked && change=='active')
+				{
+					if(action == "insert")
+					{
+						pwd.value= "";
+						re_pwd.value= "";
+					}else // action == "update"
+						return;
+					
+					// disable sending with password
+					sending.checked= false;
+					sending.disabled= true;
+					pwd.disabled= true;
+					re_pwd.disabled= true;
+				}
+				if(sending.checked && change=='sending')
+				{
+					// disable active with password
+					active.checked= false;
+					active.disabled= true;
+					pwd.disabled= true;
+					re_pwd.disabled= true;
+					pwd.value= "";
+					re_pwd.value= "";
+				}
+				if(	!active.checked &&
+					!sending.checked	)
+				{
+					// enable all fields
+					if(change != "active")
+						active.checked= activeChecked;
+					if(!activeDisabled)
+						active.disabled= false;
+					sending.disabled= false;
+					pwd.disabled= false;
+					re_pwd.disabled= false;
+				}
+
+EOT;				
+				$func->add($disableContent);
+			$script= new JavascriptTag();
+				$script->add($globalset);
+				$script->add($func);
+			$this->addOnBodyEnd($script);
+			
+			//if($action == STINSERT)
+			$user->onChange("active", "disableFieldsOnClick('$action', 'active')");
+			$user->onChange("sending", "disableFieldsOnClick('$action', 'sending')");
 		}
 		//$user->getColumn("register");
 		$user->preSelect("DateCreation", "sysdate()");
@@ -550,7 +640,7 @@ class STUserManagement extends STObjectContainer
 		{
 			$user->select("Pwd", "Pwd");
 			$user->password("Pwd", true);
-		    $user->passwordNames($newpass, $reppass);
+		    $user->passwordNames($newpass, $reppass);			
 		    $user->updateCallback("disablePasswordCallback", $newpass);
 		    $user->updateCallback("disablePasswordCallback", $reppass);
 		    $user->updateCallback("disablePasswordCallback", $username);
@@ -558,6 +648,7 @@ class STUserManagement extends STObjectContainer
 			$user->insertCallback("checkPasswordCallback", $newpass);
 			$user->updateCallback("emailCallback", "sending");
 			$user->insertCallback("emailCallback", "sending");
+			$user->updateCallback("disableUserFieldsCallback", "active");
 		}
 	}
 	/**

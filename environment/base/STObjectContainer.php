@@ -948,6 +948,8 @@ abstract class STObjectContainer extends STBaseContainer
 			
 		}else
 		    $this->makeChooseTags($get_vars);
+		foreach($this->aBodyEndTags as $tag)
+			$this->addObj($tag);
 		return $result;
 	}
 	function makeChooseTags($get_vars)

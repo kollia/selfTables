@@ -42,12 +42,6 @@ class STItemBox extends STBaseBox
 		var $joinBuffer= array();
 		var	$onlyRadioButtons= array(); // wenn nur zwei Enumns vorhanden sind, trotzdem radio Buttons verwenden
 		var $aSelectNames= array();
-	    /**
-	     * replace spaces inside field-names
-	     * from formular
-	     * @var string
-	     */
-		private $sReplaceSpaceSign= "_";
 		/**
 		 * aktual inner table position for better design
 		 */
@@ -814,7 +808,8 @@ class STItemBox extends STBaseBox
 			$field= $fields[$x];		
 			$name= $field["name"];
 			$column= $columns[$name];
-			$postColumn= preg_replace("/[ \t]/", $this->sReplaceSpaceSign, $column);
+			$postColumn= $this->asDBTable->defineDocumentItemBoxName($column);
+			//$postColumn= preg_replace("/[ \t]/", $this->sReplaceSpaceSign, $column);
 			if( (   !isset($HTTP_POST_VARS) ||
 			        empty($HTTP_POST_VARS)       ) &&
 			    isset($post[$column])                    )
@@ -1118,6 +1113,11 @@ class STItemBox extends STBaseBox
 								$input= new InputTag();
 							if($bDisabled)
 								$input->disabled();
+							if(isset($this->asDBTable->aEvents[$name]))
+							{
+								foreach($this->asDBTable->aEvents[$name] as $event => $function)
+									$input->insertAttribute($event, $function);
+							}
 							if(preg_match("/enum/", $field["flags"]))
 							{//wenn Feld einen Enumbesitzt checkbox od. toDo: radiobutton erzeugen
 								$input->name($postColumn);
@@ -1840,7 +1840,7 @@ class STItemBox extends STBaseBox
 		if(is_array($aSetAlso))
 			foreach($aSetAlso as $column=>$content)
 			{
-				$alias= $this->asDBTable->setColumnToUnderlinedAlias($column, /*underline*/true);
+				$alias= $this->asDBTable->defineDocumentItemBoxName($column);
 				foreach($content as $action=>$value)
 				{
 					// alex 01/09/2005:	action kann auch "All" sein
@@ -1905,7 +1905,7 @@ class STItemBox extends STBaseBox
 					$aShowen[$column] === true &&
   					!isset($post[$column])			)	// if the checkbox not set
 				{//STCheck::alert($field['type']=="not found", "STItemBox::box()", "column $column not found inside table {$this->asDBTable->getName()}");	
-					$alias= $this->asDBTable->setColumnToUnderlinedAlias($column, /*underline*/true);
+					$alias= $this->asDBTable->defineDocumentItemBoxName($column);
 					if(!isset($post[$alias]))
 						$post[$alias]= $enum[1];// set the value to the first entry
   				}
@@ -2479,11 +2479,12 @@ class STItemBox extends STBaseBox
         foreach($fields as $field)
         {
             $name= $field["name"];
-            if(isset($columns[$name]))
+        	if(isset($columns[$name]))
                 $columnName= $columns[$name];
             else
                 $columnName= $name;
-            $postColumn= preg_replace("/[ \t]/", $this->sReplaceSpaceSign, $columnName);
+            //$postColumn= preg_replace("/[ \t]/", $this->sReplaceSpaceSign, $columnName);
+			$postColumn= $this->asDBTable->defineDocumentItemBoxName($name);
             if( STCheck::isDebug() &&
                 isset($post[$postColumn]) &&
                 (   STCheck::isDebug("show.db.fields") ||
