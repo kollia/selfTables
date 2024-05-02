@@ -6,6 +6,8 @@ require_once($_stsitecreator);
 require_once($_stuserclustergroupmanagement);
 require_once($_email['stemail']);
 
+global $__global_defined_password_callback_function;
+$__global_defined_password_callback_function= "usermanagement_passwordCheckCallback";
 global $__email_text_cases;
 $__email_text_cases= array(	"HOST",
 							"ADMINISTRATOR_MAIL",
@@ -267,15 +269,24 @@ function usermanagement_email_replacement(string &$string, array $replacement, a
 	}
 	return $nChanged;
 }
-function checkPasswordCallback(STCallbackClass &$callbackObject, $columnName, $rownum)
+function usermanagement_main_passwordCheckCallback(STCallbackClass &$callbackObject, $columnName, $rownum)
 {
-    if(	$callbackObject->display == true ||
-		$callbackObject->before == false	)
-	{
-        return;
-	}
-	//$callbackObject->echoResult();
+	global $__global_defined_password_callback_function;
+
 	$action= $callbackObject->getAction();
+	if($callbackObject->display)
+	{
+		$post= new STPostArray();
+		$pwd= $post->getValue("Pwd");
+		$ret= $__global_defined_password_callback_function(/*display*/true, $action, $pwd);
+		if(!is_bool($ret))
+			$callbackObject->addHtmlContent($ret);
+		return "";
+	}
+    if(!$callbackObject->before)
+        return;
+
+	//$callbackObject->echoResult();
 	$active= $callbackObject->getValue("active");
 	$send= $callbackObject->getValue("sending");
 	if(	$send == "yes" ||
@@ -293,26 +304,32 @@ function checkPasswordCallback(STCallbackClass &$callbackObject, $columnName, $r
 		// can be "" by update when password not changed
 		return;
 	}
-	$table= new st_tableTag(LI);
-		$table->style("background-color:red;");
-		$table->add("password have to be longer than 8 digits");
-		$table->nextRow();
-		$table->add("The password must contain lowercase letters,<br />uppercase letters and numbers");
+	return $__global_defined_password_callback_function(/*display*/false, $action, $pwd);
+}
+function usermanagement_passwordCheckCallback(bool $display, string $onCase, string $password) : bool|string|Tag
+{
+	if($display)
+	{
+		if($password == "") // no error occurred
+			return true;
+		$table= new st_tableTag(LI);
+			$table->style("background-color:red;");
+			$table->add("password have to be longer than 8 digits");
+			$table->nextRow();
+			$table->add("The password must contain lowercase letters,<br />uppercase letters and numbers");
+		return $table;
+	}
 	
-	if(strlen($pwd) < 9)
+	if(strlen($password) < 9)
+		return false;
+	if(	preg_match("/[a-z]/", $password) &&
+		preg_match("/[A-Z]/", $password) &&
+		preg_match("/[0-9]/", $password)	&&
+		!preg_match("/^\*/", $password)		)
 	{
-		$callbackObject->addHtmlContent($table);
-		return "password have to be longer than 8 digits";
+		return true;
 	}
-	if(	preg_match("/[a-z]/", $pwd) &&
-		preg_match("/[A-Z]/", $pwd) &&
-		preg_match("/[0-9]/", $pwd)	&&
-		!preg_match("/^\*/", $pwd)		)
-	{
-		return;
-	}
-	$callbackObject->addHtmlContent($table);
-	return "The password must contain lowercase letters, uppercase letters and numbers and should not begin with a star ('*')";
+	return false;
 }
 /**
  * Callback function to disable or enable field columns inside User table.
@@ -644,12 +661,30 @@ EOT;
 		    $user->updateCallback("disablePasswordCallback", $newpass);
 		    $user->updateCallback("disablePasswordCallback", $reppass);
 		    $user->updateCallback("disablePasswordCallback", $username);
-			$user->updateCallback("checkPasswordCallback", $newpass);
-			$user->insertCallback("checkPasswordCallback", $newpass);
+			$user->updateCallback("usermanagement_main_passwordCheckCallback", $newpass);
+			$user->insertCallback("usermanagement_main_passwordCheckCallback", $newpass);
 			$user->updateCallback("emailCallback", "sending");
 			$user->insertCallback("emailCallback", "sending");
 			$user->updateCallback("disableUserFieldsCallback", "active");
 		}
+	}
+	/**
+	 * Define new callback function
+	 * to check whether password is correct.<br />
+	 * New function need to have follow parameters:<br />
+	 * <callback function>(bool $display, string $onCase, string $password) : bool|string|Tag<br />
+	 * - $display	- if true only for display error when $password no null string<br />
+	 * - $onCase	- 'insert' or 'update' if password check from usermanagement<br />
+	 *				  'registration' if the password check will be done from outside<br />
+	 * - $password	- current inserted password from user
+	 * 
+	 * @param string $functionName name of new function
+	 */
+	public function setNewPasswordCallback(string $functionName)
+	{
+		global $__global_defined_password_callback_function;
+
+		$__global_defined_password_callback_function= $functionName;
 	}
 	/**
 	 * method to create messages for different languages.<br />
