@@ -189,7 +189,7 @@ abstract class STBaseContainer extends BodyTag implements STContainerTempl
 	{
 	    $this->msgBox->setMessageContent($messageID, $messageContent, ++$errOut);
 	}
-	protected function getMessageContent(string $messageID, string $parameters= null, $outFunc= 2) : string
+	protected function getMessageContent(string $messageID, string $parameter= null, $outFunc= 0) : string
 	{
 	    $paramArray= array();	   
 		if(isset($parameter))
@@ -200,10 +200,10 @@ abstract class STBaseContainer extends BodyTag implements STContainerTempl
 				$args= func_get_args();
 				for($count=1; $count<($have-1); $count++)
 					$paramArray[]= $args[$count];
-				if(!is_int($args[$hace-1]))
+				if(!is_int($args[$have-1]))
 				{
 					$paramArray[]= $args[$have-1];
-					$outFunc= 2;
+					$outFunc= 0;
 				}else
 					$outFunc= $count;
 				$have-= 1;
@@ -214,7 +214,7 @@ abstract class STBaseContainer extends BodyTag implements STContainerTempl
 			}
 			
 		}
-        return $this->msgBox->getMessageContent($messageID, $paramArray, $outFunc);
+        return $this->msgBox->getMessageContent($messageID, $paramArray, ++$outFunc);
 	}
 	public function doContainerInstallation()
 	{
@@ -549,11 +549,11 @@ abstract class STBaseContainer extends BodyTag implements STContainerTempl
 	{
 	    // create message pool for language
 	    $this->createMessageContent();
+		$this->setExternSiteCreator($externSiteCreator);
 	    // initial container
 	    $this->initContainer();
 
 		$action= $this->getAction();
-		$this->setExternSiteCreator($externSiteCreator);
 		if(!isset($this->bBackButton))
 			$this->bBackButton= $this->oExternSideCreator->bBackButton;
 		if(!$this->backButtonAddress)

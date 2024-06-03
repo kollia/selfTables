@@ -564,6 +564,7 @@ class STDbMySql extends STDatabase
 	        "count" => array( "type" => "int", "len" => 11, "needOp" => true ),
 	        "min" => array( "type" => "int", "len" => 11, "needOp" => true ),
 	        "max" => array( "type" => "int", "len" => 11, "needOp" => true ),
+			"datediff" => array( "type" => "int", "len" => 11, "needOp" => true ),
 	        "in" => array( "type" => "text", "len" => $this->getTextLen(), "needOp" => false )
 	    );
 	}

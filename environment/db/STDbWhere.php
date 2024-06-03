@@ -152,8 +152,14 @@ class STDbWhere
 	            $this->isOwnModifyObj    )   )
 	    {
 	        $bRv= true;
-	        $this->bWriteOn= !$bModify;
-	        $this->bWritten= !$bModify;
+			/**
+			 * kollia 2024/05/29:
+			 * do not changing write where statement
+			 * into where- or on-clause by resetQueryLimitation
+			 * and also set bWritten only to false (it should can made again)
+			 */
+	        //$this->bWriteOn= !$bModify;
+	        $this->bWritten= false;
 	    }
 	    foreach($this->array as $obj)
 	    {
@@ -296,12 +302,15 @@ class STDbWhere
 		{
 		 	Tag::paramCheck($statement, 1, "STDbWhere", "string");
 
+			 reset($this->aValues);
+			 $this->aValues= array();
+			 unset($this->array);
+			 $this->array= array();
 			if(!$this->check($statement))
 			{
 				STCheck::is_error(1, "STDbWhere::check()", "where statement isn't correct (where ".$statement.")");
 				return false;
 			}
-			unset($this->array);
 			$this->bTableNamesChecked= false;
 		   	$this->array[]= $statement;
 			return true;
@@ -326,6 +335,7 @@ class STDbWhere
 				$this->array[]= " and ";
 			$this->bTableNamesChecked= false;
 		   	$this->array[]= $statement;
+			$this->reset();
 			return true;
 		}
 		function orWhere($statement)
@@ -341,6 +351,7 @@ class STDbWhere
 				$this->array[]= " or ";
 			$this->bTableNamesChecked= false;
 		   	$this->array[]= $statement;
+			$this->reset();
 			return true;
 		}
 		/*remove*/private function getArray()
@@ -746,14 +757,15 @@ class STDbWhere
 		 * @param array $aliases
 		 * @return array
 		 */
-		public function getStatement(STDbTable $oTable, string $condition, array $aliases= null) : array
+		public function getStatement(STDbTable $oTable, string $condition, array $aliases= null, int $onError= 0) : array
 		{
 			STCheck::param($condition, 1, "check", $condition=="on"||$condition=="where", "'on' string", "'where' string");
 
-			//echo __FILE__.__LINE__."<br>";
-			//echo "incomming aliases:";
-			//st_print_r($aliases);
 			$this->setDatabase($oTable, /*overwrite*/false);
+			return $this->getStatementA($oTable, $condition, $aliases, ++$onError);
+		}
+		private function getStatementA(STDbTable $oTable, string $condition, array $aliases= null, int $onError= 0) : array
+		{
 			if(STCheck::isDebug("db.statements.where"))
 			{
 			    $amsg= array();
@@ -892,7 +904,7 @@ class STDbWhere
 	                    $space= STCheck::echoDebug("db.statements.where", "found new STDbWhere object inside array and create rekursive");
 	                    st_print_r($content, 20, $space);
 		            }
-	                $newStatement= $content->getStatement($oTable, $condition, $aliases);
+	                $newStatement= $content->getStatementA($oTable, $condition, $aliases, ++$onError);
 	                if($newStatement["case"])
 	                {// where statement exist for current Table
 	                    if($case)
@@ -907,7 +919,7 @@ class STDbWhere
 		        {
 		            $space= STCheck::echoDebug("db.statements.where", "where content:");
 		            st_print_r($content, 10, $space);
-		            STCheck::alert(1, "STDbWhere::getStatement", "content of where-clause is no string, nor is it an object of STDbWhere");
+		            STCheck::alert(1, "STDbWhere::getStatement", "content of where-clause is no string, nor is it an object of STDbWhere", ++$onError);
 		        }
 		    }//foreach($array as $content)
 		    if($bMakeStatement)

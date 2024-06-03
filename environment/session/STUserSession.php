@@ -1,6 +1,7 @@
 <?php
 
 require_once($_stdbsession);
+//require_once($_sttdate);
 
 class STUserSession extends STDbSession
 {
@@ -1131,6 +1132,8 @@ class STUserSession extends STDbSession
 		$selector->clearGetColumns();
 		$selector->select("User", "ID", "ID");
 		$selector->select("User", "user", "UserName");
+		$selector->select("User", "active");
+		$selector->select("User", "Pwd"); // if Pwd is "" user is in registration mode
 		$selector->select("AccessDomain", "Name", "Domain");
 		if(is_string($user))
 			$selector->where("user='".$user."'");
@@ -1146,6 +1149,8 @@ class STUserSession extends STDbSession
 		$ID= -1;
 		$groupType= "";
 		$user= "";
+		$active= "NO";
+		$register= null;
 		$existrows= count($row);
 		if($existrows > 0 )
 		{
@@ -1167,7 +1172,12 @@ class STUserSession extends STDbSession
 		    }
     	  	$ID= $row[$rownr]['ID'];
     	  	$user= $row[$rownr]['UserName'];
+			$active= $row[$rownr]['active'];
     	  	$groupType= $row[$rownr]['Domain'];
+			if( $row[$rownr]['Pwd'] == "")
+				$register= true;
+			else
+				$register= false;
     		
 		}
 		if( STCheck::isDebug("user") )
@@ -1209,32 +1219,69 @@ class STUserSession extends STDbSession
 		if( $ID == -1 )
 		{
 		    STCheck::echoDebug("user", "user do not exist inside database");
-			 return 1;// kein User mit diesem Namen vorhanden
+			 return 1;// no user with this name exist
 		}
 
 		$oWhere= new STDbWhere();
 		$oWhere->where("ID='$ID'");
-		$oWhere->andWhere("Pwd=password('".$password."')");
-		
-		//$oUserTable= $this->container->getTable("User");
+		if($register)
+		{
+			$timeSelect= new STDbSelector($userTable->getDatabase());
+			$timeSelect->select("Mail", "case");
+			$timeSelect->select("Mail", "subject");
+			$timeSelect->where("case='MAIL_DAYS'");
+			$timeSelect->orWhere("case='MAIL_MINUTES'");
+			$timeSelect->execute();
+			$rows= $timeSelect->getResult();
+			$days= 5;
+			$minutes= 5;
+			foreach($rows as $row)
+			{;
+				if($row['case'] == "MAIL_MINUTES")
+					$minutes= $row['subject'];
+				if($row['case'] == "MAIL_DAYS")
+					$days= $row['subject'];
+			}
+			$oWhere->andWhere("regcode='$password'");
+			$oWhere->andWhere("DATEDIFF(NOW(), sendingtime) <= $days");
+		}else
+			$oWhere->andWhere("Pwd=password('".$password."')");
+
 		$userSelector= new STDbSelector($userTable);
 		$userSelector->select("User", "ID", "ID");
+		$userSelector->select("User", "sendingtime");
 		$userSelector->where($oWhere);
 		$userSelector->execute();
-		$corrID= $userSelector->getSingleResult();
-		if( !$corrID ||
-		    $corrID != $ID    )
+		$user_row= $userSelector->getRowResult();
+
+		if( !isset($user_row['ID']) ||
+			!$user_row['ID'] ||
+		    $user_row['ID'] != $ID    )
 		{
+			if($register)
+			{
+				STCheck::echoDebug("user", "user $user in registration mode gives wrong user-code or MAIL_DAYS expands");
+				return 7;// activation time pass over or wrong code
+			}
 		 	 Tag::echoDebug("user", "do not found user with given password ...");
-			 return 2;// Passwort ist falsch
+			 return 2;// password was wrong
 		}
-		//$this->sGroupType= "custom";
 		$this->userID= $ID;
 		$this->user= $user;
+		if($active == "NO")
+		{
+			if($register)
+			{// user should be in registration mode
+				$this->setSessionVar("ST_USER", $user);
+				$this->setSessionVar("ST_USERID", $ID);
+				$this->setSessionVar("ST_REGISTRATION", true);
+				return 8;
+			}
+			return 6;// user inactive
+		}
 		$this->setSessionVar("ST_USER", $user);
 		$this->setSessionVar("ST_USERID", $ID);
-		//$this->checkForLoggedIn();
-		return 0;
+		return 0;// correct login
 	}
 	public function existsDbCluster(string $clusterName)
 	{

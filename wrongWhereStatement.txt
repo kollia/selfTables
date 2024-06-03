@@ -1,0 +1,62 @@
+select distinct `t3`.`ID` as 'join@MUGroup@ID',
+                `t3`.`domain` as 'domain',
+                `t3`.`Name` as 'group',
+                `t10`.`ID` as 'Affilation',
+                `t3`.`ID` as 'Permissions',
+                `t10`.`DateCreation` as 'member since' 
+    from MUGroup as t3  
+    inner join MUClusterGroup as t2 on t3.ID=t2.GroupID 
+    inner join MUCluster as t1 on t2.ClusterID=t1.ID 
+    inner join MUProject as t6 on t1.ProjectID=t6.ID and t6.Name='UserManagement' 
+    left join MUUserGroup as t10 on t3.ID=t10.GroupID 
+    where t10.`UserID` = 1 
+    order by t0.`Name` ASC,t3.`Name` ASC 
+    limit 0, 20
+    
+    
+select distinct `t3`.`ID` as 'join@MUGroup@ID',
+                `t3`.`domain` as 'domain',
+                `t3`.`Name` as 'group',
+                `t10`.`ID` as 'Affilation',
+                `t3`.`ID` as 'Permissions',
+                `t10`.`DateCreation` as 'member since' 
+    from MUGroup as t3  
+    inner join MUClusterGroup as t2 on t3.ID=t2.GroupID 
+    inner join MUCluster as t1 on t2.ClusterID=t1.ID 
+    inner join MUProject as t6 on t1.ProjectID=t6.ID and t6.Name='UserManagement' 
+    left join MUUserGroup as t10 on t3.ID=t10.GroupID 
+    where t10.`UserID` = 1 
+    order by t0.`Name` ASC,t3.`Name` ASC 
+    limit 0, 20
+   
+debug output:
+~~~~~~~~~~~~~~~~~~~~
+STCheck::debug("db.statement.from", 48);STCheck::debug("db.statements.where");
+[db.statements.where] file:STDbWhere.php line:781 : make where clause for condition on in table STDbSelector(MUGroup)->STDbTable(MUUserGroup[3])
+[db.statements.where] file:STDbWhere.php line:781 : make where clause for condition where in table-container STDbSelector(MUGroup[3])
+___________________________________________________________________________________________________________________________________________
+     method STDbTable->getStatement() file .../selftables0.0.5-build_local/environment/db/STDbSelector.php line:894
+     method STDbSelector->getStatement() file .../selftables0.0.5-build_local/environment/db/STDbSelector.php line:823
+     method STDbSelector->execute() file .../selftables0.0.5-build_local/environment/base/STListBox.php line:529
+     method STListBox->makeResult(2) file .../selftables0.0.5-build_local/environment/base/STListBox.php line:2362
+     method STListBox->execute() file .../selftables0.0.5-build_local/environment/base/STObjectContainer.php line:1129
+     method STObjectContainer->makeListTags(array()) file .../selftables0.0.5-build_local/environment/base/STObjectContainer.php line:942
+     method STObjectContainer->execute(STProjectUserSiteCreator(), 2) file .../selftables0.0.5-build_local/environment/base/STSiteCreator.php line:424
+     method STSiteCreator->execute() file .../selftables0.0.5-build_local/environment/session/STSessionSiteCreator.php line:358
+     method STSessionSiteCreator->execute(2) file .../selftables0.0.5-build_local/environment/session/management/STProjectUserSiteCreator.php line:287
+     method STProjectUserSiteCreator->execute() file .../pment/index/index_basic.php line:51
+
+select distinct `t3`.`ID` as 'join@MUGroup@ID',
+                `t0`.`Name` as 'domain',
+                `t3`.`Name` as 'group',
+                `t10`.`ID` as 'Affilation',
+                `t3`.`ID` as 'Permissions',
+                `t10`.`DateCreation` as 'member since' 
+    from MUGroup as t3  
+    inner join MUAccessDomain as t0 on t3.domain=t0.ID 
+    inner join MUClusterGroup as t2 on t3.ID=t2.GroupID 
+    inner join MUCluster as t1 on t2.ClusterID=t1.ID 
+    inner join MUProject as t6 on t1.ProjectID=t6.ID and t6.Name='UserManagement' 
+    left join MUUserGroup as t10 on t3.ID=t10.GroupID and t10.`UserID` = 1 
+    order by t0.Name ASC,t3.Name ASC 
+    limit 0, 20

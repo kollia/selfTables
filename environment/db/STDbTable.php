@@ -242,12 +242,45 @@ class STDbTable extends STBaseTable
      * @param string $fieldName name of column or alias column
      * @param boolean $bEncode whether the password should encoded inside the database
      */
-    function password(string $fieldName, bool $bEncode= true)
+    public function password(string $fieldName, bool $bEncode= true)
     {
-    	$this->password["column"]= $fieldName;
+		$field= $this->findAliasOrColumn($fieldName);
+    	$this->password["column"]= $field['alias'];
     	$this->password["encode"]= $bEncode;
-    	$this->optional($fieldName, STUPDATE);
+		$this->password["optional"]= false;
+    	//$this->optional($fieldName, STUPDATE);
     }
+	public function hasPasswordColumn() : bool
+	{
+		if(isset($this->password["column"]))
+			return true;
+		return false;
+	}
+	public function isPasswordColumn(string $name) : bool
+	{
+		$field= $this->findAliasOrColumn($name);
+		if($this->password["column"] == $field['alias'])
+			return true;
+		return false;
+	}
+	/**
+	 * define a column as optional, maybe different by any action
+	 * 
+	 * @param string $column name of column or defined alias column
+	 * @param enum $action column should be optional for all actions STADMIN (default), or only by STINSERT or STUPDATE
+	 */
+	public function optional(string $column, $action= STUPDATE)
+	{
+	    STCheck::param($action, 1, "check", $action==STADMIN||$action==STINSERT||$action==STUPDATE, "can be STADMIN for all, or STINSERT / STUPDATE");
+
+		$field= $this->findAliasOrColumn($column);
+		if(	isset($this->password["column"]) &&
+			$this->password["column"] == $field['alias']	)
+		{
+			$this->password["optional"]= true;
+		}
+		STBaseTable::optional($field['alias'], $action);
+	}
 	function addAccessClusterColumn($column, $parentCluster, $clusterfColumn, $accessInfoString, $addGroup= true, $action= STALLDEF)
 	{
 		Tag::paramCheck($column, 1, "string");

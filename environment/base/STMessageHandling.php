@@ -55,7 +55,7 @@ class STMessageHandling // implements STMessageHandlingInterface <- ab version 5
 			}
 			$this->aMessageStrings[$messageId]= $messageString;
 		}
-		function getMessageContent(string $messageId= null, $parameter= null, $outFunc= 2)
+		function getMessageContent(string $messageId= null, $parameter= null, $outFunc= 0)
 		{
 			$paramArray= array();
 			$have= 0;
@@ -67,12 +67,12 @@ class STMessageHandling // implements STMessageHandlingInterface <- ab version 5
 					$args= func_get_args();
 					for($count=1; $count<($have-1); $count++)
 						$paramArray[]= $args[$count];
-					if(!is_int($args[$hace-1]))
+					if(!is_int($args[$have-1]))
 					{
 						$paramArray[]= $args[$have-1];
-						$outFunc= 1;
+						$outFunc= 0;
 					}else
-						$outFunc= $count;
+						$outFunc= $args[$have-1];
 					$have-= 1;
 				}else
 				{
@@ -82,7 +82,7 @@ class STMessageHandling // implements STMessageHandlingInterface <- ab version 5
 				
 			}
 			if(isset($messageId))
-				$sRv= $this->createMessageString($messageId, $paramArray, $outFunc);
+				$sRv= $this->createMessageString($messageId, $paramArray, ++$outFunc);
 			else
 			    $sRv= $this->aMessageStrings[$this->messageId];
 			return $sRv;
@@ -157,7 +157,7 @@ class STMessageHandling // implements STMessageHandlingInterface <- ab version 5
 			$this->messageId= $messageId;
 			$this->aMessageStrings[$messageId]= $message;
 		}
-		private function createMessageString(string $messageId, $paramArray= null, $outFunc= 1) : string
+		private function createMessageString(string $messageId, $paramArray= null, $outFunc= 0) : string
 		{
 			STCheck::echoDebug("STMessageHandling", "create message for ID: $messageId");
 
@@ -172,7 +172,7 @@ class STMessageHandling // implements STMessageHandlingInterface <- ab version 5
 			//					the messageId is only for handing over
 			$ats= array();
 			if(STCheck::warning(!isset($this->aMessageStrings[$messageId]),"STMessageHandling::createMessageString()",
-									"no message-ID '$messageId' for MessageHandling be set")							)
+									"no message-ID '$messageId' for MessageHandling be set", $outFunc+1					)	)
 			{
 				return "";
 			}
@@ -181,11 +181,14 @@ class STMessageHandling // implements STMessageHandlingInterface <- ab version 5
 				preg_match("/@/", $sNewMessageString)		)
 			{//st_print_r($ats);
 			    $need= strlen($ats[0]);
-				$have= count($paramArray);
+				if(isset($paramArray))
+					$have= count($paramArray);
+				else
+					$have= 0;
 				
 				$sMessageString= trim($sNewMessageString);
 				$split= preg_split("/@/", $sMessageString);							
-				Tag::alert($need!=$have, "STMessageHandling::setMessageID", "function must have ".($need)." params", $outFunc);
+				Tag::alert($need!=$have, "STMessageHandling::setMessageID", "function must have ".($need)." params", $outFunc+1);
 				
 				$sNewMessageString= $split[0];
 				$count= 1;

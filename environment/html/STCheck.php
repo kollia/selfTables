@@ -31,6 +31,13 @@ $global_SESSION_noRegister_SHOWEN= false;
 $global_SESSION_noRegister_onLine= "";
 
 /**
+ * set struct of file and line
+ * by defining debugging output.
+ * It should deleted by first echoDebug otutput writing
+ */
+$global_set_DEBUG_onLine_byFirst= false;
+
+/**
  * definition of explicit creation of statements
  * for "db.statement" debug output
  * @var array $__stdbtables_statement_count
@@ -441,6 +448,7 @@ class STCheck
 					$global_activeOutputBuffer,
 					$global_outputBufferWasErased,
 					$global_SESSION_noRegister_SHOWEN,
+					$global_set_DEBUG_onLine_byFirst,
 					$__stdbtables_statement_count,
 					$__stdbtables_statement_count_from,
 					$__stdbtables_statement_count_to;
@@ -490,6 +498,13 @@ class STCheck
 				echo "\n<table bgcolor='white'><tr><td><pre>\n";
 				if(file_exists($global_logfile_dataname))
 					@unlink($global_logfile_dataname);
+				if(!$global_set_DEBUG_onLine_byFirst)
+				{
+					$backtrace= debug_backtrace();
+					$global_set_DEBUG_onLine_byFirst= array("file" => $backtrace[0]['file'],
+															"line" => $backtrace[0]['line'],
+															"dbg"  => $dbg_str	);
+				}
 			}
 			STCheck::print_query_post();
 			if(	$HTML_CLASS_DEBUG_CONTENT
@@ -681,6 +696,8 @@ class STCheck
 		 */
 		public static function echoDebug(string $dbg_str, $string= null, $break= true)
 		{
+			global $global_set_DEBUG_onLine_byFirst;
+
 			if(!STCheck::isDebug())
 				return 0;
 			STCheck::print_query_post();
@@ -694,6 +711,16 @@ class STCheck
     				echo "<br />";
     				return;
     			}
+				if($global_set_DEBUG_onLine_byFirst)
+				{
+					preg_match("/([^\\\\\/]+)$/", $global_set_DEBUG_onLine_byFirst['file'], $ereg);
+					$file= $ereg[1];
+					$line= $global_set_DEBUG_onLine_byFirst['line'];
+					$dbg= $global_set_DEBUG_onLine_byFirst['dbg'];
+					echo "define debugstate <b>[</b>$dbg<b>]</b> on ";
+					echo "<b>file:</b>".$file." <b>line:</b>".$line." <b>:</b><br /><h>";
+					$global_set_DEBUG_onLine_byFirst= false;
+				}
     			$backtrace= array();
     			$pref= "";
     			$space= 0;

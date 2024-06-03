@@ -8,6 +8,7 @@ class TinyMCE
 	var	$sMode;
 	var $sLanguage= null;
 	var	$sTheme= null;
+	var $sSelector= "textarea";
 	var	$sElements= null;
 	var	$sPlugins= null;
 	var	$sLocation= null;
@@ -24,10 +25,10 @@ class TinyMCE
 	}
 	function &getExternalScript()
 	{
-		global	$_tinymce_path;
+		global	$_dbselftable_tinymce_path;
 		
 		$script= new JavascriptTag();
-		$script->src($_tinymce_path."tiny_mce.js");
+		$script->src($_dbselftable_tinymce_path."tinymce.min.js");
 		return $script;
 	}
 	function &getHeadScript($objectName= "tinyMCE")
@@ -40,6 +41,7 @@ class TinyMCE
 		{
 			$object.= "{";
 			$object.= "mode:'".$this->sMode."'";
+			$object.= "selector:'{$this->sSelector}'";
 			if($this->sTheme!==null)
 				$object.= ",theme:'".$this->sTheme."'";
 			if($this->sLanguage!==null)

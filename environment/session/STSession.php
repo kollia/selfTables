@@ -932,6 +932,29 @@ class STSession
 	 *       You have no access to this data. Please try an other user.
 	 *     </td>
 	 *   </tr>
+	 *   <tr>
+	 *     <td>
+	 *       6
+	 *     </td>
+	 *     <td>
+	 *       User is inactive.
+	 *     </td>
+	 *   </tr>
+	 *   <tr>
+	 *     <td>
+	 *       7
+	 *     </td>
+	 *     <td>
+	 *       Registration time is pass over.
+	 *     </td>
+	 *   </tr>
+	 *   <tr>
+	 *     <td>
+	 *       8
+	 *     </td>
+	 *     <td>
+	 *       User in registration-mode, have to define new password.
+	 *     </td>
 	 * </table>
 	 * 
 	 * @return login error number
@@ -1001,32 +1024,35 @@ class STSession
 			$this->loginUser= $HTTP_POST_VARS["user"];
 			$error= $this->acceptUser($HTTP_POST_VARS["user"], $HTTP_POST_VARS["pwd"]);
 			$this->loginError= $error;
+			if($error == 8)
+			{// user is in registration mode
+				$Project= "Website Access";//Registration";
+				$this->setProperties( $Project );
+				/**/ if( STCheck::isDebug("user") )
+				{
+				    $msg= "....login for registration-mode, set Project to <em>$Project</em>, ";
+				    $msg.= "update LastLogin and increase NrLogin counter";
+					STCheck::echoDebug("user", $msg);
+				}
+				$this->LOG(STLOGIN, 0, "user try to do registration process");
+				$this->isLoggedIn= true;
+      			return true;
+			}
       		if(!$error)
-			{
-				/**/ if( Tag::isDebug("user") )
+			{// no error
+				/**/ if( STCheck::isDebug("user") )
 				{
 				    $msg= "....login Successfull, set Project to <em>$Project</em>, ";
 				    $msg.= "update LastLogin and increase NrLogin counter";
 					STCheck::echoDebug("user", $msg);
 				}
-
-
 				$this->setProperties( $Project );
 				$userTable= $this->database->getTable("User");
-				/*$userTable->clearSelects();
-				$userTable->clearGetColumns();
-				$userTable->select("currentLogin");
-				$selector= new OSTDbSelector($userTable);
-				$selector->execute();
-				$last= $selector->getSingleResult();*/
 				$updater= new STDbUpdater($userTable);
 				$updater->update("LastLogin", "sysdate()");
 				$updater->update("NrLogin", "NrLogin+1");
 				$updater->where("ID=".$this->userID);
 				$updater->execute();
-				/*$statement=  "update ".$this->sUserTable." set LastLogin=sysdate(), NrLogin= NrLogin+1 ";
-				$statement.= "where ID=".$this->userID;
-				$this->database->fetch($statement);*/
 				$this->LOG(STLOGIN, 0);
       			return true;
 			}

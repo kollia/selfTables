@@ -1244,7 +1244,7 @@ class STListBox extends STBaseBox
 						$extraField= $CallbackClass->showType;
 					if($CallbackClass->bNoShowType)
 						$extraField= null;
-					$bDisabled= $CallbackClass->argument("disabled", $columnKey, $rowKey);
+					$bDisabled= $CallbackClass->argument("disabled", $createdColumn, $createdRow);
 					// aktuelles Feld wird in $columnValue nicht aktualisiert
 					$columnValue= $CallbackClass->sqlResult[$rowKey][$columnKey];
 				}else
@@ -1253,7 +1253,7 @@ class STListBox extends STBaseBox
 					// read value from callback not only if callback
 					// defined for columnKey, because
 					// value can also be set in a column before
-					$bDisabled= $CallbackClass->argument("disabled", $columnKey, $rowKey);
+					$bDisabled= $CallbackClass->argument("disabled", $createdColumn, $createdRow);
 					$columnValue= $CallbackClass->sqlResult[$rowKey][$columnKey];
 				}
 				if($_showColumnProperties)

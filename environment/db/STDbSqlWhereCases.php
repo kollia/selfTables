@@ -42,6 +42,15 @@ class STDbSqlWhereCases extends STDbSqlCases
         if(!isset($this->wheres[$nr]))
         {
             STCheck::alert(!isset($this->tableWhere), "STCheck::getUpdateStatement()", "no where usage for update exist");
+            /**
+             * kollia 2024/05/31
+             * maybe reset is an agley change
+             * but by registration of new user
+             * where user create his new password
+             * by updating it create no where clause
+             */
+            if(isset($this->tableWhere))
+                $this->tableWhere->reset();
             $whereStatement= $this->table->getWhereStatement("where");
             return $whereStatement;
         }

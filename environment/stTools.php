@@ -57,7 +57,9 @@ function st_print_r($value, $deep=1, $space= 0, $bFirst= true)
 				echo $f."-empty- )";
 			}elseif (typeof($value, "STBaseTable"))
 			{
-			    echo $f.$value->Name."::".$value->ID." )";
+				$name= $value->getName();
+				$id= $value->getID();
+			    echo $f.$name."::".$id." )";
 			}else
 				echo $f."-skip- )";
 			$space-= strlen($f);

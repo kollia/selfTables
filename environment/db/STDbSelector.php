@@ -488,13 +488,13 @@ class STDbSelector extends STDbTable implements STContainerTempl
 			else
 				$this->aoToTables[$fromTable]->rightJoin($fromColumn, $toTable, $toColumn);
 		}
-		public function orderBy($tableName, $column= true, $bASC= true)
+		public function orderBy($tableName, $column= true, $bASC= true, int $warnFuncOutput= 0)
 		{
 		    if(is_bool($column))
 		    {// method is as normaly table orderBy
 		        $bASC= $column;
 		        $column= $tableName;
-		        STDbTable::orderBy($column, $bASC);
+		        STDbTable::orderBy($column, $bASC, $warnFuncOutput+1);
 		        return;
 		    }
 		    
@@ -507,7 +507,7 @@ class STDbSelector extends STDbTable implements STContainerTempl
 		    $table= $this->getTable($tableName);
 		    $field= $table->findAliasOrColumn($column);
 		    $column= $field['column'];
-		    STDbTable::orderByI($tableName, $column, $bASC);
+		    STDbTable::orderByI($tableName, $column, $bASC, $warnFuncOutput+1);
 		}
 		function select(string $tableName, $column= "", $alias= null, $nextLine= true, $add= false)
 		{

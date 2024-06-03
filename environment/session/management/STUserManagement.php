@@ -1,19 +1,26 @@
 <?php
 
 $_email= load_pluginModule("email");
+$_editors= load_pluginModule("editors");
 require_once($_stdbinserter);
 require_once($_stsitecreator);
 require_once($_stuserclustergroupmanagement);
-require_once($_email['stemail']);
+require_once($_email['_stemail']);
+require_once($_editors['_tinymce']);
+require_once($_st_registration_text);
 
 global $__global_defined_password_callback_function;
 $__global_defined_password_callback_function= "usermanagement_passwordCheckCallback";
 global $__email_text_cases;
 $__email_text_cases= array(	"HOST",
-							"ADMINISTRATOR_MAIL",
+							"HOST_NAME",
+							"HOST_ADDRESS",
+							"ADMINISTRATION_NAME",
+							"ADMINISTRATION_MAIL",
 							"MAIL_CODE",
 							"MAIL_MINUTES",
 							"MAIL_DAYS",
+							"REMOVE_MONTH",
 							"SIGNATURE",
 							"PREFIXED_TITLE",
 							"SUBSEQUENT_TITLE",
@@ -21,6 +28,7 @@ $__email_text_cases= array(	"HOST",
 							"FORM_ADDRESS.sex.MALE",
 							"FORM_ADDRESS.sex.*GENDER",
 							"FORM_ADDRESS.sex.UNKNOWN",
+							"STORED_USER_DATA",
 							"OWN_REGISTRATION",
 							"MAIL_REGISTRATION",
 							"ACKNOWLEDGE_INACTIVE",
@@ -64,19 +72,22 @@ function mail_disableColumnCallback(STCallbackClass &$callbackObject, $columnNam
 		$case= $callbackObject->getValue("case");
 		if(in_array($case, $__email_text_cases))
 		{
-			$callbackObject->disabled("Case");
-			if(	$case != "MAIL_MINUTES" &&
-				$case != "MAIL_DAYS"		)
+			$callbackObject->table->disabled("Case");
+			$field= $callbackObject->table->findColumnOrAlias("subject");
+			if($columnName == $field['alias'])
 			{
-				$callbackObject->disabled("subject");
-			}
-			$html= $callbackObject->getValue("html");
-			if( !isset(($html)) ||
-				$html == "NO"		)
-			{
+				if(	$case != "MAIL_MINUTES" &&
+					$case != "MAIL_DAYS" &&
+					$case != "OWN_REGISTRATION" &&
+					$case != "MAIL_REGISTRATION" &&
+					$case != "ACKNOWLEDGE_INACTIVE" &&
+					$case != "ACKNOWLEDGE_ACTIVE"		)
+				{
+					$callbackObject->disabled($columnName);
+				}
+			}else
 				$callbackObject->disabled($columnName);
-			}
-			$callbackObject->disabled("description");
+				$callbackObject->disabled("HTML");
 		}
 	}
 }
@@ -122,11 +133,9 @@ function emailCallback(STCallbackClass &$callbackObject, $columnName, $rownum)
 		return;
 	}
 	// AFTER changing of database -------------------------------------------------------------------------------------
-	$toEmail= $callbackObject->getValue("email");
 	if(	isset($send) &&
 		$send == "yes"	)
 	{
-		$db= $callbackObject->getDatabase();
 		$oUserTable= $callbackObject->getTable();
 
 		// extract column values from post with alias names
@@ -143,193 +152,30 @@ function emailCallback(STCallbackClass &$callbackObject, $columnName, $rownum)
 			if(isset($field))
 				$newdbvalue[$field['column']]= $value;
 		}
+		$newdbvalue['regcode']= $callbackObject->getValue("regcode");
 
 		// create EMail text
-		$selector= new STDbSelector($db);
-		$selector->select("Mail", "case");
-		$selector->select("Mail", "subject");
-		$selector->select("Mail", "html");
-		$selector->select("Mail", "text");
-		$where= new STDbWhere();
-		$where->where("case!='OWN_REGISTRATION'");
-		$where->andWhere("case!='ACKNOWLEDGE_INACTIVE'");
-		$where->andWhere("case!='ACKNOWLEDGE_ACTIVE'");
-		$selector->where($where);
-		$selector->execute();
-		$repl_content= $selector->getResult();
-		$new_replacement= array();
-		$admin_email= "";
-		foreach($repl_content as $row)
+		$mail= get_db_mail_text($callbackObject->table, "MAIL_REGISTRATION", $newdbvalue);
+
+		$toEmail= $callbackObject->getValue("email");		
+		$oMail= new STEmail(/*exception*/false);
+		if(	!$oMail->init($mail['admin']) ||
+			!$oMail->sendmail($toEmail, $mail['subject'], $mail['text'], $mail['html'])	)
 		{
-			if($row['case'] == "ADMINISTRATOR_MAIL")
-				$admin_email= $row['text'];
-			if($row['case'] == "MAIL_REGISTRATION")
-			{
-				$mail_subject= $row['subject'];
-				$mail_text= $row['text'];
-			}else
-			{
-				if(preg_match("/\./", $row['case']))
-				{
-					$cases= preg_split("/\./", $row['case']);
-					if(	isset($newdbvalue[$cases[1]]) &&
-						$newdbvalue[$cases[1]] == $cases[2]	)
-					{
-						$row['case']= $cases[0];
-						$row['text']= preg_replace("/\{subject\}/", $row['subject'], $row['text']);
-						$new_replacement[]= $row;
-					}
-				}else
-				{
-					if($row['case'] == "MAIL_CODE")
-					{
-						$code= $callbackObject->getValue("regcode");
-						$row['text']= $code;
-					}else
-						$row['text']= preg_replace("/\{subject\}/", $row['subject'], $row['text']);
-					$new_replacement[]= $row;
-				}
-			}
-		}
-		usermanagement_email_replacement($mail_subject, $new_replacement, $newdbvalue);
-		if(preg_match("/\{.*\}/", $mail_subject, $preg))
-			STCheck::warning(true, "usermanagement_email_replacement()", "placeholder '{$preg[0]}' from registration EMail-Text does not exist");
-		usermanagement_email_replacement($mail_text, $new_replacement, $newdbvalue);
-		usermanagement_remove_empty_columns($mail_text, $callbackObject->table);
-		if(preg_match("/\{.*\}/", $mail_text, $preg))
-			STCheck::warning(true, "usermanagement_email_replacement()", "placeholder '{$preg[0]}' from registration EMail-Text does not exist");
-		
-		$mail= new STEmail(/*exception*/false);
-		if(	!$mail->init($admin_email) ||
-			!$mail->sendmail($toEmail, $mail_subject, $mail_text)	)
-		{
-			$error= $mail->getErrorString();
+			$error= $oMail->getErrorString();
 			return $error;
 		}
-	}
-}
-function usermanagement_remove_empty_columns(string &$string, $fromTable)
-{
-	$columns= $fromTable->columns;
-	while(preg_match("/\{(.*)\}/", $string, $preg))
-	{
-		$bFound= false;
-		foreach($columns as $column)
+		$action= $callbackObject->getAction();
+		if($action == STUPDATE)
 		{
-			if($preg[1] == $column['name'])
-			{
-				$bFound= true;
-				$string= preg_replace("/".$preg[0]."/", "", $string);
-				break;
-			}
-		}
-		if(!$bFound)
-			break;
-	}
-}
-function usermanagement_email_replacement(string &$string, array $replacement, array $dbreplacement) : int
-{
-	$nChanged= 0;
-	foreach($dbreplacement as $key => $value)
-	{
-		if(isset($value))
-		{
-			$string= preg_replace("/\{$key\}/", $value, $string, /*no limit*/-1, $count);
-			$nChanged+= $count;
+			// clear password if exist
+			$table= $callbackObject->getTable("User");
+			$table->allowQueryLimitation(true);
+			$remover= new STDbUpdater($table);
+			$remover->update("Pwd", "");
+			$remover->execute();
 		}
 	}
-	foreach($replacement as $value)
-	{
-		if(preg_match("/\{(".$value['case'].")(\.exist)?\}/", $string, $preg))
-		{
-			$pattern= $preg[1];
-			if(isset($preg[2]))
-			{ // <case>.exist want to call
-				$pattern.= "\\.exist";
-				$replace= $value['text'];
-				if(preg_match_all("/\{[^{}]+\}/", $replace, $counter))
-				{
-					$num= usermanagement_email_replacement($replace, $replacement, $dbreplacement);
-					if(count($counter) != $num)
-						$replace= "";
-				}
-			}else
-				$replace= $value['text'];
-			$string= preg_replace("/\{$pattern\}/", $replace, $string, /*no limit*/-1, $count);
-			$nChanged+= $count;
-		}
-	}
-	if(preg_match("/\{.*\}/", $string, $preg))
-	{ // if filled placeholders but now also placeholder exist do again
-	  // but if doesn't filled placeholders but placeholder exist don't do again
-		if($nChanged)
-		{
-			$nChanged+= usermanagement_email_replacement($string, $replacement, $dbreplacement);
-		}
-	}
-	return $nChanged;
-}
-function usermanagement_main_passwordCheckCallback(STCallbackClass &$callbackObject, $columnName, $rownum)
-{
-	global $__global_defined_password_callback_function;
-
-	$action= $callbackObject->getAction();
-	if($callbackObject->display)
-	{
-		$post= new STPostArray();
-		$pwd= $post->getValue("Pwd");
-		$ret= $__global_defined_password_callback_function(/*display*/true, $action, $pwd);
-		if(!is_bool($ret))
-			$callbackObject->addHtmlContent($ret);
-		return "";
-	}
-    if(!$callbackObject->before)
-        return;
-
-	//$callbackObject->echoResult();
-	$active= $callbackObject->getValue("active");
-	$send= $callbackObject->getValue("sending");
-	if(	$send == "yes" ||
-		(	$action == STINSERT &&			// if action is STINSERT
-			$active == "YES"			)	)	// revert "active user" set for dummy user (need no password check)
-	{
-		$callbackObject->setValue("", "Pwd");
-		$callbackObject->setValue("", "re_Pwd");
-		return;
-	}
-	$pwd= $callbackObject->getValue("Pwd");
-	if( $action == STUPDATE &&
-		$pwd == ""								)
-	{
-		// can be "" by update when password not changed
-		return;
-	}
-	return $__global_defined_password_callback_function(/*display*/false, $action, $pwd);
-}
-function usermanagement_passwordCheckCallback(bool $display, string $onCase, string $password) : bool|string|Tag
-{
-	if($display)
-	{
-		if($password == "") // no error occurred
-			return true;
-		$table= new st_tableTag(LI);
-			$table->style("background-color:red;");
-			$table->add("password have to be longer than 8 digits");
-			$table->nextRow();
-			$table->add("The password must contain lowercase letters,<br />uppercase letters and numbers");
-		return $table;
-	}
-	
-	if(strlen($password) < 9)
-		return false;
-	if(	preg_match("/[a-z]/", $password) &&
-		preg_match("/[A-Z]/", $password) &&
-		preg_match("/[0-9]/", $password)	&&
-		!preg_match("/^\*/", $password)		)
-	{
-		return true;
-	}
-	return false;
 }
 /**
  * Callback function to disable or enable field columns inside User table.
@@ -459,7 +305,7 @@ class STUserManagement extends STObjectContainer
         $this->registrationProperties['dummyUser']= $bAllow;
     }
 	protected function create()
-	{
+	{//STCheck::debug("db.statement.from", 48);STCheck::debug("db.statements.where");
 	    $session= &STUserSession::instance();
 	    $this->setDisplayName("Project Management");
 	    $this->accessBy($session->usermanagement_Project_AccessCluster, STLIST);
@@ -496,176 +342,198 @@ class STUserManagement extends STObjectContainer
 	    $newpass= "new Password";
 	    $reppass= "Password repetition";
 
-	    $mail= &$this->needTable("Mail");
-		$mail->select("case", "Case");
-		$mail->select("description", "Description");
-		if($action != STLIST)
+	    $mail= &$this->getTable("Mail");
+		if($table == $mail->getName())
 		{
-			$mail->select("subject", "Subject");
-			$mail->select("html", "allow HTML");
-			$mail->select("text", "EMail text");
-			$mail->insertCallback("mail_allowNewCaseCallback", "case");
-			$mail->updateCallback("mail_disableColumnCallback", "case");
-			$mail->updateCallback("mail_disableColumnCallback", "subject");
-			$mail->updateCallback("mail_disableColumnCallback", "html");
-			$mail->updateCallback("mail_disableColumnCallback", "description");
-		}else
-			$mail->listCallback("mail_allowRemovingCallback", "case");
-
-	    $user= &$this->needTable("User");
-		$user->select("domain", "Domain");
-		$user->preSelect("domain", $domain['ID']);
-		$user->disabled("domain");
-		$user->select("sex", "Sex");
-		$user->pullDownMenuByEnum("sex");
-		$user->select("user", "Nickname");
-		if($action == STLIST)
-			$user->select("active", "active");
-		$user->select("title_prefixed", "Title");
-		$user->pullDownMenuByEnum("title_prefixed");
-		$user->select("firstname", "first Name");
-		$user->select("surname", "Surname");
-		$user->select("title_subsequent", "Title subsequent");
-		$user->pullDownMenuByEnum("title_subsequent");
-		$user->select("email", "Email");	
-		if( $action == STINSERT ||
-			$action == STUPDATE	)
-		{
-			if($action == STINSERT)
+			$mail->select("case", "Case");
+			$mail->select("html", "HTML");
+			$mail->align("html", "center");
+			$mail->select("description", "Description");
+			if($action != STLIST)
 			{
-				if($this->registrationProperties['dummyUser'])
-					$user->select("active", "Dummy user");
-				$user->preSelect("active", "NO");
+				//STCheck::debug();
+				//$tinyMCE= new TinyMCE();
+				//$tinyMCE->elements("mcetext");
+				$mail->select("subject", "Subject");
+				$mail->select("html", "allow HTML");
+				$mail->select("text", "Text");//, $tinyMCE);
+				$mail->insertCallback("mail_allowNewCaseCallback", "case");
+				$mail->updateCallback("mail_disableColumnCallback", "case");
+				$mail->updateCallback("mail_disableColumnCallback", "subject");
+				$mail->updateCallback("mail_disableColumnCallback", "html");
+				$mail->updateCallback("mail_disableColumnCallback", "description");
 			}else
-				$user->select("active", "active User");	
-			$user->addColumn("sending", "SET('no', 'yes')", /*NULL*/false);
-			$user->select("sending", "send EMail");
-
-			$func= new jsFunction("disableFieldsOnClick", "action", "change");
-			$activeColumn= $user->defineDocumentItemBoxName("active");
-			$sendingColumn= $user->defineDocumentItemBoxName("sending");
-			$pwdColumn= $user->defineDocumentItemBoxName("Pwd");
-			$re_pwdColumn= $user->defineDocumentItemBoxName("re_Pwd");
-			$globalset= <<<EOT
-				activeDisabled= document.getElementsByName('$activeColumn')[0].disabled;
-				activeChecked= document.getElementsByName('$activeColumn')[0].checked;
-EOT;
-			$disableContent= <<<EOT
-				active= document.getElementsByName('$activeColumn')[0];
-				sending= document.getElementsByName('$sendingColumn')[0];
-				pwd= document.getElementsByName('$pwdColumn')[0];
-				re_pwd= document.getElementsByName('$re_pwdColumn')[0];
-				
-				if(active.checked && change=='active')
+				$mail->listCallback("mail_allowRemovingCallback", "case");
+		}
+		
+	    $user= &$this->needTable("User");
+		if($table == $user->getName())
+		{
+			$user->select("domain", "Domain");
+			$user->preSelect("domain", $domain['ID']);
+			$user->disabled("domain");
+			$user->select("sex", "Sex");
+			$user->pullDownMenuByEnum("sex");
+			$user->select("user", "Nickname");
+			if($action == STLIST)
+				$user->select("active", "active");
+			$user->select("title_prefixed", "Title");
+			$user->pullDownMenuByEnum("title_prefixed");
+			$user->select("firstname", "first Name");
+			$user->select("surname", "Surname");
+			$user->select("title_subsequent", "Title subsequent");
+			$user->pullDownMenuByEnum("title_subsequent");
+			$user->select("email", "Email");	
+			if( $action == STINSERT ||
+				$action == STUPDATE	)
+			{
+				if($action == STINSERT)
 				{
-					if(action == "insert")
+					if($this->registrationProperties['dummyUser'])
+						$user->select("active", "Dummy user");
+					$user->preSelect("active", "NO");
+				}else
+					$user->select("active", "active User");	
+				$user->addColumn("sending", "SET('no', 'yes')", /*NULL*/false);
+				$user->select("sending", "send EMail");
+
+				$func= new jsFunction("disableFieldsOnClick", "action", "change");
+				$activeColumn= $user->defineDocumentItemBoxName("active");
+				$sendingColumn= $user->defineDocumentItemBoxName("sending");
+				$pwdColumn= $user->defineDocumentItemBoxName("Pwd");
+				$re_pwdColumn= $user->defineDocumentItemBoxName("re_Pwd");
+				$globalset= <<<EOT
+					activeDisabled= document.getElementsByName('$activeColumn')[0].disabled;
+					activeChecked= document.getElementsByName('$activeColumn')[0].checked;
+EOT;
+				$disableContent= <<<EOT
+					active= document.getElementsByName('$activeColumn')[0];
+					sending= document.getElementsByName('$sendingColumn')[0];
+					pwd= document.getElementsByName('$pwdColumn')[0];
+					re_pwd= document.getElementsByName('$re_pwdColumn')[0];
+					
+					if(active.checked && change=='active')
 					{
+						if(action == "insert")
+						{
+							pwd.value= "";
+							re_pwd.value= "";
+						}else // action == "update"
+							return;
+						
+						// disable sending with password
+						sending.checked= false;
+						sending.disabled= true;
+						pwd.disabled= true;
+						re_pwd.disabled= true;
+					}
+					if(sending.checked && change=='sending')
+					{
+						// disable active with password
+						active.checked= false;
+						active.disabled= true;
+						pwd.disabled= true;
+						re_pwd.disabled= true;
 						pwd.value= "";
 						re_pwd.value= "";
-					}else // action == "update"
-						return;
-					
-					// disable sending with password
-					sending.checked= false;
-					sending.disabled= true;
-					pwd.disabled= true;
-					re_pwd.disabled= true;
-				}
-				if(sending.checked && change=='sending')
-				{
-					// disable active with password
-					active.checked= false;
-					active.disabled= true;
-					pwd.disabled= true;
-					re_pwd.disabled= true;
-					pwd.value= "";
-					re_pwd.value= "";
-				}
-				if(	!active.checked &&
-					!sending.checked	)
-				{
-					// enable all fields
-					if(change != "active")
-						active.checked= activeChecked;
-					if(!activeDisabled)
-						active.disabled= false;
-					sending.disabled= false;
-					pwd.disabled= false;
-					re_pwd.disabled= false;
-				}
+					}
+					if(	!active.checked &&
+						!sending.checked	)
+					{
+						// enable all fields
+						if(change != "active")
+							active.checked= activeChecked;
+						if(!activeDisabled)
+							active.disabled= false;
+						sending.disabled= false;
+						pwd.disabled= false;
+						re_pwd.disabled= false;
+					}
 
 EOT;				
-				$func->add($disableContent);
-			$script= new JavascriptTag();
-				$script->add($globalset);
-				$script->add($func);
-			$this->addOnBodyEnd($script);
-			
-			//if($action == STINSERT)
-			$user->onChange("active", "disableFieldsOnClick('$action', 'active')");
-			$user->onChange("sending", "disableFieldsOnClick('$action', 'sending')");
+					$func->add($disableContent);
+				$script= new JavascriptTag();
+					$script->add($globalset);
+					$script->add($func);
+				$this->addOnBodyEnd($script);
+				
+				//if($action == STINSERT)
+				$user->onChange("active", "disableFieldsOnClick('$action', 'active')");
+				$user->onChange("sending", "disableFieldsOnClick('$action', 'sending')");
+				
+				$user->select("Pwd", "Pwd");
+				$user->password("Pwd", true);
+				$user->optional("Pwd");
+				//$oldpass= "old password";
+				//$user->passwordNames($oldpass, $newpass, $reppass);	
+				$user->passwordNames($newpass, $reppass);		
+				$user->updateCallback("disablePasswordCallback", $newpass);
+				$user->updateCallback("disablePasswordCallback", $reppass);
+				$user->updateCallback("disablePasswordCallback", $username);
+				$user->updateCallback("usermanagement_main_passwordCheckCallback", $newpass);
+				$user->insertCallback("usermanagement_main_passwordCheckCallback", $newpass);
+				$user->updateCallback("emailCallback", "sending");
+				$user->insertCallback("emailCallback", "sending");
+				$user->updateCallback("disableUserFieldsCallback", "active");
+				
+			}elseif($action==STLIST)
+			{
+				//$user->select("NrLogin", "logged in");
+				//$user->select("LastLogin", "last login");
+				$user->orderBy("domain");
+				$user->orderBy("user");
+				$user->setMaxRowSelect(50);
+			}
+			//$user->getColumn("register");
+			$user->preSelect("DateCreation", "sysdate()");
 		}
-		//$user->getColumn("register");
-		$user->preSelect("DateCreation", "sysdate()");
 		
-		$groups= &$this->needTable("Group");
-		$groups->select("domain", "Domain");
-		$groups->preSelect("domain", $domain['Name']);
-		$groups->disabled("domain");
-		$groups->preSelect("DateCreation", "sysdate()");
-		$groups->select("Name", "Group");
-		
-		$project= &$this->needTable("Project");
-		$project->select("Name", "Project");
-		$project->select("Description", "Description");
-		if($action == STLIST)
+		$groups= &$this->getTable("Group");
+		if($table == $groups->getName())
 		{
-			$project->select("ID", "ID");
-			$project->align("ID", "center");
+			$groups->select("domain", "Domain");
+			$groups->preSelect("domain", $domain['Name']);
+			$groups->disabled("domain");
+			$groups->preSelect("DateCreation", "sysdate()");
+			$groups->select("Name", "Group");
+			if($action==STLIST)
+			{
+				$groups->select("ID", "access descriptions");
+				$groups->listCallback("descriptionCallback", "access descriptions");
+				//$groups->listCallback("actionCallback", "update");
+				$groups->listCallback("actionCallback", "delete");
+				$groups->orderBy("domain");
+				$groups->orderBy("Name");
+				$groups->setMaxRowSelect(50);
+			}
 		}
-		$project->select("display", "Display");
-		$project->preSelect("display", "ENABLED");
-		if($action != STLIST)
-		{
-			$project->select("Target", "Target");
-			$project->preSelect("Target", "SELF");
-			$project->pullDownMenuByEnum("Target");
-		}
-		$project->select("Path", "URL");
-		$project->preSelect("DateCreation", "sysdate()");
-		$project->orderBy("Name");
 		
-		if($action==STLIST)
+		$project= &$this->getTable("Project");
+		if($table == $project->getName())
 		{
-		    $user->select("NrLogin", "logged in");
-		    $user->select("LastLogin", "last login");
-		    $user->orderBy("domain");
-		    $user->orderBy("user");
-		    $user->setMaxRowSelect(50);
-		    
-		    $groups->select("ID", "access descriptions");
-		    $groups->listCallback("descriptionCallback", "access descriptions");
-		    //$groups->listCallback("actionCallback", "update");
-		    $groups->listCallback("actionCallback", "delete");
-		    $groups->orderBy("domain");
-		    $groups->orderBy("Name");
-		    $groups->setMaxRowSelect(50);
-		    
-			$userClusterGroup= $this->getContainer("UserClusterGroupManagement");
-		    $project->namedLink("Project", $userClusterGroup);
-		}else
-		{
-			$user->select("Pwd", "Pwd");
-			$user->password("Pwd", true);
-		    $user->passwordNames($newpass, $reppass);			
-		    $user->updateCallback("disablePasswordCallback", $newpass);
-		    $user->updateCallback("disablePasswordCallback", $reppass);
-		    $user->updateCallback("disablePasswordCallback", $username);
-			$user->updateCallback("usermanagement_main_passwordCheckCallback", $newpass);
-			$user->insertCallback("usermanagement_main_passwordCheckCallback", $newpass);
-			$user->updateCallback("emailCallback", "sending");
-			$user->insertCallback("emailCallback", "sending");
-			$user->updateCallback("disableUserFieldsCallback", "active");
+			$project->select("Name", "Project");
+			$project->select("Description", "Description");
+			if($action == STLIST)
+			{
+				$project->select("ID", "ID");
+				$project->align("ID", "center");
+			}
+			$project->select("display", "Display");
+			$project->preSelect("display", "ENABLED");
+			if($action != STLIST)
+			{
+				$project->select("Target", "Target");
+				$project->preSelect("Target", "SELF");
+				$project->pullDownMenuByEnum("Target");
+			}
+			$project->select("Path", "URL");
+			$project->preSelect("DateCreation", "sysdate()");
+			$project->orderBy("Name");
+			if($action==STLIST)
+			{
+				$userClusterGroup= $this->getContainer("UserClusterGroupManagement");
+				$project->namedLink("Project", $userClusterGroup);
+			}
 		}
 	}
 	/**
@@ -707,12 +575,23 @@ EOT;
 		// use this translation strings only if STProjectUserSiteCreator set to install
 		if($language == "de")
 		{
-		    $this->setMessageContent("MAIL-HOST-description", "address of Website");
+		    $this->setMessageContent("MAIL-HOST_NAME-description", "name of Website");
+		    $this->setMessageContent("MAIL-HOST_NAME-subject", "");
+		    $this->setMessageContent("MAIL-HOST_NAME-text", "");
+		    $this->setMessageContent("MAIL-HOST_ADDRESS-description", "address of Website");
+		    $this->setMessageContent("MAIL-HOST_ADDRESS-subject", "");
+		    $this->setMessageContent("MAIL-HOST_ADDRESS-text", "");
+		    $this->setMessageContent("MAIL-HOST-description", "displayed Website");
 		    $this->setMessageContent("MAIL-HOST-subject", "");
-		    $this->setMessageContent("MAIL-HOST-text", "");
-		    $this->setMessageContent("MAIL-ADMINISTRATOR_MAIL-description", "email address from administrator who handles the registration process");
-		    $this->setMessageContent("MAIL-ADMINISTRATOR_MAIL-subject", "");
-		    $this->setMessageContent("MAIL-ADMINISTRATOR_MAIL-text", "");
+		    $this->setMessageContent("MAIL-HOST-text", "{HOST_ADDRESS}");
+		    $this->setMessageContent("MAIL-HOST-HTML_text", "<a href='{HOST_ADDRESS}'>{HOST_NAME}</a>");
+		    $this->setMessageContent("MAIL-ADMINISTRATION_NAME-description", "name of administrator who handles the registration process");
+		    $this->setMessageContent("MAIL-ADMINISTRATION_NAME-subject", "");
+		    $this->setMessageContent("MAIL-ADMINISTRATION_NAME-text", "Administration");
+		    $this->setMessageContent("MAIL-ADMINISTRATION_MAIL-description", "email address from administrator who handles the registration process");
+		    $this->setMessageContent("MAIL-ADMINISTRATION_MAIL-subject", "");
+		    $this->setMessageContent("MAIL-ADMINISTRATION_MAIL-text", "");
+			$this->setMessageContent("MAIL-ADMINISTRATION_MAIL-HTML_text", "<a href='mailto:{ADMINISTRATION_MAIL}'>{ADMINISTRATION_NAME}</a>");
 			$this->setMessageContent("MAIL-MAIL_CODE-description", "generated numeric code when sending emails");
 			$this->setMessageContent("MAIL-MAIL_CODE-subject", "");
 			$this->setMessageContent("MAIL-MAIL_CODE-text", "{Pwd}");
@@ -722,9 +601,12 @@ EOT;
 			$this->setMessageContent("MAIL-MAIL_DAYS-description", "how long the created user-code by Admin mail should be available");
 			$this->setMessageContent("MAIL-MAIL_DAYS-subject", "5");
 			$this->setMessageContent("MAIL-MAIL_DAYS-text", "{subject} Tage");
+			$this->setMessageContent("MAIL-REMOVE_MONTH-description", "after how much month user-data will be removed when registration process not be finished");
+			$this->setMessageContent("MAIL-REMOVE_MONTH-subject", "1");
+			$this->setMessageContent("MAIL-REMOVE_MONTH-text", "einem Monat");
 			$this->setMessageContent("MAIL-SIGNATURE-description", "Signature by all sending emails");
 			$this->setMessageContent("MAIL-SIGNATURE-subject", "");
-			$this->setMessageContent("MAIL-SIGNATURE-text", "Ihr Software-Team\\n    from {HOST}");
+			$this->setMessageContent("MAIL-SIGNATURE-text", "Ihr Software-Team\\n    von {HOST}");
 			$this->setMessageContent("MAIL-PREFIXED_TITLE-description", "prefixed title only if exist");
 			$this->setMessageContent("MAIL-PREFIXED_TITLE-subject", "");
 			$this->setMessageContent("MAIL-PREFIXED_TITLE-text", " {title_prefixed}");
@@ -743,8 +625,90 @@ EOT;
 			$this->setMessageContent("MAIL-FORM_ADDRESS.sex.UNKNOWN-description", "form of address for unknown persons");
 			$this->setMessageContent("MAIL-FORM_ADDRESS.sex.UNKNOWN-subject", "");
 			$this->setMessageContent("MAIL-FORM_ADDRESS.sex.UNKNOWN-text", "Sehr geehrte(r)Frau/Herr {PREFIXED_TITLE.exist} {surname}{SUBSEQUENT_TITLE.exist}");
+			
+			$this->setMessageContent("MAIL-STORED_USER_DATA-description", "all user specific data stored on website");
+			$this->setMessageContent("MAIL-STORED_USER_DATA-subject", "");
+			$content= <<<EOT
+
+	Geschlecht:        {sex}
+	Titel:             {title_prefixed}
+	Vorname:           {firstname}
+	Nachname:          {surname}
+	angehängter Titel: {title_subsequent}
+	EMail:             {email}
+EOT;
+			$this->setMessageContent("MAIL-STORED_USER_DATA-text", $content);
+			$html_content= <<<EOT
+<table style='font-family: "Times New Roman", Garamond, serif; font-size: smaller;'>
+	<tr>
+		<td width="30"></td>
+		<td bgcolor='gray' style='padding: 1mm;'>
+		User:
+		</td>
+		<td bgcolor='lightgray' style='padding: 1mm;'>
+			{user}
+		</td>
+	</tr>
+	<tr>
+		<td ></td>
+		<td bgcolor='gray' style='padding: 1mm;'>
+			Titel:
+		</td>
+		<td bgcolor='lightgray' style='padding: 1mm;'>
+			{title_prefixed}
+		</td>
+	</tr>
+	<tr>
+		<td ></td>
+		<td bgcolor='gray' style='padding: 1mm;'>
+			Vorname:
+		</td>
+		<td bgcolor='lightgray' style='padding: 1mm;'>
+			{firstname}
+		</td>
+	</tr>
+	<tr>
+		<td ></td>
+		<td bgcolor='gray' style='padding: 1mm;'>
+			Nachname:
+		</td>
+		<td bgcolor='lightgray' style='padding: 1mm;'>
+			{surname}
+		</td>
+	</tr>
+	<tr>
+		<td ></td>
+		<td bgcolor='gray' style='padding: 1mm;'>
+			Titel:
+		</td>
+		<td bgcolor='lightgray' style='padding: 1mm;'>
+			{title_subsequent}
+		</td>
+	</tr>
+	<tr>
+		<td width="30"></td>
+		<td bgcolor='gray' style='padding: 1mm;'>
+		Geschlecht:
+		</td>
+		<td bgcolor='lightgray' style='padding: 1mm;'>
+			{sex}
+		</td>
+	</tr>
+	<tr>
+		<td ></td>
+		<td bgcolor='gray' style='padding: 1mm;'>
+			EMail:
+		</td>
+		<td bgcolor='lightgray' style='padding: 1mm;'>
+			{email}
+		</td>
+	</tr>
+</table>
+EOT;
+			$this->setMessageContent("MAIL-STORED_USER_DATA-HTML_text", $html_content);
+
 			$this->setMessageContent("MAIL-OWN_REGISTRATION-description", "registration by user (not inside UserManagement)");
-			$this->setMessageContent("MAIL-OWN_REGISTRATION-subject", "Registrierung auf der Web-Seite {HOST}");
+			$this->setMessageContent("MAIL-OWN_REGISTRATION-subject", "Registrierung auf der Web-Seite {HOST_NAME}");
 			$this->setMessageContent("MAIL-OWN_REGISTRATION-text", "{FORM_ADDRESS}!\\n\\n".
 														" Danke das sie sich auf unserer Web-Site {HOST} registrieren wollen.\\n".
 														" Sie haben den Benutzer mit dem Namen '{user}' angelegt.\\n".
@@ -752,22 +716,27 @@ EOT;
 														" Dieser LINK ist {MAIL_MINUTES} gültig.\\n\\n".
 														" {SIGNATURE}");
 			$this->setMessageContent("MAIL-MAIL_REGISTRATION-description", "registration from ADMIN, hook 'send EMail' by creation/update of User");
-			$this->setMessageContent("MAIL-MAIL_REGISTRATION-subject", "Registration on Website {HOST}");
+			$this->setMessageContent("MAIL-MAIL_REGISTRATION-subject", "Registration on Website {HOST_NAME}");
 			$this->setMessageContent("MAIL-MAIL_REGISTRATION-text", "{FORM_ADDRESS}!\\n\\n".
 														" Bitte registrieren sie sich auf unserer Web-Site {HOST}.\\n".
 														" Es wurde für Sie der Benutzer mit dem Namen '{user}' angelegt.\\n".
 														" verwenden Sie diesen mit dem user-code \"{MAIL_CODE}\", ohne Anführungszeichen, als Passwort.\\n".
 														" Der user-code ist {MAIL_DAYS} gültig.\\n\\n".
+														" Folgende Daten sind von Ihnen gespeichert:".
+														" {STORED_USER_DATA}\\n\\n".
 														" {SIGNATURE}");
 			$this->setMessageContent("MAIL-ACKNOWLEDGE_INACTIVE-description", "acknowledge before account becoming active");
-			$this->setMessageContent("MAIL-ACKNOWLEDGE_INACTIVE-subject", "Registration auf {HOST}");
+			$this->setMessageContent("MAIL-ACKNOWLEDGE_INACTIVE-subject", "Registration auf {HOST_NAME}");
 			$this->setMessageContent("MAIL-ACKNOWLEDGE_INACTIVE-text", "{FORM_ADDRESS}!\\n\\n".
 														" Vielen Dank, dass sie sich auf unserer Webseite {HOST} registriert haben.\\n".
-														" Bitte senden sie eine EMail an ADMINISTRATOR_MAIL\\n".
-														" um ihr Konto mit dem Benutzer-Namen '{user}' freizuschalten.\\n\\n".
+														" Bitte senden sie eine EMail an {ADMINISTRATION_MAIL}\\n".
+														" um ihr Konto mit folgenden Benutzer-Daten freizuschalten.\\n\\n".
+														" {STORED_USER_DATA}\\n\\n".
+														" sollten Sie die Speicherung ihrer Daten nicht wünschen brauchen sie nichts weiter zu tun als keine EMail zu senden.\\n".
+														" Alle ihre Daten werden dann nach {REMOVE_MONTH} automatisch gelöscht.\\n\\n".
 														" {SIGNATURE}");
 			$this->setMessageContent("MAIL-ACKNOWLEDGE_ACTIVE-description", "acknowledge for registration");
-			$this->setMessageContent("MAIL-ACKNOWLEDGE_ACTIVE-subject", "Registrierung auf der Webseite {HOST}");
+			$this->setMessageContent("MAIL-ACKNOWLEDGE_ACTIVE-subject", "Registrierung auf der Webseite {HOST_NAME}");
 			$this->setMessageContent("MAIL-ACKNOWLEDGE_ACTIVE-text", "{FORM_ADDRESS}!\\n\\n".
 														" Vielen Dank, dass sie sich auf unserer Webseite {HOST} registriert haben.\\n".
 														" Ihr Konto mit dem Benutzer '{user}' wurde frei geschalten.\\n\\n".
@@ -775,12 +744,25 @@ EOT;
 			
 		}else // otherwise language have to be english "en"
 		{
-		    $this->setMessageContent("MAIL-HOST-description", "address of Website");
+		    $this->setMessageContent("MAIL-HOST_NAME-description", "name of Website");
+		    $this->setMessageContent("MAIL-HOST_NAME-subject", "");
+		    $this->setMessageContent("MAIL-HOST_NAME-text", "");
+		    $this->setMessageContent("MAIL-HOST_ADDRESS-description", "address of Website");
+		    $this->setMessageContent("MAIL-HOST_ADDRESS-subject", "");
+		    $this->setMessageContent("MAIL-HOST_ADDRESS-text", "");
+		    $this->setMessageContent("MAIL-HOST-description", "displayed Website");
 		    $this->setMessageContent("MAIL-HOST-subject", "");
-		    $this->setMessageContent("MAIL-HOST-text", "");
-		    $this->setMessageContent("MAIL-ADMINISTRATOR_MAIL-description", "email address from administrator who handles the registration process");
-		    $this->setMessageContent("MAIL-ADMINISTRATOR_MAIL-subject", "");
-		    $this->setMessageContent("MAIL-ADMINISTRATOR_MAIL-text", "");
+		    $this->setMessageContent("MAIL-HOST-text", "{HOST_ADDRESS}");
+		    $this->setMessageContent("MAIL-HOST-HTML_text", "<a href='{HOST_ADDRESS}'>{HOST_NAME}</a>");
+		    $this->setMessageContent("MAIL-ADMINISTRATION_NAME-description", "name of administrator who handles the registration process");
+		    $this->setMessageContent("MAIL-ADMINISTRATION_NAME-subject", "");
+		    $this->setMessageContent("MAIL-ADMINISTRATION_NAME-text", "Administration");
+		    $this->setMessageContent("MAIL-ADMINISTRATION_MAIL-description", "email address from administrator who handles the registration process");
+		    $this->setMessageContent("MAIL-ADMINISTRATION_MAIL-subject", "");
+		    $this->setMessageContent("MAIL-ADMINISTRATION-description", "displayed administration who handles the registration process");
+		    $this->setMessageContent("MAIL-ADMINISTRATION-subject", "");
+		    $this->setMessageContent("MAIL-ADMINISTRATION-text", "Administration (mailto:{ADMINISTRATION_MAIL})");
+			$this->setMessageContent("MAIL-ADMINISTRATION-HTML_text", "<a href='mailto:{ADMINISTRATION_MAIL}'>{ADMINISTRATION_NAME}</a>");
 			$this->setMessageContent("MAIL-MAIL_CODE-description", "generated numeric code when sending emails");
 			$this->setMessageContent("MAIL-MAIL_CODE-subject", "");
 			$this->setMessageContent("MAIL-MAIL_CODE-text", "{Pwd}");
@@ -790,6 +772,9 @@ EOT;
 			$this->setMessageContent("MAIL-MAIL_DAYS-description", "how long the created user-code by Admin mail should be available");
 			$this->setMessageContent("MAIL-MAIL_DAYS-subject", "5");
 			$this->setMessageContent("MAIL-MAIL_DAYS-text", "{subject} days");
+			$this->setMessageContent("MAIL-REMOVE_MONTH-description", "after how much month user-data will be removed when registration process not be finished");
+			$this->setMessageContent("MAIL-REMOVE_MONTH-subject", "1");
+			$this->setMessageContent("MAIL-REMOVE_MONTH-text", "one month");
 			$this->setMessageContent("MAIL-SIGNATURE-description", "Signature by all sending emails");
 			$this->setMessageContent("MAIL-SIGNATURE-subject", "");
 			$this->setMessageContent("MAIL-SIGNATURE-text", "Your Software-Team\\n    from {HOST}");
@@ -811,8 +796,90 @@ EOT;
 			$this->setMessageContent("MAIL-FORM_ADDRESS.sex.UNKNOWN-description", "form of address for unknown persons");
 			$this->setMessageContent("MAIL-FORM_ADDRESS.sex.UNKNOWN-subject", "");
 			$this->setMessageContent("MAIL-FORM_ADDRESS.sex.UNKNOWN-text", "Dear {PREFIXED_TITLE.exist} {surname}{SUBSEQUENT_TITLE.exist}");
+			
+			$this->setMessageContent("MAIL-STORED_USER_DATA-description", "all user specific data stored on website");
+			$this->setMessageContent("MAIL-STORED_USER_DATA-subject", "");
+			$content= <<<EOT
+
+	Sex:              {sex}
+	prefixed title:   {title_prefixed}
+	first name:       {firstname}
+	surname:          {surname}
+	subsequent title: {title_subsequent}
+	EMail:            {email}
+EOT;
+			$this->setMessageContent("MAIL-STORED_USER_DATA-text", $content);
+			$html_content= <<<EOT
+<table style='font-family: "Times New Roman", Garamond, serif; font-size: smaller;'>
+	<tr>
+		<td width="30"></td>
+		<td bgcolor='gray' style='padding: 1mm;'>
+			User:
+		</td>
+		<td bgcolor='lightgray' style='padding: 1mm;'>
+			{user}
+		</td>
+	</tr>
+	<tr>
+		<td ></td>
+		<td bgcolor='gray' style='padding: 1mm;'>
+			prefixed title:
+		</td>
+		<td bgcolor='lightgray' style='padding: 1mm;'>
+			{title_prefixed}
+		</td>
+	</tr>
+	<tr>
+		<td ></td>
+		<td bgcolor='gray' style='padding: 1mm;'>
+			first name:
+		</td>
+		<td bgcolor='lightgray' style='padding: 1mm;'>
+			{firstname}
+		</td>
+	</tr>
+	<tr>
+		<td ></td>
+		<td bgcolor='gray' style='padding: 1mm;'>
+			surname:
+		</td>
+		<td bgcolor='lightgray' style='padding: 1mm;'>
+			{surname}
+		</td>
+	</tr>
+	<tr>
+		<td ></td>
+		<td bgcolor='gray' style='padding: 1mm;'>
+			subsequent title:
+		</td>
+		<td bgcolor='lightgray' style='padding: 1mm;'>
+			{title_subsequent}
+		</td>
+	</tr>
+	<tr>
+		<td width="30"></td>
+		<td bgcolor='gray' style='padding: 1mm;'>
+			Sex:
+		</td>
+		<td bgcolor='lightgray' style='padding: 1mm;'>
+			{sex}
+		</td>
+	</tr>
+	<tr>
+		<td ></td>
+		<td bgcolor='gray' style='padding: 1mm;'>
+			EMail:
+		</td>
+		<td bgcolor='lightgray' style='padding: 1mm;'>
+			{email}
+		</td>
+	</tr>
+</table>
+EOT;
+			$this->setMessageContent("MAIL-STORED_USER_DATA-HTML_text", $html_content);
+
 			$this->setMessageContent("MAIL-OWN_REGISTRATION-description", "registration by user (not inside UserManagement)");
-			$this->setMessageContent("MAIL-OWN_REGISTRATION-subject", "Registration on Website {HOST}");
+			$this->setMessageContent("MAIL-OWN_REGISTRATION-subject", "Registration on Website {HOST_NAME}");
 			$this->setMessageContent("MAIL-OWN_REGISTRATION-text", "{FORM_ADDRESS}!\\n\\n".
 														" Thank you that you want to register on our Web-Site {HOST}.\\n".
 														" You have created the user '{user}'.\\n".
@@ -820,22 +887,26 @@ EOT;
 														" This LINK is only {MAIL_MINUTES} available.\\n\\n".
 														" {SIGNATURE}");
 			$this->setMessageContent("MAIL-MAIL_REGISTRATION-description", "registration from ADMIN, hook 'send EMail' by creation/update of User");
-			$this->setMessageContent("MAIL-MAIL_REGISTRATION-subject", "Registration on Website {HOST}");
+			$this->setMessageContent("MAIL-MAIL_REGISTRATION-subject", "Registration on Website {HOST_NAME}");
 			$this->setMessageContent("MAIL-MAIL_REGISTRATION-text", "{FORM_ADDRESS}!\\n\\n".
 														" Please register on our Web-Site {HOST}.\\n".
 														" It was created for you the user '{user}'.\\n".
 														" Use this user account with the user-code \"{MAIL_CODE}\", without quotes, as password.\\n".
 														" The user-code is {MAIL_DAYS} available.\\n\\n".
+														" Follow data stored from you:\\n".
+														" {STORED_USER_DATA}\\n\\n".
 														" {SIGNATURE}");
 			$this->setMessageContent("MAIL-ACKNOWLEDGE_INACTIVE-description", "acknowledge before account becoming active");
-			$this->setMessageContent("MAIL-ACKNOWLEDGE_INACTIVE-subject", "Registration on {HOST}");
+			$this->setMessageContent("MAIL-ACKNOWLEDGE_INACTIVE-subject", "Registration on {HOST_NAME}");
 			$this->setMessageContent("MAIL-ACKNOWLEDGE_INACTIVE-text", "{FORM_ADDRESS}!\\n\\n".
 														" Thank you for registering on our Web-Site {HOST}.\\n".
-														" Please send an email to the ADMINISTRATOR_MAIL\\n".
-														" to activate your account with the user '{user}'.\\n\\n".
+														" Please send an email to the {ADMINISTRATION_MAIL}\\n".
+														" to activate your account with the follow data'.\\n\\n".
+														" {STORED_USER_DATA}\\n\\n".
+														" if you don't want that, do not send any email back and all your data will be removed after {REMOVE_MONTH}.\\n\\n".
 														" {SIGNATURE}");
 			$this->setMessageContent("MAIL-ACKNOWLEDGE_ACTIVE-description", "acknowledge for registration finish");
-			$this->setMessageContent("MAIL-ACKNOWLEDGE_ACTIVE-subject", "Registration on {HOST}");
+			$this->setMessageContent("MAIL-ACKNOWLEDGE_ACTIVE-subject", "Registration on {HOST_NAME}");
 			$this->setMessageContent("MAIL-ACKNOWLEDGE_ACTIVE-text", "{FORM_ADDRESS}!\\n\\n".
 														" Great pleasure, you registered on our Web-Sitee {HOST} successfully.\\n".
 														" Your account with the user '{user}' is now available.\\n\\n".
@@ -910,10 +981,10 @@ EOT;
 			$result= $creator->execute();
 			if($result=="NOERROR")
 			{
-				$desc= &STDbTableDescriptions::instance($this->getDatabase()->getDatabaseName());
-				$userName= $desc->getColumnName("User", "user");
-				$pwd= $desc->getColumnName("User", "Pwd");
 				$container= &$creator->getContainer("um_install");
+				$table= $container->getTable("User");
+				$userName= $table->findColumnOrAlias("user")['alias'];
+				$pwd= $table->findColumnOrAlias("Pwd")['alias'];
 				$sqlResult= $container->getResult();
 				$password= $sqlResult[$pwd];
 				$preg= array();
@@ -938,18 +1009,24 @@ EOT;
 				$sheme= $_SERVER['REQUEST_SCHEME'];
 			else
 				$sheme= "http";
-			$HOST= $sheme."://";
+			$HOST_ADDRESS= $sheme."://";
 			
 			if(isset($_SERVER['SCRIPT_NAME']))
-				$HOST.= $_SERVER['SCRIPT_NAME'];
+			{
+				$HOST_NAME= $_SERVER['SCRIPT_NAME'];
+				$HOST_ADDRESS.= $HOST_NAME;
+			}
 		}else
 		{// maybe class used inside PHP_CLI script like xdebug
 			$ref= preg_split("$[\\/]$", $_SERVER['HTTP_REFERER']);
 			$sheme= reset($ref);
-			$HOST= $sheme."//";
-			$HOST.= $_SERVER['HTTP_HOST'];
+			$HOST_ADDRESS= $sheme."//";
+			$HOST_NAME= $_SERVER['HTTP_HOST'];
 			if(isset($_SERVER['SCRIPT_NAME']))
-				$HOST.= $_SERVER['SCRIPT_NAME'];
+			{
+				$HOST_NAME.= $_SERVER['SCRIPT_NAME'];
+				$HOST_ADDRESS.= $HOST_NAME;
+			}
 		}
 		// read administrator email address
 		if(!isset($admin_email))
@@ -967,29 +1044,43 @@ EOT;
 		{
 			if(!in_array($case, $caseRes))
 			{
-				$insert->fillColumn("case", "'$case'");
+				$description= $this->msgBox->getMessageContent("MAIL-$case-description");
+				$subject= $this->msgBox->getMessageContent("MAIL-$case-subject");
 				switch($case)
 				{
-					case "HOST":
-						$insert->fillColumn("description", $this->msgBox->getMessageContent("MAIL-HOST-description"));
-						$insert->fillColumn("subject", $this->msgBox->getMessageContent("MAIL-HOST-subject"));
-						$insert->fillColumn("html", "NO");
-						$insert->fillColumn("text", $HOST);
+					case "HOST_NAME":
+						$text= $HOST_NAME;
 						break;
-					case "ADMINISTRATOR_MAIL":
-						$insert->fillColumn("description", $this->msgBox->getMessageContent("MAIL-ADMINISTRATOR_MAIL-description"));
-						$insert->fillColumn("subject", $this->msgBox->getMessageContent("MAIL-ADMINISTRATOR_MAIL-subject"));
-						$insert->fillColumn("html", "NO");
-						$insert->fillColumn("text", $admin_email);
+					case "HOST_ADDRESS":
+						$text= $HOST_ADDRESS;
+						break;
+					case "ADMINISTRATION_NAME":
+						$text= "Administrator";
+						break;
+					case "ADMINISTRATION_MAIL":
+						$text= $admin_email;
 						break;
 					default:
-						$insert->fillColumn("description", $this->msgBox->getMessageContent("MAIL-$case-description"));
-						$insert->fillColumn("subject", $this->msgBox->getMessageContent("MAIL-$case-subject"));
-						$insert->fillColumn("html", "NO");
-						$insert->fillColumn("text", $this->msgBox->getMessageContent("MAIL-$case-text"));
+						$text= $this->msgBox->getMessageContent("MAIL-$case-text");
 						break;
 				}
+				$insert->fillColumn("case", "'$case'");
+				$insert->fillColumn("description", $description);
+				$insert->fillColumn("subject", $subject);
+				$insert->fillColumn("html", "NO");
+				$insert->fillColumn("text", $text);
 				$insert->fillNextRow();
+				
+				$text= $this->msgBox->getMessageContent("MAIL-$case-HTML_text");
+				if($text != "")
+				{
+					$insert->fillColumn("case", "'$case'");
+					$insert->fillColumn("description", $description);
+					$insert->fillColumn("subject", $subject);
+					$insert->fillColumn("html", "YES");
+					$insert->fillColumn("text", $text);
+					$insert->fillNextRow();	
+				}
 			}
 		}
 		$insert->execute(noErrorShow);

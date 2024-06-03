@@ -30,7 +30,7 @@ class STProjectUserSiteCreator extends STUserSiteCreator
      */
     var $firstProjectName= "ProjectFrame";
     /**
-     * struct of genaral registration properties.<br />
+     * struct of general registration properties.<br />
      * outsideRegistration - whether an user can also register by him self from outside<br />
      * adminActivation - whether the administrator need to activate after registration the user
      * dummyUser - whether is allowed to create an dummy user how have no password and cannot login
@@ -74,9 +74,9 @@ class STProjectUserSiteCreator extends STUserSiteCreator
                                                             "sourcevar" => true                          ),
                                     "Registration" => array(    "name" => null,
                                                                 "var" => "Registration",
-                                                                "container" => "ProjectOverviewRegistration",
-                                                                "object" => "STProjectOverviewList",
-                                                                "source" => "_stprojectoverviewlist",
+                                                                "container" => "userRegistration",
+                                                                "object" => "STUserProfileContainer",
+                                                                "source" => "_stuserprofilecontainer",
                                                                 "sourcevar" => true                          ),
                                     "UserProfile" => array( "name" => "Profile",
                                                             "var" => "UserProfile",
@@ -144,6 +144,24 @@ class STProjectUserSiteCreator extends STUserSiteCreator
             $instance->setDbProjectName("ProjectOverview", $this->aProjects['ProjectOverview']['name']);
             if(!isset($loginEntryUrl))
                 $loginEntryUrl= $HTTP_SERVER_VARS["SCRIPT_NAME"];
+            $vscode_debug= true;
+            if($vscode_debug)
+            {
+                $read_file= false;
+                if($loginEntryUrl == "/")
+                    $read_file= true;
+                else
+                {
+                    $file= pathinfo($loginEntryUrl);
+                    if( isset($file['extension']) &&
+                        $file['extension'] == "php"     )
+                    {
+                        $read_file= true;
+                    }
+                }
+                if(!$read_file)
+                    exit;
+            }
             $this->sLoginEntryPointUrl= $loginEntryUrl;
             $instance->startPage($loginEntryUrl);
 
@@ -194,12 +212,23 @@ class STProjectUserSiteCreator extends STUserSiteCreator
             {
                 $currentContainer['container']= $this->aProjects['Login']['container'];
                 $currentContainer['name']= $this->aProjects['Login']['name'];
+            }else
+            {
+                $session= STUserSession::instance();
+                $registration= $session->getSessionVar("ST_REGISTRATION");
+                if( isset($registration) &&
+                    $registration == true   )
+                {
+                    $currentContainer['container']= $this->aProjects['Registration']['container'];
+                    $currentContainer['name']= $this->aProjects['Registration']['name'];
+                }
             }
 
         }elseif(!count($currentContainer))
         {
-            $currentContainer['container']= $this->aProjects['Registration']['container'];
-            $currentContainer['name']= $this->aProjects['Registration']['name'];
+            $currentContainer['container']= $this->aProjects['Login']['container'];
+            $currentContainer['name']= $this->aProjects['Login']['name'];
+
         }elseif(STCheck::isDebug() &&
                 $currentContainer['container'] == $this->aProjects['ProjectFrame']['container'] )
         {
@@ -269,7 +298,12 @@ class STProjectUserSiteCreator extends STUserSiteCreator
     }
     public function readRegistrationProperties()
     { return $this->registrationProperties; }
-    public function execute($onError= onErrorMessage)
+    /**
+     * initialisation should be done before initialisation of container
+     * (some getTable(), getAction(), ...)
+     * if method <code>install()</code> be used, initialisation should be also before done
+     */
+    protected function initialPredefinedStates()
     {
         if( $this->prefixPath != "" &&
             (   typeof($this->tableContainer, "STProjectOverviewList") ||
@@ -283,7 +317,16 @@ class STProjectUserSiteCreator extends STUserSiteCreator
             if($this->registrationProperties['adminActivation'])
                 $this->tableContainer->needAdminActivation();
             $this->tableContainer->allowDummyUser($this->registrationProperties['dummyUser']);
+
+        }elseif(typeof($this->tableContainer, "STUserProfileContainer"))
+        {
+            if($this->registrationProperties['adminActivation'])
+                $this->tableContainer->useAdminActivation();
         }
+    }
+    public function execute($onError= onErrorMessage)
+    {
+        $this->initialPredefinedStates();
         STUserSiteCreator::execute($onError);
     }
     protected function predefineContainers(string $databaseContainerName, array $noProjectRegister= array())
@@ -455,6 +498,7 @@ class STProjectUserSiteCreator extends STUserSiteCreator
     }
     public function install()
     {
+        $this->initialPredefinedStates();
         // write first overview name into database
 		//$this->dbProjectInsert($this->projectOverviewDbName, /*sort*/0, "only for basic database logs");
 

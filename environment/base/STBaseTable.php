@@ -2,11 +2,11 @@
 
 require_once($_stsession);
 
-$__static_global_STBaseTable_ID= 0;
+$__static_global_STBaseTable_ID= array();
 
 class STBaseTable
 {
-    var $ID= 0;
+    protected $ID= 0;
 	var $Name;
 	/**
 	 * define wheter the table
@@ -201,8 +201,6 @@ class STBaseTable
 		STCheck::param($oTable, 0, "string", "STBaseTable", "null");
 
 
-        $__static_global_STBaseTable_ID++;
-        $this->ID= $__static_global_STBaseTable_ID;
     	$this->bOrder= NULL;
 		$this->asForm= array(	"button"=>	"save",
 								"form"=>	"st_checkForm",
@@ -218,7 +216,12 @@ class STBaseTable
             $this->bCorrect= true;
     	}else
     	    $this->Name= null;
-    	
+    
+		if(isset($__static_global_STBaseTable_ID[$this->Name]))
+			$__static_global_STBaseTable_ID[$this->Name]++;
+		else
+			$__static_global_STBaseTable_ID[$this->Name]= 0;
+		$this->ID= $__static_global_STBaseTable_ID[$this->Name];	
     	STCheck::increase("table");
         if( STCheck::isDebug() &&
             (   STCheck::isDebug("table") ||
@@ -274,13 +277,14 @@ class STBaseTable
 	{
 	    global $__static_global_STBaseTable_ID;
 	    
-	    $__static_global_STBaseTable_ID++;
+	    $__static_global_STBaseTable_ID[$this->Name]++;
 	    $oldID= $this->ID;
-	    $this->ID= $__static_global_STBaseTable_ID;
+	    $this->ID= $__static_global_STBaseTable_ID[$this->Name];
 	    	    
 	    $this->bInsert= true;
 	    $this->bUpdate= true;
 	    $this->bDelete= true;
+
 	    /**
 	     *
 	     * @var boolean whether should sort Table, by clicking of one of the head-names
@@ -353,6 +357,10 @@ class STBaseTable
 	{
 	    return $this->toString();
 	}
+	public function getID()
+	{
+		return $this->ID;
+	}
 	public function toString(bool $htmlTags= true) : string
 	{
 	    $str= get_class($this)."(";
@@ -412,7 +420,8 @@ class STBaseTable
 		$this->aActiveLink= $Table->aActiveLink;
 		$this->nFirstRowSelect= $Table->nFirstRowSelect;
 		$this->nMaxRowSelect= $Table->nMaxRowSelect;
-    	$this->oWhere= &$Table->oWhere;
+		if(is_object($Table->oWhere))
+    		$this->oWhere= clone $Table->oWhere;
     	$this->asOrder= $Table->asOrder;
     	$this->sPKColumn= $Table->sPKColumn;
 		$this->show= $Table->show;
@@ -572,7 +581,7 @@ class STBaseTable
 	 * @param string $column name of column or defined alias column
 	 * @param enum $action column should be optional for all actions STADMIN (default), or only by STINSERT or STUPDATE
 	 */
-	public function optional(string $column, $action= STADMIN)
+	public function optional(string $column, $action= STUPDATE)
 	{
 	    STCheck::param($action, 1, "check", $action==STADMIN||$action==STINSERT||$action==STUPDATE, "can be STADMIN for all, or STINSERT / STUPDATE");
 	    
@@ -1326,15 +1335,15 @@ class STBaseTable
 			return true;
 		return false;
 	}
-	public function orderBy(string $column, $bASC= true)
+	public function orderBy(string $column, $bASC= true, int $warnFuncOutput= 0)
 	{
 	    STCheck::paramCheck($bASC, 2, "bool");
 	    
 	    $field= $this->findAliasOrColumn($column);
 	    $column= $field["column"];
-	    $this->orderByI($this->getName(), $column, $bASC);
+	    $this->orderByI($this->getName(), $column, $bASC, $warnFuncOutput+1);
 	}
-	protected function orderByI(string $tableName, string $column, bool $bASC)
+	protected function orderByI(string $tableName, string $column, bool $bASC, int $warnFuncOutput= 0)
 	{
 	    if( !isset($this->abOrigChoice["order"]) ||
 	        $this->abOrigChoice["order"] == true    )
@@ -1346,6 +1355,15 @@ class STBaseTable
 	        $sort= "ASC";
         else
             $sort= "DESC";
+		if(typeof($this, "STDbTable"))
+		{
+			if(!preg_match("/,/", $column))
+			{
+				$deli= $this->db->getFieldDelimiter()[0];
+				$column= "{$deli['open']['delimiter']}$column{$deli['open']['delimiter']}";
+			}else
+				STCheck::warning(true, "STBaseTable::orderBy()", "set only column one by one, because than can set field delimiter for columns", $warnFuncOutput+1);
+		}
         $this->asOrder[]= array(    "table" => $tableName,
                                     "column"=> $column,
                                     "sort"  => $sort        );
@@ -1550,7 +1568,10 @@ class STBaseTable
 		function &getTinyMCE($column= null)
 		{
 			if($column===null)
-				return reset($this->oTinyMCE);
+			{
+				$mce= reset($this->oTinyMCE);
+				return $mce;
+			}
 			return $this->oTinyMCE[$column];
 		}
 		function tinyMCECount()
@@ -1960,12 +1981,24 @@ class STBaseTable
 		        }
 		        return true;
 		    }
-		    if(preg_match("/^['\"].*['\"]$/", $content))
+			$stringDelimiter= $this->db->getStringDelimiter();
+			$pattern= "/^([";
+			foreach($stringDelimiter as $deli)
+				$pattern.= $deli['open']['delimiter'];
+			$pattern.= "])(.*)[";			
+			foreach($stringDelimiter as $deli)
+				$pattern.= $deli['close']['delimiter'];
+			$pattern.= "]$/";
+			$bString= preg_match($pattern, $content, $preg);
+		    if($bString)
 		    {// column is maybe only an string content		        
 		        if(is_array($abCorrect))
 		        {
+					$value= $preg[2];
+					// replace always the first delimiter, should be the one delimited on end-product
+					$value= preg_replace("/{$stringDelimiter[0]['open']['delimiter']}/", "\\{$stringDelimiter[0]['open']['delimiter']}", $value);
 		            $abCorrect['keyword']= "@value";
-		            $abCorrect['content']= substr($content, 1, -1);
+		            $abCorrect['content']= $value;
 		            $abCorrect['type']= "string";
 		            $abCorrect['len']= strlen($content) - 2;
 		        }

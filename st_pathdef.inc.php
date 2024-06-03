@@ -91,14 +91,9 @@
 	// own global st_pathdef location
 	$global_st_pathdef_inc_location_path= __DIR__."/st_pathdef.inc.php";
 	////////////////////////////////////////////
-		//$client_root=				$_SERVER['DOCUMENT_ROOT'];
-		$client_root=				"/";
 		$_dbselftable_root=         __DIR__;
 		$_stenvironmenttools_path=	__DIR__."/environment";
 		$_stcmstools_path=			__DIR__."/plugins";
-		$_defaultScripts=			$client_root."/defaultScripts/";
-		$_tinymce_path=				$_defaultScripts."tiny_mce/";
-		$default_css_link=			$_defaultScripts."default.css";
 		$_st_set_session_global=	false;
 		$_st_max_query_length=		 0;
 		$_st_max_debug_query_length= 0;
@@ -122,8 +117,6 @@
 		$_stbasecontainer=			$_stenvironmenttools_path."/base/STBaseContainer.php";
 		$_stframecontainer=			$_stenvironmenttools_path."/base/STFrameContainer.php";
 		$_stobjectcontainer=		$_stenvironmenttools_path."/base/STObjectContainer.php";
-		$_tinymce=					$_stenvironmenttools_path."/base/TinyMCE.php";
-		$_tinymce_row=				$_stenvironmenttools_path."/base/TinyMCE_row.php";
 		$_stsitecreator=			$_stenvironmenttools_path."/base/STSiteCreator.php";
 		  
 		$_stdatabase=				$_stenvironmenttools_path."/db/STDatabase.php";
@@ -159,6 +152,8 @@
 		$_stclustergroupassignment=			$_stenvironmenttools_path."/session/management/STClusterGroupAssignment.php";		
 		$_stum_installcontainer=			$_stenvironmenttools_path."/session/management/STUM_InstallContainer.php";
 		$_stusermanagement_install=			$_stenvironmenttools_path."/session/management/stusermanagement_install.php";
+		$_st_registration_text=				$_stenvironmenttools_path."/session/management/st_registration_text.php";
+		$_stbackgroundimagesdbcontainer=	$_stenvironmenttools_path."/session/management/STBackgroundImagesDbContainer.php";
 		$_stprojectoverviewlist=			$_stenvironmenttools_path."/session/management/STProjectOverviewList.php";
 		$_stuserprofilecontainer=           $_stenvironmenttools_path."/session/management/STUserProfileContainer.php";	
 		$_stprojectuserframe=		        $_stenvironmenttools_path."/session/management/STProjectUserFrame.php";			

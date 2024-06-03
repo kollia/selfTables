@@ -1,20 +1,9 @@
 <?php
 
-require_once $_stobjectcontainer;
+require_once $_stbackgroundimagesdbcontainer;
 
-class STProjectOverviewList extends STObjectContainer
+class STProjectOverviewList extends STBackgroundImagesDbContainer
 {
-    /**
-     * definition for default images
-     * on login screen and navigation bar
-     * @var array
-     */
-    private $image= array();
-    /**
-     * content of tags or strings
-     * added into the site
-     */
-    private $addedContent= array();
     /**
      * prefix path add to all projects inside database     * 
      * @var string
@@ -32,7 +21,7 @@ class STProjectOverviewList extends STObjectContainer
 
     public function __construct(string $name, STObjectContainer &$container, string $bodyClass= "ProjectAccessBody")
     {
-        STObjectContainer::__construct($name, $container, $bodyClass);
+        STBackgroundImagesDbContainer::__construct($name, $container, $bodyClass);
     }
 	/**
 	 * method to create messages for different languages.<br />
@@ -48,6 +37,15 @@ class STProjectOverviewList extends STObjectContainer
         STObjectContainer::createMessages($language, $nation);
 		if($language == "de")
 		{
+            $this->setMessageContent("noErrorDefined", "Unbekannter Fehler");
+            $this->setMessageContent("userNotExist", "Passwort stimmt nicht mit Benutzer-Namen &uuml;berein");
+            $this->setMessageContent("wrongPassword", "Passwort stimmt nicht mit Benutzer-Namen &uuml;berein");
+            $this->setMessageContent("multipleUser", "Mehrere Benutzer von verschiedenen Dom&auml;nen gefunden!<br />verwenden sie <domain>/<user> als Benutzer-Namen");
+            $this->setMessageContent("externalAuthenticationError", "Unbekannter Fehler von der externen Authentifizierung ist aufgetreten!");
+            $this->setMessageContent("noPermission", "Sie haben keinen Zugriff auf diese Daten!");
+            $this->setMessageContent("inactiveUser", "Dieser Benutzer ist im inaktiven Status");
+            $this->setMessageContent("registrationPassOver", "Die Registrierungszeit ist überschritten");
+            $this->setMessageContent("unknownLoginError@", "Unbekannter Login Fehler (@) ist aufgetreten");
 		    $this->setMessageContent("LoginMaskDescription", "
                                                         <h1>
                                                             Anmeldung: 
@@ -59,6 +57,15 @@ class STProjectOverviewList extends STObjectContainer
 			
 		}else // otherwise language have to be english "en"
 		{
+            $this->setMessageContent("noErrorDefined", "Unknown Error");
+            $this->setMessageContent("userNotExist", "Password or user-name are not correct");
+            $this->setMessageContent("wrongPassword", "Password or user-name are not correct");
+            $this->setMessageContent("multipleUser", "Multiple user found!<br /> Please use also a domain separated with a backslash '\'");
+            $this->setMessageContent("externalAuthenticationError", "Unknown external authentication error occured!");
+            $this->setMessageContent("noPermission", "you have no permission to this data!");
+            $this->setMessageContent("inactiveUser", "User is inactive");
+            $this->setMessageContent("registrationPassOver", "Registration time is pass over");
+            $this->setMessageContent("unknownLoginError@", "unknown Login error (@) occured");
 		    $this->setMessageContent("LoginMaskDescription", "
                                                         <h1>
                                                             Login: 
@@ -81,40 +88,6 @@ class STProjectOverviewList extends STObjectContainer
     {
         $this->prefixPath= $path;
     }
-    public function setOverviewLogo(string $address, int $width= null, int $height= 140, string $alt= "DB selftables Homepage")
-    {
-        $this->image['overview']['img']= $address;
-        $this->image['overview']['height']= $height;
-        $this->image['overview']['width']= $width;
-        $this->image['overview']['alt']= $alt;
-    }
-    public function setOverviewBackground(string $address, $repeat= true)
-    {
-        $this->image['overview']['background']= $address;
-        $this->image['overview']['background-repeat']= $repeat;
-        $this->image['overview']['background-body']= true;
-    }
-    public function setOverviewBannerBackground(string $address, $repeat= true)
-    {
-        $this->image['overview']['background']= $address;
-        $this->image['overview']['background-repeat']= $repeat;
-        $this->image['overview']['background-body']= false;
-    }
-    public function setNavigationLogo(string $address, int $width= null, int $height= 70, string $alt= null)
-    {
-        $this->image['nav']['img']= $address;
-        $this->image['nav']['height']= $height;
-        $this->image['nav']['width']= $width;
-        if(isset($alt))
-            $this->image['nav']['alt']= $alt;
-        else if(isset($this->image['overview']['alt']))
-            $this->image['nav']['alt']= $this->image['overview']['alt'];
-    }
-    public function setNavigationBannerBackground(string $address, $repeat= true)
-    {
-        $this->image['nav']['background']= $address;
-        $this->image['nav']['background-repeat']= $repeat;
-    }
     protected function create()
     {
         $this->displayNoTables();
@@ -134,7 +107,8 @@ class STProjectOverviewList extends STObjectContainer
         $selector->select("Project", "Description", "Description");//"Description");
         $selector->select("Project", "DateCreation", "DateCreation");
         $selector->rightJoin("Cluster", "ProjectID", "Project", "ID");
-        $selector->orderBy("Project", "sort, Name");
+        $selector->orderBy("Project", "sort");
+        $selector->orderBy("Project", "Name");
         $selector->allowQueryLimitation(false);
         $statement= $selector->getStatement();
         $selector->execute();
@@ -334,10 +308,6 @@ class STProjectOverviewList extends STObjectContainer
         }
         return false;
     }
-    public function addObj(Tag|jsFunctionBase|array|string|null &$tag, $bWarningShowed = false, int $outFunc = 1)
-    {
-        $this->addedContent[]= $tag;
-    }
     public function execute(&$externSideCreator, $onError)
     {
         $this->createMessageContent();
@@ -360,200 +330,13 @@ class STProjectOverviewList extends STObjectContainer
             st_print_r($available,1, $space);
         }
         
-        $get= new STQueryString();
-        $user= STSession::instance();
         if($available['show'] == "list")
         {
-            if(isset($this->image['overview']['img']))
-            {
-                $table= new st_tableTag();
-                    $table->border(0);
-                    $table->cellpadding(0);
-                    $table->cellspacing(0);
-                    $table->width("100%");                    
-                    $a= new ATag();
-                        $query= $user->getSessionUrlParameter();
-                        if($query != "")
-                            $query= "?".$query;
-                        $userQuery= $get->getParameterValue("user");
-                        if(isset($userQuery))
-                        {
-                            $userQuery= "user=".$userQuery;
-                            if($query != "")
-                                $query.= "&".$userQuery;
-                            else
-                                $query= "?".$userQuery;
-                        }
-                        $entryPoint= $externSideCreator->getLoginEntryPointUrl();
-                        $a->href($entryPoint.$query);
-                        $a->target("_top");
-                        $img= new ImageTag();
-                            $img->src($this->image['overview']['img']);
-                            $img->height($this->image['overview']['height']);
-                            $img->width($this->image['overview']['width']);
-                            $img->border(0);
-                            $img->alt($this->image['overview']['alt']);
-                        $a->add($img);
-                    $table->add($a);
-                    if(isset($this->image['overview']['background']))
-                    {
-                        $onBody= false;
-                        if($this->image['overview']['background-body'] == true)
-                            $onBody= true;
-
-                        $styleString= "background-image: url('{$this->image['overview']['background']}');";
-                        if(isset($this->image['overview']['height']))
-                        {
-                            $styleString.= " background-size: auto {$this->image['overview']['height']};";
-                            if($this->image['overview']['background-repeat'] == false)
-                                $styleString.= " background-repeat: no-repeat;";
-                        }
-                        if($onBody)
-                            $this->style($styleString);
-                        else
-                            $table->columnStyle($styleString);
-                    }
-                    if($user->isLoggedIn())
-                    {
-                        $div= new DivTag();
-                            $logout= $user->getLogoutButton( "Logout" );
-                            $div->add($logout);
-                            $div->add(br());
-                            $div->add("logged In as: ");
-                            $b= new BTag();
-                                $span= new SpanTag("colorONE");
-                                    $span->add($user->getUserName());
-                                $b->add($span);
-                                $b->add("&nbsp;&nbsp;");
-                            $div->add($b);
-                            $table->add($div);
-                        if(isset($this->image['overview']['background']))
-                            $table->columnStyle($styleString);
-                        //$table->width("100%");
-                        $table->columnAlign("right");
-                    }
-                $this->append($table); 
-            }
+            $this->createOverviewImages($externSideCreator, /*logoutbutton*/true);
+            
         }elseif($available['show'] == "navigation")
         {
-            $get->delete("show");
-            $get->delete("ERROR");
-            $get->delete("ProjectID");
-            //STCheck::debug(TRUE);
-            if(isset($this->image['nav']))
-                $logo= $this->image['nav'];
-            elseif(isset($this->image['overview']))
-            {
-                $logo= $this->image['overview'];
-                if(isset($logo['width']))
-                    $logo['width']= $logo['width']/2;
-                $logo['height']= $logo['height']/2;
-            }else
-                $logo= array();
-            
-            $table= new st_tableTag();
-                $table->border(0);
-                $table->cellpadding(0);
-                $table->cellspacing(0);
-                $table->width("100%");  
-                $a= new ATag();
-                    $entryPoint= $externSideCreator->getLoginEntryPointUrl();
-                    $a->href($entryPoint.$get->getUrlParamString());
-                    $a->target("_top");
-                    $img= new ImageTag();
-                        if(isset($logo['img'])) 
-                            $img->src($logo['img']);
-                        if(isset($logo['width']))
-                            $img->width($logo['width']);
-                        if(isset($logo['height']))
-                            $img->height($logo['height']);
-                        $img->border(0);
-                        if(isset($logo['alt']))
-                            $img->alt($logo['alt']);
-                    $a->add($img);
-                $table->add($a);
-                $styleString= "";
-                if(isset($logo['background']))
-                {
-                    $styleString= "background-image: url('{$logo['background']}');";
-                    if(isset($logo['height']))
-                    {
-                        $styleString.= " background-size: auto {$logo['height']};";
-                        if($logo['background-repeat'] == false)
-                            $styleString.= " background-repeat: no-repeat;";
-                    }
-                    $table->columnStyle($styleString);
-                }
-                $navSpan= new SpanTag("smallBoldFont");
-                    $script= new JavaScriptTag();
-                        $function= new jsFunction("myOnSubmit", "myTarget");
-                            $function->add("top.location.href = myTarget;");
-                            $function->add("return false;");
-                        $script->add($function);
-                    $navSpan->add($script);
-                    $form= new FormTag();
-                        $form->name("myForm");
-                        $form->onSubmit("myOnSubmit( myForm.mySelect.value )");
-                        $form->add("Web-Aplikation: ");
-                        $select= new SelectTag();
-                            $select->onChange("top.location.href=this.value;");
-                            $select->name("mySelect");
-                        foreach( $this->accessableProjects as $project )
-                        {
-                            if($project['Target'] == "SELF")
-                            {
-                                $projectID= $project['ID'];
-                                $option= new OptionTag();
-                                    $get->update("ProjectID=$projectID");
-                                    $option->value($get->getUrlParamString());
-                                    $option->add($project['Name']);
-                                if($projectID == $available['project'])
-                                    $option->selected();
-                                $select->add($option);
-                            }
-                        }
-                        $form->add($select);
-                        $input= new InputTag("button");
-                            $input->type("submit");
-                            $input->value("GO&nbsp;&gt;&gt;");
-                        $form->add($input);
-                    $navSpan->add($form);
-                $table->add($navSpan);
-                if(isset($logo['background']))
-                        $table->columnStyle($styleString);
-                $table->columnWidth("100%");
-                $table->columnAlign("center");
-                $table->columnClass("fontSmaller");
-                //$table->columnStyle("font-weight:bold;");
-                $table->columnNowrap();
-                $div= new DivTag();
-                if($available['LoggedIn'])
-                {                        
-                    $logout= $user->getLogoutButton( "Logout" );
-                    $div->add($logout);
-                    $div->add(br());
-                    $div->add("&#160;logged&#160;In&#160;as:&#160;");
-                    $b= new BTag();
-                        $span= new SpanTag("colorONE");
-                            $span->add($user->getUserName());
-                        $b->add($span);
-                        $b->add("&nbsp;&nbsp;");
-                    $div->add($b);
-                }else
-                {
-                    $login= $user->getLogoutButton("Login");
-                    $div->add($login);
-                    $div->add(br());
-                    $div->add(br());                        
-                }
-                $table->add($div);
-                $table->width("100%");
-                $table->columnAlign("right");
-            $this->append($table); 
-        }
-        foreach($this->addedContent as $tag)
-        {
-            $this->appendObj($tag);
+            $this->createNavigationImageBar($externSideCreator, $available);
         }
         if( $available['show'] != "navigation" &&
             (   !$available['LoggedIn'] ||
@@ -571,6 +354,10 @@ class STProjectOverviewList extends STObjectContainer
         }
         return "NOERROR";
     }
+    /**
+     * return error string if session login not excepted
+     * @see STSession::getLoginError()
+     */
     private function getLoginErrorString(array $available) : string
     {
         if(isset($this->loginMask))
@@ -592,27 +379,36 @@ class STProjectOverviewList extends STObjectContainer
         $content= null;
         switch ($available['error'])
         {
+            case 0:
+                $errorID= "noErrorDefined";//No Error defined.
+                break;
             case 1:
-                $errorMsg= "noUserAccess";//mit diesem User-Namen besteht keine Berechtigung";
+                $errorID= "userNotExist";//This user name has no access.
                 break;
             case 2:
-                $errorMsg= "wrongUserPassword";//"Passwort stimmt nicht mit User-Namen &uuml;berein";
+                $errorID= "wrongPassword";//"Passwort stimmt nicht mit User-Namen &uuml;berein";
                 break;
             case 3:
-                $errorMsg= "multipleUser";//"Multiple UserName in LDAP found!";
+                $errorID= "multipleUser";//Multiple UserName in found!<br /> Please use also a domain separated with a backslash '\'
                 break;
             case 4:
-                $errorMsg= "externalAuthenticationError";//"Unknown error in LDAP authentication!";
+                $errorID= "externalAuthenticationError";//"Unknown error in LDAP authentication!";
                 break;
             case 5:
-                $errorMsg= "noPermission";//"Sie haben keinen Zugriff auf diese Daten!";
+                $errorID= "noPermission";//"Sie haben keinen Zugriff auf diese Daten!";
+                break;
+            case 6:
+                $errorID= "inactiveUser";//User is inactive.
+                break;
+            case 7:
+                $errorID= "registrationPassOver";//Registration time is pass over
                 break;
             default:
-                $errorMsg= "unknownError@";//<b>UNKNOWN</b> Error type ($error) found!";
-                $content= "$error";
+                $errorID= "unknownLoginError@";//<b>UNKNOWN</b> Error type ($error) found!";
+                $content= "{$available['error']}";
                 break;
         }
-        $errorString= $this->getMessageContent($errorMsg, $content);
+        $errorString= $this->getMessageContent($errorID, $content);
         if( $available['error'] == 5 &&
             $available['LoggedIn'] &&
             !$available['access']       )
@@ -783,6 +579,41 @@ class STProjectOverviewList extends STObjectContainer
                 $form->add($tr);
             $table->add($form);  
         return $table;
+    }
+    protected function &getAccessibleChooseBox() : Tag
+    {
+        $get= new STQueryString();
+        $get->delete("show");
+        $get->delete("ERROR");
+        $get->delete("ProjectID");
+
+        $form= new FormTag();
+            $form->name("myForm");
+            $form->onSubmit("myOnSubmit( myForm.mySelect.value )");
+            $form->add("Web-Aplikation: ");
+            $select= new SelectTag();
+                $select->onChange("top.location.href=this.value;");
+                $select->name("mySelect");
+            foreach( $this->accessableProjects as $project )
+            {
+                if($project['Target'] == "SELF")
+                {
+                    $projectID= $project['ID'];
+                    $option= new OptionTag();
+                        $get->update("ProjectID=$projectID");
+                        $option->value($get->getUrlParamString());
+                        $option->add($project['Name']);
+                    if($projectID == $this->availableSite['project'])
+                        $option->selected();
+                    $select->add($option);
+                }
+            }
+            $form->add($select);
+            $input= new InputTag("button");
+                $input->type("submit");
+                $input->value("GO&nbsp;&gt;&gt;");
+            $form->add($input);
+        return $form;
     }
     private function &getAccessibleProjectList() : object
     {

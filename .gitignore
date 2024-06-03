@@ -6,3 +6,4 @@
 org.eclipse.*
 extensions.json
 plugins/email/st_email.inc.json
+plugins/editors/tinymce/

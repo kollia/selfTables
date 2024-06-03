@@ -1109,6 +1109,7 @@ class STItemBox extends STBaseBox
 								isset($mce)			)
 							{
 								$input= new TextareaTag();
+								$input->id("mcetext");
 							}else
 								$input= new InputTag();
 							if($bDisabled)
@@ -1130,7 +1131,7 @@ class STItemBox extends STBaseBox
 									$input->size(1);
 									$nEnums= $aEnums[0];
 									if(!isset($this->aSetAlso[$field["name"]]))
-									{
+									{// no pre defined value for column, define option entry whether entry need to have or not
 										$option= new OptionTag();
 										if(!preg_match("/not_null/", $field["flags"]))
 										{
@@ -1146,14 +1147,13 @@ class STItemBox extends STBaseBox
 										$option->value("");
 										$input->add($option);
 									}
-									for($n= 1; $n<=$nEnums; $n++)
+									for($n= 1; $n<count($aEnums); $n++)
 									{
 										$option= new OptionTag();
 										$option->add($aEnums[$n]);
-										if(	(	$this->action == STINSERT &&
-												isset($this->aSetAlso[$field["name"]]) &&
+										if(	(	isset($this->aSetAlso[$field["name"]]) && // for STINSERT ane STUPDATE
 												$this->aSetAlso[$field["name"]] == $aEnums[$n]	) ||
-											(	$this->action == STUPDATE &&
+											(	$this->action == STUPDATE && // and aSetAlso field name not defined
 												isset($columnValue) &&
 												$columnValue == $aEnums[$n]	)			)
 										{
@@ -2035,7 +2035,9 @@ class STItemBox extends STBaseBox
 						$changedValues= $this->getChangedResult($showpost);
 						$db_case= new STDbUpdater($this->asDBTable);
 						foreach($changedValues as $column => $value)
+						{
 						    $db_case->update($column, $value);
+						}
 						$where= new STDbWhere($this->db, $PK."=".$showpost[$PK]);
 						$db_case->where($where);
 					}else
@@ -2044,7 +2046,21 @@ class STItemBox extends STBaseBox
 					    $db_case= new STDbInserter($this->asDBTable);
 					    foreach($showpost as $column => $value)
 					    {
-					        if(isset($value))
+							$bWrite= true;
+							if($this->asDBTable->hasDefinedFlag($column, STUPDATE, "null"))
+							{// column is optional
+								if(	!isset($value) ||
+									trim($value) == ""	)
+								{
+									$bWrite= false;
+								}elseif(	isset($value) &&
+											$value == "password('')" &&
+											$this->asDBTable->isPasswordColumn($column)	)
+								{
+									$bWrite= false;
+								}
+							}
+							if($bWrite)
 					        {
 					            $field= $this->asDBTable->findAliasOrColumn($column);
 					            if( $field['type'] == "not found" )
@@ -2070,7 +2086,24 @@ class STItemBox extends STBaseBox
 				    {
     				    $db_case= new STDbUpdater($this->asDBTable);
     				    foreach($changedValues as $column => $value)
-    				        $db_case->update($column, $value);
+						{
+							$bWrite= true;
+							if($this->asDBTable->hasDefinedFlag($column, STUPDATE, "null"))
+							{// column is optional
+								if(	!isset($value) ||
+									trim($value) == ""	)
+								{
+									$bWrite= false;
+								}elseif(	isset($value) &&
+											$value == "password('')" &&
+											$this->asDBTable->isPasswordColumn($column)	)
+								{
+									$bWrite= false;
+								}
+							}
+							if($bWrite)
+    				        	$db_case->update($column, $value);
+						}
 				    }else
 				    {
 				        $bError= true;
@@ -2150,7 +2183,7 @@ class STItemBox extends STBaseBox
 			        {
 						if($post_vars[$alias] !== $content)
 			            	$result[$column]= $post_vars[$alias];
-			        }else
+			        }elseif(isset($this->sqlResult[$column]))
 					{// if not set entry maybe was removed
 						$result[$column]= null;//$post_vars[$alias];
 					}
@@ -2172,7 +2205,9 @@ class STItemBox extends STBaseBox
 						$column= $alias;
 			        if(!isset($this->sqlResult[$column]))
 			        {// column was new set from callback
-			            $result[$column]= $content;
+						$field= $this->asDBTable->findColumnOrAlias($column);
+						if($field['type'] != "not found")
+			            	$result[$column]= $content;
 			        }
 			    }
 			}
@@ -2677,7 +2712,8 @@ class STItemBox extends STBaseBox
 					return false;
 				}
 			}
-			if($name==$this->password)
+			if(	$name==$this->password &&
+				!$this->asDBTable->hasDefinedFlag($this->password, $this->action, "null")	) // <- not optional
 			{// if the field is an password
 				// should be made an check whether new password and repitition be the same
 				// and also whether the old password was inserted
@@ -2687,13 +2723,11 @@ class STItemBox extends STBaseBox
 					and
 					count($this->passwordNames)>=3	)
 				{
-					showLine();
-					st_print_r($this->asDBTable->oWhere,5);
 					$oTable= $this->asDBTable;
 					$oTable->clearSelects();
 					$oTable->count();
 					$oTable->andWhere($name."=password('".$post["old_".$name]."')");
-					$statement= $this->db->getStatement($this->asDBTable);
+					$statement= $oTable->getStatement();//$this->asDBTable);
 					//echo $statement;exit;
 					if(!$this->db->fetch_single($statement))
 					{
