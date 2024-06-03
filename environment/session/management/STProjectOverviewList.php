@@ -1,6 +1,8 @@
 <?php
 
 require_once $_stbackgroundimagesdbcontainer;
+require_once $_st_registration_text;
+require_once $_stprojectusersitecreator;
 
 class STProjectOverviewList extends STBackgroundImagesDbContainer
 {
@@ -348,9 +350,25 @@ class STProjectOverviewList extends STBackgroundImagesDbContainer
         }
         if( $available['show'] == "list" &&
             $this->hasProjects()            )
-        {
+        { 
+            $session= STSession::instance();
+            $user= $session->getUserData();
+
             $this->getAccessibleProjectList();
             $this->appendObj($this->accessibilityProjectMask);
+            if($user['register'] == "INACTIVE")
+            {
+                $userTable= $this->getTable("User");                
+                $text= get_db_mail_text($userTable, "WEBSITE_ACKNOWLEDGE_INACTIVE", $user);
+                $table= new st_tableTag();
+                    //$table->border(1);
+                    $table->add("&#160;");
+                    $table->columnWidth(200);
+                    $div= new DivTag("INACTIVE_WEBSITE_TEXT");
+                        $div->add($text['html']);
+                    $table->add($div);
+                $this->appendObj($table);
+            }
         }
         return "NOERROR";
     }
@@ -620,6 +638,10 @@ class STProjectOverviewList extends STBackgroundImagesDbContainer
         if(isset($this->accessibilityProjectMask))
             return $this->accessibilityProjectMask;
          
+        $session= STSession::instance();
+        $user= $session->getUserData();
+        $profile= STPRojectUserSiteCreator::getContainerProjectDefinition("UserProfile");
+
         $div= new DivTag("AccessibleProjectList");
             $table= new st_tableTag("ListTable");
                 $table->border(0);
@@ -644,28 +666,32 @@ class STProjectOverviewList extends STBackgroundImagesDbContainer
                     $lu= new  st_tableTag("ListTable");
                     foreach( $this->accessableProjects as $project )
                     {
-                        $divI= new DivTag();
-                            $a= new ATag();
-                            if( $project['Target'] == "SELF" ||
-                                $project['Path'] == "X"         )
-                            {
-                                $href= "?ProjectID=";
-                                $href.= urlencode( $project['ID'] );
-                                $session= STSession::getSessionUrlParameter();
-                                if($session != "")
-                                    $href.= "&".$session;
-                            }else
-                                $href= $project['Path'];
+                        if( $user['register'] == "ACTIVE" ||
+                            $project['Name'] == $profile['name'] )
+                        {
+                            $divI= new DivTag();
+                                $a= new ATag();
+                                if( $project['Target'] == "SELF" ||
+                                    $project['Path'] == "X"         )
+                                {
+                                    $href= "?ProjectID=";
+                                    $href.= urlencode( $project['ID'] );
+                                    $session= STSession::getSessionUrlParameter();
+                                    if($session != "")
+                                        $href.= "&".$session;
+                                }else
+                                    $href= $project['Path'];
 
-                                $a->href($href);
-                                $a->target("_".strtolower($project['Target']));
-                                $a->style("font-size:12pt;font-weight=bold;");
-                                $a->add($project[ 'Name' ]);
-                            $divI->add($a);
-                            $divI->add(br());
-                            $divI->add($project[ 'Description' ]);
-                        $lu->add($divI);
-                        $lu->nextRow();
+                                    $a->href($href);
+                                    $a->target("_".strtolower($project['Target']));
+                                    $a->style("font-size:12pt;font-weight=bold;");
+                                    $a->add($project[ 'Name' ]);
+                                $divI->add($a);
+                                $divI->add(br());
+                                $divI->add($project[ 'Description' ]);
+                            $lu->add($divI);
+                            $lu->nextRow();
+                        }
                     }
                     $divo->add($lu);
                     $divo->add(br());

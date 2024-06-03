@@ -29,9 +29,11 @@ $__email_text_cases= array(	"HOST",
 							"FORM_ADDRESS.sex.*GENDER",
 							"FORM_ADDRESS.sex.UNKNOWN",
 							"STORED_USER_DATA",
+							"PRINT_STORED_USER_DATA",
 							"OWN_REGISTRATION",
 							"MAIL_REGISTRATION",
 							"ACKNOWLEDGE_INACTIVE",
+							"WEBSITE_ACKNOWLEDGE_INACTIVE",
 							"ACKNOWLEDGE_ACTIVE"				);
 
 
@@ -707,6 +709,12 @@ EOT;
 EOT;
 			$this->setMessageContent("MAIL-STORED_USER_DATA-HTML_text", $html_content);
 
+			$this->setMessageContent("MAIL-PRINT_STORED_USER_DATA-description", "Printing sheet for all stored user data on website");
+			$this->setMessageContent("MAIL-PRINT_STORED_USER_DATA-subject", "");
+			$this->setMessageContent("MAIL-PRINT_STORED_USER_DATA-HTML_text", "Folgende User-Daten sind innerhalb unserer Webseite {HOST} gespeichert:<br />\\n".
+														"<br />\\n".
+														" {STORED_USER_DATA}");
+
 			$this->setMessageContent("MAIL-OWN_REGISTRATION-description", "registration by user (not inside UserManagement)");
 			$this->setMessageContent("MAIL-OWN_REGISTRATION-subject", "Registrierung auf der Web-Seite {HOST_NAME}");
 			$this->setMessageContent("MAIL-OWN_REGISTRATION-text", "{FORM_ADDRESS}!\\n\\n".
@@ -725,7 +733,17 @@ EOT;
 														" Folgende Daten sind von Ihnen gespeichert:".
 														" {STORED_USER_DATA}\\n\\n".
 														" {SIGNATURE}");
-			$this->setMessageContent("MAIL-ACKNOWLEDGE_INACTIVE-description", "acknowledge before account becoming active");
+			$this->setMessageContent("MAIL-WEBSITE_ACKNOWLEDGE_INACTIVE-description", "acknowledge of registration seen inside website while accoutn is inactive");
+			$this->setMessageContent("MAIL-WEBSITE_ACKNOWLEDGE_INACTIVE-subject", "");
+			$this->setMessageContent("MAIL-WEBSITE_ACKNOWLEDGE_INACTIVE-HTML_text", "{FORM_ADDRESS}!<br /><br />\\n".
+														" Vielen Dank, dass sie sich auf unserer Webseite {HOST} registriert haben.<br />\\n".
+														" Bitte senden sie eine EMail an {ADMINISTRATION_MAIL}<br />\\n".
+														" um ihr Konto mit folgenden Benutzer-Daten freizuschalten.<br /><br />\\n".
+														" {STORED_USER_DATA}<br /><br />\\n".
+														" sollten Sie die Speicherung ihrer Daten nicht wünschen brauchen sie nichts weiter zu tun als keine EMail zu senden.<br />\\n".
+														" Alle ihre Daten werden dann nach {REMOVE_MONTH} automatisch gelöscht.<br /><br />\\n".
+														" {SIGNATURE}");
+			$this->setMessageContent("MAIL-ACKNOWLEDGE_INACTIVE-description", "EMAIL acknowledge before account becoming active");
 			$this->setMessageContent("MAIL-ACKNOWLEDGE_INACTIVE-subject", "Registration auf {HOST_NAME}");
 			$this->setMessageContent("MAIL-ACKNOWLEDGE_INACTIVE-text", "{FORM_ADDRESS}!\\n\\n".
 														" Vielen Dank, dass sie sich auf unserer Webseite {HOST} registriert haben.\\n".
@@ -878,6 +896,12 @@ EOT;
 EOT;
 			$this->setMessageContent("MAIL-STORED_USER_DATA-HTML_text", $html_content);
 
+			$this->setMessageContent("MAIL-PRINT_STORED_USER_DATA-description", "Printing sheet for all stored user data on website");
+			$this->setMessageContent("MAIL-PRINT_STORED_USER_DATA-subject", "");
+			$this->setMessageContent("MAIL-PRINT_STORED_USER_DATA-HTML_text", "Follow user-data stored of our website {HOST}:<br />\\n".
+														"<br />\\n".
+														" {STORED_USER_DATA}");
+
 			$this->setMessageContent("MAIL-OWN_REGISTRATION-description", "registration by user (not inside UserManagement)");
 			$this->setMessageContent("MAIL-OWN_REGISTRATION-subject", "Registration on Website {HOST_NAME}");
 			$this->setMessageContent("MAIL-OWN_REGISTRATION-text", "{FORM_ADDRESS}!\\n\\n".
@@ -904,6 +928,15 @@ EOT;
 														" to activate your account with the follow data'.\\n\\n".
 														" {STORED_USER_DATA}\\n\\n".
 														" if you don't want that, do not send any email back and all your data will be removed after {REMOVE_MONTH}.\\n\\n".
+														" {SIGNATURE}");
+			$this->setMessageContent("MAIL-WEBSITE_ACKNOWLEDGE_INACTIVE-description", "acknowledge of registration seen inside website while accoutn is inactive");
+			$this->setMessageContent("MAIL-WEBSITE_ACKNOWLEDGE_INACTIVE-subject", "");
+			$this->setMessageContent("MAIL-WEBSITE_ACKNOWLEDGE_INACTIVE-HTML_text", "{FORM_ADDRESS}!<br /><br />\\n".
+														" Thank you for registering on our Web-Site {HOST}.<br />\\n".
+														" Please send an email to the {ADMINISTRATION_MAIL}<br />\\n".
+														" to activate your account with the follow data'.<br /><br />\\n".
+														" {STORED_USER_DATA}<br /><br />\\n".
+														" if you don't want that, do not send any email back and all your data will be removed after {REMOVE_MONTH}.<br /><br />\\n".
 														" {SIGNATURE}");
 			$this->setMessageContent("MAIL-ACKNOWLEDGE_ACTIVE-description", "acknowledge for registration finish");
 			$this->setMessageContent("MAIL-ACKNOWLEDGE_ACTIVE-subject", "Registration on {HOST_NAME}");
@@ -1064,16 +1097,19 @@ EOT;
 						$text= $this->msgBox->getMessageContent("MAIL-$case-text");
 						break;
 				}
-				$insert->fillColumn("case", "'$case'");
-				$insert->fillColumn("description", $description);
-				$insert->fillColumn("subject", $subject);
-				$insert->fillColumn("html", "NO");
-				$insert->fillColumn("text", $text);
-				$insert->fillNextRow();
+				if($text != "")
+				{// placeholder for plain text
+					$insert->fillColumn("case", "'$case'");
+					$insert->fillColumn("description", $description);
+					$insert->fillColumn("subject", $subject);
+					$insert->fillColumn("html", "NO");
+					$insert->fillColumn("text", $text);
+					$insert->fillNextRow();
+				}
 				
 				$text= $this->msgBox->getMessageContent("MAIL-$case-HTML_text");
 				if($text != "")
-				{
+				{// placeholder for HTML text
 					$insert->fillColumn("case", "'$case'");
 					$insert->fillColumn("description", $description);
 					$insert->fillColumn("subject", $subject);

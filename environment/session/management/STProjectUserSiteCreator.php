@@ -2,6 +2,69 @@
 
 require_once($_stusersitecreator);
 
+    /**
+     * All registered projects.<br />
+     * Beginning always with the 'Login' var which point to 'Registration' or 'ProjectOverview'.
+     * The project key 'var' have to be always the same than the array key.
+     * If the 'name' project key set to null, there is no entry in database project table.
+     * @var array
+     */
+$__global_registered_project_containers= array(      "Login" => array(  "name" => null,
+                                                                        "var" => "Login",
+                                                                        "container" => "ProjectOverviewRegistration",
+                                                                        "object" => "STProjectOverviewList",
+                                                                        "source" => "_stprojectoverviewlist",
+                                                                        "sourcevar" => true                          ),
+                                                                        "ProjectOverview" => array( "name" => "Website Access",
+                                                                                                    "var" => "ProjectOverview",
+                                                                                                    "container" => "ProjectOverviewRegistration",
+                                                                                                    "position" => 0,
+                                                                                                    "object" => "STProjectOverviewList",
+                                                                                                    "source" =>"_stprojectoverviewlist",
+                                                                                                    "sourcevar" => true,
+                                                                                                    "description" => "Access for unknown user"      ),
+                                                                        "ProjectFrame" => array(    "name" => null,
+                                                                                                    "var" => "ProjectFrame",
+                                                                                                    "container" => "ProjectFrame",
+                                                                                                    "object" => "STProjectUserFrame",
+                                                                                                    "source" =>"_stprojectuserframe",
+                                                                                                    "sourcevar" => true                    ),
+                                                                        "Navigation" => array(  "name" => null,
+                                                                                                "var" => "Navigation",
+                                                                                                "container" => "ProjectOverviewRegistration",
+                                                                                                "object" => "STProjectOverviewList",
+                                                                                                "source" => "_stprojectoverviewlist",
+                                                                                                "sourcevar" => true                          ),
+                                                                        "Registration" => array(    "name" => null,
+                                                                                                    "var" => "Registration",
+                                                                                                    "container" => "userRegistration",
+                                                                                                    "object" => "STUserProfileContainer",
+                                                                                                    "source" => "_stuserprofilecontainer",
+                                                                                                    "sourcevar" => true                          ),
+                                                                        "UserProfile" => array( "name" => "Profile",
+                                                                                                "var" => "UserProfile",
+                                                                                                "container" => "userprofile",
+                                                                                                "position" => -1,
+                                                                                                "object" => "STUserProfileContainer",
+                                                                                                "source" =>"_stuserprofilecontainer",
+                                                                                                "sourcevar" => true,
+                                                                                                "description" => "Own User Profile" ),
+                                                                        "UserManagement" => array(  "name" =>"UserManagement",
+                                                                                                    "var" => "UserManagement",
+                                                                                                    "container" => "usermanagement",
+                                                                                                    "position" => 0,
+                                                                                                    "object" => "STUserManagement",
+                                                                                                    "source" =>"_stusermanagement",
+                                                                                                    "sourcevar" => true,
+                                                                                                    "description" => "Management for all user and projects" ),
+                                                                        "ExampleProject" => array(  "name" => "DB selfTables",
+                                                                                                    "var" => "ExampleProject",
+                                                                                                    "container" => "dbselftables",
+                                                                                                    "position" => 0,
+                                                                                                    "description" => "selfTables framework to create first database API",
+                                                                                                    "path" => "https://github.com/kollia/dbselftables",
+                                                                                                    "target" => "blank"                                                     )   );
+
 class STProjectUserSiteCreator extends STUserSiteCreator
 {
     /**
@@ -46,70 +109,18 @@ class STProjectUserSiteCreator extends STUserSiteCreator
      * If the 'name' project key set to null, there is no entry in database project table.
      * @var array
      */
-    private $aProjects= array(      "Login" => array(   "name" => null,
-                                                        "var" => "Login",
-                                                        "container" => "ProjectOverviewRegistration",
-                                                        "object" => "STProjectOverviewList",
-                                                        "source" => "_stprojectoverviewlist",
-                                                        "sourcevar" => true                          ),
-                                    "ProjectOverview" => array( "name" => "Website Access",
-                                                                "var" => "ProjectOverview",
-                                                                "container" => "ProjectOverviewRegistration",
-                                                                "position" => 0,
-                                                                "object" => "STProjectOverviewList",
-                                                                "source" =>"_stprojectoverviewlist",
-                                                                "sourcevar" => true,
-                                                                "description" => "Access for unknown user"      ),
-                                    "ProjectFrame" => array(    "name" => null,
-                                                                "var" => "ProjectFrame",
-                                                                "container" => "ProjectFrame",
-                                                                "object" => "STProjectUserFrame",
-                                                                "source" =>"_stprojectuserframe",
-                                                                "sourcevar" => true                    ),
-                                    "Navigation" => array(  "name" => null,
-                                                            "var" => "Navigation",
-                                                            "container" => "ProjectOverviewRegistration",
-                                                            "object" => "STProjectOverviewList",
-                                                            "source" => "_stprojectoverviewlist",
-                                                            "sourcevar" => true                          ),
-                                    "Registration" => array(    "name" => null,
-                                                                "var" => "Registration",
-                                                                "container" => "userRegistration",
-                                                                "object" => "STUserProfileContainer",
-                                                                "source" => "_stuserprofilecontainer",
-                                                                "sourcevar" => true                          ),
-                                    "UserProfile" => array( "name" => "Profile",
-                                                            "var" => "UserProfile",
-                                                            "container" => "userprofile",
-                                                            "position" => -1,
-                                                            "object" => "STUserProfileContainer",
-                                                            "source" =>"_stuserprofilecontainer",
-                                                            "sourcevar" => true,
-                                                            "description" => "Own User Profile" ),
-                                    "UserManagement" => array(  "name" =>"UserManagement",
-                                                                "var" => "UserManagement",
-                                                                "container" => "usermanagement",
-                                                                "position" => 0,
-                                                                "object" => "STUserManagement",
-                                                                "source" =>"_stusermanagement",
-                                                                "sourcevar" => true,
-                                                                "description" => "Management for all user and projects" ),
-                                    "ExampleProject" => array(  "name" => "DB selfTables",
-                                                                "var" => "ExampleProject",
-                                                                "container" => "dbselftables",
-                                                                "position" => 0,
-                                                                "description" => "selfTables framework to create first database API",
-                                                                "path" => "https://github.com/kollia/dbselftables",
-                                                                "target" => "blank"                                                     )   );
+    private $aProjects= array();
     
     public function __construct(STObjectContainer $container, string $dbTablePrefix= null, string $loginEntryUrl= null, string $bodyClass= "ProjectAccessBody")
     {
         global $HTTP_SERVER_VARS;
+        global $__global_registered_project_containers;
         
         $query= new STQueryString();
         $projectID= $query->getParameterValue("ProjectID");
         $show= $query->getParameterValue("show");
 
+        $this->aProjects= $__global_registered_project_containers;
         $this->predefineContainers($container->getName());
 
         // if currentContainer will be not defined as frame,
@@ -243,6 +254,13 @@ class STProjectUserSiteCreator extends STUserSiteCreator
         
         $containerObj= STObjectContainer::getContainer($currentContainer['container']); 
         STUserSiteCreator::__construct($projectID, $containerObj);
+    }
+    public static function getContainerProjectDefinition(string $case)
+    {
+        global $__global_registered_project_containers;
+
+        STCheck::alert(!isset($__global_registered_project_containers[$case]), "STProjectUserSiteCreator::getContainerProjectDefinition", "project container of '$case' does not exist", 1);
+        return $__global_registered_project_containers[$case];
     }
     /**
      * read from database project ID and Name
