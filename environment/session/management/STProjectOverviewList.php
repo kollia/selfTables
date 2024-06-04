@@ -356,7 +356,8 @@ class STProjectOverviewList extends STBackgroundImagesDbContainer
 
             $this->getAccessibleProjectList();
             $this->appendObj($this->accessibilityProjectMask);
-            if($user['register'] == "INACTIVE")
+            if( isset($user['register']) &&
+                $user['register'] == "INACTIVE" )
             {
                 $userTable= $this->getTable("User");                
                 $text= get_db_mail_text($userTable, "WEBSITE_ACKNOWLEDGE_INACTIVE", $user);
@@ -666,8 +667,9 @@ class STProjectOverviewList extends STBackgroundImagesDbContainer
                     $lu= new  st_tableTag("ListTable");
                     foreach( $this->accessableProjects as $project )
                     {
-                        if( $user['register'] == "ACTIVE" ||
-                            $project['Name'] == $profile['name'] )
+                        if( (   isset($user['register']) &&
+                                $user['register'] == "ACTIVE" ) ||
+                            $project['Name'] == $profile['name']    )
                         {
                             $divI= new DivTag();
                                 $a= new ATag();
