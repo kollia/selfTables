@@ -188,7 +188,7 @@ function disableUserFieldsCallback(STCallbackClass &$callbackObject, $columnName
 {
 	if(!$callbackObject->display)
 		return;
-	
+
 	$action= $callbackObject->getAction();
 	if($action != STUPDATE)
 		return;
@@ -199,6 +199,17 @@ function disableUserFieldsCallback(STCallbackClass &$callbackObject, $columnName
 	{
 		$callbackObject->disabled($columnName);
 	}
+}
+function setRegisterColumnActive(STCallbackClass &$callbackObject, $columnName, $rownum)
+{
+    if(	$callbackObject->display ||
+		!$callbackObject->before	)
+	{
+        return;
+	}
+	//$callbackObject->echoResult();
+	if($callbackObject->getValue("active User") == "YES")
+		$callbackObject->setValue("ACTIVE", "register");
 }
 function disablePasswordCallback(STCallbackClass &$callbackObject, $columnName, $rownum)
 {
@@ -307,7 +318,7 @@ class STUserManagement extends STObjectContainer
         $this->registrationProperties['dummyUser']= $bAllow;
     }
 	protected function create()
-	{//STCheck::debug("db.statement.from", 48);STCheck::debug("db.statements.where");
+	{//STCheck::debug("query");
 	    $session= &STUserSession::instance();
 	    $this->setDisplayName("Project Management");
 	    $this->accessBy($session->usermanagement_Project_AccessCluster, STLIST);
@@ -385,7 +396,7 @@ class STUserManagement extends STObjectContainer
 			$user->select("surname", "Surname");
 			$user->select("title_subsequent", "Title subsequent");
 			$user->pullDownMenuByEnum("title_subsequent");
-			$user->select("email", "Email");	
+			$user->select("email", "Email");
 			if( $action == STINSERT ||
 				$action == STUPDATE	)
 			{
@@ -398,6 +409,7 @@ class STUserManagement extends STObjectContainer
 					$user->select("active", "active User");	
 				$user->addColumn("sending", "SET('no', 'yes')", /*NULL*/false);
 				$user->select("sending", "send EMail");
+				$user->getColumn("register");	
 
 				$func= new jsFunction("disableFieldsOnClick", "action", "change");
 				$activeColumn= $user->defineDocumentItemBoxName("active");
@@ -477,6 +489,7 @@ EOT;
 				$user->updateCallback("emailCallback", "sending");
 				$user->insertCallback("emailCallback", "sending");
 				$user->updateCallback("disableUserFieldsCallback", "active");
+				$user->updateCallback("setRegisterColumnActive", "register");
 				
 			}elseif($action==STLIST)
 			{
