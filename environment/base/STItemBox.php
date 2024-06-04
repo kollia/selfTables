@@ -483,6 +483,12 @@ class STItemBox extends STBaseBox
     	$count= 0;
     	$newFields= array();
 		$set= array();
+		$getColumns= array();
+		foreach($this->asDBTable->show as $show)
+		{
+			if($show['type'] == 'get')
+				$getColumns[]= $show['alias'];
+		}
     	foreach($columns as $column => $name)
         {
 			$bfound= false;
@@ -491,6 +497,8 @@ class STItemBox extends STBaseBox
             	if($column==$fields[$i]["name"])
                 {
 					$bfound= true;
+					if(in_array($name, $getColumns))
+						$fields[$i]['type']= "getColumn";
                 	$newFields[]= $fields[$i];
 					$set[$name]= true;
 					break;
@@ -501,7 +509,7 @@ class STItemBox extends STBaseBox
         }
 		if($this->asDBTable)
 		{
-			foreach($this->asDBTable->columns as $field)
+			foreach($this->asDBTable->columns as $nr=>$field)
 			{
 				if(	$field['type']==="get" &&				    
 					!isset($set[$field['column']])	)
