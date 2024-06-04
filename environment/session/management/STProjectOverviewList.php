@@ -357,6 +357,7 @@ class STProjectOverviewList extends STBackgroundImagesDbContainer
             $this->getAccessibleProjectList();
             $this->appendObj($this->accessibilityProjectMask);
             if( isset($user['register']) &&
+                $available['LoggedIn'] &&
                 $user['register'] == "INACTIVE" )
             {
                 $userTable= $this->getTable("User");                
@@ -641,6 +642,7 @@ class STProjectOverviewList extends STBackgroundImagesDbContainer
          
         $session= STSession::instance();
         $user= $session->getUserData();
+        $bLoggedIn= $session->isLoggedIn();
         $profile= STPRojectUserSiteCreator::getContainerProjectDefinition("UserProfile");
 
         $div= new DivTag("AccessibleProjectList");
@@ -667,7 +669,8 @@ class STProjectOverviewList extends STBackgroundImagesDbContainer
                     $lu= new  st_tableTag("ListTable");
                     foreach( $this->accessableProjects as $project )
                     {
-                        if( (   isset($user['register']) &&
+                        if( !$bLoggedIn || // if nobody is logged-in accasable projects only with ONLINE-group
+                            (   isset($user['register']) && // elsewhere show only Profile if register is INACTIVE
                                 $user['register'] == "ACTIVE" ) ||
                             $project['Name'] == $profile['name']    )
                         {
