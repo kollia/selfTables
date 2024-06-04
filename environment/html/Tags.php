@@ -132,7 +132,8 @@ class Tag extends STCheck
 					$HTML_CLASS_DEBUG_CONTENT,
 					$HTML_CLASS_DEBUG_CONTENT_SHOWN,
 					$global_SESSION_noRegister_SHOWEN,
-					$global_SESSION_noRegister_onLine;
+					$global_SESSION_noRegister_onLine,
+					$global_set_DEBUG_onLine_byFirst;
 
             $displayString= "";
             
@@ -151,6 +152,10 @@ class Tag extends STCheck
     				$displayString.= "<table width='100%' bgcolor='white'><tr><td>";
     				$displayString.= "<center>this side is set for <b>DEBUG-session</b> ";
     				$displayString.= "(STCheck::debug(<font color='blue'>true</font>))";
+					preg_match("/([^\\\\\/]+)$/", $global_set_DEBUG_onLine_byFirst['file'], $ereg);
+					$file= $ereg[1];
+					$line= $global_set_DEBUG_onLine_byFirst['line'];
+					$displayString.= "<br />first on <b>file:</b>".$file." <b>line:</b>".$line." <b>";
     				if($global_SESSION_noRegister_SHOWEN)
     				{
     				    $displayString.= "<br /><b>WARNING:</b> SESSION set to noRegister <b>:WARNING</b><br />";

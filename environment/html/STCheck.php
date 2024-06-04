@@ -711,16 +711,6 @@ class STCheck
     				echo "<br />";
     				return;
     			}
-				if($global_set_DEBUG_onLine_byFirst)
-				{
-					preg_match("/([^\\\\\/]+)$/", $global_set_DEBUG_onLine_byFirst['file'], $ereg);
-					$file= $ereg[1];
-					$line= $global_set_DEBUG_onLine_byFirst['line'];
-					$dbg= $global_set_DEBUG_onLine_byFirst['dbg'];
-					echo "define debugstate <b>[</b>$dbg<b>]</b> on ";
-					echo "<b>file:</b>".$file." <b>line:</b>".$line." <b>:</b><br /><h>";
-					$global_set_DEBUG_onLine_byFirst= false;
-				}
     			$backtrace= array();
     			$pref= "";
     			$space= 0;
