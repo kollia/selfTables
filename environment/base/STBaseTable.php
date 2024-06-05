@@ -455,14 +455,21 @@ class STBaseTable
 	 * name of input-tags are displayed as alias columns with underlines for spaces.
 	 * (It's an ugly hack I know, but fast enough for now)
 	 * 
-	 * @param string $column name of column or alias for table
-	 * @param bool $bUnderline whether should create an underline instead as space
+	 * @param string|array $column name of column or alias for table or field of column (getting from STBaseTable::searchAliasColumn) for maybe faster execution
+	 * @param bool $bUnderline whether should create an underline instead as space, default true
 	 * @return string alias with underline if before exist, otherwise the column
 	 */
-	public function defineDocumentItemBoxName(string $column) : string
+	public function defineDocumentItemBoxName(string|array $column, bool $bUnderline= true) : string
 	{
-		$field= $this->findColumnOrAlias($column);
-		return preg_replace("/ /", "_", $field['alias']);
+		if(is_string($column))
+		{
+			$field= $this->findColumnOrAlias($column);
+			$column= $field['alias'];
+		}else
+			$column= $column['alias'];
+		if($bUnderline)
+			$column= preg_replace("/ /", "_", $column);
+		return $column;
 	}
 	function postToGetTransfer($var /*, ...*/)
 	{

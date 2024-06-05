@@ -7,6 +7,12 @@ class STCallbackClass
 		var	$db;
 		var	$sqlResult;
 		/**
+		 * old values set inside database
+		 * for action STUPDATE
+		 * @var array
+		 */
+		private $oldSqlValues;
+		/**
 		 * current action of building box
 		 * ( STLIST / STINSERT / STUPDATE / STDELETE )
 		 * @var string
@@ -310,16 +316,24 @@ class STCallbackClass
 		 * So do if ask for an column try to change it if necessary
 		 * (It's an ugly hack I know, but fast enough for now)
 		 * 
-		 * @param string $column name of column in database
+		 * @param string|array $column name of column in database or field of column (getting from STBaseTable::searchAliasColumn) for maybe faster execution
 		 * @return string alias with underline if before exist, otherwise the column
 		 */
-		public function setColumnToUnderlinedAliasIfNecessary(string $column) : string
+		public function setColumnToUnderlinedAliasIfNecessary(string|array $column) : string
 		{
-			if(!isset($this->sqlResult[$column]))
+			if(	is_array($column) ||
+				!isset($this->sqlResult[$column]))
 			{
-				$alias= $this->table->defineDocumentItemBoxName($column);
+				if(is_string($column))
+					$field= $this->table->findColumnOrAlias($column);
+				else
+					$field= $column;
+				$alias= $this->table->defineDocumentItemBoxName($field);
 				if(isset($this->sqlResult[$alias]))
 					return $alias;
+				if(isset($this->sqlResult[$field['alias']]))
+					return $field['alias'];
+				return $field['column'];
 			}
 			return $column;
 		}
@@ -393,6 +407,75 @@ class STCallbackClass
 		public function getAllValues() : array
 		{
 			return $this->sqlResult;
+		}
+		/**
+		 * set all old values from database
+		 */
+		public function setOldValues(array $values)
+		{
+			$this->oldSqlValues= $values;
+		}
+		/**
+		 * get old value from database
+		 */
+		public function getOldValue(string $column)
+		{			
+			if(!isset($this->oldSqlValues))
+			{
+				if(STCheck::isDebug())
+				{
+					STCheck::warning($this->getAction() != STUPDATE, "STCallbackClass::getOldValue()", "old values from database only exist by action STUPDATE", /*warning*/1);
+					STCheck::warning($this->display || $this->before, "STCallbackClass::getOldValue()", "old values only defined after make changes inside database", /*warning*/1);
+				}
+				return null;
+			}
+			$field= $this->table->findAliasOrColumn($column);
+			if(!isset($field))
+			{
+				STCheck::warning(true, "STCallbackClass::getOldValue()", "column '$column' does not exist", /*warning*/);
+				return false;
+			}
+			if(isset($this->oldSqlValues[$field['alias']]))
+				return $this->oldSqlValues[$field['alias']];
+			if(isset($this->oldSqlValues[$field['column']]))
+				return $this->oldSqlValues[$field['column']];
+			return null;
+		}
+		/**
+		 * check whether old value from database
+		 * is different from incoming gui interface
+		 */
+		public function changed(string $column) : bool
+		{		
+			if(!isset($this->oldSqlValues))
+			{
+				if(STCheck::isDebug())
+				{
+					STCheck::warning($this->getAction() != STUPDATE, "STCallbackClass::getOldValue()", "old values from database only exist by action STUPDATE", /*warning*/1);
+					STCheck::warning($this->display || $this->before, "STCallbackClass::getOldValue()", "old values only defined after make changes inside database", /*warning*/1);
+				}
+				return false;
+			}
+			$field= $this->table->findAliasOrColumn($column);
+			$alias= $this->setColumnToUnderlinedAliasIfNecessary($field);
+			$bSetValue= false;
+			$bSetOldValue= false;
+			if(isset($this->sqlResult[$alias]))
+				$bSetValue= true;
+			if(isset($this->oldSqlValues[$field['alias']]))
+			{
+				$bSetOldValue= true;
+				$column= $field['alias'];
+
+			}elseif(isset($this->oldSqlValues[$column]))
+				$bSetOldValue= true;
+			if($bSetValue != $bSetOldValue)
+				return true;
+			if(!$bSetValue) // both values not set
+				return false;
+			if($this->sqlResult[$alias] != $this->oldSqlValues[$column])
+				return true;
+			return false;
 		}
 		public function getValue($column= null, $rownum= null)
 		{

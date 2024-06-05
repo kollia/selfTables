@@ -99,8 +99,9 @@ function emailCallback(STCallbackClass &$callbackObject, $columnName, $rownum)
 	if($callbackObject->display)
 		return;
 
-	//$callbackObject->echoResult();
+	$callbackObject->echoResult();
 	$action= $callbackObject->getAction();
+	$active= $callbackObject->getValue("active");
 	$send= $callbackObject->getValue("sending");
 	if($callbackObject->before)
 	{// BEFORE any changing of database -------------------------------------------------------------------------------
@@ -135,8 +136,12 @@ function emailCallback(STCallbackClass &$callbackObject, $columnName, $rownum)
 		return;
 	}
 	// AFTER changing of database -------------------------------------------------------------------------------------
-	if(	isset($send) &&
-		$send == "yes"	)
+	STCheck::debug();
+	$changedActive= $callbackObject->changed("active");
+	if(	(	isset($send) &&
+			$send == "yes"	) ||
+		(	$active == "YES" &&
+			$changedActive	)	)
 	{
 		$oUserTable= $callbackObject->getTable();
 
@@ -157,7 +162,11 @@ function emailCallback(STCallbackClass &$callbackObject, $columnName, $rownum)
 		$newdbvalue['regcode']= $callbackObject->getValue("regcode");
 
 		// create EMail text
-		$mail= get_db_mail_text($callbackObject->table, "MAIL_REGISTRATION", $newdbvalue);
+		if($send == "yes")
+			$email_text= "MAIL_REGISTRATION";
+		else
+			$email_text= "ACKNOWLEDGE_ACTIVE";
+		$mail= get_db_mail_text($callbackObject->table, $email_text, $newdbvalue);
 
 		$toEmail= $callbackObject->getValue("email");		
 		$oMail= new STEmail(/*exception*/false);
@@ -209,7 +218,10 @@ function setRegisterColumnActive(STCallbackClass &$callbackObject, $columnName, 
 	}
 	//$callbackObject->echoResult();
 	if($callbackObject->getValue("active User") == "YES")
+	{
 		$callbackObject->setValue("ACTIVE", "register");
+		$callbackObject->setValue("", "regcode");
+	}
 }
 function disablePasswordCallback(STCallbackClass &$callbackObject, $columnName, $rownum)
 {
