@@ -269,18 +269,24 @@ abstract class STBaseBox extends TableTag
 								$column==STALLDEF		)		)
     					{
           					$errorString= $functionArray["function"]($oCallbackClass, $columnName, $rownum, $action);
-        					if(	is_string($errorString)
-        						and
-        						$errorString!==""	)
+        					if(	is_string($errorString) &&
+        						$errorString!==""			)
         					{
 								$this->msg->setMessageId("CALLBACKERROR@", $errorString);
         						return $errorString;
         					}
-							$bOk= true;
-							//break;
+							if(is_bool($errorString))
+							{
+								$bOk= $errorString;
+								if(!$bOk)
+									break;
+							}else
+								$bOk= true;
     					}
     				}
     				$this->aDisabled[$columnName][$rownum]= $oCallbackClass->argument("disabled", $columnName, 0);
+					if(!$bOk)
+						break;
 				}
 			}
 			return $bOk;

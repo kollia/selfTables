@@ -75,6 +75,8 @@ class STUserProfileContainer extends STBackgroundImagesDbContainer
 			{
 				$user->setDisplayName("please set new password");
 				$user->setFirstAction(STUPDATE);
+				$user->updateCallback("usermanagement_main_passwordCheckCallback", "Pwd");
+				$user->insertCallback("usermanagement_main_passwordCheckCallback", "Pwd");
 			}
 		}else
 			$user->setDisplayName("User Profile");

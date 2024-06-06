@@ -1943,6 +1943,7 @@ class STItemBox extends STBaseBox
 			$sErrorString= $this->makeCallback($this->action, $oCallbackClass, $this->action, 0);
 			if(is_bool($sErrorString))
 			{
+				$bError= !$sErrorString;
 				if($this->asDBTable)
 				{
 					$this->asDBTable->where($oCallbackClass->where);
@@ -1950,10 +1951,10 @@ class STItemBox extends STBaseBox
 					$where= $this->asDBTable->getWhere();
 				}else
 					$where= $this->where;
-			if($this->asDBTable)
-				if($this->action==STUPDATE)
-					Tag::alert(!($where && $where->isModified()), "STItemBox::box()",
-										"no where-clausel defined for update in database");
+				if($this->asDBTable)
+					if($this->action==STUPDATE)
+						Tag::alert(!($where && $where->isModified()), "STItemBox::box()",
+											"no where-clausel defined for update in database");
 			}else
 			    $bError= true;
 
@@ -2189,8 +2190,15 @@ class STItemBox extends STBaseBox
 			        $alias= preg_replace("/ /", "_", $columns[$column]);
 			        if(isset($post_vars[$alias]))
 			        {
-						if($post_vars[$alias] !== $content)
+						if(	(	$alias != $this->password &&
+								$post_vars[$alias] !== $content	) ||
+							(	$alias == $this->password &&	 // if column is password, post entry cannot compare with result
+								isset($post_vars[$alias]) &&			 // so updae password always
+								(	trim($post_vars[$alias]) != "password('')" || // elsewhere password is optional, do not update by null string
+									!$this->asDBTable->password['optional']			)	)	)
+						{
 			            	$result[$column]= $post_vars[$alias];
+						}
 			        }elseif(isset($this->sqlResult[$column]))
 					{// if not set entry maybe was removed
 						$result[$column]= null;//$post_vars[$alias];
@@ -2463,11 +2471,13 @@ class STItemBox extends STBaseBox
 					{
 					    if($bFieldDefineSelection)
 					        STCheck::write("and also inside database select");
-						if(	(	$post[$alias]!=$result[$f['alias']] &&
-								$f['column']!=$this->password					    )
+						if(	(	$f['column']!=$this->password &&
+								$post[$alias]!=$result[$f['alias']]	)
 							or
-							(	$f['alias']==$this->password &&
-								isset($post[$alias])							)	)
+							(	$f['alias']==$this->password &&	 // if column is password, post entry cannot compare with result
+								isset($post[$alias]) &&			 // so updae password always
+								(	trim($post[$alias]) != "" || // elsewhere password is optional, do not update by null string
+									!$this->asDBTable->password['optional']	)	)	)
 						{
 							$newFields[]= $field;
 						}
@@ -2721,7 +2731,10 @@ class STItemBox extends STBaseBox
 				}
 			}
 			if(	$name==$this->password &&
-				!$this->asDBTable->hasDefinedFlag($this->password, $this->action, "null")	) // <- not optional
+				(	$post[$name] != "" ||
+					( isset($post["re_".$name]) && $post["re_".$name] != "" ) ||
+					( isset($post["old_".$name]) && $post["old_".$name] != "" ) ||
+					!$this->asDBTable->hasDefinedFlag($this->password, $this->action, "null")	)	) // <- not optional
 			{// if the field is an password
 				// should be made an check whether new password and repitition be the same
 				// and also whether the old password was inserted

@@ -99,7 +99,7 @@ function emailCallback(STCallbackClass &$callbackObject, $columnName, $rownum)
 	if($callbackObject->display)
 		return;
 
-	$callbackObject->echoResult();
+	//$callbackObject->echoResult();
 	$action= $callbackObject->getAction();
 	$active= $callbackObject->getValue("active");
 	$send= $callbackObject->getValue("sending");
@@ -130,13 +130,12 @@ function emailCallback(STCallbackClass &$callbackObject, $columnName, $rownum)
 			// create user-code
 			$code= random_int(1000000000, 9999999999);
 			$callbackObject->setValue("SENDMAIL", "register");
-			$callbackObject->setValue($code, "regcode");
+			$callbackObject->setValue($code, "regcode");			
 			$callbackObject->setValue("now()", "sendingtime");
 		}
 		return;
 	}
 	// AFTER changing of database -------------------------------------------------------------------------------------
-	STCheck::debug();
 	$changedActive= $callbackObject->changed("active");
 	if(	(	isset($send) &&
 			$send == "yes"	) ||
@@ -176,8 +175,8 @@ function emailCallback(STCallbackClass &$callbackObject, $columnName, $rownum)
 			$error= $oMail->getErrorString();
 			return $error;
 		}
-		$action= $callbackObject->getAction();
-		if($action == STUPDATE)
+		if(	$action == STUPDATE &&
+			$send == "yes"			)
 		{
 			// clear password if exist
 			$table= $callbackObject->getTable("User");
@@ -195,10 +194,11 @@ function emailCallback(STCallbackClass &$callbackObject, $columnName, $rownum)
  */
 function disableUserFieldsCallback(STCallbackClass &$callbackObject, $columnName, $rownum)
 {
+	//$callbackObject->echoResult();
 	if(!$callbackObject->display)
 		return;
 
-	$action= $callbackObject->getAction();
+   	$action= $callbackObject->getAction();
 	if($action != STUPDATE)
 		return;
 	//$column= $callbackObject->setColumnToUnderlinedAliasIfNecessary("active", /*underline*/false);
@@ -235,6 +235,7 @@ function disablePasswordCallback(STCallbackClass &$callbackObject, $columnName, 
     $domainValue= $callbackObject->getValue("domain");
     
     if(	(	is_string($domainValue) &&
+			!is_numeric($domainValue) &&
 			$domainValue != $domain['Name']	) ||
 		(	is_numeric($domainValue) &&
 			$domainValue != $domain['ID']	)	)
@@ -330,7 +331,7 @@ class STUserManagement extends STObjectContainer
         $this->registrationProperties['dummyUser']= $bAllow;
     }
 	protected function create()
-	{//STCheck::debug("query");
+	{//STCheck::debug("db.main.statement");
 	    $session= &STUserSession::instance();
 	    $this->setDisplayName("Project Management");
 	    $this->accessBy($session->usermanagement_Project_AccessCluster, STLIST);
@@ -575,7 +576,7 @@ EOT;
 	 * 
 	 * @param string $functionName name of new function
 	 */
-	public function setNewPasswordCallback(string $functionName)
+	public static function setNewPasswordCallback(string $functionName)
 	{
 		global $__global_defined_password_callback_function;
 
