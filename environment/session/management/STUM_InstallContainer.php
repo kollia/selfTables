@@ -16,12 +16,14 @@ class STUM_InstallContainer extends STObjectContainer
 		$user->select("surname", "Surname");
 		$user->select("email", "Email");
 		$user->select("Pwd");
+		$user->password("Pwd", true);
+		$user->passwordNames("Password", "Repeat password");
 		$user->preSelect("domain", $domain['ID']);
 		$user->preSelect("user", "admin");
 		$user->preSelect("surname", "Administrator");
+		$user->preSelect("register", "ACTIVE");
+		$user->preSelect("active", "YES");
 		$user->preSelect("DateCreation", "sysdate()");
-		$user->password("Pwd", true);
-		$user->passwordNames("Password", "Repeat password");
 	}
 	
 	/**
