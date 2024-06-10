@@ -72,7 +72,9 @@ class STEMail
     {
         $content= @file_get_contents($json);
         if($content == false)
+        {// no json file available, mail over standard php mailer
             return false;
+        }
         $config_data= json_decode($content, true);
 
         $mailer= new PHPMailer(/*exceptions*/true);// intern exception handling should be always true
@@ -139,7 +141,7 @@ class STEMail
             return false;
         }
         if(isset($this->phpmailer))
-        {
+        { // mailing over PHPMailer
             try
             {
                 if(isset($Cc))
@@ -185,7 +187,7 @@ class STEMail
                 return false;
             }
         }else // PHPMailer not configured
-        {
+        {// mail over standard php mailer 
             $ccstr= "";
             $bccstr= "";
             if(is_array($to))
