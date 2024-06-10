@@ -1943,7 +1943,6 @@ class STItemBox extends STBaseBox
 			$sErrorString= $this->makeCallback($this->action, $oCallbackClass, $this->action, 0);
 			if(is_bool($sErrorString))
 			{
-				$bError= !$sErrorString;
 				if($this->asDBTable)
 				{
 					$this->asDBTable->where($oCallbackClass->where);

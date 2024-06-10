@@ -166,6 +166,19 @@ abstract class STBaseBox extends TableTag
 			$this->aCallbacks[$columnName][]= array(	"action"=>	$action,
 														"function"=>$callbackFunction	);
 		}
+		/**
+		 * Make callback function which have developer set for container.<br />
+		 * This will be done for display, before insert/update on database or behind.<br />
+		 * A callback can set for every table (STBaseTable) with the methods listCallback, insertCallback, updateCallback
+		 * or joinCallback. Where the callbackfunction need the parameters <code>&lt;callbackfunction&gt;(STCallbackClass &$callbackObject, $columnName, $rownum)</code>
+		 * and should return an error string or false when an error occur, otherwise true or an null string
+		 * 
+		 * @param enum $action current running action (STLIST, STINSERT or STUPDATE)
+		 * @param STCallbackClass $oCallbackClass callback object with some content of selection where callback function can set also some behavior
+		 * @param string $columnName name of column or alias column for which the callback should currently running
+		 * @param int $rownum row number of selection when action is STLIST, otherwise 0
+		 * @return bool|string if no callback be done always false, true if no error occur or an error string by fault
+		 */
 		protected function makeCallback($action, &$oCallbackClass, $columnName, $rownum)
 		{//STCheck::is_warning(1,"","makeCallback");
 		    if(STCheck::isDebug())
@@ -232,7 +245,6 @@ abstract class STBaseBox extends TableTag
 			 // wether columnName the same as action
 			 	Tag::echoDebug("callback", "loop callbacks for STLIST, STINSERT, ... -> wether columnName has the same action");
 				$incomming= $columnName;
-				$bOk= false;
 				//echo "action:$action<br />";
 				//echo "columnName:$columnName<br />";
 				foreach($this->aCallbacks as $column=>$content)
@@ -268,28 +280,23 @@ abstract class STBaseBox extends TableTag
 								or
 								$column==STALLDEF		)		)
     					{
-          					$errorString= $functionArray["function"]($oCallbackClass, $columnName, $rownum, $action);
-        					if(	is_string($errorString) &&
-        						$errorString!==""			)
-        					{
-								$this->msg->setMessageId("CALLBACKERROR@", $errorString);
-        						return $errorString;
-        					}
-							if(is_bool($errorString))
+							$errorString= $functionArray["function"]($oCallbackClass, $columnName, $rownum, $action);
+							if(	is_string($errorString) &&
+								$errorString!==""			)
 							{
-								$bOk= $errorString;
-								if(!$bOk)
-									break;
-							}else
-								$bOk= true;
+								$this->msg->setMessageId("CALLBACKERROR@", $errorString);
+								return $errorString;
+							}
+							if( is_bool($errorString) &&
+								!$errorString			)
+							{
+								return "unknown callback ERROR occurred";
+							}
     					}
     				}
     				$this->aDisabled[$columnName][$rownum]= $oCallbackClass->argument("disabled", $columnName, 0);
-					if(!$bOk)
-						break;
 				}
 			}
-			return $bOk;
 		}
 		public function updateLine(string $column, string $alias= null)
 		{
