@@ -245,6 +245,7 @@ abstract class STBaseBox extends TableTag
 			 // wether columnName the same as action
 			 	Tag::echoDebug("callback", "loop callbacks for STLIST, STINSERT, ... -> wether columnName has the same action");
 				$incomming= $columnName;
+				$bOk= false;
 				//echo "action:$action<br />";
 				//echo "columnName:$columnName<br />";
 				foreach($this->aCallbacks as $column=>$content)
@@ -292,11 +293,13 @@ abstract class STBaseBox extends TableTag
 							{
 								return "unknown callback ERROR occurred";
 							}
+							$bOk= true;
     					}
     				}
     				$this->aDisabled[$columnName][$rownum]= $oCallbackClass->argument("disabled", $columnName, 0);
 				}
 			}
+			return $bOk;
 		}
 		public function updateLine(string $column, string $alias= null)
 		{
