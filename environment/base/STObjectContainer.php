@@ -88,7 +88,7 @@ abstract class STObjectContainer extends STBaseContainer
 		    $this->setMessageContent("DELETE", "löschen");
 		    $this->setMessageContent("newENTRY", " neuer Eintrag");
 		    $this->setMessageContent("DELETE_QUESTION", "wollen Sie diesen Eintrag wirklich löschen?");		    
-		    $this->setMessageContent("NOPERMISSION", "Sie haben keine Berechtigung um die Aktion \''+action+'\' durchzuführen!");
+		    $this->setMessageContent("NOPERMISSION", "Sie haben keine Berechtigung um die Aktion '+action+' durchzuführen!");
 			
 		}else // otherwise language have to be english "en"
 		{
@@ -1259,7 +1259,7 @@ abstract class STObjectContainer extends STBaseContainer
 				$this->addObj($chooseTable);
 			}
     		$this->addObj($center);
-				$this->addObj($box);
+			$this->addObj($box);
 			//$this->addObj($body);
 			return $result;
 		}
