@@ -79,7 +79,11 @@ class STUserProfileContainer extends STBackgroundImagesDbContainer
 				$user->insertCallback("usermanagement_main_passwordCheckCallback", "Pwd");
 			}
 		}else
+		{
 			$user->setDisplayName("User Profile");
+			$user->updateCallback("usermanagement_main_passwordCheckCallback", "Pwd");
+			$user->insertCallback("usermanagement_main_passwordCheckCallback", "Pwd");
+		}
 		$user->accessBy("LOGGED_IN");
 	}
 	function useAdminActivation()
