@@ -293,6 +293,8 @@ abstract class STBackgroundImagesDbContainer extends STObjectContainer
 		$registration= $session->getSessionVar("ST_REGISTRATION");
         if($registration)
             $this->createOverviewImages($externSiteCreator);
+        // do not need overview images more
+        $this->bAddContent= false;
         return STObjectContainer::execute($externSiteCreator, $onError);
     }
 }
