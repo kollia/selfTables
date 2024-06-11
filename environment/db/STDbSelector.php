@@ -78,7 +78,7 @@ class STDbSelector extends STDbTable implements STContainerTempl
 		function add($table)
 		{
 			Tag::paramCheck($table, 1, "string", "STDbTable");
-			Tag::alert($this->bAddedFkTables, "STDbSelector::add()", "cannot add an new table, if bevore made ::select to an other");
+			Tag::alert($this->bAddedFkTables, "STDbSelector::add()", "cannot add an new table, if before made ::select to an other");
 
 			if(is_string($table))
 				$table= $this->getTable($table);

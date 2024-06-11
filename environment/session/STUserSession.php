@@ -960,6 +960,11 @@ class STUserSession extends STDbSession
 		else
 		  $projectCluster= &$oProject;
 		$projectCluster->distinct();
+		if( isset($this->userID) &&
+		    $this->userID != -1        )
+		{// toDo: search why have to set joins before selecting fields from other tables -> what will be wrong when bAddedFkTables set to true
+			$projectCluster->leftJoin("UserGroup", "GroupID", "Group");
+		}
 		$projectCluster->select("Cluster", "ID", "ID");
 		$projectCluster->select("Project", "Name", "Name");
 		$projectCluster->select("Cluster", "ProjectID", "ProjectID");
