@@ -308,6 +308,12 @@ class STUserManagement extends STObjectContainer
                                             'adminActivation' =>        false,
                                             'dummyUser' =>              true    );
 
+	/**
+	 * this variable is set to insert javascript function 'disableFieldsOnClick()'
+	 * into body only by one time
+	 */
+	private $bFirstAddPasswordMailBehavior_call= true;
+
 	function __construct(string $name, STObjectContainer &$container)
 	{
 		STObjectContainer::__construct($name, $container);
@@ -364,10 +370,6 @@ class STUserManagement extends STObjectContainer
 	    $session= &STUserSession::instance();
 	    $domain= $session->getCustomDomain();
 	    
-	    $username= "User";
-	    $newpass= "new Password";
-	    $reppass= "Password repetition";
-
 	    $mail= &$this->getTable("Mail");
 		if($table == $mail->getName())
 		{
@@ -409,21 +411,116 @@ class STUserManagement extends STObjectContainer
 			$user->select("surname", "Surname");
 			$user->select("title_subsequent", "Title subsequent");
 			$user->pullDownMenuByEnum("title_subsequent");
-			$user->select("email", "Email");
+			$user->select("email", "Email");	
 			if( $action == STINSERT ||
-				$action == STUPDATE	)
+				$action == STUPDATE		)
 			{
-				if($action == STINSERT)
-				{
-					if($this->registrationProperties['dummyUser'])
-						$user->select("active", "Dummy user");
-					$user->preSelect("active", "NO");
-				}else
-					$user->select("active", "active User");	
 				$user->addColumn("sending", "SET('no', 'yes')", /*NULL*/false);
-				$user->select("sending", "send EMail");
-				$user->getColumn("register");	
+				$this->addPasswordMailBehavior($action, $user);
+				
+				$username= "User";
+				$newpass= "new Password";
+				$reppass= "Password repetition";
 
+				$user->updateCallback("disablePasswordCallback", $newpass);
+				$user->updateCallback("disablePasswordCallback", $reppass);
+				$user->updateCallback("disablePasswordCallback", $username);
+				$user->updateCallback("usermanagement_main_passwordCheckCallback", $newpass);
+				$user->insertCallback("usermanagement_main_passwordCheckCallback", $newpass);
+				$user->updateCallback("emailCallback", "sending");
+				$user->insertCallback("emailCallback", "sending");
+				$user->updateCallback("disableUserFieldsCallback", "active");
+				$user->updateCallback("setRegisterColumnActive", "register");
+			}			
+				
+			
+			if($action==STLIST)
+			{
+				//$user->select("NrLogin", "logged in");
+				//$user->select("LastLogin", "last login");
+				$user->orderBy("domain");
+				$user->orderBy("user");
+				$user->setMaxRowSelect(50);
+			}else
+				$user->passwordNames($newpass, $reppass);
+			//$user->getColumn("register");
+			$user->preSelect("DateCreation", "sysdate()");
+		}
+		
+		$groups= &$this->getTable("Group");
+		if($table == $groups->getName())
+		{
+			$groups->select("domain", "Domain");
+			$groups->preSelect("domain", $domain['Name']);
+			$groups->disabled("domain");
+			$groups->preSelect("DateCreation", "sysdate()");
+			$groups->select("Name", "Group");
+			if($action==STLIST)
+			{
+				$groups->select("ID", "access descriptions");
+				$groups->listCallback("descriptionCallback", "access descriptions");
+				//$groups->listCallback("actionCallback", "update");
+				$groups->listCallback("actionCallback", "delete");
+				$groups->orderBy("domain");
+				$groups->orderBy("Name");
+				$groups->setMaxRowSelect(50);
+			}
+		}
+		
+		$project= &$this->getTable("Project");
+		if($table == $project->getName())
+		{
+			$project->select("Name", "Project");
+			$project->select("Description", "Description");
+			if($action == STLIST)
+			{
+				$project->select("ID", "ID");
+				$project->align("ID", "center");
+			}
+			$project->select("display", "Display");
+			$project->preSelect("display", "ENABLED");
+			if($action != STLIST)
+			{
+				$project->select("Target", "Target");
+				$project->preSelect("Target", "SELF");
+				$project->pullDownMenuByEnum("Target");
+			}
+			$project->select("Path", "URL");
+			$project->preSelect("DateCreation", "sysdate()");
+			$project->orderBy("Name");
+			if($action==STLIST)
+			{
+				$userClusterGroup= $this->getContainer("UserClusterGroupManagement");
+				$project->namedLink("Project", $userClusterGroup);
+			}
+		}
+	}
+	protected function addPasswordMailBehavior(string $action, STDbTable $user)
+	{
+		if( $action == STINSERT ||
+			$action == STUPDATE		)
+		{
+			if($action == STINSERT)
+			{
+				if($this->registrationProperties['dummyUser'])
+					$user->select("active", "Dummy user");
+				$user->preSelect("active", "NO");
+			}else
+				$user->select("active", "active User");	
+			
+			$user->select("sending", "send EMail");
+			$user->getColumn("register");	
+			
+			$user->select("Pwd", "Pwd");
+			$user->password("Pwd", true);
+			$user->optional("Pwd");
+
+			if($this->bFirstAddPasswordMailBehavior_call)
+			{
+				$this->bFirstAddPasswordMailBehavior_call= false;
+				$user->onChange("active", "disableFieldsOnClick('$action', 'active')");
+				$user->onChange("sending", "disableFieldsOnClick('$action', 'sending')");
+				
 				$func= new jsFunction("disableFieldsOnClick", "action", "change");
 				$activeColumn= $user->defineDocumentItemBoxName("active");
 				$sendingColumn= $user->defineDocumentItemBoxName("sending");
@@ -483,84 +580,6 @@ EOT;
 					$script->add($globalset);
 					$script->add($func);
 				$this->addOnBodyEnd($script);
-				
-				//if($action == STINSERT)
-				$user->onChange("active", "disableFieldsOnClick('$action', 'active')");
-				$user->onChange("sending", "disableFieldsOnClick('$action', 'sending')");
-				
-				$user->select("Pwd", "Pwd");
-				$user->password("Pwd", true);
-				$user->optional("Pwd");
-				//$oldpass= "old password";
-				//$user->passwordNames($oldpass, $newpass, $reppass);	
-				$user->passwordNames($newpass, $reppass);		
-				$user->updateCallback("disablePasswordCallback", $newpass);
-				$user->updateCallback("disablePasswordCallback", $reppass);
-				$user->updateCallback("disablePasswordCallback", $username);
-				$user->updateCallback("usermanagement_main_passwordCheckCallback", $newpass);
-				$user->insertCallback("usermanagement_main_passwordCheckCallback", $newpass);
-				$user->updateCallback("emailCallback", "sending");
-				$user->insertCallback("emailCallback", "sending");
-				$user->updateCallback("disableUserFieldsCallback", "active");
-				$user->updateCallback("setRegisterColumnActive", "register");
-				
-			}elseif($action==STLIST)
-			{
-				//$user->select("NrLogin", "logged in");
-				//$user->select("LastLogin", "last login");
-				$user->orderBy("domain");
-				$user->orderBy("user");
-				$user->setMaxRowSelect(50);
-			}
-			//$user->getColumn("register");
-			$user->preSelect("DateCreation", "sysdate()");
-		}
-		
-		$groups= &$this->getTable("Group");
-		if($table == $groups->getName())
-		{
-			$groups->select("domain", "Domain");
-			$groups->preSelect("domain", $domain['Name']);
-			$groups->disabled("domain");
-			$groups->preSelect("DateCreation", "sysdate()");
-			$groups->select("Name", "Group");
-			if($action==STLIST)
-			{
-				$groups->select("ID", "access descriptions");
-				$groups->listCallback("descriptionCallback", "access descriptions");
-				//$groups->listCallback("actionCallback", "update");
-				$groups->listCallback("actionCallback", "delete");
-				$groups->orderBy("domain");
-				$groups->orderBy("Name");
-				$groups->setMaxRowSelect(50);
-			}
-		}
-		
-		$project= &$this->getTable("Project");
-		if($table == $project->getName())
-		{
-			$project->select("Name", "Project");
-			$project->select("Description", "Description");
-			if($action == STLIST)
-			{
-				$project->select("ID", "ID");
-				$project->align("ID", "center");
-			}
-			$project->select("display", "Display");
-			$project->preSelect("display", "ENABLED");
-			if($action != STLIST)
-			{
-				$project->select("Target", "Target");
-				$project->preSelect("Target", "SELF");
-				$project->pullDownMenuByEnum("Target");
-			}
-			$project->select("Path", "URL");
-			$project->preSelect("DateCreation", "sysdate()");
-			$project->orderBy("Name");
-			if($action==STLIST)
-			{
-				$userClusterGroup= $this->getContainer("UserClusterGroupManagement");
-				$project->namedLink("Project", $userClusterGroup);
 			}
 		}
 	}
