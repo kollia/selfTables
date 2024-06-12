@@ -1,7 +1,7 @@
 <?php
 
 require_once($_stbasebox);
-
+require_once($_stpostarray);
 
 /**
 *	 src: STItemBox.php
@@ -2456,7 +2456,8 @@ class STItemBox extends STBaseBox
 							if( $action == 0 || // 0 means action is STINSERT and STUPDATE but no STLIST
 								$action == $this->action     )
 							{
-								$post[$alias]= $result[$alias];
+								if(isset($result[$alias]))
+									$post[$alias]= $result[$alias];
 								break;
 							}
 						}

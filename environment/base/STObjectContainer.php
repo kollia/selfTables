@@ -66,7 +66,7 @@ abstract class STObjectContainer extends STBaseContainer
     		STCheck::param($bodyClass, 2, "string");
 	    }
 
-		$this->db= &$container->getDatabase();
+		$this->db= $container->getDatabase();
 		STBaseContainer::__construct($name, $container, $bodyClass);
 	}
 	/**
