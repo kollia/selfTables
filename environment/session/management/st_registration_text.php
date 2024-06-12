@@ -1,5 +1,8 @@
 <?php
 
+$_email= load_pluginModule("email");
+require_once($_email['_stemail']);
+
 function usermanagement_remove_empty_columns(string &$string, $fromTable)
 {
 	$columns= $fromTable->columns;
@@ -89,6 +92,8 @@ function usermanagement_main_passwordCheckCallback(STCallbackClass &$callbackObj
 	{
 		$post= new STPostArray();
 		$pwd= $post->getValue("Pwd");
+		if(!isset($__global_defined_password_callback_function))
+			return "";
 		$ret= $__global_defined_password_callback_function(/*display*/true, $action, $pwd);
 		if(!is_bool($ret))
 			$callbackObject->addHtmlContent($ret);
@@ -115,6 +120,8 @@ function usermanagement_main_passwordCheckCallback(STCallbackClass &$callbackObj
 		// can be "" by update when password not changed
 		return;
 	}
+	if(!isset($__global_defined_password_callback_function))
+		return "";
 	return $__global_defined_password_callback_function(/*display*/false, $action, $pwd);
 }
 function usermanagement_passwordCheckCallback(bool $display, string $onCase, string $password) : bool|string|Tag
