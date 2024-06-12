@@ -874,7 +874,7 @@ class STSession
 
 		// Fehler !!
 			// return 0: No Error User with Password found
-            // Error  1: Wrong Username
+            // Error  1: user found for this other connection
             // Error  2: Wrong Password
             // Error  3: Multiple Usernames found!
             // Error  4: Unknown error in LDAP authentication!
