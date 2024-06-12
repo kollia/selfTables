@@ -268,7 +268,8 @@ class STDbTableDescriptions
 		$params= func_num_args();
 		STCheck::lastParam(5, $params);
 
-		$type= strtoupper($type);
+		if(!preg_match("/^(SET|ENUM)\(/i", $type))
+			$type= strtoupper($type);
 	    $this->asTableColumns[$tableName][$column]= array(	"column"=>	$column,
 															"type"=>	  $type,
 															"null"=>		$null	);
