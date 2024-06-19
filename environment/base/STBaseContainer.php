@@ -1861,6 +1861,7 @@ abstract class STBaseContainer extends BodyTag implements STContainerTempl
 	public function hasAccess($action= null, $loginOnFail= false) : bool
 	{
 	    if( !StCheck::isDebug("useExtern") &&
+		//	count($this->aAccessClusters) &&
 	        STSession::sessionGenerated()      )
 	    {
 	        $instance= &STUserSession::instance();
@@ -1869,11 +1870,25 @@ abstract class STBaseContainer extends BodyTag implements STContainerTempl
             $clusters= $this->getAccessCluster($action);
             foreach($clusters as $aCluster)
             {
-                $access=  $instance->hasAccess($aCluster['cluster'], $aCluster['info'], $aCluster['customID'], $loginOnFail);
-                if(!$access)
-                    return false;
+                $access=  $instance->hasAccess($aCluster['cluster'], $aCluster['info'], $aCluster['customID'], /*loginOnFail*/false);
+                if($access)
+                    return true;
             }
-            return true;
+			if($loginOnFail)
+			{
+				if(isset($this->aAccessClusters[$action]))
+					$firstCluster= reset($this->aAccessClusters[$action]);
+				if(	!isset($firstCluster) &&
+					isset($this->aAccessClusters[STALLDEF]))
+				{
+					$firstCluster= reset($this->aAccessClusters[STALLDEF]);
+				}
+				if(isset($firstCluster))
+					$instance->hasAccess($aCluster['cluster'], $aCluster['info'], $aCluster['customID'], /*loginOnFail*/true);
+				else
+					return true;
+			}
+            return false;
 	    }
 	    return true;
 	}

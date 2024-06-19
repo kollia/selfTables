@@ -17,7 +17,7 @@ abstract class STObjectContainer extends STBaseContainer
 	var $sDefaultCssLink;
 	var	$oGetTables= array(); // all tables which are geted but not needed
 	var $tables= array(); // alle STDbTable Objekte welche f�r die Auflistung gebraucht werden
-	var	$sFirstTableName; //erste Tabelle
+	var	$asFirstTableNames= array(); //erste Tabelle
 	var $sFirstAction= null; // erste Aktion nicht gesetzt hole von Tabelle
 	var $actAction= ""; // current action from this container
 	var $actTableName= ""; // current main table in this container
@@ -382,24 +382,66 @@ abstract class STObjectContainer extends STBaseContainer
 			$this->tables[$tableName]->columnFlags($columnName, $flags);
 		}
 	}
-	function setFirstTable($tableName, $action= null)
+	/**
+	 * set first table which should displayed,
+	 * otherwise it display the first available table for this container
+	 * 
+	 * @param string|array $tableNames define the first table, can be an string or an array of strings which gives the posibility order when the user have no access to the first
+	 * @param string|array $actions first action of table, if $tableNames is an array $actions do must have the same count
+	 */
+	function setFirstTable($tableNames, $actions= null)
 	{
-		Tag::paramCheck($tableName, 1, "string");
-		Tag::paramCheck($action, 2, "check", $action===STLIST||$action===STINSERT||$action===STUPDATE||$action===null,
-										"STLIST", "STINSERT", "STUPDATE");
+		if(STCheck::isDebug())
+		{
+			STCheck::param($tableNames, 0, "string", "array");
+			if(is_array($actions))
+			{
+				STCheck::alert(is_string($tableNames) || count($tableNames)!=count($actions),
+						"STObjectContainer::setFirstTable", "both parameters should have the same count of action entries");
+				foreach($actions as $key=>$action)
+					STCheck::alert($action===STLIST||$action===STINSERT||$action===STUPDATE, 
+						"STObjectContainer::setFirstTable", "$key. action have to be STLIST, STINSERT or STUPDATE");
+			}else
+				STCheck::param($actions, 1, "check", $actions===STLIST||$actions===STINSERT||$actions===STUPDATE||$actions===null,
+											"STLIST", "STINSERT", "STUPDATE");
+		}
 
-		$tableName= $this->getTableName($tableName);
-		$this->sFirstTableName= $tableName;
-		if($action===null)
+		$this->asFirstTableNames= array();
+		if(is_array($tableNames))
+		{
+			foreach($tableNames as $name)
+				$this->asFirstTableNames[]= $this->getTableName($name);
+		}else
+			$this->asFirstTableNames[]= $this->getTableName($tableNames);
+		if($actions===null)
 		{// take the table from needTable,
 		 // because if be set this function before
 		 // get an other table, the db container
 		 // fetch all from the database if fetched with getTable
-			$table= &$this->needTable($tableName);
-			$this->sFirstAction= &$table->sFirstAction;
+			if(is_string($tableNames))
+			{
+				$table= &$this->needTable($tableNames);
+				$actions= $table->sFirstAction;
+			}else
+				$actions= STLIST;
+		}
+		if(is_array($actions))
+		{
+			$this->action= array();
+			$firstTable= reset($tableNames);
+			$this->sFirstAction= reset($actions);
+			foreach($actions as $action)
+			{
+				$curTable= current($tableNames);
+				$this->action[$curTable]= $action;
+				next($tableNames);
+			}
 		}else
-			$this->sFirstAction= $action;
-		$this->actions[$tableName]= $action;
+		{
+			$this->sFirstAction= $actions;
+			if(is_string($tableNames))
+				$this->actions[$tableNames]= $actions;
+		}
 	}
 	/**
 	 * whether table object exist inside container
@@ -521,7 +563,6 @@ abstract class STObjectContainer extends STBaseContainer
 		}
 		return $this->actions;
 	}
-	var $actFirstTable= "";
 	function getFirstTableName()
 	{
 		// method needs initialization properties
@@ -536,45 +577,66 @@ abstract class STObjectContainer extends STBaseContainer
 		{
 			$this->initContainer();
 		}
-
-		$tableName= $this->sFirstTableName;
-		if(	$tableName
-			and
-			$this->askForAcess()	)
+		
+		$bFound= false;
+		$searchForTable= array();
+		foreach($this->asFirstTableNames as $tableName)
 		{
-			$table= &$this->getTable($tableName);
-			$action= $this->sFirstAction;
-			if(!$action)
+			if(isset($this->action[$tableName]))
+				$action= $this->action[$tableName];
+			else
 				$action= STLIST;
-			if(!$table->hasAccess($action))
+			if(!$this->askForAcess())
 			{
-				$this->sFirstAction= STCHOOSE;
-				$this->sFirstTableName= "";
-				$tableName= "";
+				$bFound= true;
+				break;
+			}
+			$table= &$this->getTable($tableName);
+			$searchForTable[]= $tableName;
+			if($table->hasAccess($action))
+			{
+				$bFound= true;
+				break;
 			}
 		}
-		if(	!$tableName
-			and
-			count($this->tables)==1
-			and
-			!$this->bChooseByOneTable	)
-    	{// get tableName from table-object not from key,
-		 // because there only lower case
-    	    $table= reset($this->tables);
-    		if(!$table)
-    		{
-    			$keys= array_keys($this->tables);
-    			$tableName= reset($keys);
-    		}else
-    		    $tableName= $table->getName();
-    	}
+		if(!$bFound)
+		{
+			$tableName= "";
+			foreach($this->tables as $oTable)
+			{
+				$tableName= $oTable->getName();
+				if(isset($this->action[$tableName]))
+					$action= $this->action[$tableName];
+				else
+					$action= STLIST;
+				if(!$this->askForAcess())
+				{
+					$bFound= true;
+					break;
+				}
+				if(!in_array($tableName, $searchForTable))
+				{
+					$searchForTable[]= $tableName;
+					if($oTable->hasAccess($action))
+					{
+						$bFound= true;
+						break;
+					}
+				}
+			}
+		}
+		if(	!$bFound &&
+			isset($this->parentContainer))
+		{
+			$tableName= $this->parentContainer->getFirstTableName();
+		}
 		return $tableName;
 	}
 	function askForAcess()
 	{
-		if(	STSession::sessionGenerated()
-			and
-			typeof($this->oExternSideCreator, "STSessionCreator")	)
+		if(	STSession::sessionGenerated() )
+//			and
+//			typeof($this->oExternSideCreator, "STSessionCreator")	)
 		{
 			return true;
 		}
@@ -1343,8 +1405,8 @@ abstract class STObjectContainer extends STBaseContainer
 				{
 					STCheck::echoDebug(true, "no tables exist, install anyone before, or use STDbSiteCreator->install()");
 					exit;
-				}else
-					$oTable->hasAccess($get_vars["action"], true);
+				}//else
+				//	$oTable->hasAccess($get_vars["action"], true);
 			}
 
 

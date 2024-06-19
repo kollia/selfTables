@@ -756,7 +756,7 @@ class STBaseTable
 		if(isset($this->asAccessIds[STALLDEF]))
 		    $aRv= $this->asAccessIds[STALLDEF];
 	    if(isset($this->asAccessIds[$action]))
-	        $aRv= $this->asAccessIds[$action];
+	        $aRv= array_merge($aRv, $this->asAccessIds[$action]);
 		if( STUserSession::sessionGenerated()
 		    and
 			count($this->sAcessClusterColumn) )
@@ -4028,8 +4028,8 @@ class STBaseTable
             if(trim($accessString) == "")
                 $accessString= "access to table ".$this->getName()." on action $action";
             $access=  $instance->hasAccess($aCluster['cluster'], $accessString, $aCluster['customID'], $loginOnFail);
-            if(!$access)
-                return false;
+            if($access)
+                break;
         }
 
         if(STCheck::isDebug("access"))

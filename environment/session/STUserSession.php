@@ -34,31 +34,36 @@ class STUserSession extends STDbSession
 	 * @var string
 	 */
 	var $loggedinGroup= "LOGGED_IN";
+
 	/**
-	 * user has access to all cluster
-	 * from projects and users
-	 * defined for UserManagement
+	 * all groups link to clusters for usermanagement
 	 * @var string
 	 */
 	var $usermanagementAccessGroup= "UM_Access";
 	var $usermanagementAdminGroup= "UM_CHANGE";
 	var $usermanagementAvailableProfileGroup= "OwnProfile";
-	/**
-	 * user linked with this cluster
-	 * is administrator and has
-	 * access to all other clusters
-	 * and so also to all projects
-	 * @var string
-	 */	
-	var $usermanagement_User_AccessCluster= "UM_UserAccess";
-	var $usermanagement_User_ChangeCluster= "UM_UserCHANGE";
-	var $usermanagement_Project_AccessCluster= "UM_ProjectAccess";
-	var $usermanagement_Project_ChangeCluster= "UM_ProjectCHANGE";
-	var $usermanagement_Group_AccessCluster= "UM_GroupAccess";
-	var $usermanagement_Group_ChangeCluster= "UM_GroupCHANGE";
-	var $usermanagement_Cluster_ChangeCluster= "UM_ClusterCHANGE";
-	var $usermanagement_Log_AccessCluster= "UM_LOGAccess";
 	var $profile_ChangeAccessCluster= "PR_ChangeAccess";
+
+	/**
+	 * all clusters for usermanagement
+	 * @var string
+	 */
+	var $usermanagement_EMailAccess= "UM_EMailAccess";
+	var $usermanagement_EMailModif= "UM_EMailModification";
+	var $usermanagement_UserAccess= "UM_UserAccess";
+	var $usermanagement_UserModif= "UM_UserModification";
+	var $usermanagement_GroupModif= "UM_GroupModification";
+	var $usermanagement_LogAccess= "UM_LOGAccess";
+
+	var $usermanagement_ProjectAccess= "UM_ProjectAccess";
+	var $usermanagement_ProjectModif= "UM_ProjectModification";
+	var $usermanagement_ProjectAssign= "UM_ProjectGroupAssignment";
+
+	var $usermanagement_ClusterAccess= "UM_ClusterAccess";
+	var $usermanagement_ClusterModif= "UM_ClusterModification";
+	var $usermanagement_ClusterAssign= "UM_ClusterGroupAssignment";
+
+	
 	/**
 	 * user linked with this cluster
 	 * has administration rights

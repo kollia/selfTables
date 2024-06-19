@@ -1228,6 +1228,7 @@ class STSession
 		{
 			$query= new STQueryString();
 			$query->delete("doLogout");
+			$query->delete("show");
 			$query->update("ERROR=".$error);
 			$query->update("ProjectID=".$this->projectID);
 			$Address= $this->UserLoginMask;

@@ -340,8 +340,8 @@ class STUserManagement extends STObjectContainer
 	{//STCheck::debug("db.main.statement");
 	    $session= &STUserSession::instance();
 	    $this->setDisplayName("Project Management");
-	    $this->accessBy($session->usermanagement_Project_AccessCluster, STLIST);
-	    $this->accessBy($session->usermanagement_Project_ChangeCluster, STADMIN);
+	    //$this->accessBy($session->usermanagement_Project_AccessCluster, STLIST);
+	    //$this->accessBy($session->usermanagement_Project_ChangeCluster, STADMIN);
 		//$this->needContainer("projects");
 	    
 	    $domain= $this->getTable("AccessDomain");
@@ -350,20 +350,23 @@ class STUserManagement extends STObjectContainer
 	    
 		$mail= &$this->needTable("Mail");
 		$mail->setDisplayName("registration EMail-Text");
-	    $mail->accessBy($session->usermanagement_User_AccessCluster, STLIST);
-	    $mail->accessBy($session->usermanagement_User_ChangeCluster, STADMIN);
+	    $mail->accessBy($session->usermanagement_EMailAccess, STLIST);
+	    $mail->accessBy($session->usermanagement_EMailModif, STADMIN);
 
 	    $user= &$this->needTable("User");
 	    $user->setDisplayName("User");
-	    $user->accessBy($session->usermanagement_User_AccessCluster, STLIST);
-	    $user->accessBy($session->usermanagement_User_ChangeCluster, STADMIN);
+	    $user->accessBy($session->usermanagement_UserAccess, STLIST);
+	    $user->accessBy($session->usermanagement_UserModif, STADMIN);
 	       
 	    $groups= &$this->needTable("Group");
 	    $groups->setDisplayName("Groups");
+		$groups->accessBy($session->usermanagement_GroupModif);
 	    
 		$project= &$this->needTable("Project");
 		$project->setDisplayName("existing Projects");
-		$this->setFirstTable("Project");
+	    $project->accessBy($session->usermanagement_ProjectAccess, STLIST);
+	    $project->accessBy($session->usermanagement_ProjectModif, STADMIN);
+		$this->setFirstTable(array("Project", "User", "Mail"));
 	}
 	protected function init(string $action, string $table)
 	{
@@ -995,6 +998,7 @@ EOT;
 	{
 		global $__email_text_cases;
 
+		//STCheck::debug("container"); 
 		$instance= &STSession::instance();		
 		// create custom domain database entry
 		$domain= $instance->getCustomDomain();
@@ -1005,15 +1009,21 @@ EOT;
 		
 		$this->createCluster($instance->allAdminCluster, $overview, "access to all exist CLUSTERs in every project", /*addGroup*/false);
 		$this->createCluster($instance->profile_ChangeAccessCluster, $profile, "access to own profile data", /*addGroup*/false);
-		$this->createCluster($instance->usermanagement_Project_AccessCluster, $usermanagement, "Permission to see all projects inside UserManagement", /*addGroup*/false);
-		$this->createCluster($instance->usermanagement_Project_ChangeCluster, $usermanagement, "Permission to create projects inside  UserManagement", /*addGroup*/false);
-		$this->createCluster($instance->usermanagement_User_AccessCluster, $usermanagement, "Permission to see all user inside UserManagement", /*addGroup*/false);
-		$this->createCluster($instance->usermanagement_User_ChangeCluster, $usermanagement, "Permission to create/modify user inside UserManagement", /*addGroup*/false);
-		$this->createCluster($instance->usermanagement_Group_AccessCluster, $usermanagement, "Ability to see all permission groups", /*addGroup*/false);
-		$this->createCluster($instance->usermanagement_Group_ChangeCluster, $usermanagement, "Ability to change groups affiliation", /*addGroup*/false);
-		$this->createCluster($instance->usermanagement_Cluster_ChangeCluster, $usermanagement, "Ability to create new clusters for a project", /*addGroup*/false);
-		$this->createCluster($instance->usermanagement_Log_AccessCluster, $usermanagement, "Permission to see all logged affiliations", /*addGroup*/false);
+
+		$this->createCluster($instance->usermanagement_EMailAccess, $usermanagement, "Permission to see all email shortcuts", /*addGroup*/true);
+		$this->createCluster($instance->usermanagement_EMailModif, $usermanagement, "Permission to modify email shortcuts", /*addGroup*/true);
+		$this->createCluster($instance->usermanagement_UserAccess, $usermanagement, "Access to see list of user", /*addGroup*/true);
+		$this->createCluster($instance->usermanagement_UserModif, $usermanagement, "Permission to create and modify users", /*addGroup*/true);
+		$this->createCluster($instance->usermanagement_GroupModif, $usermanagement, "Access to create modify groups which are between user and cluster", /*addGroup*/false);
+		$this->createCluster($instance->usermanagement_LogAccess, $usermanagement, "Access to see all logfiles in database", /*addGroup*/false);
 		
+		$this->createCluster($instance->usermanagement_ProjectAccess, $usermanagement, "Access to see list of projects", /*addGroup*/false);
+		$this->createCluster($instance->usermanagement_ProjectModif, $usermanagement, "Permission to create modify projects", /*addGroup*/false);
+		$this->createCluster($instance->usermanagement_ProjectAssign, $usermanagement, "Permission to assign project to access groups", /*addGroup*/false);
+	
+		$this->createCluster($instance->usermanagement_ClusterAccess, $usermanagement, "Permission to see list of clusters", /*addGroup*/false);
+		$this->createCluster($instance->usermanagement_ClusterModif, $usermanagement, "Permission to create and modify clusters for porject", /*addGroup*/false);
+		$this->createCluster($instance->usermanagement_ClusterAssign, $usermanagement, "Permission to assign cluster with groups", /*addGroup*/false);
 		 
     	$this->createGroup($instance->allAdminGroup, $domain['Name']);
     	$this->createGroup($instance->onlineGroup, $domain['Name']);
@@ -1023,11 +1033,11 @@ EOT;
 		
 		$this->joinClusterGroup($instance->allAdminCluster, $instance->allAdminGroup);
 		$this->joinClusterGroup($instance->profile_ChangeAccessCluster, $instance->loggedinGroup);
-    	$this->joinClusterGroup($instance->usermanagement_Project_AccessCluster, $instance->usermanagementAccessGroup);
-    	$this->joinClusterGroup($instance->usermanagement_Project_ChangeCluster, $instance->usermanagementAdminGroup);
-		$this->joinClusterGroup($instance->usermanagement_Cluster_ChangeCluster, $instance->usermanagementAdminGroup);
-    	$this->joinClusterGroup($instance->usermanagement_User_AccessCluster, $instance->usermanagementAccessGroup);
-    	$this->joinClusterGroup($instance->usermanagement_User_ChangeCluster, $instance->usermanagementAdminGroup);
+    	$this->joinClusterGroup($instance->usermanagement_ProjectAccess, $instance->usermanagementAccessGroup);
+    	$this->joinClusterGroup($instance->usermanagement_ProjectModif, $instance->usermanagementAdminGroup);
+		$this->joinClusterGroup($instance->usermanagement_ClusterModif, $instance->usermanagementAdminGroup);
+    	$this->joinClusterGroup($instance->usermanagement_UserAccess, $instance->usermanagementAccessGroup);
+    	$this->joinClusterGroup($instance->usermanagement_UserModif, $instance->usermanagementAdminGroup);
 		
 		
 
