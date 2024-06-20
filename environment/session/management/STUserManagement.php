@@ -481,7 +481,8 @@ class STUserManagement extends STObjectContainer
 				$project->align("ID", "center");
 			}
 			$project->select("display", "Display");
-			$project->preSelect("display", "ENABLED");
+			$project->preSelect("sort", 0);
+			$project->preSelect("Display", "ENABLED");
 			if($action != STLIST)
 			{
 				$project->select("Target", "Target");
