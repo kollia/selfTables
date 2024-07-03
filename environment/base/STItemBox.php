@@ -1681,7 +1681,7 @@ class STItemBox extends STBaseBox
 			$this->action= STUPDATE;
 		}else
 			$this->action= STINSERT;
-		
+		//STCheck::debug();
 		$result= null;
 		$this->box($this->join, $this->where, $result);	
 
@@ -1696,7 +1696,14 @@ class STItemBox extends STBaseBox
 
 		$forward= null;
 		$message= $this->msg->getMessageId();
-		if($message == "NOERROR")
+		if($message != "NOERROR")
+		{// implement error message box
+			$tr= new RowTag();
+				$td= new ColumnTag(TD);
+					$td->add($this->msg->getMessageEndScript());
+				$tr->add($td);
+			$this->add($tr);
+		}else // else forward after next callback, maybe there is an error
 			$forward= $this->msg->getMessageEndScript();
 		$oCallbackClass= new STCallbackClass($this->asDBTable, $this->aResult);
 		$oCallbackClass->display= $display;
