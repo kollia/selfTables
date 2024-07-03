@@ -1,7 +1,7 @@
 <?php
 
-global $_stdbinserter;
-require_once($_stdbinserter);
+global $_stdbupdater;
+require_once($_stdbupdater);
 require_once($_stsitecreator);
 require_once $_stbackgroundimagesdbcontainer;
 require_once($_st_registration_text);
@@ -57,10 +57,17 @@ class STUserProfileContainer extends STBackgroundImagesDbContainer
 				$this->addOnBodyEnd($script);
 				
 				// create EMail text
-				if($this->bAdminActivation)
-					$acknowledge= "ACKNOWLEDGE_INACTIVE";// need activation from admin
-				else
+				if(!$this->bAdminActivation)
+				{
 					$acknowledge= "ACKNOWLEDGE_ACTIVE";// no admin activation required, user is directly active
+					$updater= new STDbUpdater($user);
+					$updater->update("active", "YES");
+					echo "update:".$updater->getStatement()."<br>";
+					$updater->execute();
+
+				}else
+					$acknowledge= "ACKNOWLEDGE_INACTIVE";// need activation from admin
+					
 				$mail= get_db_mail_text($user, $acknowledge, $newdbvalue);
 
 				$toEmail= $newdbvalue['email'];		
