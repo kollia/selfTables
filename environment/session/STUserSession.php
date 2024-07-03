@@ -302,7 +302,7 @@ class STUserSession extends STDbSession
         $dbTableDescription->table("Cluster");
         $dbTableDescription->column("Cluster", "ID", "varchar(100)", /*null*/false);
         $dbTableDescription->primaryKey("Cluster", "ID");
-        $dbTableDescription->column("Cluster", "ProjectID", "TINYINT", /*null*/false);
+        $dbTableDescription->column("Cluster", "ProjectID", "SMALLINT", /*null*/false);
         $dbTableDescription->foreignKey("Cluster", "ProjectID", "Project", 1);
         $dbTableDescription->column("Cluster", "Description", "TEXT", /*null*/false);
         //$dbTableDescription->column("Cluster", "identification", "SMALLINT", /*null*/false);
@@ -369,7 +369,7 @@ class STUserSession extends STDbSession
         $dbTableDescription->autoIncrement("Log", "ID");
         $dbTableDescription->column("Log", "UserID", "INT", /*null*/false);
         $dbTableDescription->foreignKey("Log", "UserID", "User", 1);
-        $dbTableDescription->column("Log", "ProjectID", "TINYINT", /*null*/false);
+        $dbTableDescription->column("Log", "ProjectID", "SMALLINT", /*null*/false);
         $dbTableDescription->foreignKey("Log", "ProjectID", "Project", 2);
         $dbTableDescription->column("Log", "Type", "set('DEBUG','LOGIN','LOGIN_ERROR','LOGOUT','ACCESS', 'ACCESS_ERROR')", /*null*/false);
         $dbTableDescription->column("Log", "CustomID", "varchar(255)");
