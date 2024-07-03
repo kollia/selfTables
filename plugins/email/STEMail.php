@@ -188,42 +188,109 @@ class STEMail
             }
         }else // PHPMailer not configured
         {// mail over standard php mailer 
-            $ccstr= "";
-            $bccstr= "";
+            $toAdr= array();
             if(is_array($to))
             {
                 $tostr= "";
                 foreach($to as $email)
                     $tostr.= "$email,";
                 $tostr= substr($tostr, 0, strlen($tostr)-1);
+                $toAdr['To']= $tostr;
             }else
-                $tostr= $to;
+                $toAdr['To']= $to;
             if(isset($Cc))
             {
                 foreach($Cc as $email)
                     $ccstr.= "$email,";
                 $ccstr= substr($ccstr, 0, strlen($ccstr)-1);
+                $toAdr['Cc']= $ccstr;
             }
             if(isset($Bcc))
             {
                 foreach($Bcc as $email)
                     $bccstr.= "$email,";
                 $bccstr= substr($bccstr, 0, strlen($bccstr)-1);
+                $toAdr['Bcc']= $bccstr;
             }
-            $header['From']= $this->fromSending;
-            $header['Reply-To']= $this->fromSending;
-            $header['X-Mailer']= "PHP/".phpversion();
-            if($ccstr != "")
-                $header['Cc']= $ccstr;
-            if($bccstr != "")
-                $header['Bcc']= $bccstr;
-            if(!mail($tostr, $subject, $ASCIIbody, $header))
+            
+            $body['txt']= $ASCIIbody;
+            $body['html']= $HTMLbody;
+            if(!$this->send_email($toAdr, $this->fromSending, $subject, $body))
             {
                 $this->sErrorStr= "ERROR: standard PHP email client doesn't send correct email";
                 return false;
             }
         }
         return true;
+    }
+    /**
+     * Send standard PHP email
+     * 
+     * @param string|array $to sending email to address(es)
+     * @param string|array $from sending email from address with key from and reply
+     * @param string $subject subject of email
+     * @param array $message array of messages with key txt and or html
+     * @param string $headers optional headers
+     * @return bool boolean whether sending was OK
+     */
+    protected function send_email($to, $from, $subject, $message, $headers = null) : bool
+    {
+        // Unique boundary
+        $boundary = md5( uniqid('', true) . microtime() );
+
+        // If no $headers sent
+        if (empty($headers))
+        {
+            // Add From: header
+            if(is_array($from))
+                $fromAdr= $from['from'];
+            else
+                $fromAdr= $from;
+            $headers = "From: {$fromAdr}\r\n";
+            if(is_array($from) && isset($from['reply']))
+                $reply= $from['reply'];
+            else
+                $reply= $fromAdr;
+            $headers.= "Reply-To: {$reply}\r\n";
+
+            // Specify MIME version 1.0
+            $headers .= "MIME-Version: 1.0\r\n";
+
+            // Tell e-mail client this e-mail contains alternate versions
+            $headers .= "Content-Type: multipart/alternative; boundary=\"$boundary\"\r\n\r\n";
+        }
+
+        // Plain text version of message
+        $body = "--$boundary\r\n" .
+        "Content-Type: text/plain; charset=UTF-8\r\n" .
+        "Content-Transfer-Encoding: base64\r\n\r\n";
+        $body .= chunk_split( base64_encode( strip_tags($message['txt']) ) );
+
+        // HTML version of message
+        $body .= "--$boundary\r\n" .
+        "Content-Type: text/html; charset=UTF-8\r\n" .
+        "Content-Transfer-Encoding: base64\r\n\r\n";
+        $body .= chunk_split( base64_encode( $message['html'] ) );
+
+        $body .= "--$boundary--";
+
+        // Send Email
+        if(is_array($to))
+        {
+            if (is_array($to['To']))
+            {
+
+                foreach ($to['To'] as $e)
+                {
+                    $bOK= mail($e, $subject, $body, $headers);
+                    if(!$bOK)
+                        return false;
+                }
+                return true;
+            }
+            $to= $to['To'];
+        }
+        return mail($to, $subject, $body, $headers);
     }
     /**
      * validate correctness of email address in writing
