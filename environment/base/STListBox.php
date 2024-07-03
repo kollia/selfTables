@@ -272,7 +272,7 @@ class STListBox extends STBaseBox
 				}
 			}
 		}
-	/*protected*/function makeCallback($action, &$oCallbackClass, $columnName, $rownum)
+	/*protected*/function makeCallback($action, &$oCallbackClass, $columnName, $rownum) : bool
 	{
 		if(STCheck::isDebug())
 		{
@@ -2034,7 +2034,7 @@ class STListBox extends STBaseBox
         									}
         								}
         								
-							        }else echo "<br>";
+							        }//else echo "<br>";
 							    }while($bDone !== true);
 							}
 						}

@@ -400,6 +400,9 @@ class STUserManagement extends STObjectContainer
 	    $user= &$this->needTable("User");
 		if($table == $user->getName())
 		{
+			$newpass= "new Password";
+			$reppass= "Password repetition";
+
 			$user->select("domain", "Domain");
 			$user->preSelect("domain", $domain['ID']);
 			$user->disabled("domain");
@@ -421,13 +424,9 @@ class STUserManagement extends STObjectContainer
 				$user->addColumn("sending", "SET('no', 'yes')", /*NULL*/false);
 				$this->addPasswordMailBehavior($action, $user);
 				
-				$username= "User";
-				$newpass= "new Password";
-				$reppass= "Password repetition";
-
 				$user->updateCallback("disablePasswordCallback", $newpass);
 				$user->updateCallback("disablePasswordCallback", $reppass);
-				$user->updateCallback("disablePasswordCallback", $username);
+				$user->updateCallback("disablePasswordCallback", "User");
 				$user->updateCallback("usermanagement_main_passwordCheckCallback", $newpass);
 				$user->insertCallback("usermanagement_main_passwordCheckCallback", $newpass);
 				$user->updateCallback("emailCallback", "sending");
@@ -444,7 +443,7 @@ class STUserManagement extends STObjectContainer
 				$user->orderBy("domain");
 				$user->orderBy("user");
 				$user->setMaxRowSelect(50);
-			}else
+			}elseif($action!=STDELETE)
 				$user->passwordNames($newpass, $reppass);
 			//$user->getColumn("register");
 			$user->preSelect("DateCreation", "sysdate()");

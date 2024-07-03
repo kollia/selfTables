@@ -145,7 +145,7 @@
 
 
 		/**********************************************************************\
-		|**         selfTables - CMS System                                  **|
+		|**         selfTables - project - usermanagement                    **|
 		\**********************************************************************/
 		$_stusermanagement=					$_stenvironmenttools_path."/session/management/STUserManagement.php";
 		$_stuserclustergroupmanagement=     $_stenvironmenttools_path."/session/management/STUserClusterGroupManagement.php";		
@@ -164,10 +164,6 @@
 		$_stgroupgroupmanagement=			$_stenvironmenttools_path."/session/management/STGroupGroupManagement.php";
 		$_stprojectusersitecreator=			$_stenvironmenttools_path."/session/management/STProjectUserSiteCreator.php";
 		
-		$_sttdate=                          $_stcmstools_path."/calendar/STTestDate.php";
-		$_stdbtdate=						$_stcmstools_path."/calendar/STDbTestDate.php";
-		$_stseriescontainer_install=		$_stcmstools_path."/calendar/stseriescontainer_install.php";
-		$_stcalendarserie=					$_stcmstools_path."/calendar/STCalendarSerieForm.php";
 		$_stgallerycontainer_install=		$_stcmstools_path."/gallery/STGalleryContainer_install.php";
 		$_stgallerycontainer=				$_stcmstools_path."/gallery/STGalleryContainer.php";
 		$_stsubgallerycontainer=			$_stcmstools_path."/gallery/STSubGalleryContainer.php";

@@ -388,8 +388,8 @@ class STItemBox extends STBaseBox
 				$oCallbackClass->joinResult= $joinArray[$name];
 				//echo $name;st_print_r($this->aDisabled);echo "<br />";
 				$oCallbackClass->aDisabled= array();
-				if( isset($this->aDisabled[$name]) &&
-				    $this->aDisabled[$name] == true     )
+				if( isset($this->aDisabled[$name][$this->action]) &&
+				    $this->aDisabled[$name][$this->action] == true     )
 				{
 					$oCallbackClass->disabled($name);
 				}else
@@ -399,7 +399,7 @@ class STItemBox extends STBaseBox
 				$result= $this->makeCallback("join", $oCallbackClass, $name, $this->action);
 				if($result===true)
 				{
-					$this->aDisabled[$name]= $oCallbackClass->argument("disabled", $name);
+					$this->aDisabled[$name][$this->action]= $oCallbackClass->argument("disabled", $name, /*display row for STItemBox*/0);
 					$joinArray[$name]= $oCallbackClass->joinResult;
 				}
 			}
@@ -1681,31 +1681,10 @@ class STItemBox extends STBaseBox
 			$this->action= STUPDATE;
 		}else
 			$this->action= STINSERT;
-	// alex: 06/09/2005: parsen in function table verlegt
-		// alex 02/09/2005:	vor dem Erzeugen des Formulars
-		//					showTypes von der gesezten Tabelle durchparsen
-		//					ob ein Feld auf upload gesetzt ist,
-		//					dann in uploadFields �bernehmen
-		/*if($this->asDBTable)
-		{
-			foreach($this->asDBTable->showTypes as $column=>$showTypes)
-			{
-				foreach($showTypes as $extraField=>$array)
-				{
-					if($extraField=="upload")
-						$this->uploadFields[$column]= $array;
-				}
-			}
-		}*/
+		
 		$result= null;
-		$this->box($this->join, $this->where, $result);
-		$tr= new RowTag();
-			$td= new ColumnTag(TD);
-				$td->add($this->msg->getMessageEndScript());
-			$tr->add($td);
-		$this->add($tr);
-				
-		$message= $this->msg->getMessageId();
+		$this->box($this->join, $this->where, $result);	
+
 
 		$query= new STPostArray();		
 		if( $query->exist("STBoxes_action") &&
@@ -1715,13 +1694,25 @@ class STItemBox extends STBaseBox
 		}else
 			$display= true;
 
+		$forward= null;
+		$message= $this->msg->getMessageId();
+		if($message == "NOERROR")
+			$forward= $this->msg->getMessageEndScript();
 		$oCallbackClass= new STCallbackClass($this->asDBTable, $this->aResult);
 		$oCallbackClass->display= $display;
 		$oCallbackClass->before= false;
 		$oCallbackClass->rownum= 0;
 		$oCallbackClass->MessageId= $message;
-		$this->makeCallback($this->action, $oCallbackClass, $this->action, 0);
-		
+		if(!$this->makeCallback($this->action, $oCallbackClass, $this->action, 0))		
+			$message= $this->msg->getMessageId();
+		if(isset($forward))
+		{
+			$tr= new RowTag();
+				$td= new ColumnTag(TD);
+					$td->add($forward);
+				$tr->add($td);
+			$this->add($tr);
+		}
 		STCheck::echoDebug("db.statements.limit", "set all old limits inside table from $firstRow to $maxRow");
 		if(isset($maxRow))
 			$this->asDBTable->setMaxRowSelect($maxRow);
@@ -2897,13 +2888,7 @@ class STItemBox extends STBaseBox
 
 			$oCallbackClass->before= false;
 			$oCallbackClass->MessageId= $this->msg->getMessageId();
-			$error= $this->makeCallback(STDELETE, $oCallbackClass, STDELETE, 0);
-			
-			$tr= new RowTag();
-				$td= new ColumnTag(TD);
-					$td->add($this->msg->getMessageEndScript());
-				$tr->add($td);
-           	$this->add($tr);
+			$error= $this->makeCallback(STDELETE, $oCallbackClass, STDELETE, 0);			
 			return $this->msg->getMessageId();
 		}
 }

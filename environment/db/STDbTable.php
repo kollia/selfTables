@@ -228,6 +228,7 @@ class STDbTable extends STBaseTable
 	}
     function passwordNames($firstName, $secondName, $thirdName= null)
     {
+		STCheck::is_error(!isset($this->password["column"]), "STDbTable::passwordNames()", "column password have to be defined before", 1);
     	$this->password["names"][]= $firstName;
     	$this->password["names"][]= $secondName;
     	if($thirdName)

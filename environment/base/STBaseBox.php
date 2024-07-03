@@ -177,9 +177,9 @@ abstract class STBaseBox extends TableTag
 		 * @param STCallbackClass $oCallbackClass callback object with some content of selection where callback function can set also some behavior
 		 * @param string $columnName name of column or alias column for which the callback should currently running
 		 * @param int $rownum row number of selection when action is STLIST, otherwise 0
-		 * @return bool|string if no callback be done always false, true if no error occur or an error string by fault
+		 * @return bool if an erro occured in any callback <code>false</code> otherwise when all OK or no callback be set <code>true</code>
 		 */
-		protected function makeCallback($action, &$oCallbackClass, $columnName, $rownum)
+		protected function makeCallback($action, &$oCallbackClass, $columnName, $rownum) : bool
 		{//STCheck::is_warning(1,"","makeCallback");
 		    if(STCheck::isDebug())
 		    {
@@ -192,7 +192,7 @@ abstract class STBaseBox extends TableTag
 		    }
 
 			if(!count($this->aCallbacks))
-				return false;
+				return true;
 			$oCallbackClass->clear();
 			if(is_array($this->sqlResult))
 				$oCallbackClass->setOldValues($this->sqlResult);
@@ -229,13 +229,21 @@ abstract class STBaseBox extends TableTag
 					if($action==$functionArray["action"])
 					{
       					$errorString= $functionArray["function"]($oCallbackClass, $columnName, $rownum, $action);
-    					if(	is_string($errorString)
-    						and
-    						$errorString!==""	)
-    					{
-							$this->msg->setMessageId("CALLBACKERROR@", $errorString);
-    						return $errorString;
-    					}
+						if(	isset($errorString) &&
+							$errorString !== "" &&
+							$errorString !== true	)
+						{
+							if(is_string($errorString))
+							{
+								$this->msg->setMessageId("CALLBACKERROR@", $errorString);
+								$tr= new RowTag();
+									$td= new ColumnTag(TD);
+										$td->add($this->msg->getMessageEndScript());
+									$tr->add($td);
+								$this->add($tr);
+							}
+							return false;
+						}
 					}
 				}
 				$this->aDisabled[$columnName][$rownum]= $oCallbackClass->argument("disabled", $columnName, 0);
@@ -245,7 +253,6 @@ abstract class STBaseBox extends TableTag
 			 // wether columnName the same as action
 			 	Tag::echoDebug("callback", "loop callbacks for STLIST, STINSERT, ... -> wether columnName has the same action");
 				$incomming= $columnName;
-				$bOk= false;
 				//echo "action:$action<br />";
 				//echo "columnName:$columnName<br />";
 				foreach($this->aCallbacks as $column=>$content)
@@ -282,24 +289,28 @@ abstract class STBaseBox extends TableTag
 								$column==STALLDEF		)		)
     					{
 							$errorString= $functionArray["function"]($oCallbackClass, $columnName, $rownum, $action);
-							if(	is_string($errorString) &&
-								$errorString!==""			)
+							if(	isset($errorString) &&
+								$errorString !== "" &&
+								$errorString !== true	)
 							{
-								$this->msg->setMessageId("CALLBACKERROR@", $errorString);
-								return $errorString;
+								if(is_string($errorString))
+								{
+									$this->msg->setMessageId("CALLBACKERROR@", $errorString);
+									$tr= new RowTag();
+										$td= new ColumnTag(TD);
+											$td->add($this->msg->getMessageEndScript());
+										$tr->add($td);
+									$this->add($tr);
+								}
+								return false;
 							}
-							if( is_bool($errorString) &&
-								!$errorString			)
-							{
-								return "unknown callback ERROR occurred";
-							}
-							$bOk= true;
     					}
     				}
-    				$this->aDisabled[$columnName][$rownum]= $oCallbackClass->argument("disabled", $columnName, 0);
+					$this->aDisabled[$columnName][$rownum]= $oCallbackClass->argument("disabled", $columnName, 0);
+
 				}
 			}
-			return $bOk;
+			return true;
 		}
 		public function updateLine(string $column, string $alias= null)
 		{

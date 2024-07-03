@@ -323,7 +323,7 @@ class STMessageHandling // implements STMessageHandlingInterface <- ab version 5
 			}
 				
 			// f�ge die Url in das Array
-			if($Url)
+				if($Url)
 			{
 				if(Tag::isDebug())
 				{					

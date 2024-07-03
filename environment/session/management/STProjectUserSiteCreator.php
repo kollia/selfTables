@@ -132,6 +132,7 @@ class STProjectUserSiteCreator extends STUserSiteCreator
             (   !isset($show) ||
                 $show == "frame"    )   )
         {// need project frame
+            //STCheck::debug(false);// if any output outside of frame nothing will displayed
             $currentContainer['container']= $this->aProjects['ProjectFrame']['container'];
             $currentContainer['name']= $this->aProjects['ProjectFrame']['name'];
         }

@@ -243,7 +243,7 @@ class STUserSession extends STDbSession
         $dbTableDescription->column("AccessDomain", "DateCreation", "DATETIME", /*null*/false);
         
         $dbTableDescription->table("Project");
-        $dbTableDescription->column("Project", "ID", "TINYINT", /*null*/false);
+        $dbTableDescription->column("Project", "ID", "SMALLINT", /*null*/false);
         $dbTableDescription->primaryKey("Project", "ID");
         $dbTableDescription->autoIncrement("Project", "ID");
         $dbTableDescription->column("Project", "Name", "varchar(70)", /*null*/false);
