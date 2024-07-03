@@ -679,13 +679,13 @@ EOT;
 			$this->setMessageContent("MAIL-STORED_USER_DATA-description", "all user specific data stored on website");
 			$this->setMessageContent("MAIL-STORED_USER_DATA-subject", "");
 			$content= <<<EOT
-
-	Geschlecht:        {sex}
-	Titel:             {title_prefixed}
-	Vorname:           {firstname}
-	Nachname:          {surname}
-	angehängter Titel: {title_subsequent}
-	EMail:             {email}
+    User:       {user}
+    Geschlecht: {sex}
+    Titel:      {title_prefixed}
+    Vorname:    {firstname}
+    Nachname:   {surname}
+    Titel:      {title_subsequent}
+    EMail:      {email}
 EOT;
 			$this->setMessageContent("MAIL-STORED_USER_DATA-text", $content);
 			$html_content= <<<EOT
@@ -866,13 +866,13 @@ EOT;
 			$this->setMessageContent("MAIL-STORED_USER_DATA-description", "all user specific data stored on website");
 			$this->setMessageContent("MAIL-STORED_USER_DATA-subject", "");
 			$content= <<<EOT
-
-	Sex:              {sex}
-	prefixed title:   {title_prefixed}
-	first name:       {firstname}
-	surname:          {surname}
-	subsequent title: {title_subsequent}
-	EMail:            {email}
+    User:       {user}
+    Sex:        {sex}
+    title:      {title_prefixed}
+    first name: {firstname}
+    surname:    {surname}
+    title:      {title_subsequent}
+    EMail:      {email}
 EOT;
 			$this->setMessageContent("MAIL-STORED_USER_DATA-text", $content);
 			$html_content= <<<EOT
