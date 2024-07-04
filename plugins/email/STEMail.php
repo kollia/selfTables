@@ -230,35 +230,35 @@ class STEMail
      * @param string|array $from sending email from address with key from and reply
      * @param string $subject subject of email
      * @param array $message array of messages with key txt and or html
-     * @param string $headers optional headers
      * @return bool boolean whether sending was OK
      */
-    protected function send_email($to, $from, $subject, $message, $headers = null) : bool
+    protected function send_email($to, $from, $subject, $message) : bool
     {
         // Unique boundary
         $boundary = md5( uniqid('', true) . microtime() );
 
-        // If no $headers sent
-        if (empty($headers))
-        {
-            // Add From: header
-            if(is_array($from))
-                $fromAdr= $from['from'];
-            else
-                $fromAdr= $from;
-            $headers = "From: {$fromAdr}\r\n";
-            if(is_array($from) && isset($from['reply']))
-                $reply= $from['reply'];
-            else
-                $reply= $fromAdr;
-            $headers.= "Reply-To: {$reply}\r\n";
+        // Add From: header
+        if(is_array($from))
+            $fromAdr= $from['from'];
+        else
+            $fromAdr= $from;
+        $headers['From']= $fromAdr;
+        //$headers = "From: {$fromAdr}\r\n";
+        if(is_array($from) && isset($from['reply']))
+            $reply= $from['reply'];
+        else
+            $reply= $fromAdr;
+        $headers['Reply-To']= $reply;
+        //$headers.= "Reply-To: {$reply}\r\n";
 
-            // Specify MIME version 1.0
-            $headers .= "MIME-Version: 1.0\r\n";
+        // Specify MIME version 1.0
+        //$headers['MIME-Version']= "1.0";
 
-            // Tell e-mail client this e-mail contains alternate versions
-            $headers .= "Content-Type: multipart/alternative; boundary=\"$boundary\"\r\n\r\n";
-        }
+        $headers['X-Mailer']= "PHP/".phpversion();
+
+        // Tell e-mail client this e-mail contains alternate versions
+        $headers['Content-Type']= "multipart/alternative; boundary=\"$boundary\""; 
+
 
         // Plain text version of message
         $body = "--$boundary\r\n" .
