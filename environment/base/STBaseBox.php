@@ -22,6 +22,16 @@ abstract class STBaseBox extends TableTag
      * @var array
      */
     protected $sqlResult= null;
+	/**
+	 * new defined global parameter list
+	 * for the feature should implement all other parameters/arguments
+	 * like hidden, disabled, and so on
+	 * now implemented:
+	 * array(	"binarys" => array( [string:<field names>] )	)
+	 * @var array first key should be the argument
+	 */	
+	protected $aArgumentList= array();
+
 		var $tableContainer;
 		var $msg; // class for STMessageHandling
 		var	$onError= onErrorMessage;

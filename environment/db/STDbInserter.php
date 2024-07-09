@@ -54,7 +54,6 @@ class STDbInserter extends STDbSqlCases
 	    $key_string= "";
 	    $value_string= "";
 	    $result= $this->make_sql_values($this->columns[$nr]);
-	    $types= $this->read_inFields("type");
 	    $flags= $this->read_inFields("flags");
 		$table= $this->db->getDelimitedString($this->table->getName(), "field");
 	        
@@ -67,6 +66,7 @@ class STDbInserter extends STDbSqlCases
         {
             if(STCheck::isDebug("db.statement.insert"))
             {
+				$types= $this->read_inFields("type");
                 STCheck::echoDebug("db.statement.insert", "field <b>$key</b>:");
                 STCheck::echoDebug("db.statement.insert", "   from type '".$types[$key]."'");
                 STCheck::echoDebug("db.statement.insert", "   with flag '".$flags[$key]."'");
@@ -76,7 +76,7 @@ class STDbInserter extends STDbSqlCases
             if(!preg_match("/auto_increment/i", $flags[$key]))
             {
 				$key_string.= $this->db->getDelimitedString($key, "field") . ",";
-                $value_string.= $this->add_quotes($types[$key], $value).",";
+                $value_string.= $this->add_quotes($key, $value).",";
             }
         }
         $key_string= substr($key_string, 0, strlen($key_string)-1);

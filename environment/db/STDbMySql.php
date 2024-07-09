@@ -245,6 +245,20 @@ class STDbMySql extends STDatabase
 			echo "<b>WARNING:</b> does not found any table in database <b>".$this->dbName."</b><br />";
 		}
 	}
+	public function getEncryptFunctionName(string $type= "AES") : string
+	{
+		STCheck::warning($type!="AES", "STDbMySql::getEncryptFunctionName()", "database have only AES encryption");
+		return "AES_ENCRYPT";
+	}
+	public function getDecryptFunctionName(string $type= "AES") : string
+	{
+		STCheck::warning($type!="AES", "STDbMySql::getDecryptFunctionName()", "database have only AES decryption");
+		return "AES_DECRYPT";
+	}
+	public function getNullValue() : string
+	{
+		return "null";
+	}
 	public function real_escape_string(string $str)
 	{
 	    $escaped= $this->conn->real_escape_string($str);

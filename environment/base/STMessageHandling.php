@@ -120,7 +120,7 @@ class STMessageHandling // implements STMessageHandlingInterface <- ab version 5
 						$paramArray[]= $args[$have-1];
 						$outFunc= 1;
 					}else
-						$outFunc= $count;
+						$outFunc= $args[$have-1];
 					$have-= 1;
 				}else
 				{

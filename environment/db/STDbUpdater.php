@@ -54,12 +54,12 @@ class STDbUpdater extends STDbSqlWhereCases
         {
             $mainTableAlias= $tableAliases[$this->table->Name];
             $mainTableAlias.= ".";
-        }
-        $types= $this->read_inFields("type");
+        }        
         foreach($result as $key => $value)
         {
             if(STCheck::isDebug("db.statement.update"))
             {
+				$types= $this->read_inFields("type");
                 $flags= $this->read_inFields("flags");
                 STCheck::echoDebug("db.statement.update", "field <b>$key</b>:");
                 STCheck::echoDebug("db.statement.update", "   from type '".$types[$key]."'");
@@ -67,7 +67,7 @@ class STDbUpdater extends STDbSqlWhereCases
                 STCheck::echoDebug("db.statement.update", "   and value '$value'");
                 echo "<br />";
             }
-            $update_string.= $mainTableAlias.$key."=".$this->add_quotes($types[$key], $value).",";
+            $update_string.= $mainTableAlias.$key."=".$this->add_quotes($key, $value).",";
         }
         $update_string= substr($update_string, 0, strlen($update_string)-1);
         $tableStatement= $this->table->getTableStatement($tableAliases, array());

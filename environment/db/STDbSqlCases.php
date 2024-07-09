@@ -36,6 +36,11 @@ class STDbSqlCases
      * @var array
      */
     protected $nErrorRowNr= null;
+    /**
+     * all types of every field
+     * @var array
+     */
+    protected $aFieldTypes= null;
     
     // do not take by reference
     // because into table comming
@@ -113,12 +118,15 @@ class STDbSqlCases
      * method add quotes to value if need,
      * or declare as null
      *
-     * @param string $type type of database column
+     * @param string $column column of table (warning: isn't check for right name)
      * @param mixed $value value insert update to database;
-     * @return mixed value with qutes
+     * @return mixed value with quotes
      */
-    protected function add_quotes(string $type, $value)
+    protected function add_quotes(string $column, $value)
     {
+        if(!isset($this->aFieldTypes))
+            $this->aFieldTypes= $this->read_inFields("type");
+        $type= $this->aFieldTypes[$column];
         if(	$type=="int" ||
             $type=="real" ||
             $type=="datetime" ||
@@ -131,10 +139,39 @@ class STDbSqlCases
                 $value= "null";
             }
         }elseif(isset($value))
-        {
+        {// type should be a string
             $keyword= $this->table->db->keyword($value);
             if($keyword === false)
-                $value= "'".$value."'";
+            {
+                if(typeof($this->table, "STDbTable"))
+                {
+                    if( !isset($this->table->aArgumentList['binary']) ||
+                        !in_array($column, $this->table->aArgumentList['binary'])   )
+                    {
+                        $value= $this->db->real_escape_string($value);
+                    }
+                    $value= $this->db->getDelimitedString($value, "string");
+                    if(isset($this->table->aArgumentList['encrypt'][$column]))
+                    {
+                        $value= "aes_encrypt($value,";
+                        $value.= "'{$this->table->aArgumentList['encrypt'][$column]['key']}'";
+                        if(isset($this->table->aArgumentList['encrypt'][$column]['iv']))
+                        {
+                            $content= $this->table->aArgumentList['encrypt'][$column]['iv'];
+                            $content=  $this->db->real_escape_string($content);
+                            $value.= ",'$content'";
+                        }
+                        if(isset($this->table->aArgumentList['encrypt'][$column]['mode']))
+                        {
+                            $content= $this->table->aArgumentList['encrypt'][$column]['mode'];
+                            $content=  $this->db->real_escape_string($content);
+                            $value.= ",'$content'";
+                        }
+                        $value.= ")";
+                    }
+                }else
+                    $value= "'".$value."'";
+            }
         }else // value is not set
             $value= "null";
         return $value;

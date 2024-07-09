@@ -2429,6 +2429,7 @@ class STItemBox extends STBaseBox
 			$this->sqlResult= $newResult;
 			$this->setSqlError($result);
 			$newFields= array();
+
 			// add fields which are defined inside database
 			// but have no values inside incomming post variable
 			// fields are all columns from table inside database
@@ -2551,17 +2552,6 @@ class STItemBox extends STBaseBox
                 STCheck::echoSpace($space);
                 echo "<b>content:</b> \"".$post[$postColumn]."\"<br />";
             }
-            $ch= 0;
-            if(isset($post[$postColumn]))
-            {
-                $post[$postColumn]= str_replace("'", "\\'", $post[$postColumn], $ch);
-                if( $bFieldDefineSelection &&
-                    $ch > 0                     )
-                {
-                    STCheck::echoSpace($space);
-                    echo "<b>changed to:</b>\"".$post[$postColumn]."\"<br>";
-                }
-            }
 			$enum= 0;
 			if(preg_match("/enum/", $field["flags"]))
 			{
@@ -2646,7 +2636,7 @@ class STItemBox extends STBaseBox
 				{
 					if(strlen($post[$postColumn]) > $field["len"])
 					{
-						$this->msg->setMessageId("TOLONGSTRING@@", $columnName, $field["len"]);
+						$this->msg->setMessageId("TOLONGSTRING@@", $columnName, "{$field["len"]}");
 						return false;
 					}
 				}
@@ -2769,10 +2759,6 @@ class STItemBox extends STBaseBox
 			if(isset($post[$postColumn]))
 				$newPost[$name]= $post[$postColumn];
         }
-        //$post= $newPost;
-		//echo __file__.__line__."<br>";
-		//echo "end result of checking files to update inside database:"
-		//st_print_r($post);
         return true;
     }
 		function preSelect($columnName, $value)

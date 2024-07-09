@@ -282,6 +282,27 @@ class STDbTable extends STBaseTable
 		}
 		STBaseTable::optional($field['alias'], $action);
 	}
+	/**
+	 * set column to an binary field.<br />
+	 * sometime needed, maybe implemented value is an encrypted string
+	 * there shouldn't prepared the string with escaped quotes.<br />
+	 * but warning: you should be sure that the string not implement any incomming post
+	 * because there can be intent an hack
+	 * 
+	 * @param string $column name of column or alias
+	 */
+	public function binary(string $column)
+	{
+		$field= $this->findColumnOrAlias($column);
+		$this->aArgumentList["binary"][]= $field['column'];
+	}
+	public function encrypt(string $column, $key, $iv= null, $mode= null)
+	{
+		$field= $this->findColumnOrAlias($column);
+		$this->aArgumentList["encrypt"][$field['column']]= array(	'key'	=> $key,
+																	'iv'	=> $iv,
+																	'mode'	=> $mode	);
+	}
 	function addAccessClusterColumn($column, $parentCluster, $clusterfColumn, $accessInfoString, $addGroup= true, $action= STALLDEF)
 	{
 		Tag::paramCheck($column, 1, "string");
@@ -1034,13 +1055,13 @@ class STDbTable extends STBaseTable
             if(preg_match("/(.+)\\((.+)\\)/", $columnName, $preg))
             {
                 if($preg[2] != "*")
-                    $columnName= $preg[1]."(`".$preg[2]."`)";
+                    $columnName= $preg[1]."(".$this->db->getDelimitedString($preg[2], "field").")";
             }else
-                $columnName= "`$columnName`";
+                $columnName= $this->db->getDelimitedString($columnName, "field");
             if(isset($column["alias"]))
-                $columnAlias= "'".$column["alias"]."'";
+                $columnAlias= $this->db->getDelimitedString($column["alias"], "string");
             else
-                $columnAlias= "'".$column["column"]."'";
+                $columnAlias= $this->db->getDelimitedString($column["column"], "string");
             if(STCheck::isDebug("db.statements.select"))
             {
                 $msg= "select ";
@@ -1099,19 +1120,42 @@ class STDbTable extends STBaseTable
 					{// column is virtual
 						$default= $this->getDefaultValue($column['column']);
 						if(!isset($default))
-							$default= "null";
+							$default= $this->db->getNullValue();
 						elseif(!is_numeric($default))
-							$default= "'$default'";
+							$default= $this->db->getDelimitedString($default, "string");
 						$statement.= $default;
 						$singleStatement.= $default;
 						
 					}else
 					{
-						$singleStatement.= $columnName;
+						$singleColumn= $columnName;
 						if($this->sqlKeyword($column["column"]) != false)
-							$statement.= $columnName;
+							$multiColumn= $columnName;
 						else
-							$statement.= "`".$aliasTable."`.$columnName";
+							$multiColumn= $this->db->getDelimitedString($aliasTable, "field").".$columnName";
+						if(isset($this->aArgumentList['encrypt'][$column['column']]))
+						{
+							$decrypt_function= $this->db->getDecryptFunctionName("AES");
+							$decrypt_content= ",".$this->db->getDelimitedString($this->aArgumentList['encrypt'][$column['column']]['key'], "string");
+							if(	isset($this->aArgumentList['encrypt'][$column['column']]['iv']) ||
+								isset($this->aArgumentList['encrypt'][$column['column']]['mode'])	)
+							{
+								$decrypt_content.= ",";
+								if(isset($this->aArgumentList['encrypt'][$column['column']]['iv']))
+									$decrypt_content.= $this->db->getDelimitedString($this->aArgumentList['encrypt'][$column['column']]['iv'], "string");
+								else
+									$decrypt_content.= $this->db->getNullValue();
+							}
+							if(isset($this->aArgumentList['encrypt'][$column['column']]['mode']))
+							{
+								$decrypt_content.= ",";
+								$decrypt_content.= $this->db->getDelimitedString($this->aArgumentList['encrypt'][$column['column']]['mode'], "string");
+							}
+							$singleColumn= $decrypt_function.$this->db->getDelimitedString($singleColumn.$decrypt_content, "function");
+							$multiColumn= $decrypt_function.$this->db->getDelimitedString($multiColumn.$decrypt_content, "function");
+						}
+						$singleStatement.= $singleColumn;
+						$statement.= $multiColumn;
 					}
                     if(	isset($column["alias"])
                         and

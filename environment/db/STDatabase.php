@@ -461,6 +461,7 @@ abstract class STDatabase extends STObjectContainer
 		$time= $this->getNullTime();
 		return $date." ".$time;
 	}
+	abstract public function getNullValue();
 	function getDateFormat()
 	{
 		$format= "";
@@ -2055,6 +2056,8 @@ abstract class STDatabase extends STObjectContainer
 	abstract public function getFieldDelimiter() : array;
 	abstract public function getStringDelimiter() : array;
 	abstract protected function getAllColumnKeyword() : string;
+	abstract public function getEncryptFunctionName(string $type= "AES") : string;
+	abstract public function getDecryptFunctionName(string $type= "AES") : string;
 	public function getDelimitedString(string $content, string $for, bool $bRegex= false)
 	{
 	    $sRv= "";
