@@ -1116,6 +1116,7 @@ class STDbTable extends STBaseTable
 						$aUseAliases[$aTableAlias[$column['table']]]= $column['table'];
 					}
                     
+					$aEncryptList= null;
 					if(!isset($column["table"]))
 					{// column is virtual
 						$default= $this->getDefaultValue($column['column']);
@@ -1134,22 +1135,33 @@ class STDbTable extends STBaseTable
 						else
 							$multiColumn= $this->db->getDelimitedString($aliasTable, "field").".$columnName";
 						if(isset($this->aArgumentList['encrypt'][$column['column']]))
+							$aEncryptList= $this->aArgumentList['encrypt'][$column['column']];
+						if(	typeof($this, "STDbSelector") &&
+							isset($this->aoToTables[$this->Name]) &&
+							isset($this->aoToTables[$this->Name]->aArgumentList['encrypt'][$column['column']])	)
+						{
+							if(isset($aEncryptList))
+								$aEncryptList= array_merge($aEncryptList, $this->aoToTables[$this->Name]->aArgumentList['encrypt'][$column['column']]);
+							else
+								$aEncryptList= $this->aoToTables[$this->Name]->aArgumentList['encrypt'][$column['column']];
+						}
+						if(isset($aEncryptList))
 						{
 							$decrypt_function= $this->db->getDecryptFunctionName("AES");
-							$decrypt_content= ",".$this->db->getDelimitedString($this->aArgumentList['encrypt'][$column['column']]['key'], "string");
-							if(	isset($this->aArgumentList['encrypt'][$column['column']]['iv']) ||
-								isset($this->aArgumentList['encrypt'][$column['column']]['mode'])	)
+							$decrypt_content= ",".$this->db->getDelimitedString($aEncryptList['key'], "string");
+							if(	isset($aEncryptList['iv']) ||
+								isset($aEncryptList['mode'])	)
 							{
 								$decrypt_content.= ",";
-								if(isset($this->aArgumentList['encrypt'][$column['column']]['iv']))
-									$decrypt_content.= $this->db->getDelimitedString($this->aArgumentList['encrypt'][$column['column']]['iv'], "string");
+								if(isset($aEncryptList['iv']))
+									$decrypt_content.= $this->db->getDelimitedString($aEncryptList['iv'], "string");
 								else
 									$decrypt_content.= $this->db->getNullValue();
 							}
-							if(isset($this->aArgumentList['encrypt'][$column['column']]['mode']))
+							if(isset($aEncryptList['mode']))
 							{
 								$decrypt_content.= ",";
-								$decrypt_content.= $this->db->getDelimitedString($this->aArgumentList['encrypt'][$column['column']]['mode'], "string");
+								$decrypt_content.= $this->db->getDelimitedString($aEncryptList['mode'], "string");
 							}
 							$singleColumn= $decrypt_function.$this->db->getDelimitedString($singleColumn.$decrypt_content, "function");
 							$multiColumn= $decrypt_function.$this->db->getDelimitedString($multiColumn.$decrypt_content, "function");
@@ -1157,9 +1169,9 @@ class STDbTable extends STBaseTable
 						$singleStatement.= $singleColumn;
 						$statement.= $multiColumn;
 					}
-                    if(	isset($column["alias"])
-                        and
-                        $column["column"]!=$column["alias"])
+                    if(	isset($column["alias"]) &&
+                        (	$column["column"]!=$column["alias"] ||
+							isset($aEncryptList)					)	)
                     {
                         $statement.= " as $columnAlias";
                         $singleStatement.= " as $columnAlias";

@@ -9,7 +9,7 @@ class STBaseTable
     protected $ID= 0;
 	var $Name;
 	/**
-	 * define wheter the table
+	 * define whether the table
 	 * is an correct defined table object
 	 * or only an alias table
 	 * @var boolean
@@ -60,6 +60,12 @@ class STBaseTable
 	 * @var array
 	 */
 	protected $aPreDefinde= array();
+	/**
+	 * argument list for different properties.
+	 * Currently:	binary columns	- 	
+	 * 				encrypt columns	-	if column should encrypted
+	 */
+	var $aArgumentList= array();
 	/**
 	 * columns for cluster where row should only show
 	 * when user has cluster
