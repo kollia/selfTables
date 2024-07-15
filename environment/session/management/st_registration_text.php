@@ -31,11 +31,10 @@ function usermanagement_email_replacement(bool $html, string &$string, array $re
 	$nChanged= 0;
 	foreach($dbreplacement as $key => $value)
 	{
-		if(isset($value))
-		{
-			$string= preg_replace("/\{$key\}/", $value, $string, /*no limit*/-1, $count);
-			$nChanged+= $count;
-		}
+		if(!isset($value))
+			$value= "";
+		$string= preg_replace("/\{$key\}/", $value, $string, /*no limit*/-1, $count);
+		$nChanged+= $count;
 	}
 	foreach($replacement as $value)
 	{

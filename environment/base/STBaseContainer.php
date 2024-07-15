@@ -544,6 +544,15 @@ abstract class STBaseContainer extends BodyTag implements STContainerTempl
 	public function setExternSiteCreator(STSiteCreator &$externSiteCreator)
 	{
 		$this->oExternSideCreator= &$externSiteCreator;
+	}	
+	/**
+	 * whether site need a button to go back
+	 *
+	 * @param bool $bNeed whether need a backbutton
+	 */
+	public function needBackButton(bool $bNeed)
+	{
+		$this->bBackButton= $bNeed;
 	}
 	function execute(&$externSiteCreator, $onError)
 	{
@@ -1414,12 +1423,19 @@ abstract class STBaseContainer extends BodyTag implements STContainerTempl
 							}
 							if(isset($get_vars["table"]))
 							    $get->delete("stget[firstrow][".$get_vars["table"]."]");
-							$this->bBackButton= $this->deleteQueryContainer($get);
-							if(!$this->bBackButton)
+							if(	!isset($this->bBackButton) ||
+								$this->bBackButton == true		)
 							{
-								Tag::echoDebug("containerChoice", "the actual container is the first,");
-								Tag::echoDebug("containerChoice", "or all before has set ->forwardByOneEntry()");
-								Tag::echoDebug("containerChoice", "and this tables have only one entry.");
+								$this->bBackButton= $this->deleteQueryContainer($get);
+								if(!$this->bBackButton)
+								{
+									Tag::echoDebug("containerChoice", "the current container is the first,");
+									Tag::echoDebug("containerChoice", "or all before has set ->forwardByOneEntry()");
+									Tag::echoDebug("containerChoice", "and this tables have only one entry.");
+								}
+							}elseif(!$this->bBackButton)
+							{
+								Tag::echoDebug("containerChoice", "do not need Back-Button was set before");
 							}
 
 						}elseif(isset($get_vars["action"]) &&	

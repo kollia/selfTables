@@ -438,6 +438,12 @@ class STUserManagement extends STObjectContainer
 			
 			if($action==STLIST)
 			{
+				//STCheck::debug();
+				$printContainer= STObjectContainer::getContainer("DataSignature");
+				$printText= "no text";
+				//$printText= $this->msgBox->getMessageContent("PRINT");
+				//$user->select("ID", $printText);
+				$user->link("print", $printContainer);
 				//$user->select("NrLogin", "logged in");
 				//$user->select("LastLogin", "last login");
 				$user->orderBy("domain");
@@ -625,6 +631,7 @@ EOT;
 		// use this translation strings only if STProjectUserSiteCreator set to install
 		if($language == "de")
 		{
+			$this->setMessageContent("PRINT", "druck");
 		    $this->setMessageContent("MAIL-HOST_NAME-description", "name of Website");
 		    $this->setMessageContent("MAIL-HOST_NAME-subject", "");
 		    $this->setMessageContent("MAIL-HOST_NAME-text", "");
@@ -810,6 +817,7 @@ EOT;
 			
 		}else // otherwise language have to be english "en"
 		{
+			$this->setMessageContent("PRINT", "print");
 		    $this->setMessageContent("MAIL-HOST_NAME-description", "name of Website");
 		    $this->setMessageContent("MAIL-HOST_NAME-subject", "");
 		    $this->setMessageContent("MAIL-HOST_NAME-text", "");

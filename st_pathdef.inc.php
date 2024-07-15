@@ -155,7 +155,8 @@
 		$_st_registration_text=				$_stenvironmenttools_path."/session/management/st_registration_text.php";
 		$_stbackgroundimagesdbcontainer=	$_stenvironmenttools_path."/session/management/STBackgroundImagesDbContainer.php";
 		$_stprojectoverviewlist=			$_stenvironmenttools_path."/session/management/STProjectOverviewList.php";
-		$_stuserprofilecontainer=           $_stenvironmenttools_path."/session/management/STUserProfileContainer.php";	
+		$_stuserprofilecontainer=           $_stenvironmenttools_path."/session/management/STUserProfileContainer.php";
+		$_stusersignaturecontainer=			$_stenvironmenttools_path."/session/management/STUserSignatureContainer.php";
 		$_stprojectuserframe=		        $_stenvironmenttools_path."/session/management/STProjectUserFrame.php";			
 		$_stusermanagementsession=			$_stenvironmenttools_path."/session/management/STUserManagementSession.php";
 		$_stprojectmanagement=				$_stenvironmenttools_path."/session/management/STProjectManagement.php";

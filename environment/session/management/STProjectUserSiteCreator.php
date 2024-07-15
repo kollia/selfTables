@@ -7,6 +7,17 @@ require_once($_stusersitecreator);
      * Beginning always with the 'Login' var which point to 'Registration' or 'ProjectOverview'.
      * The project key 'var' have to be always the same than the array key.
      * If the 'name' project key set to null, there is no entry in database project table.
+     * project structure:
+     *      array( "project" => array(  "name"          =>  project name listed on first html site of overview list
+     *                                  "var"           =>  same definition of project key
+     *                                  "container"     =>  name of container object callable from ::getContainer()
+     *                                  "from"          =>  from which container took the base table properties
+     *                                  "position"      =>  order position inside shown overview list,
+     *                                                      if more than one equal number alphabetic order by name
+     *                                  "object"        =>  class name of container
+     *                                  "source"        =>  path of php file where source code
+     *                                  "sourcevar"     =>
+     *                                  "description"   =>  description shown in overview list           )               )
      * @var array
      */
 $__global_registered_project_containers= array( "Login" => array(   "name" => null,
@@ -57,6 +68,14 @@ $__global_registered_project_containers= array( "Login" => array(   "name" => nu
                                                                             "source" =>"_stusermanagement",
                                                                             "sourcevar" => true,
                                                                             "description" => "Management for all user and projects" ),
+                                                "signature" => array(   "name" => null,
+                                                                        "var" => "signature",
+                                                                        "container" => "DataSignature",
+                                                                        "from" => "UserManagement",
+                                                                        "object" => "STUserSignatureContainer",
+                                                                        "source" =>"_stusersignaturecontainer",
+                                                                        "sourcevar" => true,
+                                                                        "description" => "Data signature for printing" ),
                                                 "ExampleProject" => array(  "name" => "DB selfTables",
                                                                             "var" => "ExampleProject",
                                                                             "container" => "dbselftables",
@@ -348,6 +367,15 @@ class STProjectUserSiteCreator extends STUserSiteCreator
         $this->initialPredefinedStates();
         STUserSiteCreator::execute($onError);
     }
+    /**
+     * define all containers which are predefined in global array variable 
+     * <code>$__global_registered_project_containers</code>
+     * inside file STProjectUserSiteCreator on beginning
+     * 
+     * @param string $databaseContainerName primary database
+     * @param array array of predefined containerames which are registerd before, should not maked twice
+     *              ('var' key from global variable mentioned in description before)
+     */
     protected function predefineContainers(string $databaseContainerName, array $noProjectRegister= array())
     {
         global $_stum_installcontainer;
@@ -371,9 +399,13 @@ class STProjectUserSiteCreator extends STUserSiteCreator
             if( isset($project['object']) &&
                 !in_array($project['var'], $noProjectRegister)  )
             {
+                if(isset($project['from']))
+                    $fromContainer= $project['from'];
+                else
+                    $fromContainer= $databaseContainerName;
                 STObjectContainer::predefine(   $project['container'],
                                                 $project['object'],
-                                                $databaseContainerName,
+                                                $fromContainer,
                                                 $project['source']      );
             }
         }
