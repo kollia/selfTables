@@ -54,7 +54,7 @@
 	 * global debug settings
 	 * for development required on begin
 	 */
-    $__globally_debug_defined= true;
+    $__globally_debug_defined= false;
     global_debug_definition($__globally_debug_defined);
 
 	//--------------------------------------------------------------------------
