@@ -16,7 +16,8 @@ require_once($_stusersitecreator);
      *                                                      if more than one equal number alphabetic order by name
      *                                  "object"        =>  class name of container
      *                                  "source"        =>  path of php file where source code
-     *                                  "sourcevar"     =>
+     *                                  "sourcevar"     =>  boolean, whether source is an predefined variable (true)
+     *                                                      or real defined string of path
      *                                  "description"   =>  description shown in overview list           )               )
      * @var array
      */
@@ -393,7 +394,8 @@ class STProjectUserSiteCreator extends STUserSiteCreator
             }
         }
 
-        STObjectContainer::predefine("um_install", "STUM_InstallContainer", $databaseContainerName, $_stum_installcontainer);
+        if(!in_array("um_install", $noProjectRegister))
+            STObjectContainer::predefine("um_install", "STUM_InstallContainer", $databaseContainerName, $_stum_installcontainer);
         foreach($this->aProjects as $project)
         {
             if( isset($project['object']) &&
