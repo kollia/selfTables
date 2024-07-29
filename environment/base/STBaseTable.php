@@ -3642,7 +3642,6 @@ class STBaseTable
 				and
 				STUserSession::sessionGenerated()   )
 			{
-			    //st_print_r($table->sAccessClusterColumn,2);
 			    $session= &STUserSession::instance();
 				$aAccess= $session->getDynamicClusters($this);
 				if(count($aAccess))
@@ -3652,41 +3651,24 @@ class STBaseTable
     				$where= new STDbWhere();
 					// read all columns for dynamic clustering
 					// which are set in the table object
-					$bFounded= false;
 					$aktAccess= "";
-					//$accessTo= array();
-    				foreach($this->sAccessClusterColumn as $info)
-    				{
-    				    if($info["cluster"]!=$aktAccess)
-    					{
-    					    if($in)
-    						{
-    					        $in= substr($in, 0, strlen($in)-1).")";
-    						    $where->orWhere($in);
-    						}
-    						$checked= array();
-    						$aktAccess= $info["cluster"];
-    						$in= $aktAccess." in(";
-    					}
-    					$checked[$info["action"]]= 0;
-
-						//echo "info access: ";st_print_r($info["action"]);echo "<br />";
-    				    foreach($aAccess[$info["action"]] as $key=>$cluster)
-    					{
-    					    if($session->hasAccess($cluster, null, null, false, $info["action"]))
-    						{
-    						    $in.= $key.",";
-    							++$checked[$info["action"]];
-								$bFounded= true;
-								//$accessTo[$info["action"]]= true;
-    						}
-						}
-    				}
-					if($bFounded)
+					foreach($aAccess as $action=>$rows)
 					{
-    					$in= substr($in, 0, strlen($in)-1).")";
-    					$where->orWhere($in);
-    					$this->andWhere($where);
+						foreach($rows as $row)
+						{
+							foreach($row as $column=>$cluster)
+							{
+								if($session->hasAccess($cluster, null, null, $action, false))
+								{
+									$sWhere= "`{$column}`='{$cluster}'";
+									$this->orWhere($sWhere);
+									if(!isset($checked[$action]))
+										$checked[$action]= 1;
+									else
+										++$checked[$action];
+								}
+							}
+						}
 					}
 					$this->bDynamicAccessIn= $checked;
 				}

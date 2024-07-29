@@ -380,7 +380,11 @@ class STUserSession extends STDbSession
   		    {
   		        foreach($table->sAccessClusterColumn as	$key=>$clusterInfo)
 			    {
-			        $clusters[$clusterInfo["action"]][$row[$pkColumn]][$clusterInfo["column"]]= $row[$clusterInfo["column"]];
+					if(trim($row[$clusterInfo["column"]]) == "")
+						STCheck::warning(1, "STUserSession::getDynamicClusters()", 
+							"inside table {$table->getName()} row of $pkColumn:{$row[$pkColumn]} column {$clusterInfo["column"]} has no cluster");
+					else
+			        	$clusters[$clusterInfo["action"]][$row[$pkColumn]][$clusterInfo["column"]]= $row[$clusterInfo["column"]];
 			    }
   		    }
 			if($store_in_session)

@@ -1334,7 +1334,7 @@ abstract class STObjectContainer extends STBaseContainer
 										//alle Spalten aus der Datenbank holen
 
 			// create rows for dynamic-clustering
-			$checked= array();//$table->createDynamicAccess();
+			$checked= $table->createDynamicAccess();
 			if(count($checked))
 			{
   				if(isset($checked[STADMIN]))
@@ -1708,14 +1708,14 @@ abstract class STObjectContainer extends STBaseContainer
 								or
 								$info["action"]==STADMIN )
 						{
-						    $cluster= $oCallback->getValue($info["column"]);
+						    $cluster= $oCallback->getValue($info["column"], $row);
 								break;
 						}
 				}
 				//echo $cluster."<br />";
 				if(!$cluster)
 				    return;
-				if(!$session->hasAccess($cluster, null, null, false, $action))
+				if(!$session->hasAccess($cluster, null, null, $action, false))
 				    $oCallback->setValue("");
 		}
 		

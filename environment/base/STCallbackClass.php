@@ -371,6 +371,8 @@ class STCallbackClass
 //    				STCheck::is_warning(!array_key_exists($columnPrefix.$column, $this->sqlResult[$rownum]), "STCallbackClass::getValue()",
 //    										"the value for column $column in row $rownum is not set");
     			}
+				if(!isset($this->sqlResult[$rownum][$columnPrefix.$column]))
+					return null;
 				return $this->sqlResult[$rownum][$columnPrefix.$column];
 			}
   			if(	is_array($this->sqlResult) &&

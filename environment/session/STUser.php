@@ -282,7 +282,7 @@ class STUser
 	{
 		if($this->projectAccessTable) // wenn eine Tabelle gesetzt wurde �ber projektspezifische Abfrage
 			return $this->hasProjectAccess($authorisationString, $toAccessInfoString, $customID);
-		return $this->access($authorisationString, $toAccessInfoString, $customID, $gotoLoginMask);
+		return $this->hasAccess($authorisationString, $toAccessInfoString, $customID, $gotoLoginMask);
 	}
 	function hasProjectAccess($authorisationString, $toAccessInfoString= null, $customID= null)
 	{		
@@ -331,7 +331,7 @@ class STUser
 			}
 		}
 		$clusterString= substr($clusterString, 1);//echo __FILE__.__LINE__."<br />ask for $clusterString<br />";
-		return $this->access($clusterString, $toAccessInfoString, $customID);
+		return $this->hasAccess($clusterString, $toAccessInfoString, $customID);
 	}
 	// alex 06/05/2005:	Funktionsname von hasAccess auf access ge�ndert,
 	//					da jetzt in hasAccess zwischen access und hasProjectAccess 

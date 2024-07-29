@@ -1131,6 +1131,9 @@ class STListBox extends STBaseBox
 		}else
 			$_showColumnProperties= false;
 		$class= "Tr1";
+		// read first whether an column defined
+		// to need permission rights
+		$aAccessClusterColumns= $this->asDBTable->sAccessClusterColumn;
         foreach($Rows as $rowKey=>$rowArray)
         {
             $extraField= null;

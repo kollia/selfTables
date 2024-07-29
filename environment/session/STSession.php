@@ -339,7 +339,11 @@ class STSession
 	    $this->hasAccess($authorisationString, $toAccessInfoString, $customID, /*gotoLoginMask*/true);
 	}
 	/**
-	 * ask session whether have user currently access to specific CLUSTERs
+	 * ask session whether have user currently access to specific CLUSTERs.<br />
+	 * After first parameter it is possible to define on all positions the last boolean
+	 * parameter <code>$gotoLoginMask</code>
+	 * If you want to pull the last parameter forward, it is also possible
+	 * to set the action parameter (STINSERT/STUPDATE/STDELETE or STALLDEF) after them.
 	 * 
 	 * @param string|array $authoricationCluster string or array of clusters defined inside usermanagement
 	 * @param string $toAccessInfoString authorisation string logged by access into database
@@ -348,21 +352,60 @@ class STSession
 	 * @param boolean $gotoLoginMask goto login mask if access not given, otherwise return false
 	 * @return boolean return true when access given, otherwise by no access and variable <code>$gotoLoginMask = false</code> return false
 	 */
-	public function hasAccess($authoricationCluster, $toAccessInfoString= null, $customID= null, $action= STALLDEF, $gotoLoginMask= false)
+	public function hasAccess($authorisationCluster, $toAccessInfoString= null, $customID= null, $action= STALLDEF, $gotoLoginMask= false)
 	{
-		STCheck::param($authoricationCluster, 0, "string", "array");
-		STCheck::param($toAccessInfoString, 1, "string", "empty(string)", "null");
-		STCheck::param($customID, 2, "string", "int", "null");
-		STCheck::param($action, 3, "bool", "string");
-		STCheck::param($gotoLoginMask, 4, "bool");
-
-		if(is_bool($action))
+		if(STCheck::isDebug())
 		{
-		    $gotoLoginMask= $action;
-		    $action= STALLDEF;
+			STCheck::param($authorisationCluster, 0, "string", "array");
+			STCheck::param($toAccessInfoString, 1, "string", "empty(string)", "bool", "null");
+			STCheck::param($customID, 2, "string", "int", "bool", "null");
+			STCheck::param($action, 3, "bool", "string");
+			STCheck::param($gotoLoginMask, 4, "bool");
 		}
-		//Tag::alert($action==STALLDEF, "STSession::access()", "asking by action STAlldef");
-		return $this->access($authoricationCluster, $toAccessInfoString, $customID, $gotoLoginMask, $action);
+		
+		$params= array();
+		$params['authorisationCluster']= $authorisationCluster;
+		if(!is_bool($toAccessInfoString))
+		{
+			$params['toAccessInfoString']= $toAccessInfoString;
+			if(!is_bool($customID))
+			{
+				$params['customID']= $customID;
+				if(!is_bool($action))
+				{
+					$params['action']= $action;
+					$params['gotoLoginMask']= $gotoLoginMask;
+				}else
+				{
+					if(is_string($gotoLoginMask)) // action is set behind gotoLoginMask
+						$action_set= $gotoLoginMask;
+					else
+						$action_set= STALLDEF;
+					$params['action']= $action_set;
+					$params['gotoLoginMask']= $action;
+				}
+			}else
+			{
+				if(is_string($action)) // action is set behind gotoLoginMask
+					$action= $action;
+				else
+					$action= STALLDEF;
+				$params['customID']= null;
+				$params['action']= STALLDEF;
+				$params['gotoLoginMask']= $customID;
+			}
+		}else
+		{
+			if(is_string($customID)) // action is set behind gotoLoginMask
+				$action= $customID;
+			else
+				$action= STALLDEF;
+			$params['toAccessInfoString']= null;
+			$params['customID']= null;
+			$params['action']= $action;
+			$params['gotoLoginMask']= $toAccessInfoString;
+		}
+		return $this->accessA($params);
 	}
 	function hasProjectAccess($authorisationString, $toAccessInfoString= null, $customID= null)
 	{
@@ -429,19 +472,28 @@ class STSession
 			}
 		}
 		$clusterString= substr($clusterString, 1);//echo __FILE__.__LINE__."<br />ask for $clusterString<br />";
-		return $this->access($clusterString, $toAccessInfoString, $customID);
+		return $this->hasAccess($clusterString, $toAccessInfoString, $customID);
 	}
 	// alex 06/05/2005:	Funktionsname von hasAccess auf access ge�ndert,
 	//					da jetzt in hasAccess zwischen access und hasProjectAccess
 	//					unterschieden wird
-	protected function access($authoricationCluster, $toAccessInfoString= null, $customID= null, $gotoLoginMask= false, $action= STALLDEF)
+	/**
+	 * @param array $input - array of follow input parameters:
+	 *		- string authorisationCluster - cluster(s) to check access for
+	 *		- string toAccessInfoString - string to identify the access request
+	 *		- string customID - customID to identify the access request
+	 *		- bool gotoLoginMask - if true and user has no access to all clusters in $input, user will be redirected to login mask
+	 *		- int action - action to check access for
+	 * @return bool - true if user has access to all clusters in $input, false otherwise
+	 */
+	protected function accessA($input)
 	{
-		Tag::paramCheck($authoricationCluster, 1, "string", "array");
-		Tag::paramCheck($toAccessInfoString, 2, "string", "null");
-		Tag::paramCheck($customID, 3, "string", "int", "null");
-		Tag::paramCheck($gotoLoginMask, 4, "bool");
+		STCheck::param($input, 0, "array");
+		Tag::paramCheck($input['authorisationCluster'], 1, "string", "array");
+		Tag::paramCheck($input['toAccessInfoString'], 2, "string", "null");
+		Tag::paramCheck($input['customID'], 3, "string", "int", "null");
+		Tag::paramCheck($input['gotoLoginMask'], 4, "bool");
 
-		//Tag::alert($action==STALLDEF, "STSession::access()", "asking by action STAlldef");
 		if($this->noRegister)
 		{
 			/**/Tag::echoDebug("user", "-&gt; User must not be registered so return TRUE<br />");
@@ -450,37 +502,37 @@ class STSession
 		$cluster_membership= $this->getSessionVar("ST_CLUSTER_MEMBERSHIP");
 		$staction= "unknown action";
 		$logincluster= false;
-		if(is_string($authoricationCluster))
+		if(is_string($input['authorisationCluster']))
 		{
-			$clusters= preg_split("/,/", $authoricationCluster, -1, PREG_SPLIT_NO_EMPTY);
+			$clusters= preg_split("/,/", $input['authorisationCluster'], -1, PREG_SPLIT_NO_EMPTY);
 		}else
-	        $clusters= $authoricationCluster;
+	        $clusters= $input['authorisationCluster'];
 		/**/if( Tag::isDebug("user") )
 		{
-			$sAccess= $toAccessInfoString;
+			$sAccess= $input['toAccessInfoString'];
 			if($sAccess===NULL)
 				$sAccess= "NULL";
 			else
 				$sAccess= htmlspecialchars("\"".$sAccess."\"");
-			$sID= $customID;
+			$sID= $input['customID'];
 			if($sID===NULL)
 				$sID= "NULL";
 			else
 				$sID= htmlspecialchars("\"".$sID."\"");
-			if($action==STLIST)
+			if($input['action']==STLIST)
 				$staction= "STLIST";
-			elseif($action==STUPDATE)
+			elseif($input['action']==STUPDATE)
 				$staction= "STUPDATE";
-			elseif($action==STINSERT)
+			elseif($input['action']==STINSERT)
 				$staction= "STINSERT";
-			elseif($action==STDELETE)
+			elseif($input['action']==STDELETE)
 				$staction= "STDELETE";
-			elseif($action==STALLDEF)
+			elseif($input['action']==STALLDEF)
 				$staction= "STALLDEF";
-			elseif($action==STADMIN)
+			elseif($input['action']==STADMIN)
 				$staction= "STADMIN";
 			$space= STCheck::echoDebug("user", "entering hasAccess(&lt;follow clusters&gt;, ".$sAccess.", ".$sID.", ".$staction."</em>)");
-			st_print_r($authoricationCluster, 1, $space);
+			st_print_r($input['authorisationCluster'], 1, $space);
 		}
 		// alex 09/10/2005:	User muss nicht eingeloggt sein
 		//					um auf Projekte zugriff zu haben
@@ -519,7 +571,7 @@ class STSession
 			and
 			$this->isLoggedIn())
 		{
-  			$this->LOG(STACCESS, $customID, $toAccessInfoString);
+  			$this->LOG(STACCESS, $input['customID'], $input['toAccessInfoString']);
   			/**/Tag::echoDebug("user", "-&gt; User is Super-Admin &quot;allAdmin&quot; so return TRUE<br />");
   			return true;
   		}
@@ -527,22 +579,16 @@ class STSession
 		{
 		    if(isset( $cluster_membership[ trim($cluster) ]))
 			{
-				if($toAccessInfoString)
-					$this->LOG(STACCESS, $customID, $toAccessInfoString);
+				if($input['toAccessInfoString'])
+					$this->LOG(STACCESS, $input['customID'], $input['toAccessInfoString']);
 				/**/Tag::echoDebug("user", "-&gt; User is Member of '$cluster' Cluster so return <b>TRUE</b>");
 				return true;
 			}
 		}
-		if($action!=STALLDEF)
+		if($input['action']!=STALLDEF)
 		{
 			Tag::echoDebug("user", "member has no direct access to any clusters and action is $staction, so check for dynamic cluster");
 
-			/*if($action==STUPDATE)
-				$action= STADMIN;
-			elseif($action==STINSERT)
-				$action= STADMIN;
-			elseif($action==STDELETE)
-				$action= STADMIN;*/
 			foreach($clusters as $cluster)
 			{
 				Tag::echoDebug("access", "look for dynamic access to cluster <b>$cluster</b>");
@@ -552,7 +598,7 @@ class STSession
 				    foreach($cluster_membership as $dynamic_cluster=>$project)
 					{
 						Tag::echoDebug("access", "with having cluster <b>$dynamic_cluster</b>");
-						if($action==STLIST)
+						if($input['action']==STLIST)
 						{
 							$cl= preg_quote($cluster);
 							$dyn_cl= preg_quote($dynamic_cluster);
@@ -561,31 +607,31 @@ class STSession
 								or
 								preg_match("/^".$dyn_cl."\_/", $cluster)	)
 							{
-            					if($toAccessInfoString)
-            						$this->LOG(STACCESS, $customID, $toAccessInfoString);
+            					if($input['toAccessInfoString'])
+            						$this->LOG(STACCESS, $input['customID'], $input['toAccessInfoString']);
             					/**/Tag::echoDebug("user", "-&gt; User is Member of '$cluster' with dynamic Cluster '$dynamic_cluster', so return TRUE<br />");
             					return true;
 							}
-						}else // else for if($action==STLIST)
+						}else // else for if($input['action']==STLIST)
 						{
 							$cl= preg_quote($dynamic_cluster);
 							//echo "preg_match('/^$cl\_/', $dynamic_cluster)<br />";
 							if(preg_match("/^".$cl."\_/", $cluster))
 							{
-            					if($toAccessInfoString)
-            						$this->LOG(STACCESS, $customID, $toAccessInfoString);
+            					if($input['toAccessInfoString'])
+            						$this->LOG(STACCESS, $input['customID'], $input['toAccessInfoString']);
             					/**/Tag::echoDebug("user", "-&gt; User is Member of '$cluster' width dynamic Cluster '$dynamic_cluster', so return TRUE<br />");
             					return true;
 							}
-						} // end of if($action==STLIST)
+						} // end of if($input['action']==STLIST)
 					}// end of	foreach($cluster_membership["ST_CLUSTER_MEMBERSHIP"])
 				}// end of if(is_array($cluster_membership["ST_CLUSTER_MEMBERSHIP"]))
 			}// end of foreach($clusters)
-		}// end of if($action!=STALLDEF)
+		}// end of if($input['action']!=STALLDEF)
 
-		if($toAccessInfoString)
-			$this->LOG(STACCESS_ERROR, $customID, $toAccessInfoString);
-		if($gotoLoginMask)
+		if($input['toAccessInfoString'])
+			$this->LOG(STACCESS_ERROR, $input['customID'], $input['toAccessInfoString']);
+		if($input['gotoLoginMask'])
 		{
 		    if(STCheck::isDebug())
 		    {
