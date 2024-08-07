@@ -504,9 +504,13 @@ abstract class STBaseContainer extends BodyTag implements STContainerTempl
 		return "NOERROR";
 	}
 	/**
-	 * method will be called by creation
-	 * when container need to know which tables inside
-	 * with witch names
+	 * Method will be called after creation
+	 * when container need to know primary properties:<br />
+	 * - displayed container name [setDisplayName()]<br />
+	 * - which table need [needTable()]<br />
+	 * &#160; <b>tables need to have</b> (when not defined from any parent container)<br />
+	 * - display name from table [setDisplayName()]<br />
+	 * - cluster access [accessBy(), accessContainer()/adminContainer() is container()]
 	 */
 	abstract protected function create();
 	protected function createContainer()
@@ -683,8 +687,10 @@ abstract class STBaseContainer extends BodyTag implements STContainerTempl
 				}
 			}
 		}
+		$aSearchedContainers= array();
 		foreach($global_array_all_exist_stobjectcontainers as $name=>$container)
 		{
+			$aSearchedContainers[]= $name;
 			if($name==$containerName)
 			{
 			    $containerObj= &$global_array_all_exist_stobjectcontainers[$name];
@@ -706,7 +712,41 @@ abstract class STBaseContainer extends BodyTag implements STContainerTempl
 			$fromContainer= $global_array_exist_stobjectcontainer_with_classname[$containerName]["from"];
 			
 		}else
+		{
+			// try to run create method from all exist containers
+			// maybe in one will be create a new container
+			$nNewExist= 0;
+			$nExistContainers= count($global_array_all_exist_stobjectcontainers);
+			do{
+				foreach($global_array_all_exist_stobjectcontainers as $name=>$container)
+				{
+					$container->createContainer();
+					$nNewExist= count($global_array_all_exist_stobjectcontainers);
+					if($nNewExist > $nExistContainers)
+					{
+						foreach($global_array_all_exist_stobjectcontainers as $name=>$container)
+						{
+							if(!in_array($name, $aSearchedContainers))
+							{
+								$aSearchedContainers[]= $name;
+								$nExistContainers++;
+								if($name==$containerName)
+								{
+									$containerObj= &$global_array_all_exist_stobjectcontainers[$name];
+									return $containerObj;
+								}
+								$container->createContainer();
+								$nNewExist= count($global_array_all_exist_stobjectcontainers);
+							}
+						}
+					}
+				}
+			}while($nExistContainers < $nNewExist);
+
+			// take first database container
 			$fromContainer= $_selftable_first_main_database_name;
+			STCheck::warning(1, "STBaseContainer::getContainer()", "cannot find container '$containerName' produce first database container '$fromContainer'", 1);
+		}
 
 		// if className is an exist database class
 		// it should be no error and the second parameter
