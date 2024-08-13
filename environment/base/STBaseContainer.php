@@ -477,7 +477,11 @@ abstract class STBaseContainer extends BodyTag implements STContainerTempl
 	    $this->createMessages($this->locale['language'], $this->locale['nation']);
 	    // initial container
 	    $this->initContainer();
-
+		$this->defineBackbuttonProperties($externSideCreator);
+		return "NOERROR";
+	}
+	protected function defineBackbuttonProperties($externSideCreator)
+	{
 		$action= $this->getAction();
 		$this->oExternSideCreator= &$externSideCreator;
 		if(!isset($this->bBackButton))
@@ -501,7 +505,6 @@ abstract class STBaseContainer extends BodyTag implements STContainerTempl
 
 		if(!isset($this->sBackButton))
 		    $this->sBackButton= $this->oExternSideCreator->sBackButton;
-		return "NOERROR";
 	}
 	/**
 	 * Method will be called after creation
@@ -1292,15 +1295,17 @@ abstract class STBaseContainer extends BodyTag implements STContainerTempl
   			$div->add(br());
 			return $div;
 		}
-		function makeHeadlineButtons(&$divTag, $get_vars)
+		protected function getBackButton()
 		{
 			global $HTTP_SERVER_VARS;
 
-			$HTTP_GET_VARS= new STQueryString();
-			$HTTP_GET_VARS= $HTTP_GET_VARS->getArrayVars();
-
-			// alex 16/06/2005: definition des BackButtons an den Anfang der Funktion gezogen,
-			//					da er bei der Parameter-Auswahl noch ver�ndert wird
+			$query= new STQueryString();
+			$get_vars= $query->getUrlParamValue("stget");
+			if(!isset($get_vars['table']))
+				$get_vars['table']= $this->getTableName();
+			if(!isset($get_vars['action']))
+				$get_vars['action']= $this->getAction();
+			$backButton= null;
     		$sBackButtonName= $this->sBackButton;
     		$sBackButtonContainerName= null;
 			if(	(	$this->oExternSideCreator->sFirstTableContainerName!=$this->getName() &&
@@ -1435,6 +1440,17 @@ abstract class STBaseContainer extends BodyTag implements STContainerTempl
 					STCheck::echoDebug("containerChoice", "---------------------------------------------------------------------------");
 				//}
 			}//end if(display backbutton)
+			return $backButton;
+		}
+		function makeHeadlineButtons(&$divTag, $get_vars)
+		{
+			$HTTP_GET_VARS= new STQueryString();
+			$HTTP_GET_VARS= $HTTP_GET_VARS->getArrayVars();
+
+			// alex 16/06/2005: definition des BackButtons an den Anfang der Funktion gezogen,
+			//					da er bei der Parameter-Auswahl noch ver�ndert wird
+			$backButton= $this->getBackButton();
+			$sBackButtonContainerName= $this->sBackContainer;
 
 		$bNeededBackButton= false;
 		$containerButtons= array();
