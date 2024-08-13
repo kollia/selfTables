@@ -645,7 +645,30 @@ abstract class STBaseContainer extends BodyTag implements STContainerTempl
 		}
 		$global_first_objectContainerName= $container;
 	}
-	public static function &getContainer($containerName= null, string $className= null, string $fromContainer= null) : object
+	public static function hasGlobalContainer(string $container) : bool
+	{
+		global $global_array_all_exist_stobjectcontainers;
+
+		foreach($global_array_all_exist_stobjectcontainers as $name=>$containerObj)
+		{
+			if($name==$container)
+				return true;
+		}
+		return false;
+	}
+
+	/**
+	 * Search current main container, or give container
+	 * defined as first parameter from global list.<br />
+	 * 
+	 * @param string|bool|null $containerName name of container if defined, can also be <code>null</code> 
+	 * 										  for currently defined container search or <code>false</code> if should return back null when no current container found
+	 * @param string|bool|null $className name of class of container from witch object should be created when container not exist
+	 * 									  or <code>false</code> if should return back null when no current container found
+	 * @param string|null $fromContainer inside which container containerName should exist
+	 * 
+	 */
+	public static function &getContainer($containerName= null, $className= null, string $fromContainer= null) : object
 	{
 		global	$global_first_objectContainerName,
 				$global_array_all_exist_stobjectcontainers,
@@ -653,7 +676,9 @@ abstract class STBaseContainer extends BodyTag implements STContainerTempl
 				$_selftable_first_main_database_name;
 
 		STCheck::param($containerName, 0, "string", "null", "bool");
+		STCheck::param($className, 1, "string", "null", "bool");
 		
+		$query= new STQueryString();
 		$bAllowNullObj= false;
 		if(typeof($containerName, "bool"))
 		{
@@ -662,7 +687,6 @@ abstract class STBaseContainer extends BodyTag implements STContainerTempl
 		}
 		if(!isset($containerName))
 		{
-			$query= new STQueryString();
 			$containerName= $query->getArrayVars("stget", "container");
 			//$containerName= $get["stget"]["container"];
 			if(!$containerName)
@@ -715,32 +739,20 @@ abstract class STBaseContainer extends BodyTag implements STContainerTempl
 		{
 			// try to run create method from all exist containers
 			// maybe in one will be create a new container
-			$nNewExist= 0;
-			$nExistContainers= count($global_array_all_exist_stobjectcontainers);
+			// toDo: better solution will be if searching
+			//       only in the container list of older
+			//       query container
+			//       (not successive from all container)
+			$nNewExist= 0;			
 			do{
+				$nExistContainers= count($global_array_all_exist_stobjectcontainers);
 				foreach($global_array_all_exist_stobjectcontainers as $name=>$container)
 				{
 					$container->createContainer();
-					$nNewExist= count($global_array_all_exist_stobjectcontainers);
-					if($nNewExist > $nExistContainers)
-					{
-						foreach($global_array_all_exist_stobjectcontainers as $name=>$container)
-						{
-							if(!in_array($name, $aSearchedContainers))
-							{
-								$aSearchedContainers[]= $name;
-								$nExistContainers++;
-								if($name==$containerName)
-								{
-									$containerObj= &$global_array_all_exist_stobjectcontainers[$name];
-									return $containerObj;
-								}
-								$container->createContainer();
-								$nNewExist= count($global_array_all_exist_stobjectcontainers);
-							}
-						}
-					}
+					if(STBaseContainer::hasGlobalContainer($containerName))
+						return $global_array_all_exist_stobjectcontainers[$containerName];
 				}
+				$nNewExist= count($global_array_all_exist_stobjectcontainers);
 			}while($nExistContainers < $nNewExist);
 
 			// take first database container
@@ -1678,6 +1690,12 @@ abstract class STBaseContainer extends BodyTag implements STContainerTempl
 	public function getAction()
 	{
 		// dummy function for STSessionSiteCreator
+		// this container STBaseContainer need no action
+		return null;
+	}
+	public function getFirstAction()
+	{
+		// dummy function for STChooseTable
 		// this container STBaseContainer need no action
 		return null;
 	}

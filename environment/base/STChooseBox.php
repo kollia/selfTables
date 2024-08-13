@@ -99,8 +99,15 @@ class STChooseBox extends TableTag
     					{
     						$get->resetParams();
 							//echo "for table $tableName set Action ".$table->sFirstAction."<br />";
-    						$get->update("stget[action]=".$table->sFirstAction);
-							$get->update("stget[table]=".$tableName);
+							$sFirstAction= $table->getFirstAction();
+							if(isset($sFirstAction))
+    							$get->update("stget[action]=$sFirstAction");							
+							if(typeof($table, "STBaseContainer"))
+							{
+								$get->update("stget[container]=".$tableName);
+								$get->update("stget[table]=");// NULL-Table
+							}else
+								$get->update("stget[table]=".$tableName);
     						$address=  $this->startPage;
     						$address.= $get->getStringVars();
     						$sButton= $table->getDisplayName();
