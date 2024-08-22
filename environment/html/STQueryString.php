@@ -509,9 +509,15 @@ class STQueryString
 		}
 		public function getUrlParamValue(string $parameter)
 		{
-		    if(isset($this->param_vars[$parameter]))
-		        return $this->param_vars[$parameter];
-		    return null;
+			$array= $this->splitParamValue($parameter);
+			$param_vars= $this->param_vars;
+			foreach($array["params"] as $param)
+			{
+				if(!isset($param_vars[$param]))
+					return null;
+				$param_vars= $param_vars[$param];
+			}
+		    return $param_vars;
 		}
 		private function getArrayValue(/*array*/$param_array, /*array*/$aQuery)
 		{

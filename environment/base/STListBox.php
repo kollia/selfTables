@@ -1387,7 +1387,18 @@ class STListBox extends STBaseBox
 									$isValue= $rowArray[$createdRepresent];
 								}
 								$newContainer= $table->showTypes[$createdColumn][$extraField];
-								$container_data= array(  "container" =>  $newContainer->getName() );
+								/**
+								 * kollia: 22/08/24
+								 * if first table inside container points also to an container
+								 * write this container name into query string
+								 */
+								$firstTable= $newContainer->getFirstTableName();
+								$firstTable= $newContainer->getTable($firstTable);
+								if(typeof($firstTable, "STBaseContainer"))
+									$containerName= $firstTable->getName();
+								else
+									$containerName= $newContainer->getName();
+								$container_data= array(  "container" =>  $containerName );
 								$table_limitation= $table->getDeleteLimitationOrder();
 								STCheck::echoDebug("query.limitation", "<b>LINK</b> to new container '".$container_data["container"]."'");
 								$query->setLimitation($table_limitation, $container_data['container'], $tableName, $represent, $columnValue);

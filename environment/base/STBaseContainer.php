@@ -65,6 +65,15 @@ abstract class STBaseContainer extends BodyTag implements STContainerTempl
      */
     protected $parentContainer= null;
 	var $bFirstContainer= false; // ob der Container der erste fuer STDbSiteCreator ist
+	/**
+	 * Is defined as container when this container should be used as table inside defined container variable.<br />
+	 * This means for url query by jumping into container it creates no new container layer
+	 * (do not drop current container layer into older layer),
+	 * but remain inside current layer and change only container name.
+	 * This behavior be set when container stored inside method <code>needTableObject()</code> from an other.
+     * @var STBaseContainer
+	 */
+	protected $oUsedContainerLayer= null;
 	var $nLevel= null; // auf welcher Ebene sich der Contiainer befindet
 	var $name;  // Name des Containers mit dem er als Objekt gehandelt wird
 				// und für den Button wenn kein identifName angegeben wird

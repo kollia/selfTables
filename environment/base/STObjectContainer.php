@@ -145,12 +145,20 @@ abstract class STObjectContainer extends STBaseContainer
 	    }
 	    return $selector;
 	}
-	public function needTableObject(&$table)
+	/**
+	 * an extern created table or container which should
+	 * be used inside choosebox
+	 * 
+	 * @param STDbSelector|STBaseContainer $object new table or container which should displayed
+	 */
+	public function needTableObject(&$object)
 	{
-	    $orgTableName= $table->getName();
+		if(typeof($object, "STBaseContainer"))
+			$object->oUsedContainerLayer= $this;
+	    $orgTableName= $object->getName();
 	    // not all databases save the tables case sensetive
 	    $sTableName= strtolower($orgTableName);
-	    $this->tables[$sTableName]= &$table;
+	    $this->tables[$sTableName]= &$object;
 	}
 	public function &needTable(string $sTableName, bool $bEmpty= false) : object
 	{   
@@ -976,7 +984,7 @@ abstract class STObjectContainer extends STBaseContainer
 		$headline= &$this->getHeadline($get_vars);
 		$div->addObj($headline);
 		if($this->bChooseInTable)
-		    $div->add($this->getChooseTableTag($get_vars));
+		    $div->add($this->getChooseTableTag());
 		 
 		$result= "NOERROR";
 		if($tableName)
@@ -1270,11 +1278,13 @@ abstract class STObjectContainer extends STBaseContainer
 			$this->addObj($box);
 			return $result;
 		}
-		function getChooseTableTag($get_vars)
+		public function getNotChoiceTables() : array
 		{
 			$action= $this->getAction();
 			$aTables= &$this->getTables();
 			$aktTableName= $this->getTableName();
+
+			$aNoChoice= array();
 			if(isset($this->oExternSideCreator))
 			{
     			foreach($aTables as $name=>$table)
@@ -1290,13 +1300,27 @@ abstract class STObjectContainer extends STBaseContainer
     					or
     					isset($this->oExternSideCreator->aNoChoice[$tableName])		)
     				{
-    					$this->aNoChoice[$tableName]= $tableName;
+    					$aNoChoice[$tableName]= $tableName;
     				}
     			}
 			}
-			
-			$chooseTable= new STChooseBox($this);
-			$chooseTable->align("center");
+			return $aNoChoice;
+		}
+		function getChooseTableTag(string $align= "center")
+		{
+			$action= $this->getAction();
+			$aNoChoice= $this->getNotChoiceTables();
+			$this->aNoChoice= array_merge($this->aNoChoice, $aNoChoice);
+			$chooseTable= new STChooseBox($fromContainer);
+			if(isset($this->oUsedContainerLayer))
+			{
+				$fromContainer= $this->oUsedContainerLayer;
+				$aNoChoice= $fromContainer->getNotChoiceTables();
+				$this->aNoChoice= array_merge($this->aNoChoice, $aNoChoice);
+				$chooseTable->setCurrentTableName($this->getName());
+			}else
+				$fromContainer= $this;
+			$chooseTable->align($align);
 			$chooseTable->setStartPage($this->oExternSideCreator->getStartPage());
 			$chooseTable->noChoise($this->aNoChoice);
 			$chooseTable->forwardByOne();
@@ -1312,7 +1336,7 @@ abstract class STObjectContainer extends STBaseContainer
 					STCheck::echoDebug(true, "no tables exist, install anyone before, or use STDbSiteCreator->install()");
 					exit;
 				}else
-					$oTable->hasAccess($get_vars["action"], true);
+					$oTable->hasAccess($action, true);
 			}
 
 

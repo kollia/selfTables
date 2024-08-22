@@ -5,6 +5,12 @@ require_once($php_javascript);
 
 class STChooseBox extends TableTag
 {
+		/**
+		 * current table/object which should not
+		 * displayed for choosing
+		 * @var string
+		 */
+		private $currentTable= null;
 		var	$tableContainer;
 		var $aEntries;
 		var	$startPage;
@@ -52,7 +58,25 @@ class STChooseBox extends TableTag
 		{
 			$this->aNoChoise= $array;
 		}
-		function execute($table= null)
+		/**
+		 * Set current table/object which should not displayed.<br />
+		 * Otherwise take current table from container.
+		 * 
+		 * @param string $tableName name of table/object
+		 */
+		public function setCurrentTableName(string $tableName)
+		{
+			$this->currentTable= $tableName;
+		}
+		protected function getCurrentTableName()
+		{
+			if(isset($this->currentTable))
+				$sRv= $this->currentTable;
+			else
+				$sRv= $this->tableContainer->getTableName();
+			return $sRv;
+		}
+		public function execute($table= null)
 		{
 			if(Tag::isDebug())
 			{
@@ -79,7 +103,7 @@ class STChooseBox extends TableTag
 			if($this->tableContainer)
 			//if(typeof($this->tableContainer, "OSTDatabase"))
 			{
-				$aktTable= $this->tableContainer->getTableName();
+				$aktTable= $this->getCurrentTableName();
 				$aTables= array();
 				if(is_string($table))
 					$aTables[]= $this->getTable($table);
@@ -88,6 +112,7 @@ class STChooseBox extends TableTag
 				
 				
 				$get= new STQueryString();
+				$currentContainer= $get->getUrlParamValue("stget[container]");
 				foreach($aTables as $table)
 				{
 					if($table)
@@ -102,12 +127,18 @@ class STChooseBox extends TableTag
 							$sFirstAction= $table->getFirstAction();							
 							if(typeof($table, "STBaseContainer"))
 							{
-								$get->insert("stget[container]=".$tableName);
-								$get->insert("stget[table]=");// NULL-Table
+								$get->update("stget[container]=".$tableName);
+								$get->update("stget[table]=");// NULL-Table
 								if(isset($sFirstAction))
 									$get->insert("stget[action]=$sFirstAction");
 							}else
 							{
+								if(typeof($table, "StDbTable"))
+								{
+									$containerName= $table->container->getName();
+									if($containerName != $currentContainer)
+										$get->update("stget[container]=".$containerName);
+								}
 								$get->update("stget[table]=".$tableName);
 								if(isset($sFirstAction))
 									$get->update("stget[action]=$sFirstAction");
