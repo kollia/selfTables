@@ -867,18 +867,38 @@ class STSession
   	    $this->setSessionVar("ST_LOGGED_IN", 1);
 		$this->aExistCluster= $this->getExistClusters();
   	}
-	function getFromOtherConnections($foundedID, $user, $password, $groupType)
+	/**
+	 * This method is ony for overloading in an new extended new class.<br />
+	 * It returning only 1 for this <code>STSession</code> class, because 
+	 * there is no other connection, or 10 if the access_domain other than
+	 * 'unknown'. For more error codes which can be used, see <code>getLoginError()</code>
+	 * 
+	 * @param string $user searching in other connection for this user
+	 * @param string $password searching in other connection where the user have this password
+	 * @param string $access_domain if access_domain is set, or not 'unknown' return error code 10 if the domain not for the current class
+	 * @return int error number like <code>getLoginError()</code>
+	 * @see getLoginError
+	 */
+	protected function getFromOtherConnections(string $user, string $password, string $access_domain= "unknown")
 	{// diese Funktion ist zum �berladen verschiedener �berpr�fungen
 	 // user sollte f�r die n�chste session gespeichert werden
 	 // und die ID muss in $this->userID eingetragen werden
 
 		// Fehler !!
 			// return 0: No Error User with Password found
-            // Error  1: user found for this other connection
+            // Error  1: user not found for this other connection
             // Error  2: Wrong Password
             // Error  3: Multiple Usernames found!
-            // Error  4: Unknown error in LDAP authentication!
-			return 1;
+            // Error  4: Unknown error occured!
+			// Error  5: You have no access to this data. Please try an other user.
+			// Error  6: User is inactive.
+			// Error  7: Registration time is pass over.
+			// Error  8: User in registration-mode, have to define new password.
+			// Error  9: Unknown database error occured
+			// Error 10: wrong access domain
+		if($access_domain != "unknown")
+			return 10;
+		return 1;
 	}
 	/**
 	 * return error number by fault login, or elsewher 0.<br />
@@ -955,6 +975,23 @@ class STSession
 	 *     <td>
 	 *       User in registration-mode, have to define new password.
 	 *     </td>
+	 *   </tr>
+	 *   <tr>
+	 *     <td>
+	 *       9
+	 *     </td>
+	 *     <td>
+	 *       Unknown database error occured.
+	 *     </td>
+	 *   </tr>
+	 *   <tr>
+	 *     <td>
+	 *       10
+	 *     </td>
+	 *     <td>
+	 *       wrong access domain be given.
+	 *     </td>
+	 *   </tr>
 	 * </table>
 	 * 
 	 * @return login error number
@@ -962,6 +999,62 @@ class STSession
 	public  function getLoginError()
 	{
 	    return $this->loginError;
+	}
+	/**
+	 * return error string for given error number.<br />
+	 * Specific for domain when set.
+	 * 
+	 * @param int $error_nr number of error
+	 * @param string $domain domain for current error
+	 * @return string string of current error code
+	 */
+	public function getErrorString(int $error_nr, string $domain= "unknown")
+	{
+		$sErrStr= "";
+		switch($error_nr)
+		{
+			case 0:
+				$sErrStr= "No Error occured";
+				break;
+			case 1:
+				$sErrStr= "This user name has no access.";
+				break;
+			case 2:
+				$sErrStr= "Password is incorrect.";
+				break;
+			case 3:
+				$sErrStr= "Multiple UserName found! Use domain before backslash '\'.";
+				break;
+			case 4:
+				$sErrStr= "Unknown error occured!";
+				break;
+			case 5:
+				$sErrStr= "You have no access to this data. Please try an other user.";
+				break;
+			case 6:
+				$sErrStr= "User is inactive.";
+				break;
+			case 7:
+				$sErrStr= "Registration time is pass over.";
+				break;
+			case 8:
+				$sErrStr= "User in registration-mode, have to define new password.";
+				break;
+			case 9:
+				$sErrStr= "Unknown database error occured.";
+				break;
+			case 10:
+				$sErrStr= "Wrong access domain be given.";
+				break;
+			default:
+				$sErrStr= "Unknown error occured";
+				break;
+		}
+		return $sErrStr;
+	}
+	public function getLoginErrorString()
+	{
+		return $this->getErrorString($this->loginError);
 	}
 	public function verifyProject(string $Project) : bool
 	{

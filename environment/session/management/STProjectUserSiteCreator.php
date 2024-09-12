@@ -131,6 +131,13 @@ class STProjectUserSiteCreator extends STUserSiteCreator
      */
     private $aProjects= array();
     
+    protected function createSession( string $dbTablePrefix= null)
+    {
+        STCheck::alert(!isset($dbTablePrefix), "STProjectUserSiteCreator::createSession()", 
+                    "please define before creating STUserProjectManagement a STUserSession or define \$dbTablePrefix inside constructor");
+        STUserSession::init($container, $dbTablePrefix);
+        return STUserSession::instance();
+    }
     public function __construct(STObjectContainer $container, string $dbTablePrefix= null, string $loginEntryUrl= null, string $bodyClass= "ProjectAccessBody")
     {
         global $HTTP_SERVER_VARS;
@@ -169,10 +176,7 @@ class STProjectUserSiteCreator extends STUserSiteCreator
             // or when not tables are installed ($bCorrectDb = false) (DB tables are not installed)
             $instance= STSession::instance();
             if(!isset($instance))
-            {
-                STCheck::alert(!isset($dbTablePrefix), "please define before creating STUserProjectManagement a STUserSession or define \$dbTablePrefix inside constructor");
-                STUserSession::init($container, $dbTablePrefix);
-            }
+                $instance= $this->createSession($dbTablePrefix);
             $instance->setDbProjectName("ProjectOverview", $this->aProjects['ProjectOverview']['name']);
             if(!isset($loginEntryUrl))
                 $loginEntryUrl= $HTTP_SERVER_VARS["SCRIPT_NAME"];

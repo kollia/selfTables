@@ -1158,13 +1158,14 @@ class STUserSession extends STDbSession
 
 		$ID= -1;
 		$groupType= "";
-		$user= "";
+		//$user= "";
 		$active= "NO";
 		$register= null;
 		$existrows= count($row);
 		if($existrows > 0 )
 		{
 		    $rownr= 0;
+			$user= "";
 		    if(count($row) > 1)
 		    {
 		        if(STCheck::isDebug("user"))
@@ -1217,7 +1218,7 @@ class STUserSession extends STDbSession
 	  	        
 	  	    $msg.= ", so check accepting about ->getFromOtherConnections()";
 	  	    STCheck::echoDebug("user", $msg);
-			$result= $this->getFromOtherConnections($ID, $user, $password, $type);
+			$result= $this->getFromOtherConnections($user, $password, $type);
 			if($result === 0)
 			{
     			$this->setSessionVar("ST_USER", $user);
