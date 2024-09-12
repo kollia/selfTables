@@ -1,7 +1,5 @@
-<?
+<?php 
 
-	//require_once("tools_path.php");
-	require_once($php_html_description);
 /************************************************************************
  * 
  * LDAP Server - Abstraction  / Object Wrapper
@@ -11,18 +9,18 @@
  * example of usage:
  * <pre>
  *	class MY_LDAP_Server extends LDAPServer {
- *		var $host_ = 'sw02all001.ad.local';
+ *		var $host_ = 'sw02all001.klinikum.ad.local';
  *      var $loginUserName_ = 'ZotterR';
- *		var $loginBaseDN_ = 'OU=Users,OU=ADM,DC=ad,DC=local';
+ *		var $loginBaseDN_ = 'OU=Users,OU=ADM,DC=klinikum,DC=ad,DC=local';
  * 		var $password_ = 'Bums.ti';
- * 		var $baseDN_ = 'DC=ad,DC=local';
+ * 		var $baseDN_ = 'DC=klinikum,DC=ad,DC=local';
  *		var $loginAttribName_ = 'cn';
  * 	}
  *
  *	$ldap = new MY_LDAP_Server();
  *	$ldap->showWarnings_ = true;
  *
- * 	$ldap->connect() OR die( "<br /><b>Unable to connect!</b>" );
+ * 	$ldap->initialize_connection() OR die( "<br /><b>Unable to connect!</b>" );
  *	$ldap->bind() OR die( "<br /><b>Bind was not successfull!</b>" );
  *	$ldap->search( "(&(sAMAccountName=".$userIDPrefix."*)(objectClass=user))", 
  *			array( 'sAMAccountName', 'displayName', 'description', 'memberOf' ),
@@ -48,7 +46,7 @@ class LDAPServer{
 	var $loginBaseDN_ ;
 	var $password_ ;
 
-	var $baseDN_ = 'DC=ad,DC=local';
+	var $baseDN_ = 'DC=klinikum,DC=ad,DC=local';
 	var $loginAttribName_ = 'cn';
 	
 	
@@ -61,8 +59,10 @@ class LDAPServer{
 	var $resultEntryID_ ;
 	var $resultAttributes_;
 	
-	/*public:*/
-	function LDAPServer(){
+	protected $resultFirstEntryID= null;
+	protected $resultEntryID= null;
+
+	public function __construct(){
 	}
 	//--------------------------------------------------------------------	
 	function setBaseDN( $baseDN ){
@@ -86,32 +86,36 @@ class LDAPServer{
 		return	$UserDN;
 	}
 	//--------------------------------------------------------------------
-	function connect()
+	function initialize_connection()
 	{
 		if( $this->con_ )
 			return true;		
 		if($this->debug_)
-			echo "entering function <b>connect()</b><br />";
+			$space= STCheck::echoDebug("user", "entering function <b>initialize_connection()</b> for {$this->host_}:{$this->port_}");
 		
-		$this->con_ = ldap_connect( $this->host_, $this->port_ );
+		//$this->con_ = ldap_connect( $this->host_, $this->port_ );
+		$this->con_= ldap_connect( "{$this->protocol_}://{$this->host_}:{$this->port_}" );
 		if($this->debug_)
 		{
-			echo "result is <b>".$this->con_."</b><br />";
-			echo "error ".ldap_errno($this->con_).": ".ldap_error($this->con_)."<br />";
+			STCheck::echoSpace($space);
+		    echo "connection <b>result:</b> &#160;";
+		    st_print_r($this->con_, 1, 1, false);
+			//echo "result is <b>".$this->con_."</b><br />";
+			echo " <b>error</b> ".ldap_errno($this->con_).": ".ldap_error($this->con_)."<br />";
 		}		
 		if(!$this->con_)
 		{
-			$string1= 'Could not connect to LDAP Server!';
+			$string1= 'Could not initialize connection to LDAP Server!';
 			$string2= "for server: ".htmlspecialchars( $this->host_ );
-			$string2.= " on port ".$this->port_."<br />";
+			$string2.= " (host isn't parsable)<br />";
 			$this->reportWarning($string1, $string2);
 		}elseif($this->debug_)
 		{
-			echo 'Successfully <b>connected LDAP Server:</b> "';
-			echo htmlspecialchars( $this->host_ ).'"';
-			echo " on port ".$this->port_."<br />";			
+			STCheck::echoSpace($space);
+			$msg= "Successfully <b>initialize connection to LDAP Server:</b> host '{$this->host_}' was parsable (no connection was done) ";
+			echo "$msg<br />";
 		} 
-		return ( !$this->con_ ? false : true );
+		return ( $this->con_ == false ? false : true );// result should be false or an object of LDAP\Connection since PHP 8.1
 	}
 	//--------------------------------------------------------------------	
 	function disconnect(){
@@ -123,14 +127,12 @@ class LDAPServer{
 	}
 	//--------------------------------------------------------------------
 	function hidePassword( $passWD ){
-		$res = '';
-		for( $i = 0; $i < strlen( $passWD ); $i++ ) $res .= '*';
-		return $res;
+		return getPlaceholdPassword($passWD);
 	}
 	//--------------------------------------------------------------------
 	function bindAnonymously(){
 		if( $this->binding_ ) return true;
-		if( !$this->connect() ) return false;
+		if( !$this->initialize_connection() ) return false;
 	
 		//if( !$this->debug_ ) error_reporting( E_ALL & ~E_NOTICE & ~E_WARNING );
 		$this->binding_ = @ldap_bind( $this->con_ );
@@ -140,39 +142,160 @@ class LDAPServer{
 		return ( $this->binding_ ? true : false );
 	}
 	//--------------------------------------------------------------------
+	private function setLDAPoption(string $property, $option, $value) : bool
+	{
+		$predefined_values= false; // whether need to know predefined values for debugging		
+	    if( $predefined_values &&
+			$this->debug_ &&
+	        $property != "ldap_start_tls"  )
+	    {
+	        $getValue= null;
+			$con= null;
+		    if(	$property != 'debug_level' &&
+				substr($property, 0, 7) != "no_con_"	)
+			{
+				$con= $this->con_;
+			}
+	        if(!ldap_get_option($this->con_, $option, $getValue))
+			{
+				$message= null;
+                echo "  -- <b>ERROR</b> cannot read ldap option '$property' ($option) maybe option not predefined, try to set to >> $value << <br />";
+				if(ldap_get_option($this->con_, LDAP_OPT_ERROR_STRING, $message))
+					echo "          $message<br />";
+			}else
+	            echo " -- set ldap option <b>'$property'</b> from >> $getValue << to >> $value << <br />";
+	    }
+	    $success= false;
+	    if($property == "ldap_start_tls")
+		{
+			if($this->debug_)
+			{
+				ini_set('display_errors', 1);
+				ini_set('display_startup_errors', 1);
+				error_reporting(E_ALL);
+	        	$success= ldap_start_tls($this->con_);
+				echo "return code of ldap_start_tls was: ";
+				var_dump($success);
+				echo "<br />";
+			}else
+				$success= @ldap_start_tls($this->con_);
+			
+		}else
+		{
+			$con= null;
+		    if(	$property != 'debug_level' &&
+				substr($property, 0, 7) != "no_con_"	)
+			{
+				$con= $this->con_;
+			}
+	        $success= ldap_set_option($con, $option, $value);
+		}
+	    if(!$success)
+	    {
+	        $message= null;
+	        $string1= "  -- <b>ERROR</b> cannot ";
+	        if($property == "ldap_start_tls")
+	            $string1.= "start <b>TLS</b>-connection<br />";
+	        else
+				$string1.= "set ldap option '$property' ($option)<br />";
+			ldap_get_option($this->con_, LDAP_OPT_DIAGNOSTIC_MESSAGE, $message);
+				$string1.=  "            m:$message<br />";
+			$message= "";
+	        ldap_get_option($this->con_, LDAP_OPT_ERROR_STRING, $message);
+				$string1.=  "            m:$message<br />";
+			$string2= ' LDAP-Error (Nr '.ldap_errno( $this->con_ );
+			$string2.= '){'.htmlspecialchars( ldap_error( $this->con_) ).'}';
+			$this->reportWarning($string1, $string2);
+	        return false;
+	    }elseif(	$this->debug_ &&
+					!$predefined_values	&&
+					$property != "ldap_start_tls"	)
+		{
+			echo " -- set ldap option <b>'$property'</b> to >> $value << <br />";
+		}
+	    return true;
+	}
 	/** 
 	 * @param fullUserNameDN if this parameter is set it will overwrite $userName 
 	 */
 	function bind( $fullUserNameDN = '', $password = '',  $userNameForStandardUserDN = '' )
 	{		
 		if($this->debug_)
-			echo "entering function <b>bind(</b>'$fullUserNameDN', '$password', '$userNameForStandardUserDN'<b>)</b><br />";
+		{
+			$msg= "entering function <b>bind(</b>";
+			if($fullUserNameDN == "")
+				$msg.= " with no user and or password ";
+			else
+				$msg.= "'$fullUserNameDN', '".$this->hidePassword($password)."', '$userNameForStandardUserDN'";
+			$msg.= "<b>)</b>";
+			STCheck::echoDebug("user", $msg);
+		}
 		if($userNameForStandardUserDN != '')
 			$fullUserNameDN = 'AAA';
 		if($this->binding_)
 		{
 			if($this->debug_)
-				echo "connection is <b>binded</b> befor<br />";
+				echo "connection was <b>binded</b> befor<br />";
 			return true;
+		}			
+		
+		if(	$this->debug_ &&
+			isset($this->LDAP_options['debug_level'])	)
+		{
+			$this->setLDAPoption("debug_level", $this->LDAP_options['debug_level'][0], $this->LDAP_options['debug_level'][1]);	
+		}			
+		foreach($this->LDAP_options as $property => $value)
+		{
+			if(substr($property, 0, 7) == "no_con_")
+				$this->setLDAPoption($property, $value[0], $value[1]);
 		}
-		if(!$this->connect())
-			return false;
-			
+		if(!$this->initialize_connection())
+		    return false;
+		    
+		foreach($this->LDAP_options as $property => $value)
+		{
+			if(	$property != "debug_level" &&
+				substr($property, 0, 7) != "no_con_"	)
+			{
+		    	$this->setLDAPoption($property, $value[0], $value[1]);
+			}
+		}
+
+		if( isset($this->LDAP_TLS_options) &&
+		    $this->LDAP_TLS_options['require_tls'] == true    )
+		{
+		    foreach($this->LDAP_TLS_options as $property => $value)
+		    {
+		        if(	$property != 'require_tls' &&
+					$property != 'ldap_start_tls'	)
+		            $this->setLDAPoption($property, $value[0], $value[1]);
+		    }
+			if(	isset($this->LDAP_TLS_options['ldap_start_tls']) &&
+				!$this->setLDAPoption('ldap_start_tls', NULL, NULL)	)
+			{
+		        return false;
+			}
+		}
 		
 		if( $fullUserNameDN != '' AND $password != '' )
 		{
 			$UserDN= $fullUserNameDN;
 			if($userNameForStandardUserDN != '')
 				$UserDN= $this->getUserDN( $userNameForStandardUserDN );
-			if($this->debug_)
-				echo "ldap_bind($this->con_, '$UserDN', '$password')<br />";
-			$this->binding_ = @ldap_bind( $this->con_, $UserDN, $password );
+			showLine();
+			if(1)//$this->debug_)
+			{
+			    echo "ldap_bind(";st_print_r($this->con_, 1, 1, false);
+			    echo ", '$UserDN', '".$this->hidePassword($password)."')<br />";
+				$this->binding_ = ldap_bind( $this->con_, $UserDN, $password );
+			}else
+				$this->binding_ = @ldap_bind( $this->con_, $UserDN, $password );
 			if(!$this->binding_)
 			{
 				$string1= 'Binding to LDAP Server failed!';
 				$string2=  'for UserDN:{<em>'.htmlspecialchars($UserDN);
 				$string2.= '</em>}Password:{shielded:<em>';
-				$string2.= htmlspecialchars($this->hidePassword($password));
+				$string2.= $this->hidePassword($password);
 				$string2.= '</em>}<br />LDAP-Error (Nr '.ldap_errno( $this->con_ );
 				$string2.= '){'.htmlspecialchars( ldap_error( $this->con_) ).'}';
 				$this->reportWarning($string1, $string2);
@@ -180,26 +303,36 @@ class LDAPServer{
 			{ 
 				echo 'Successful binding to LDAP Server: for UserDN:{<em>';
 				echo htmlspecialchars($UserDN).'</em>}Password:{<em>';
-				echo htmlspecialchars($password).'</em>}<br />';
+				echo $this->hidePassword($password).'</em>}<br />';
 			}
 		}elseif(!isset($this->loginUserName_) AND !isset($this->password_))
-		{ 
+		{
 			if($this->debug_)
 				echo "binding anonymously<br />";
 			$this->bindAnonymously();
 		}else
-		{
+		{  
 			if($this->debug_)
-				echo "ldap_bind(".$this->con_.", '".$this->getUserDN()."', '".$this->password_."')<br />";
-			$this->binding_ = @ldap_bind( $this->con_, $this->getUserDN(), $this->password_ );
+			{
+				showLine();
+				echo "ldap_bind(";
+				st_print_r($this->con_, 1, 1, false);
+				echo ", '".$this->getUserDN()."', '".$this->hidePassword($this->password_)."')<br />";
+				$this->binding_ = ldap_bind( $this->con_, $this->getUserDN(), $this->password_ );
+			}else
+				$this->binding_ = @ldap_bind( $this->con_, $this->getUserDN(), $this->password_ );
+			
 			if( !$this->binding_ )
 			{
-				$string1= 'Binding to LDAP Server failed!';
+				$string1= "Binding to LDAP Server ";
+				if($fullUserNameDN == "")
+					$string1.= "with standard user ";
+				$string1.= "failed!";
 				$string2=  'for UserDN:{<em>'.htmlspecialchars( $this->getUserDN( ) );
 				$string2.= '</em>}Password:{shielded:<em>';
 				$string2.= htmlspecialchars( $this->hidePassword($this->password_ ) );
-				$string2.= '</em>}<br />LDAP-Error (Nr '.ldap_errno( $this->con_ );
-				$string2.= '){'.htmlspecialchars( ldap_error( $this->con_) ).'}';
+				$string2.= '</em>}<br /><b>LDAP-Error</b> (Nr '.ldap_errno( $this->con_ );
+				$string2.= ')<b> **{ '.htmlspecialchars( ldap_error( $this->con_) ).' }**</b>';
 				$this->reportWarning($string1 , $string2);
 			}elseif( $this->debug_ )
 			{
@@ -221,7 +354,7 @@ class LDAPServer{
 	}
 	//--------------------------------------------------------------------
 	function freeResult(){
-		if(  $this->resultRessource_ ) ldap_free_result(  $this->resultRessource_ );
+		if(  isset($this->resultRessource_) ) ldap_free_result(  $this->resultRessource_ );
 		unset( $this->resultEntryID_ ); 
 		unset( $this->resultRessource_ );
 		unset( $this->resultAttributes_ );
@@ -243,7 +376,7 @@ class LDAPServer{
 			$result[]= trim($preg[1]);
 			
 			/*$groupDN = trim( $groupDN );
-			$foundPos = strpos( strtolower($groupDN), strtolower(',CN=Users,DC=ad,DC=local') );
+			$foundPos = strpos( strtolower($groupDN), strtolower(',CN=Users,DC=klinikum,DC=ad,DC=local') );
 			if( !$foundPos ) {
 				if( Tag::isDebug("user") ) echo "<br />discard GroupDN(<em>".$groupDN."</em> because the reqired postfix of the groupname was not found";
 				continue;
@@ -290,7 +423,7 @@ class LDAPServer{
 	{
 		if($this->debug_)
 		{
-			echo "entering function <b>search(</b>'$filter', ";
+			echo "<br />entering function <b>search(</b>'$filter', ";
 			echo "'". var_dump($retrieveAttributes)."', ";
 			echo "'$baseDNPrefix', '$baseDN'<b>)</b><br />";
 		}
@@ -308,20 +441,29 @@ class LDAPServer{
 
 		$this->freeResult();
 		$myAttributes = '';
-		if( $retrieveAttributes )
-			foreach( $retrieveAttributes AS $aVal )
-				$myAttributes .= ( $myAttributes == '' ? '':', ' ).$aVal;
-		/**/ if( $this->debug_ )
-		{ 
-			echo "performin search for: <br />";
-			echo "ldap_search( ".$this->con_.",<br />";
-			echo "&nbsp;&nbsp;".htmlspecialchars( $rootDN );
-			echo ",<br >&nbsp;&nbsp;".htmlspecialchars( $filter );
-			if($retrieveAttributes)
-				echo ",<br >&nbsp;&nbsp;".htmlspecialchars( $retrieveAttributes );
-			echo " );<br />";
+		if( $retrieveAttributes == false &&
+		    isset($this->retrieveAttributes_) &&
+		    $this->retrieveAttributes_ != false     )
+		{
+		    $retrieveAttributes= $this->retrieveAttributes_;
 		}
 		if( $retrieveAttributes )
+		{
+			foreach( $retrieveAttributes AS $aVal )
+				$myAttributes .= ( $myAttributes == '' ? '':', ' ).$aVal;
+		}
+		/**/ if( $this->debug_ )
+		{
+		    echo "performin search for: <br />";
+		    echo "<pre>";
+		    echo "ldap_search( [conntection]&nbsp".print_r($this->con_, true).",<br />";
+		    echo "&nbsp;&nbsp;[rootDb]&nbsp'".htmlspecialchars( $rootDN );echo "',<br >";
+		    echo "&nbsp;&nbsp;[filter]&nbsp'".htmlspecialchars( $filter );echo "',<br >";
+		    echo "&nbsp;&nbsp;[retrieveAttributes]&nbsp'";
+		    st_print_r( $retrieveAttributes, 50 );
+		    echo "' );<pre><br />";
+		}
+		if( isset($retrieveAttributes) )
 		{
 			$this->resultRessource_ = @ldap_search( $this->con_, $rootDN, $filter, $retrieveAttributes );
 			$this->resultAttributes_ = $retrieveAttributes ;
@@ -331,7 +473,7 @@ class LDAPServer{
 			$this->resultAttributes_ = array();
 			while( $this->next_record() )
 			{
-				$attribs = ldap_get_attributes( $this->con_, $this->resultEntyID );
+				$attribs = ldap_get_attributes( $this->con_, $this->resultEntryID );
 				$attributeNames = array();
 				for( $i = 0; $i < $attribs["count"]; ++$i )
 				{
@@ -350,20 +492,24 @@ class LDAPServer{
 					echo htmlspecialchars( $value )."<br />";
 			}
 		}
-		if( !$this->resultRessource_ )
+		if($this->resultRessource_ == false)
 		{
 			$this->reportWarning(	'search to LDAP Server failed!', 
 									'for filter:{<em>'.htmlspecialchars( $filter ).
 										'</em>} in RootDN:{<em>'.htmlspecialchars($rootDN).
 										'</em>} for Attributes:{<em>'.htmlspecialchars($myAttributes).
 										'</em>}<br />LDAP-Error (Nr '.ldap_errno( $this->con_ ).
-										'){'.htmlspecialchars( ldap_error( $this->con_) ).'}' );
+			    '){'.htmlspecialchars( ldap_error( $this->con_) ).'}' );
+			showErrorTrace();
 		}/**/elseif( $this->debug_ )
 		{
 			echo '<br />Successful <b>search()</b> on LDAP Server: for filter:{<em>';
 			echo htmlspecialchars( $filter ).'</em>} in RootDN:{<em>';
 			echo htmlspecialchars($rootDN).'</em>} for Attributes:{<em>';
 			echo htmlspecialchars($myAttributes).'</em>}';
+			echo "<pre>";
+			st_print_r($this->resultRessource_);
+			echo "</pre>";
 		}
 		if( $this->debug_ )
 			echo "---&gt;found ".$this->rowCount()." Entities<br />";
@@ -379,10 +525,10 @@ class LDAPServer{
 			$this->reportWarning( "next_record called upon uninitialized or unsuccessfull search" );
 			return false;
 		}
-		if( !$this->resultEntyID )
-			$this->resultEntyID = ldap_first_entry( $this->con_, $this->resultRessource_ );
-		else	$this->resultEntyID = ldap_next_entry( $this->con_, $this->resultEntyID );
-		return ( $this->resultEntyID  != false ? true : false );
+		if( !isset($this->resultEntryID) )
+			$this->resultEntryID = ldap_first_entry( $this->con_, $this->resultRessource_ );
+		else	$this->resultEntryID = ldap_next_entry( $this->con_, $this->resultEntryID );
+		return ( $this->resultEntryID  != false ? true : false );
 	}
 	//--------------------------------------------------------------------
 	function first_record(){
@@ -390,22 +536,35 @@ class LDAPServer{
 			$this->reportWarning( "first_record called upon uninitialized or unsuccessfull search" );
 			return false;
 		}
-		if( !$this->resultEntyID )
-			$this->resultEntyID = ldap_first_entry( $this->con_, $this->resultRessource_ );	
+		if( !$this->resultEntryID )
+			$this->resultEntryID = ldap_first_entry( $this->con_, $this->resultRessource_ );	
 	}
 	//--------------------------------------------------------------------
 	function getAttributeValues( $attributeName ){
-		if( !$this->resultEntyID )
+		if( !$this->resultEntryID )
 		{
 			if(Tag::isDebug("user"))
-				echo "no resultEntryID for function getAttributeValues(".$attributeName.")<br />";
+				echo "no resultEntrID for function getAttributeValues(".$attributeName.")<br />";
 			return array();
 		}
-		$values = @ldap_get_values(  $this->con_, $this->resultEntyID, $attributeName );
+		$values = @ldap_get_values(  $this->con_, $this->resultEntryID, $attributeName );
 		if( $values ) {
 			unset( $values['count'] );
 			return $values;
 		} else	return array();
+	}
+	public function getAllUserData() : array
+	{
+		$aRv= array();
+		foreach($this->retrieveAttributes_ as $attribute)
+		{
+			$res= $this->getAttributeValues($attribute);
+			if(count($res) == 1)
+				$aRv[$attribute]= array_pop($res);
+			else
+				$aRv[$attribute]= $res;
+		}
+		return $aRv;
 	}
 	//--------------------------------------------------------------------
 	/**short-cut for getAttributeValues **/
@@ -418,7 +577,8 @@ class LDAPServer{
 			echo "No successfull query executed yet!"; 
 			return;
 		}
-		?>found <?=$this->rowCount()?> Entities:<br />
+		echo "found {$this->rowCount()} Entities:<br />"
+		?>
 		<table border="0" cellpadding="0" cellspacing="1" style="background-color:black;" >
 
 			<tr>
@@ -426,37 +586,37 @@ class LDAPServer{
 					<table border="0" cellpadding="0" cellspacing="1" >
 						
 						<tr>
-							<? foreach( $this->resultAttributes_ AS $myAttrib ){ ?>
+							<?php  foreach( $this->resultAttributes_ AS $myAttrib ){ ?>
 								<td nowrap style="background-color:red;color:white;font-width=normal;font-family:Tahoma,Arial;font-size:10pt;">
-									&nbsp;<?=htmlspecialchars( $myAttrib )?>&nbsp;
+									&nbsp;<?php echo htmlspecialchars( $myAttrib )?>&nbsp;
 								</td>
-							<? } ?>
+							<?php  } ?>
 						 </tr>
-						<? for(    $entryID = ldap_first_entry( $this->con_, $this->resultRessource_ );
+						<?php  for(    $entryID = ldap_first_entry( $this->con_, $this->resultRessource_ );
 							   $entryID != false;
 							   $entryID = ldap_next_entry( $this->con_, $entryID )
 						){?>
 							<tr>
-								<? foreach( $this->resultAttributes_ AS $myAttrib ){ 
+								<?php  foreach( $this->resultAttributes_ AS $myAttrib ){ 
 									$values = ldap_get_values(  $this->con_, $entryID, $myAttrib );
 									if( isset( $values ) ){
 										unset( $values['count'] );
 									?>
 										<td nowrap style="font-family:Courier,Arial;font-size:10pt;background-color:white;" valign="top">
-											<? if( is_array( $values ) ) foreach( $values AS $aVal ) echo htmlspecialchars( $aVal )."<br />"; ?>
+											<?php  if( is_array( $values ) ) foreach( $values AS $aVal ) echo htmlspecialchars( $aVal )."<br />"; ?>
 										</td>
-									<? } 
+									<?php  } 
 								}
 								?>
 							 </tr>						
 
-						<? } ?>
+						<?php  } ?>
 						 
 					</table>
 				</td>
 			</tr>
 					
-		</table><?
+		</table><?php 
 	}
 	//--------------------------------------------------------------------
 	function report( $externalMsg, $internalMsg, $type = 'Error' ){
@@ -465,18 +625,18 @@ class LDAPServer{
 				<td>
 					<table border="0" cellpadding="0" cellspacing="1" style="background-color:white;" >
 						<tr><td style="background-color:red;color:white;font-width=bold;font-family:Tahoma,Arial;font-size:10pt;">
-							&nbsp;<?=htmlspecialchars( $type )?>&nbsp;
+							&nbsp;<?php echo htmlspecialchars( $type )?>&nbsp;
 						    </td>
 						    <td >
-						    	<?=$externalMsg?>
+						    	<?php echo $externalMsg?>
 						    	<hr />
-						    	<em>Details:</em><?=$internalMsg?>
+						    	<em>Details:</em><?php echo $internalMsg?>
 						    </td>
 						 </tr>
 					</table>
 				</td>
 			</tr>
-		</table><?			    	
+		</table><?php 			    	
 	}
 	//--------------------------------------------------------------------
 	function reportWarning( $externalMsg, $internalMsg = '' ){

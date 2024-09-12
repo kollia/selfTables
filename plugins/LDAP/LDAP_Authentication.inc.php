@@ -1,6 +1,5 @@
-<?
-//echo "$ldap_authentification<br />";
-//require_once( $ldap_authentification );
+<?php 
+
 /************************************************************************
  * 
  * LDAP Server - Autentification  / Object Wrapper
@@ -27,7 +26,7 @@
  *		<input type="submit" value="Login&nbsp;&gt;&gt;" />
  *	</form><?
  *	if( $loginForm['submitted'] ){
- *		$ldap = new LDAP_Server();
+ *		
  *		$ldapAuthentification = new LDAP_Authentification( $ldap );
  *		//--if you want to now what the class(es) do: enable debugging:
  *		$ldap->debug_ = true;
@@ -67,11 +66,41 @@
  * </pre>
  *
 **/
-	
-class LDAP_Authentification {
+
+/**
+ * php7 ldap connect and bind via TLS
+ * @see https://stackoverflow.com/questions/51615665/php7-ldap-connect-and-bind-via-tls
+ * 
+ * @example
+ *  $ldap="localhost";
+ *  $port=636;
+ *  $usr="CN=admin";
+ *  $pwd="pwd123";
+ *
+ *  $ds=ldap_connect("$ldap", $port); 
+ *  $ldapbind=false;
+ *  // for debugging
+ *  ldap_set_option(NULL, LDAP_OPT_DEBUG_LEVEL, 9);
+ *  if(ldap_set_option($ds, LDAP_OPT_PROTOCOL_VERSION, 3))
+ *      if(ldap_set_option($ds, LDAP_OPT_X_TLS_REQUIRE_CERT, 0))
+ *          if(ldap_set_option($ds, LDAP_OPT_REFERRALS, 0))
+ *              if(ldap_start_tls($ds))
+ *                  $ldapbind = @ldap_bind($ds, $usr, $pwd);   
+ *  ldap_close($ds);
+ *
+ *  if(!$ldapbind)
+ *          echo "BIND ERROR!\n";
+ *  else
+ *          echo "BIND OK!\n";
+ *          
+ * @author stackoverflow
+ *
+ */
+class LDAP_Authentication {
 	var $ldapServer;
+	var $debug_= false;
 	//--------------------------------------------------------------------
-	function LDAP_Authentification( &$ldapServer )
+	function __construct( &$ldapServer )
 	{
 		//echo "create LDAP_Authentification<br />";
 		$this->ldapServer = &$ldapServer;
@@ -84,14 +113,19 @@ class LDAP_Authentification {
 	//--------------------------------------------------------------------
 	function authenticate( $username, $password, &$userData ){
 
-		if( isset( $userData ) AND is_array( $userData ) ) 
+		if( isset( $userData ) ) 
 			$userData = array();
 
-		//if( $this->ldapServer->connect() ) echo "<br /><b>Successfull Connect!</b>";
+		//if( $this->ldapServer->initialize_connection() ) echo "<br /><b>Successfull Connect!</b>";
+			
 
-		if( Tag::isDebug("user") )
-			$this->ldapServer->debug_ = true;
-		if( Tag::isDebug() ) $this->ldapServer->showWarnings_ = true;
+		if(STCheck::isDebug())
+		{
+			$this->ldapServer->showWarnings_ = true;
+			if( Tag::isDebug("user") )
+				$this->ldapServer->debug_ = true;
+		}
+
 		if( !$this->ldapServer->bind() ){
 			$this->ldapServer->reportFatalError(
 				"Could not connect to LDAP Server, please try again later",
@@ -99,20 +133,16 @@ class LDAP_Authentification {
 			);
 		}
 		if( Tag::isDebug("user") )
-			echo "<br />authenticate(): ..searching for username";
-		$this->ldapServer->search( "(&(sAMAccountName=".$username.")(objectClass=user))", 
-								array( 	'sAMAccountName',
-										'distinguishedName', 
-										'displayName', 
-										'description', 
-										'memberOf', 
-										'homeDirectory', 
-										'homeDrive',
-										'mail'				   ),
-			"", "OU=Users, OU=ADM, DC=unknown,DC=ad,DC=local"
-		);		
+		{
+			$msg= array();
+			$msg[]= "->authenticate():";
+			$msg[]= " null binding with standard user was OK";
+			$msg[]= " ... searching now for username:$username with password";
+			STCheck::echoDebug("user", $msg);
+		}
+		$this->ldapServer->search( "(&(sAMAccountName=".$username.")(objectClass=user))" );		
 
-
+		
 		if( $this->ldapServer->rowCount() < 1 )
 		{
 			if( Tag::isDebug("user") )
@@ -134,16 +164,7 @@ class LDAP_Authentification {
 			if( Tag::isDebug("user") ) 
 				echo "<br />Found Username: will try to use users password:<br />";
 			$this->ldapServer->next_record();
-			$userDN = array_pop( $this->ldapServer->f('distinguishedName') );
-			$userFullName = $this->extractNameFromDisplayName( array_pop( $this->ldapServer->f('displayName') ) );
-			$groupDNs = $this->ldapServer->f('memberOf');
-			$mail= array_pop($this->ldapServer->f('mail'));
-			$userDescription = array_pop( $this->ldapServer->f( 'description' ) );
-
-			if( Tag::isDebug("user") ) 
-				echo "user: <em>".htmlspecialchars( $userFullName )."</em><br />";
-			if( Tag::isDebug("user") ) 
-				echo "description: <em>".htmlspecialchars( $userDescription )."</em><br />";
+			$foundData= $this->ldapServer->getAllUserData();
 
 			if( Tag::isDebug("user") ) 
 				echo "will unbind now:";
@@ -156,9 +177,9 @@ class LDAP_Authentification {
 				if( Tag::isDebug("user") )
 					echo "<br />empty password received ";
 				/*if($this->ldapServer->bindAnonymously())
-				{ ToDo: alle vorhandenen UserNamen können Anonym gebunden werden
-						funktion muss noch für Kinderrad erweitert werden
-						dass diese mit keinem Passwort einsteigen können
+				{ ToDo: alle vorhandenen UserNamen kï¿½nnen Anonym gebunden werden
+						funktion muss noch fï¿½r Kinderrad erweitert werden
+						dass diese mit keinem Passwort einsteigen kï¿½nnen
 					echo "so do binding Anonymously<br />";
 					return 0;
 				}else*/
@@ -171,25 +192,23 @@ class LDAP_Authentification {
             	return 2;
 			}else
 			{
-				if( $this->ldapServer->bind( $userDN, $password ) )
+				if( $this->ldapServer->bind( "", $password ) )
 				{
 					if( Tag::isDebug("user") )
 						echo "<br /><b>Successfull Bind!</b>";
 
 					if( isset( $userData ) AND is_array( $userData ) )
 					{
-						$userData = array(
-  										'FullName' => $userFullName,
-										'Description' => $userDescription,
-										'FullUserDN' => $userDN,
-										'InGroups' => $this->ldapServer->extractGroupNames( $groupDNs ),
-										'mail' => $mail											);
+						$userData = $foundData;
 					}
 					return 0;
 				}else
 				{
-					if( Tag::isDebug("user") )
-						echo "<br />unsuccessfull bind!";
+				    if(STCheck::isDebug("user"))
+				    {
+				       echo "<br /><br />";
+					   STCheck::echoDebug("user", "<b>unsuccessfull bind!</b>");
+				    }
 					if( isset( $userData ) AND is_array( $userData ) )
 					{
 						$userData = array(
