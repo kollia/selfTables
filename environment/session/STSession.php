@@ -129,6 +129,7 @@ class STSession
 	{
 	    if(isset($seconds))
 	    {
+			STCheck::echoDebug("session", "set life time of session to $seconds seconds");
 	        $seconds= ini_set("session.gc_maxlifetime", $seconds);
 	    }else
 	    {
@@ -1599,6 +1600,6 @@ class STSession
 	{
     	if(!$this->sLogFile)
         	return;
-		// alex 04/01/2006: toDo: write logText into File
+		// kollia 04/01/2006: toDo: write logText into File
 	}
 }
