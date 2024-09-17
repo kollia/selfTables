@@ -20,6 +20,9 @@ require_once( $global_st_plugins['LDAP']['mindtake_ldap'] );
 		8	-	wrong access domain
 		---------------------------------------------------------------	*/	
 
+/**
+ * abstract UserSession for LDAP-connection
+ */
 abstract class STLdapUserSession extends STUserSession
 {
 	var $aExistingGroups= array();
@@ -29,29 +32,32 @@ abstract class STLdapUserSession extends STUserSession
 	 */
 	var $sGroupType= null;
 	
-	protected function __construct(&$Db, string $prefix= null, string $domain= null)
+
+	/**
+	 * STLdapUserSession constructor to create an object 
+	 * only inside instance method <code>init()</code>
+	 * 
+	 * @param STObjectContainer $Db object of container or database to instantiate the session
+	 * @param string $prefix prefix defined before every database table name
+	 * @param string $ldapDomain domain which are used for ldap-connection 
+	 */
+	protected function __construct(&$Db, string $prefix= null, string $ldapDomain= null)
 	{
 		global	$_st_set_session_global;
 		
 		$_st_set_session_global= true;
-		if(!isset($domain))
-			$this->sGroupType= "LDAP";
-		else
-			$this->sGroupType= $domain;
+		$this->sGroupType= $ldapDomain;
 		STUserSession::__construct($Db, $prefix);
   	}
-	public static function init(&$Db= null, string $prefix= null, string $domain= null)
-	{
-	    STCheck::param($Db, 0, "STDatabase", "STDbSession");
-	    STCheck::param($prefix, 1, "string", "empty(string)");
-	    
-		$instance= new STLdapUserSession($Db, $prefix, $domain);
-		STUserSession::init($instance, $prefix);
-	}
 	abstract protected function getLDAP_AuthenticationObject() : object;
 	protected function getFromOtherConnections(string $user, string $password, string $access_domain= "unknown", array &$userData= null)
 	{// authentication check over LDAP-Server
 	
+		if(!isset($this->sGroupType))
+		{
+			// Error: class object not prepared to login with an LDAP-user
+			return 1; // no user found for other connection
+		}
 		if(	$access_domain != "unknown" &&
 			$this->sGroupType != $access_domain	)
 		{

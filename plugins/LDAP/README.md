@@ -24,6 +24,15 @@ require_once( 'LDAPServer_Connection.inc.php' );
 
 class MyLdapSession extends STLdapUserSession
 {
+	/**
+	 * Instantiating session object for LDAP-connection.
+	 * 
+	 * @param STObjectContainer $Db object of container or database to instantiate the session
+	 * @param string $prefix prefix defined before every database table name
+	 * @param string $ldapDomain domain which will be used for ldap-connection.<br />
+	 *                           If domain not set, method <code>getFromOtherConnectios()</code> 
+	 *                           from object STLdapUserSession return always 1 for no user found
+	 */
 	public static function init(&$Db= null, $prefix= null, string $domain= null)
 	{        
 		$instance= new MyLdapSession($Db, $prefix, $domain);
