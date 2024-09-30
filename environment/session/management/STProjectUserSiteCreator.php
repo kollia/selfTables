@@ -480,6 +480,11 @@ class STProjectUserSiteCreator extends STUserSiteCreator
         $this->aProjects["position"]= $pos;
         $session->setDbProjectName($projectKey, $profileName);
     }
+    /**
+     * add path before all project urls inside overview-list
+     * 
+     * @param string $path directory to set bofore project url inside databse
+     */
     public function addClientRootPath(string $path)
     {
         $this->prefixPath= $path;
@@ -562,6 +567,26 @@ class STProjectUserSiteCreator extends STUserSiteCreator
     {
         if($this->tableContainer->getName() == $this->aProjects['Navigation']['container'])
             $this->tableContainer->setNavigationBannerBackground($address, $repeat);
+    }
+    /**
+     * Define new Login description
+     * 
+     * @param string $description new login string
+     */
+    public function setLoginMaskDescription(string $description)
+    {
+        if(typeof($this->tableContainer, "STProjectOverviewList"))
+            $this->tableContainer->setLoginMaskDescription($description);
+    }
+    /**
+     * Headline from list of all accessible projects.
+     * 
+     * @param string $string description string for project list
+     */
+    public function setAccessibilityProjectString(string $string)
+    {
+        if(typeof($this->tableContainer, "STProjectOverviewList"))
+            $this->tableContainer->setAccessibilityProjectString($string);
     }
     public function install()
     {

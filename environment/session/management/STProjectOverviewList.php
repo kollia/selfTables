@@ -15,8 +15,8 @@ class STProjectOverviewList extends STBackgroundImagesDbContainer
      * all exist projects
      */
     private $accessableProjects= array();
-    private $accessibilityString= null;
     private $accessibilityProjectMask= null;
+    private $aNewPredefinedMessages= array();
     
     private $loginMask= null;
     private $availableSite= null;
@@ -55,7 +55,7 @@ class STProjectOverviewList extends STBackgroundImagesDbContainer
                                                         <span class='fontBigger'>
                                                             Bitte melden sie sich mit ihren Konto-Daten an:
                                                         </span>");
-		    $this->setMessageContent("AccessibilityProjectString", "Zur Verfügung stehende Webapplikationen:");
+		    $this->setMessageContent("AccessibilityProjectString", "<h2>Zur Verfügung stehende Webapplikationen:</h2>");
 			
 		}else // otherwise language have to be english "en"
 		{
@@ -75,16 +75,26 @@ class STProjectOverviewList extends STBackgroundImagesDbContainer
                                                         <span class='fontBigger'>
                                                             Please login with your specific account:
                                                         </span>");
-		    $this->setMessageContent("AccessibilityProjectString", "Existing Webapplikations:");
+		    $this->setMessageContent("AccessibilityProjectString", "<h2>Existing Webapplikations:</h2>");
 		}
 	}
+    /**
+     * Define new Login description
+     * 
+     * @param string $description new login string
+     */
     public function setLoginMaskDescription(string $description)
     {
-        $this->setMessageContent("LoginMaskDescription", $description);
+        $this->aNewPredefinedMessages['LoginMaskDescription']= $description;
     }
+    /**
+     * Headline from list of all accessible projects.
+     * 
+     * @param string $string description string for project list
+     */
     public function setAccessibilityProjectString(string $string)
     {
-        $this->accessibilityString= $string;
+        $this->aNewPredefinedMessages['AccessibilityProjectString']= $string;
     }
     public function addClientRootPath(string $path)
     {
@@ -313,10 +323,11 @@ class STProjectOverviewList extends STBackgroundImagesDbContainer
     public function execute(&$externSideCreator, $onError)
     {
         $this->createMessageContent();
-        $message= $this->getMessageContent("LoginMaskDescription");
-        if(!isset($this->accessibilityProjectString))
-            $this->setAccessibilityProjectString($this->getMessageContent("AccessibilityProjectString"));
-
+        foreach($this->aNewPredefinedMessages as $messageId => $message)
+        {
+            $this->setMessageContent($messageId, $message, 1);
+        }
+        
         STObjectContainer::execute($externSideCreator, $onError);
 
   
@@ -654,9 +665,7 @@ class STProjectOverviewList extends STBackgroundImagesDbContainer
                 $table->columnWidth("20%");
                 $p= new PTag("AccessibilityProjects");
                     $p->add(br());
-                    $accessibilityString= $this->accessibilityString;
-                    if($accessibilityString == "")
-                        $accessibilityString= $this->getMessageContent("AccessibilityProjectString");
+                    $accessibilityString= $this->getMessageContent("AccessibilityProjectString");
                     $p->add($accessibilityString);
                 $table->add($p);
                 $table->colspan(2);
