@@ -72,6 +72,7 @@ class STSession
 		$this->startPage= "";
 		
 		$this->aSessionVars[]= "ST_LOGGED_IN";
+		$this->aSessionVars[]= "ST_USERSESSION_START";
 		$this->aSessionVars[]= "ST_CLUSTER_MEMBERSHIP";
 		$this->aSessionVars[]= "ST_EXIST_CLUSTER";
 		$this->aSessionVars[]= "ST_USER_DEFINED_VARS";
@@ -213,13 +214,31 @@ class STSession
 		    {
     		    echo "<hr>";
     		    STCheck::echoDebug("session", "start session");
+				//session_cache_limiter('private');
+				//session_cache_expire(1);
+				$expire= session_cache_expire();
+				//$expire= ini_get("session.cache_expire");
 		    }
 		    $bSetSession= session_start();
+			$maxlifetime= ini_get("session.gc_maxlifetime");
+			$startlife= $this->getSessionVar("ST_USERSESSION_START");
+			$lifetime= time()-$startlife;
 		    if(STCheck::isDebug("session"))
 		    {
-    		    STCheck::echoDebug("session", "session was started");
+				$msg[]= "session was started";
+				$msg[]= "this session expire automatic after $expire minutes";
+				$msg[]= "every session for user hold $maxlifetime seconds";
+				$msg[]= "the session currently hold $lifetime seconds";
+				$msg[]= "current time ".date('l jS \of F Y h:i:s A');
+    		    STCheck::echoDebug("session", $msg);
     		    echo "<hr>";
 		    }
+			if($lifetime > $maxlifetime)
+			{
+				$this->setSessionVar("ST_LOGGED_IN", 0);
+				$this->setSessionVar("ST_USERSESSION_START", 0);
+			}else
+				$this->setSessionVar("ST_USERSESSION_START", time());
     		STCheck::end_outputBuffer();
     		$this->sessionRegistered= true;
 		}else
@@ -481,14 +500,6 @@ class STSession
 			$space= STCheck::echoDebug("user", "entering hasAccess(&lt;follow clusters&gt;, ".$sAccess.", ".$sID.", ".$staction."</em>)");
 			st_print_r($authoricationCluster, 1, $space);
 		}
-		// alex 09/10/2005:	User muss nicht eingeloggt sein
-		//					um auf Projekte zugriff zu haben
-		//					habe Abfrage herausgenommen
-		/*if(!$ST_LOGGED_IN)
-		{
-			$this->gotoLoginMask(0);
-			exit;
-		}*/
 		if(	typeof($this, "STUserSession") &&
 			is_array($clusters)					)
 		{
@@ -866,6 +877,7 @@ class STSession
 		/**/Tag::echoDebug("user", "entering STSession::setProperties ...");
 		// define Login-Flag
   	    $this->setSessionVar("ST_LOGGED_IN", 1);
+		$this->setSessionVar("ST_USERSESSION_START", time());
 		$this->aExistCluster= $this->getExistClusters();
   	}
 	/**

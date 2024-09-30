@@ -155,13 +155,28 @@ class STProjectUserSiteCreator extends STUserSiteCreator
         // to decide whether need the Login or ProjectOverview page
         $currentContainer= array();
 
-        if( isset($projectID) &&
-            (   !isset($show) ||
-                $show == "frame"    )   )
-        {// need project frame
-            //STCheck::debug(false);// if any output outside of frame nothing will displayed
-            $currentContainer['container']= $this->aProjects['ProjectFrame']['container'];
-            $currentContainer['name']= $this->aProjects['ProjectFrame']['name'];
+        if(!isset($loginEntryUrl))
+            $loginEntryUrl= $HTTP_SERVER_VARS["SCRIPT_NAME"];
+        $instance= STSession::instance();
+        if(!isset($instance))
+            $instance= $this->createSession($dbTablePrefix);
+        if(isset($projectID))
+        {
+            $bLoggedIn= $instance->verifyLogin($projectID, $loginEntryUrl);
+            if($bLoggedIn)
+            {
+                if( !isset($show) ||
+                    $show == "frame"    )
+                {// need project frame
+                    //STCheck::debug(false);// if any output outside of frame nothing will displayed
+                    $currentContainer['container']= $this->aProjects['ProjectFrame']['container'];
+                    $currentContainer['name']= $this->aProjects['ProjectFrame']['name'];
+                }
+            }else
+            {
+                $projectID= null;
+                $show= null;
+            }
         }
         $projectTableName= $container->getTableName("Project");
         // if find Project table on database,
@@ -173,13 +188,8 @@ class STProjectUserSiteCreator extends STUserSiteCreator
                 $currentContainer['container'] != $this->aProjects['ProjectFrame']['container']   ) )
         {
             // do not need registration if only a STFrameContainer called
-            // or when not tables are installed ($bCorrectDb = false) (DB tables are not installed)
-            $instance= STSession::instance();
-            if(!isset($instance))
-                $instance= $this->createSession($dbTablePrefix);
+            // or when not tables are installed ($bCorrectDb = false) (DB tables are not installed)            
             $instance->setDbProjectName("ProjectOverview", $this->aProjects['ProjectOverview']['name']);
-            if(!isset($loginEntryUrl))
-                $loginEntryUrl= $HTTP_SERVER_VARS["SCRIPT_NAME"];
             $vscode_debug= true;
             if($vscode_debug)
             {
