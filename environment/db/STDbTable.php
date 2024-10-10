@@ -2391,7 +2391,7 @@ class STDbTable extends STBaseTable
             $operators= $db->getOperatorArray();
             foreach($operators as $operator)
             {
-                if($content == $operator)
+                if($content == $operator['str'])
                 {
                     $abCorrect['keyword']= "@operator";
                     $abCorrect['content']= $abCorrect['content']['column'];
