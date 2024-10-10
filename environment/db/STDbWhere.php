@@ -394,8 +394,15 @@ class STDbWhere extends STDbSqlWhereFunctions
 				return true;
 			}
 			$preg= array();
-			preg_match("/^([^=><!]*| +'.*' *)(is +not|is|between|like|not +like|in|not +in|>=|<=|<>|!=|<|>|=)([^=><!]*| *'.*' *)$/i", $statement, $preg);
-			//echo "where:";st_print_r($preg);
+			//if(!preg_match("/^([^=><!]*| +'.*' *)(is +not|is|between|like|not +like|in|not +in|>=|<=|<>|!=|<|>|=)([^=><!]*| *'.*' *)$/i", $statement, $preg))
+			{// kollia 10/10/2024:
+			 // toDo: 	check whether $this->aValues realy need
+			 //			if-sentence disabled
+				$preg[0]= $statement;
+				$preg[1]= $statement;
+				$preg[2]= "file:STDbWhere line:".__LINE__;
+				$preg[3]= "maybe does not need";
+			}
 			if(	!isset($preg[1])
 				or
 				!isset($preg[3])	)
@@ -645,12 +652,41 @@ class STDbWhere extends STDbSqlWhereFunctions
 		    //--------------------------------------------------------------------------------------------
 		    $operators= $this->oDb->getOperatorArray();
 		    $pattern_op= "(";
+			$bA= false;
+			if($content=="'My is all!'=parish")
+				$bA= true;
+			$quotation= array();
+			if(preg_match_all("(\"|'|`)", $content, $quotation, PREG_OFFSET_CAPTURE))
+			{// operator cannot be inside quotation marks
+			 // so prepear as first $quotation variable with all quotation marks
+				$c= 0;
+				$pairs= array();
+				foreach($quotation[0] as $mark)
+					$pairs[$mark[0]][]= $mark[1];
+				$quotation= array();
+				foreach($pairs as $mark => $aCount)
+				{
+					foreach($aCount as $pos)
+					{
+						$quotation[$c][]= $pos;
+						if(count($quotation[$c]) > 1)
+							$c++;
+					}
+					if(isset($quotation[$c]))
+						$c++; // count of marks was an odd count
+				}
+			}
 		    foreach($operators as $op)
-		    {
-		        if(isset($op))
+		    {// prepear pattern for operator search
+		        if(isset($op['word']))
 		        {
+					if($op['word'])
+						$pattern_op.= "[^\w]";
 		            $str= preg_replace("/[ \\t]+/", "[ \\t]+", $op);
-		            $pattern_op.= "$str|";
+		            $pattern_op.= "{$str['str']}";
+					if($op['word'])
+						$pattern_op.= "[^\w]";
+					$pattern_op.= "|";
 		        }
 		    }
 		    $pattern_op= substr($pattern_op, 0, -1).")";
@@ -658,7 +694,7 @@ class STDbWhere extends STDbSqlWhereFunctions
 		    $preg= array();
 		    $str_before= "";
 		    $str_after= "";
-		    if(!preg_match("/$pattern_op/i", $content, $preg, PREG_OFFSET_CAPTURE))
+		    if(!preg_match_all("/$pattern_op/i", $content, $preg, PREG_OFFSET_CAPTURE))
 		    {
 		        $operator= "";
 		        if( $function == false ||
@@ -676,18 +712,37 @@ class STDbWhere extends STDbSqlWhereFunctions
 		        }
 		    }else
 		    {
-		        if($preg[1][1] > 0)
-		            $str_before= substr($content, 0, $preg[1][1]);
-		        $operator= $preg[1][0];
+				$op_pos= array();
+				foreach($preg[1] as $pos)
+				{// operator cannot be inside quotation marks
+					$bFault= false;
+					foreach($quotation as $pair)
+					{
+						if(	isset($pair[1]) && // maybe the odd count of pairs is inside an other quotation mark, otherwise later should shown the error
+							$pos[1] > $pair[0] &&
+							$pos[1] < $pair[1]		)
+						{
+							$bFault= true;
+						}
+					}
+					if(!$bFault)
+					{
+						$op_pos= $pos;
+						break;
+					}
+				}
+		        if($op_pos[1] > 0)
+		            $str_before= substr($content, 0, $op_pos[1]);
+		        $operator= $op_pos[0];
 		        $op_len= strlen($operator);
-		        $after_pos= $preg[1][1] + $op_len;
+		        $after_pos= $op_pos[1] + $op_len;
 		        if($after_pos < strlen($content))
 		            $str_after= substr($content, $after_pos);
 		        
 	            if(STCheck::isDebug("db.statements.where"))
 	            {
 	                $space= STCheck::echoDebug("db.statements.where", "localize statement string '$content' from pattern:\"/$pattern_op$/i\":");
-	                st_print_r($preg, 2, $space);
+	                st_print_r($preg, 3, $space);
 	                STCheck::echoDebug("db.statements.where", "result is field/value('$str_before') operator('$operator') field/value('$str_after')");
 	                echo "from '$content' read at position $after_pos<br>";
 	            }

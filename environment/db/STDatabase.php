@@ -615,7 +615,11 @@ abstract class STDatabase extends STObjectContainer
     	}
   		return $res;
   	}
-	function getError(bool $withTags= false, int $space= 0)
+	public function getErrorNumber()
+	{
+		return $this->errno;
+	}
+	public function getError(bool $withTags= false, int $space= 0)
 	{
 		//if($this->isError())	// ??? was soll das?
 		//	return "";			// damit der Fehler nur einmal ausgegeben wird?
@@ -1904,7 +1908,7 @@ abstract class STDatabase extends STObjectContainer
 	 *
 	 * @return string[] operator array
 	 */
-	abstract public function getOperatorArray();
+	abstract public function getOperatorArray() : array;
 	function getRegexpOperator()
 	{
 	    return $this->getOperatorArray()["regexp"];

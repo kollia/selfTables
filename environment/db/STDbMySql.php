@@ -640,29 +640,30 @@ class STDbMySql extends STDatabase
 	/**
 	 * return an array of all operators
 	 * the key inside the array shouldn't changed
-	 * if an operator not exist, value should be null
+	 * if an operator not exist, word of value should be null.
+	 * word define whether can be an character before and behind operator (false)
 	 * 
 	 * @return string[] operator array
 	 */
-	public function getOperatorArray()
+	public function getOperatorArray() : array
 	{
 	    $arr= 
 	       array(
-	           "regexp"   => "regexp",
-	           "not regexp" => "not regexp",
-	           "like"     => "like",
-	           "not like" => "not like",
-	           "is not"  => "is not", // <- have to be before single word 'is'
-	           "is"      => "is",
+	           "regexp"   => array( 'str' => "regexp", 'word' => true),
+	           "not regexp" => array( 'str' => "not regexp", 'word' => true),
+	           "like"     => array( 'str' => "like", 'word' => true),
+	           "not like" => array( 'str' => "not like", 'word' => true),
+	           "is not"  => array( 'str' => "is not", 'word' => true), // <- have to be before single word 'is'
+	           "is"      => array( 'str' => "is", 'word' => true),
 	        // "not in"   => "not in", <- in is an keyword
-	           "not"     => "not", // take not in last position
-	           "="       => "=",
-	           ">="      => ">=", // <- have to be before single character >
-	           ">"       => ">",
-	           "<>"      => "<>", // <- have to be before single character <
-	           "<="      => "<=", // <- have to be before single character <
-    	       "<"       => "<",
-    	       "!="      => "!="
+	           "not"     => array( 'str' => "not", 'word' => true), // take not in last position
+	           "="       => array( 'str' => "=", 'word' => false),
+	           ">="      => array( 'str' => ">=", 'word' => false), // <- have to be before single character >
+	           ">"       => array( 'str' => ">", 'word' => false),
+	           "<>"      => array( 'str' => "<>", 'word' => false), // <- have to be before single character <
+	           "<="      => array( 'str' => "<=", 'word' => false), // <- have to be before single character <
+    	       "<"       => array( 'str' => "<", 'word' => false),
+    	       "!="      => array( 'str' => "!=", 'word' => false)
 	       );
 	    return $arr;
 	}
