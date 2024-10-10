@@ -130,7 +130,7 @@ class STChooseBox extends TableTag
 								$get->update("stget[container]=".$tableName);
 								$get->update("stget[table]=");// NULL-Table
 								if(isset($sFirstAction))
-									$get->insert("stget[action]=$sFirstAction");
+									$get->update("stget[action]=$sFirstAction");
 							}else
 							{
 								if(typeof($table, "StDbTable"))

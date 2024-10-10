@@ -409,6 +409,7 @@ class STBaseTable
     	$this->identification= $Table->identification;
     	$this->showTypes= $Table->showTypes;
 		$this->aActiveLink= $Table->aActiveLink;
+		$this->aLinkAddresses= $Table->aLinkAddresses;
 		$this->nFirstRowSelect= $Table->nFirstRowSelect;
 		$this->nMaxRowSelect= $Table->nMaxRowSelect;
     	$this->oWhere= &$Table->oWhere;
@@ -2839,9 +2840,11 @@ class STBaseTable
 		if(!isset($this->showTypes[$aliasColumn]))
 			$this->showTypes[$aliasColumn]= array();
 		$to= $which;
+		$addressType= "address";
 		if(typeof($address, "STBaseTable"))
 		{// wenn ein AliasTabel hereinkommt
 		 // diesen in einen Container verpacken
+		 	$addressType= "table";
 			$tableName= $address->getName();
 			// alex 21/10/2005:	$address auf $to ge�ndert
 			//					und $address null zugewiesen
@@ -2854,6 +2857,7 @@ class STBaseTable
 		{// ist die Addresse schon ein Container
 		 // nimm die Referenz aus der Containerliste
 
+			$addressType= "container";
 			$which= "container_".$which;
 			$to= &STBaseContainer::getContainer($address->getName());
 			$address= null;
@@ -2865,6 +2869,7 @@ class STBaseTable
 			{
 				if($name==$address)
 				{
+					$addressType= "container";
 					$which= "container_".$which;
 					$to= &STBaseContainer::getContainer($name);
 					$address= null;
@@ -2909,7 +2914,8 @@ class STBaseTable
 			}
 
 		}
-		$this->aLinkAddresses[$aliasColumn]= $address;
+		$this->aLinkAddresses[$aliasColumn]['type']= $addressType;
+		$this->aLinkAddresses[$aliasColumn]['address']= $address;
 		//echo "LinkAddresses:";st_print_r($this->aLinkAddresses,2);
 		//echo "showTypes:";st_print_r($this->showTypes,2);
 	}

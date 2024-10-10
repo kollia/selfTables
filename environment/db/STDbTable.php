@@ -2420,28 +2420,33 @@ class STDbTable extends STBaseTable
     	    STCheck::param($valueColumn, 4, "string", "null");
 	    }
 	    
-		if(typeof($address, "STDbTable"))
-		{// ist die Addresse ein STDbTable
-		 // diesen abfangen und in einen Container verpacken
-		    $tabName= $address->getName();
-		    $newContainerName= "dbtable ".$tabName;
-		    $address= new STDbTableContainer($newContainerName, $this->db);
-		    $address->needTable($tabName);
-			
-		}elseif($address != null &&
-		        !typeof($address, "STBaseContainer")  )
-		{// wenn nicht k�nnte die Addresse noch der Name einer
-		 // Tabelle sein
+		if(	$address != null &&
+			is_string($address)	)
+		{// if address only an string, 
+		 // test whether string name can be a table from database
+			$bTable= false;
 		    $tables= $this->db->list_tables();
 		    $address= STDbTableDescriptions::instance($this->db->getDatabaseName())->getTableName($address);
     		foreach($tables as $tabName)
     		{// schau ob die Adresse eine Tabelle ist
     			if($address==$tabName)
     			{
+					$bTable= true;
 					$tableName= $tabName;
     				break;
     			}
     		}
+			if($bTable)
+				$address= $this->container->getTable($tableName);
+		}
+		if(typeof($address, "STDbTable"))
+		{// is address a STDbTable
+		 // pack table into Container
+		    $tabName= $address->getName();
+		    $newContainerName= "dbtable ".$tabName;
+		    $address= new STDbTableContainer($newContainerName, $this->db);
+		    $address->needTable($tabName);
+			
 		}
 		STBaseTable::linkA($which, $tableName, $aliasColumn, $address, $valueColumn);
 	}

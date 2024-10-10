@@ -1271,8 +1271,14 @@ class STListBox extends STBaseBox
           			{
 							global	$HTTP_SERVER_VARS;
 							
+							$linkAddress= null;
 							$file=  "javascript:location='";
-          					$file.= $HTTP_SERVER_VARS["SCRIPT_NAME"];
+							if($this->asDBTable->aLinkAddresses[$columnKey]['type'] == "address")
+							{
+								$linkAddress= $this->asDBTable->aLinkAddresses[$columnKey]['address'];
+								$file.= $linkAddress;
+							}else
+          						$file.= $HTTP_SERVER_VARS["SCRIPT_NAME"];
 
           					$alldef= [];
           					$array= [];
@@ -1346,14 +1352,19 @@ class STListBox extends STBaseBox
 									$query->make($work["do"], $work["param"]);
 								}
 							}
-							if(preg_match("/^container_/", $extraField))
-							{//	alex 19/04/2005:	bei einem Table-Link (bei der Linkangabe wurde ein Tabellenname angegeben)
+							if(isset($extraField))//preg_match("/^container_/", $extraField))
+							{// kollia 09/10/2024:	make shift behavior of container with limitation set
+							 //						now for all extra fields (link, namedlink, ...)
+							 //						and write if extraField no container_* field 
+							 //						also extraField or new address near container layer
+							
+							 //	kollia 19/04/2005:	bei einem Table-Link (bei der Linkangabe wurde ein Tabellenname angegeben)
 							 //						wird der Tabellenname ge�ndert und von der neuen Tabelle
 							 //						der PK mit dem augenblicklichen Value verglichen
 								$table= &$this->getTable();
 								$tableName= $table->getName();
-								// alex 28/06/2005:	suche Name der Spalte
-								//					welche der Key representiert
+								// kollia 28/06/2005:	search name of column
+								//					wich representing the Key
 								$represent= $createdColumn;
 								foreach($table->show as $column)
 								{
@@ -1363,12 +1374,11 @@ class STListBox extends STBaseBox
 										break;
 									}
 								}
-								//echo __file__.__line__;
+								//showLine();
 								//echo "columnValue:$columnValue<br />";
 								//echo "createdColumn:$createdColumn<br />";
 								//echo "key:$key<br />";
 								$isValue= $columnValue;
-								//if(preg_match("/^(container_)?namedcolumnlink$/", $extraField))
 								if(isset($table->showTypes["valueColumns"][$createdColumn]))
 								{// if wished an other value/column inside variable showTapes
 									//st_print_r($table->showTypes, 2);
@@ -1392,12 +1402,17 @@ class STListBox extends STBaseBox
 								 * if first table inside container points also to an container
 								 * write this container name into query string
 								 */
-								$firstTable= $newContainer->getFirstTableName();
-								$firstTable= $newContainer->getTable($firstTable);
-								if(typeof($firstTable, "STBaseContainer"))
-									$containerName= $firstTable->getName();
-								else
-									$containerName= $newContainer->getName();
+								if(typeof($newContainer, "STBaseContainer"))
+								{
+									$firstTable= $newContainer->getFirstTableName();
+									if(!isset($firstTable))
+										$firstTable= $newContainer->getTable($firstTable);
+									if(typeof($firstTable, "STBaseContainer"))
+										$containerName= $firstTable->getName();
+									else
+										$containerName= $newContainer->getName();
+								}else
+									$containerName= "";
 								$container_data= array(  "container" =>  $containerName );
 								$table_limitation= $table->getDeleteLimitationOrder();
 								STCheck::echoDebug("query.limitation", "<b>LINK</b> to new container '".$container_data["container"]."'");
@@ -1411,13 +1426,21 @@ class STListBox extends STBaseBox
 								    $query->updateContainer($container_data);
 								    //$make= STUPDATE;
 								}
-							}else
+							}//else
+							if(!preg_match("/^container_/", $extraField))
 							{
-								$asParam= $createdColumn;
-								if(isset($this->setParams["asParam"][$createdColumn]))
-									$asParam= $this->setParams["asParam"][$createdColumn];
-								$query->update("stget[".$extraField."][".$asParam."]=".$columnValue);
+								if(!isset($linkAddress))
+								{
+									$asParam= $createdColumn;
+									if(isset($this->setParams["asParam"][$createdColumn]))
+										$asParam= $this->setParams["asParam"][$createdColumn];
+									$query->update("stget[".$extraField."][".$asParam."]=".$columnValue);
+								}else
+									$query->update("stget[address]=$linkAddress");
 							}
+				/*			showLine();
+							echo "current query for $columnKey:$columnValue:";
+							st_print_r($query,7);		*/
 							$table= &$this->getTable();
 							//echo "value is $sValue<br />";
 							//echo "represent is $represent<br />";
