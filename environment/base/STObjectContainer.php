@@ -689,15 +689,13 @@ abstract class STObjectContainer extends STBaseContainer
 		STCheck::echoDebug("containerChoice", "delete container ".$this->getName()." in object STObjectContainer");
 		$params= $oGetParam->getArrayVars();
 		
-		if(isset($params["stget"]["container"]))
-			$container= $params["stget"]["container"];
-		else
-			$container= null;
-		if(!$container)
+		if(!isset($params["stget"]["container"]))
 		{// container is the first,
-		 // cannot delete any more^
+		 // cannot delete any more
 		 	return false;
-		}
+
+		}else
+			$container= $params["stget"]["container"];
 
 		STBaseContainer::deleteQueryContainer($oGetParam);
 		$params= $oGetParam->getArrayVars();
@@ -710,7 +708,13 @@ abstract class STObjectContainer extends STBaseContainer
 
 			$container= $global_first_objectContainerName;
 		}
-		$container= &$this->getContainer($container);
+		$container= &$this->getContainer($container, false);
+		if(!$container)
+		{
+			// cannot find defined container
+			// so do not search for dynamic access			
+			return true;
+		}
 		$result= $container->hasDynamicAccessToOneEntry();
 		if($result)
 		{

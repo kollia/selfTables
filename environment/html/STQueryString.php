@@ -463,25 +463,29 @@ class STQueryString
 		}
 		private function restoreStgetOlder()
 		{
-/*	        foreach($this->param_vars['stget'] as $param => $value)
+			if($this->param_vars['stget']['older'])
+			{
+				$older= $this->param_vars['stget']['older'];
+				if(isset($older['older']))
+				{
+					$olderolder= $older['older'];
+					unset($older['older']);
+				}else
+					$olderolder= null;
+			}else
+			{
+				$older= null;
+				$olderolder= null;
+			}
+	        foreach($this->param_vars['stget'] as $param => $value)
 	        {
-	            if(in_array($param, $this->aNoShiftVars))
+	            if(!in_array($param, $this->aNoShiftVars))
 	                unset($this->param_vars['stget'][$param]);
-	        }*/
-	        unset($this->param_vars['stget']['container']);
-	        unset($this->param_vars['stget']['table']);
-	        unset($this->param_vars['stget']['action']);
-		    foreach($this->param_vars['stget']['older'] as $param=>$value)
-		    {
-		        if($param != "older")
-		            $this->param_vars['stget'][$param]= $value;		        
-		    }
-		    if(isset($this->param_vars['stget']['older']['older']))
-		    {
-		        $older= $this->param_vars['stget']['older']['older'];
-		        $this->param_vars['stget']['older']= $older;
-		    }else
-		        unset($this->param_vars['stget']['older']);
+	        }
+		    foreach($older as $param=>$value)
+		        $this->param_vars['stget'][$param]= $value;
+		    if(isset($olderolder))
+		        $this->param_vars['stget']['older']= $olderolder;
 		}
 		/**
 		 * check whether an parameter be defined
