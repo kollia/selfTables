@@ -1310,25 +1310,61 @@ abstract class STObjectContainer extends STBaseContainer
 			}
 			return $aNoChoice;
 		}
-		function getChooseTableTag(string $align= "center")
+		/**
+		 * Return a table tag with all tables, which can be choosen.<br>
+		 * Only current table can not choosen.
+		 * 
+		 * @param string|bool $baseURL if set, all links of the tables will be set to this URL
+		 * 								and also the query show to an new container
+		 * @param string|bool $align alignment of the table
+		 * @param bool $bNewContainer if true, the query show to an new container
+		 * @return STChooseBox the table tag
+		 */
+		function getChooseTableTag(string|bool $baseURL= NULL, string|bool $align= "center", bool $bNewContainer= false) : STChooseBox
 		{
+			if(is_bool($baseURL))
+			{
+				$bNewContainer= $baseURL;
+				if(preg_match("/\.php|htm(l)?/i", $align))
+				{
+					$baseURL= $align;
+					$align= "center";
+				}else
+					$baseURL= NULL;
+			}elseif(is_bool($align))
+			{
+				$bNewContainer= $align;
+				$align= "center";
+			}
 			$action= $this->getAction();
 			$aNoChoice= $this->getNotChoiceTables();
 			$this->aNoChoice= array_merge($this->aNoChoice, $aNoChoice);
-			$chooseTable= new STChooseBox($fromContainer);
 			if(isset($this->oUsedContainerLayer))
 			{
 				$fromContainer= $this->oUsedContainerLayer;
 				$aNoChoice= $fromContainer->getNotChoiceTables();
 				$this->aNoChoice= array_merge($this->aNoChoice, $aNoChoice);
-				$chooseTable->setCurrentTableName($this->getName());
 			}else
 				$fromContainer= $this;
+			$chooseTable= new STChooseBox($fromContainer);
+			if(isset($this->oUsedContainerLayer))
+				$chooseTable->setCurrentTableName($this->getName());
+			if(!isset($baseURL))
+			{
+				$baseURL= $this->starterPage;
+				if(	!isset($baseURL) &&
+					isset($this->oExternSideCreator)	)
+				{
+					$baseURL= $this->oExternSideCreator->getStartPage();
+					$this->starterPage= $baseURL;
+				}
+			}else
+				$this->starterPage= $baseURL;
 			$chooseTable->align($align);
-			$chooseTable->setStartPage($this->oExternSideCreator->getStartPage());
+			$chooseTable->setStartPage($baseURL);
 			$chooseTable->noChoise($this->aNoChoice);
 			$chooseTable->forwardByOne();
-    		$nExistTables= $chooseTable->execute();
+    		$nExistTables= $chooseTable->execute($bNewContainer);
 			if(!$nExistTables)
 			{// wenn auf garkeine Tabelle zugegriffen werden kann
 			 // erzeuge einen Fehler

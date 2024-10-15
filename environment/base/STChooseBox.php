@@ -76,32 +76,17 @@ class STChooseBox extends TableTag
 				$sRv= $this->tableContainer->getTableName();
 			return $sRv;
 		}
-		public function execute($table= null)
+		public function execute(string|STBaseTable|bool $table= null, bool $bNewContainer= false)
 		{
-			if(Tag::isDebug())
-			{
-				/*if(	!typeof($this->tableContainer, "stdbtablecontainer")
-					and $table===null	)
-				{
-					echo "<b>Error:</b> if \$Db in constructor from STChooseBox is no object from STDbTableContainer,<br />";
-					echo "\$table in function execute can not be null";
-					exit;					
-				}*/
-				if(!$this->startPage)
-				{
-					showBackTrace();
-					if(STCheck::isDebug())
-						STCheck::echoDebug("", "for object STChooseBox is no start site defined");
-					else
-						echo "for object STChooseBox is no start site defined";
-					exit;
-				}
-			}		
 			$nButtonCreated= 0;
+			if(is_bool($table))
+			{
+				$bNewContainer= $table;
+				$table= null;
+			}
 			// alex	26/04/2005:	Abfrage muss nun nur mehr sein ob Db NULL ist,
 			//					da ein Array nun auf aEntries gelegt wird
 			if($this->tableContainer)
-			//if(typeof($this->tableContainer, "OSTDatabase"))
 			{
 				$aktTable= $this->getCurrentTableName();
 				$aTables= array();
@@ -111,8 +96,9 @@ class STChooseBox extends TableTag
 					$aTables= &$this->tableContainer->getTables();
 				
 				
-				$get= new STQueryString();
+				$get= new STQueryString();				
 				$currentContainer= $get->getUrlParamValue("stget[container]");
+				$containerArray= array();
 				foreach($aTables as $table)
 				{
 					if($table)
@@ -127,23 +113,34 @@ class STChooseBox extends TableTag
 							$sFirstAction= $table->getFirstAction();							
 							if(typeof($table, "STBaseContainer"))
 							{
-								$get->update("stget[container]=".$tableName);
-								$get->update("stget[table]=");// NULL-Table
+								$containerArray["container"]= $tableName;
+								$containerArray["table"]= "";
 								if(isset($sFirstAction))
-									$get->update("stget[action]=$sFirstAction");
+									$containerArray["action"]= $sFirstAction;
 							}else
 							{
 								if(typeof($table, "StDbTable"))
 								{
 									$containerName= $table->container->getName();
 									if($containerName != $currentContainer)
-										$get->update("stget[container]=".$containerName);
+										$containerArray["container"]= $containerName;
 								}
-								$get->update("stget[table]=".$tableName);
+								$containerArray["table"]= $tableName;
 								if(isset($sFirstAction))
-									$get->update("stget[action]=$sFirstAction");
+									$containerArray["action"]= $sFirstAction;
 							}
-    						$address=  $this->startPage;
+							if(	$this->startPage == "" &&
+								isset($this->tableContainer)	)
+							{
+								$address= $this->tableContainer->getStartPage();
+							}else
+    							$address=  $this->startPage;	
+							if(!$bNewContainer)
+							{
+								foreach($containerArray as $key=>$value)
+									$get->update("stget[$key]", $value);
+							}else
+								$get->newContainer($containerArray);
     						$address.= $get->getStringVars();
     						$sButton= $table->getDisplayName();
 							if(!$sButton)
@@ -162,7 +159,7 @@ class STChooseBox extends TableTag
 					}
 					if($nButtonCreated===1)
 					{
-						$get->update("stget[fromchoose][onlyone]=true");
+						$containerArray["fromchoose"]["onlyone"]= true;
 						$address=  $this->startPage;
 						$address.= $get->getStringVars();
 					}
@@ -215,7 +212,7 @@ class STChooseBox extends TableTag
 					$script->add("document.location.href='".$address."'");
 					$this->add($script);
 				}
-			}	
+			}
 			return $nButtonCreated;
 		}
 		function getButtons()

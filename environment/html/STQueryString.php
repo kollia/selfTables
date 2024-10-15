@@ -412,10 +412,17 @@ class STQueryString
 		    $this->removeLimitation();
 		    return true;
 		}
-		public function insert($paramValue, $bAddLink= false)
+		public function insert($paramValue)
 		{
 			$param_vars= &$this->param_vars;
 			$array= $this->splitParamValue($paramValue);
+			if(	$array["params"][0] == "stget" &&
+				(	$array["params"][1] == "container" ||
+					$array["params"][1] == "table" ||
+					$array["params"][1] == "action"			)	)
+			{
+				STCheck::deprecated("STQueryString::newContainer(<array>)", "fill array with new container/table/action parameter");
+			}
 			$update= $this->updateA($array, $param_vars);
 			if($update)
 			{
@@ -606,10 +613,34 @@ class STQueryString
 				unset($aQuery[$firstVar]);
 			}
 		}
-		public function update($paramValue)
+		public function update(string $paramValue, string|array $value= NULL)
 		{
-			$array= $this->splitParamValue($paramValue);
-			$this->updateA($array, $this->param_vars);
+			$paramValue= $this->splitParamValue($paramValue);
+			if(isset($value))
+				$paramValue['value']= $value;
+			$this->updateA($paramValue, $this->param_vars);
+		}
+		/**
+		 * Fill <code>$param_value</code> into last entry of array.<br />
+		 * This will be done only in the first recursive entry.
+		 * 
+		 * @param array $keys array with key and value pair
+		 * @param string|array $param_value value which should be set inside first array parameter
+		 */
+		private function setValueOnArray(array &$keys, string|array $param_value)
+		{
+			foreach($keys as $key=>&$value)
+			{
+				if(is_array($value))
+				{
+					$this->setValueOnArray($value, $param_value);
+					return;
+				}else
+				{
+					$keys[$key]= $param_value;
+					return;
+				}
+			}
 		}
 		private function updateA($array, &$param_vars)
 		{
@@ -1070,6 +1101,7 @@ class STQueryString
 			    $this->delete($session_name);
 			}else
     			$this->update($session);
+			$this->bNewContainerShiftet= false;
 		}
 		/**
 		 * synchronize new defined query string

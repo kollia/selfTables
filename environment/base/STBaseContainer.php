@@ -126,7 +126,7 @@ abstract class STBaseContainer extends BodyTag implements STContainerTempl
 	 * @var string
 	 */
 	var $sBackButton= null;
-	var $starterPage= "";
+	protected $starterPage= "";
 	
 	var $headTag= "";
 	var $chooseTitle= "";
@@ -1311,6 +1311,10 @@ abstract class STBaseContainer extends BodyTag implements STContainerTempl
   			$div->add(br());
 			return $div;
 		}
+		public function getStartPage() : string
+		{
+			return $this->starterPage;
+		}
 		/**
 		 * Get back button address to container before or to older side
 		 * 
@@ -1393,21 +1397,28 @@ abstract class STBaseContainer extends BodyTag implements STContainerTempl
 						$get->delete("stget[table]");
 						$get->delete("stget[value]");
 					}
+					$sBackButtonContainerName= $this->sBackContainer;
+					if(!$sBackButtonContainerName)
+						$sBackButtonContainerName= $this->sFirstTableContainerName;
+					//echo "BackButton:".$sBackButtonName."<br />";
+					//echo "BackContainer:".$sBackButtonContainerName."<br />";
+	
+					$this->addParamsByButton($get, $sBackButtonContainerName);
 					$this->backButtonQuery= $get->getUrlParamString();
 				}
 
-				$sBackButtonContainerName= $this->sBackContainer;
-				if(!$sBackButtonContainerName)
-					$sBackButtonContainerName= $this->sFirstTableContainerName;
-				//echo "BackButton:".$sBackButtonName."<br />";
-				//echo "BackContainer:".$sBackButtonContainerName."<br />";
-
-				$this->addParamsByButton($get, $sBackButtonContainerName);
 				$backAddress= "";
 				if(isset($baseURL))
 					$backAddress= $baseURL;
 				elseif(isset($this->starterPage))
 					$backAddress= $this->starterPage;
+				elseif(isset($this->oExternSideCreator))
+					$backAddress= $this->oExternSideCreator->getStartPage();
+				if(	!isset($this->starterPage) ||
+					trim($this->starterPage) == ""	)
+				{
+					$this->starterPage= $backAddress;
+				}
 				$backAddress.= $this->backButtonQuery;
 				$this->backButtonAddress= $backAddress;
 				if(STCheck::isDebug("containerChoice"))
