@@ -9,29 +9,29 @@ Or you just want to collect data for later use or something else. There are many
 
 ## INSTALLATION
 dbselftable is implemented now for php 8 / 9<br />
-and using as database MariaDb/MySql
+and using as database MariaDb or MySql
 
-You can download the .zip or .tar.zip packages from last release on the right column and extract this in your project folder.<br />
+You can download the .zip or .tar.zip packages from last release on the right column and extract this in your project folder.
 Or if you work with git, clone the main repository which should be the same.
 ```
 git clone https://github.com/kollia/dbselftables.git
 ```
 
-the folder structure be:
+the folder structure should be:
 ```
-    | Folder/File          | Description                                                                  |
-    |----------------------|------------------------------------------------------------------------------|
-    | dbselftables         |                                                                              |
-    | ├── data             | [Only need Modelio UMLs - can be removed for productive use]                 |
-    | ├── design           | [Needs to be reachable from webspace (contains .css and .png or .svf files)] |
-    | ├── environment      | [PHP sources]                                                                |
-    | │   ├── base         | [Base classes]                                                               |
-    | │   ├── db           | [Classes to handle database]                                                 |
-    | │   ├── html         | [Own HTML classes]                                                           |
-    | │   ├── session      | [Session objects]                                                            |
-    | ├── plugins          | [Usable plugins for the project]                                             |
-    | ├── examples         | [Examples for learning and test cases - can be removed for productive use]   |
-    | └── wiki             | [Wiki content for GitHub - removable]                                        |
+| Folder               | Description                                                                  
+|----------------------|--------------------------------------------------------------------------------
+| dbselftables         |
+| ├── data             | [ Only required for Modelio UMLs - can be removed for productive use ]
+| ├── design           | [ Needs to be reachable from webspace (contains .css and .png or .svf files) ]
+| ├── environment      | [ PHP sources ]
+| │   ├── base         | [ Base classes ]
+| │   ├── db           | [ Classes to handle database ]
+| │   ├── html         | [ Own HTML classes ]
+| │   ├── session      | [ Session objects ]
+| ├── plugins          | [ Usable plugins for the project ]
+| ├── examples         | [ Examples for learning and test cases - can be removed for productive use ]
+| └── wiki             | [ Wiki content for GitHub - removable ]
 ```
 
 
