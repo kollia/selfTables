@@ -18,24 +18,25 @@ git clone https://github.com/kollia/dbselftables.git
 ```
 
 the folder structure be:
-    | Folder/File          | Description                                                                |
-    |----------------------|----------------------------------------------------------------------------|
-    | dbselftables         |                                                                            |
-    | ├── data             | Only need Modelio UMLs - can be removed for productive use                 |
-    | ├── design           | Needs to be reachable from website (contains .css and .png or .svf files)  |
-    | ├── environment      | PHP sources                                                                |
-    | │   ├── base         | Base classes                                                               |
-    | │   ├── db           | Classes to handle database                                                 |
-    | │   ├── html         | Own HTML classes                                                           |
-    | │   ├── session      | Session objects                                                            |
-    | ├── plugins          | Usable plugins for the project                                             |
-    | ├── examples         | Examples for learning and test cases - can be removed for productive use   |
-    | └── wiki             | Wiki content for GitHub - removable                                        |
+```
+    | Folder/File          | Description                                                                  |
+    |----------------------|------------------------------------------------------------------------------|
+    | dbselftables         |                                                                              |
+    | ├── data             | [Only need Modelio UMLs - can be removed for productive use]                 |
+    | ├── design           | [Needs to be reachable from webspace (contains .css and .png or .svf files)] |
+    | ├── environment      | [PHP sources]                                                                |
+    | │   ├── base         | [Base classes]                                                               |
+    | │   ├── db           | [Classes to handle database]                                                 |
+    | │   ├── html         | [Own HTML classes]                                                           |
+    | │   ├── session      | [Session objects]                                                            |
+    | ├── plugins          | [Usable plugins for the project]                                             |
+    | ├── examples         | [Examples for learning and test cases - can be removed for productive use]   |
+    | └── wiki             | [Wiki content for GitHub - removable]                                        |
+```
 
 
 ## BASICs
 As first try, you can use any database you want
-#### example-file: `examples/01_first_try.php'
 ```php
 <?php
 
@@ -53,6 +54,6 @@ $creator->display();
 
 ```
 now you can have three solutions:
-1. - an empty page - because you choose a database with no tables
-2. - a list of a table - only one table in database
-3. - all tables as buttons
+ - an empty page - because you choose a database with no tables
+ - a list of a table - only one table in database
+ - all tables as buttons
