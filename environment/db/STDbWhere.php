@@ -315,6 +315,14 @@ class STDbWhere
 		   	$this->array[]= $statement;
 			return true;
 		}
+		public function and($statement) : STDbWhere | null
+		{
+			Tag::paramCheck($statement, 1, "STDbWhere", "string", "empty(string)", "null");
+
+			if(!$this->andWhere($statement))
+				return null;
+			return $this;
+		}
 		function andWhere($statement)
 		{
 		 	Tag::paramCheck($statement, 1, "STDbWhere", "string", "empty(string)", "null");
@@ -338,6 +346,14 @@ class STDbWhere
 			$this->reset();
 			return true;
 		}
+		public function or($statement) : STDbWhere | null
+		{
+			Tag::paramCheck($statement, 1, "STDbWhere", "string", "empty(string)", "null");
+
+			if(!$this->orWhere($statement))
+				return null;
+			return $this;
+		}	
 		function orWhere($statement)
 		{
 		 	Tag::paramCheck($statement, 1, "STDbWhere", "string", "empty(string)", "null");
