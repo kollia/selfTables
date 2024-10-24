@@ -50,6 +50,7 @@ $db->connect('<host>', '<user>', '<password>');
 $db->database('<your preferred database>');
 
 $creator= new STSiteCreator($db);
+$creator->addCssLink('dbselftables/design/websitecolors.css');
 $creator->execute();
 $creator->display();
 
