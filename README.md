@@ -11,11 +11,12 @@ Or you just want to collect data for later use or something else. There are many
 dbselftable is implemented now for php 8 / 9<br />
 and using as database MariaDb or MySql
 
-You can download the .zip or .tar.zip packages from last release on the right column and extract this in your project folder.
+You can download the .zip or .tar.zip package from last release on the right column and extract this in your project folder.
 Or if you work with git, clone the main repository which should be the same.
 ```
 git clone https://github.com/kollia/dbselftables.git
 ```
+<br />
 
 the folder structure should be:
 ```
@@ -23,10 +24,10 @@ the folder structure should be:
 |----------------------|--------------------------------------------------------------------------------
 | dbselftables         |
 | ├── data             | [ Only required for Modelio UMLs - can be removed for productive use ]
-| ├── design           | [ Needs to be reachable from webspace (contains .css and .png or .svf files) ]
+| ├── design           | [ Needs to be reachable from website (contains .css and .png or .svg files) ]
 | ├── environment      | [ PHP sources ]
 | │   ├── base         | [ Base classes ]
-| │   ├── db           | [ Classes to handle database ]
+| │   ├── db           | [ Classes to handle with database ]
 | │   ├── html         | [ Own HTML classes ]
 | │   ├── session      | [ Session objects ]
 | ├── plugins          | [ Usable plugins for the project ]
@@ -55,5 +56,5 @@ $creator->display();
 ```
 now you can have three solutions:
  - an empty page - because you choose a database with no tables
- - a list of a table - only one table in database
+ - a listing of a table - only one table in database
  - all tables as buttons
