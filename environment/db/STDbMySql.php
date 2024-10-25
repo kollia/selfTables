@@ -327,7 +327,7 @@ class STDbMySql extends STDatabase
 		if(isset($this->databaseTables[$TableName]))
 			return $this->databaseTables[$TableName];
 		$fields= array();
-		$statement= "SHOW COLUMNS FROM $TableName";
+		$statement= "SHOW COLUMNS FROM `$TableName`";
 		$res= $this->query($statement, $onError);
 		$errno= $this->errno();
 		if($errno > 0)

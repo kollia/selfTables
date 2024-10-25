@@ -1213,7 +1213,9 @@ class STDbTable extends STBaseTable
 	            $aTableAlias= array();
 	        return $this->aStatement['table'];
 	    }
-	    $statement= "from ".$this->Name;
+		$fieldDelimiter= $this->db->getFieldDelimiter();
+	    $statement= "from ".$fieldDelimiter[0]['open']['delimiter'];
+		$statement.= $this->Name.$fieldDelimiter[0]['close']['delimiter'];
 	    if(count($aTableAlias) <= 1)
 	    {
 	        $this->aStatement['table']= $statement;
