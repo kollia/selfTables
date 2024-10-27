@@ -129,12 +129,18 @@ class STChooseBox extends TableTag
 								if(isset($sFirstAction))
 									$containerArray["action"]= $sFirstAction;
 							}
-							if(	$this->startPage == "" &&
-								isset($this->tableContainer)	)
+							
+							// if table defined only to link to an address (STBaseTable with link)
+							$address= $table->getLinkToAddress();
+							if(!$address)
 							{
-								$address= $this->tableContainer->getStartPage();
-							}else
-    							$address=  $this->startPage;	
+								if(	$this->startPage == "" &&
+									isset($this->tableContainer)	)
+								{
+									$address= $this->tableContainer->getStartPage();
+								}else
+									$address=  $this->startPage;	
+							}
 							if(!$bNewContainer)
 							{
 								foreach($containerArray as $key=>$value)

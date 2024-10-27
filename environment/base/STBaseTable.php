@@ -35,6 +35,16 @@ class STBaseTable
 	 */
 	var $aAliases= array();
 	var $titles= null;
+	/**
+	 * define table as link to another specific side.<br />
+	 * If variable is undefined, class represents a normal table
+	 * @var string
+	 */
+	protected $sUrlLinkAddress= null;
+	/**
+	 * first action of table
+	 * @var enum
+	 */
 	var	$sFirstAction= STLIST;
 	var	$identification= array();
 	var	$bDisplayIdentifs= true;
@@ -2923,6 +2933,28 @@ class STBaseTable
 	{
 		$this->aActiveLink["column"]= $alias;
 		$this->aActiveLink["represent"]= $representColumnValue;
+	}
+	/**
+	 * inside container table list
+	 * this table will be linked only to an foreign address
+	 *
+	 * @param string $address url of foreign address
+	 * @return void
+	 */
+	public function linkTo(string $address)
+	{
+		$this->sUrlLinkAddress= $address;
+	}
+	/**
+	 * get the url of the foreign address
+	 * if table only defined as link to foreign address
+	 * otherwise return null
+	 *
+	 * @return string url of foreign address
+	 */
+	public function getLinkToAddress()
+	{
+		return $this->sUrlLinkAddress;
 	}
 	/**
 	 * define column with link to address

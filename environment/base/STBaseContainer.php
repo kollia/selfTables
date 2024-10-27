@@ -64,7 +64,11 @@ abstract class STBaseContainer extends BodyTag implements STContainerTempl
      * @var STBaseContainer
      */
     protected $parentContainer= null;
-	var $bFirstContainer= false; // ob der Container der erste fuer STDbSiteCreator ist
+	/**
+	 * whether container is the first container inside STSiteCreator
+	 * @var boolean
+	 */
+	var $bFirstContainer= false;
 	/**
 	 * Is defined as container when this container should be used as table inside defined container variable.<br />
 	 * This means for url query by jumping into container it creates no new container layer
@@ -967,15 +971,6 @@ abstract class STBaseContainer extends BodyTag implements STContainerTempl
 			$name= $this->name;
 		return $name;
 	}
-	function need(&$object)
-	{
-		Tag::paramCheck($object, 1, "STBaseTable", "STBaseContainer");
-
-		if(typeof($object, "STBaseContainer"))
-			$this->needContainer($object);
-		else
-			$this->needTableObject($object);
-	}
 	function addObjBehindHeadLineButtons(&$tag)
 	{
 		Tag::paramCheck($tag, 1, "Tag", "string");
@@ -1327,17 +1322,18 @@ abstract class STBaseContainer extends BodyTag implements STContainerTempl
 			if(	!isset($this->backButtonAddress) ||
 				trim($this->backButtonAddress) == ""	)
 			{
+				$get= new STQueryString();
 				if(	!isset($this->backButtonQuery) ||
 					trim($this->backButtonQuery) == ""	)
 				{
-					$get= new STQueryString();//$get_vars);
-					$get_vars= $get->getArrayVars();
+					$currentTable= $get->getUrlParamValue("stget[table]");
 					if(STCheck::isDebug("containerChoice"))
 					{
 						STCheck::echoDebug("containerChoice", "no backButtonAddress be set,");
 						STCheck::echoDebug("containerChoice", "so create an Address for back-button.");
 						echo "<br />";
 						$space= STCheck::echoDebug("containerChoice", "incomming query fields before changing for back-Button");
+						$get_vars= $get->getArrayVars();
 						st_print_r($get_vars,5, $space);
 					}
 
@@ -1350,13 +1346,13 @@ abstract class STBaseContainer extends BodyTag implements STContainerTempl
 						{
 							Tag::echoDebug("containerChoice", "action is STLIST/STCHOOSE or container is an STFrameContainer,");
 							$msgstr= "so delete the container and if it has also the first row (stget[firstrow][";
-							if(isset($get_vars["table"]))
-								$msgstr.= $get_vars["table"];
+							if(isset($currentTable))
+								$msgstr.= $currentTable;
 							$msgstr.= "])";
 							Tag::echoDebug("containerChoice", $msgstr);
 						}
-						if(isset($get_vars["table"]))
-							$get->delete("stget[firstrow][".$get_vars["table"]."]");
+						if(isset($currentTable))
+							$get->delete("stget[firstrow][".$currentTable."]");
 						$this->bBackButton= $this->deleteQueryContainer($get);
 						if(!$this->bBackButton)
 						{
@@ -1407,18 +1403,27 @@ abstract class STBaseContainer extends BodyTag implements STContainerTempl
 					$this->backButtonQuery= $get->getUrlParamString();
 				}
 
+				$currentContainer= $get->getUrlParamValue("stget[container]");
+				$currentAddress= $get->getUrlParamValue("stget[address]");
+				$currentAddress= null;
 				$backAddress= "";
 				if(isset($baseURL))
 					$backAddress= $baseURL;
-				elseif(isset($this->starterPage))
-					$backAddress= $this->starterPage;
-				elseif(isset($this->oExternSideCreator))
-					$backAddress= $this->oExternSideCreator->getStartPage();
-				if(	!isset($this->starterPage) ||
-					trim($this->starterPage) == ""	)
+				elseif(	(	!isset($currentContainer) ||
+							trim($currentContainer) == ""	) &&
+						isset($currentAddress) &&
+						trim($currentAddress) != ""					)
+				{			
+					$backAddress= $currentAddress;
+
+				}elseif(	isset($this->starterPage) &&
+							trim($this->starterPage) != ""	)
 				{
-					$this->starterPage= $backAddress;
-				}
+					$backAddress= $this->starterPage;
+
+				}elseif(isset($this->oExternSideCreator))
+					$backAddress= $this->oExternSideCreator->getStartPage();
+				$this->starterPage= $backAddress;
 				$backAddress.= $this->backButtonQuery;
 				$this->backButtonAddress= $backAddress;
 				if(STCheck::isDebug("containerChoice"))

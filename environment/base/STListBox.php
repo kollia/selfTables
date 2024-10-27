@@ -1271,15 +1271,6 @@ class STListBox extends STBaseBox
           			{
 							global	$HTTP_SERVER_VARS;
 							
-							$linkAddress= null;
-							$file=  "javascript:location='";
-							if($this->asDBTable->aLinkAddresses[$columnKey]['type'] == "address")
-							{
-								$linkAddress= $this->asDBTable->aLinkAddresses[$columnKey]['address'];
-								$file.= $linkAddress;
-							}else
-          						$file.= $HTTP_SERVER_VARS["SCRIPT_NAME"];
-
           					$alldef= [];
           					$array= [];
 							$query= new STQueryString();//$this->oQuery;
@@ -1404,9 +1395,7 @@ class STListBox extends STBaseBox
 								 */
 								if(typeof($newContainer, "STBaseContainer"))
 								{
-									$firstTable= $newContainer->getFirstTableName();
-									if(!isset($firstTable))
-										$firstTable= $newContainer->getTable($firstTable);
+									$firstTable= $newContainer->getTable(); // get first table
 									if(typeof($firstTable, "STBaseContainer"))
 										$containerName= $firstTable->getName();
 									else
@@ -1426,7 +1415,20 @@ class STListBox extends STBaseBox
 								    $query->updateContainer($container_data);
 								    //$make= STUPDATE;
 								}
-							}//else
+							}
+							$linkAddress= $firstTable->getLinkToAddress();
+							$file=  "javascript:location='";
+							if(!$linkAddress)
+							{
+								if($this->asDBTable->aLinkAddresses[$columnKey]['type'] == "address")
+								{
+									$linkAddress= $this->asDBTable->aLinkAddresses[$columnKey]['address'];
+									$file.= $linkAddress;
+								}else
+									$file.= $HTTP_SERVER_VARS["SCRIPT_NAME"];
+							}else
+								$file.= $linkAddress;
+
 							if(!preg_match("/^container_/", $extraField))
 							{
 								if(!isset($linkAddress))

@@ -15,8 +15,18 @@ abstract class STObjectContainer extends STBaseContainer
 	var $headTag;
 	var $chooseTitle;
 	var $sDefaultCssLink;
-	var	$oGetTables= array(); // all tables which are geted but not needed
-	var $tables= array(); // alle STDbTable Objekte welche f�r die Auflistung gebraucht werden
+	/**
+	 * all tables which are geted to modify
+	 * but not needed to display
+	 * @var array
+	 */
+	protected $oGetTables= array();
+	/**
+	 * all tables which are needed
+	 * to display or modify
+	 * @var array
+	 */
+	protected $tables= array();
 	var	$sFirstTableName; //erste Tabelle
 	var $sFirstAction= null; // erste Aktion nicht gesetzt hole von Tabelle
 	var $actAction= ""; // current action from this container
@@ -145,6 +155,15 @@ abstract class STObjectContainer extends STBaseContainer
 	    }
 	    return $selector;
 	}
+	public function need(&$object)
+	{
+		Tag::paramCheck($object, 1, "STBaseTable", "STBaseContainer");
+
+		if(typeof($object, "STBaseContainer"))
+			$this->needContainer($object);
+		else
+			$this->needTableObject($object);
+	}
 	/**
 	 * an extern created table or container which should
 	 * be used inside choosebox
@@ -187,6 +206,14 @@ abstract class STObjectContainer extends STBaseContainer
             }
         }
         return $table;
+	}
+	public function needLink(string $name, string $address= null)
+	{
+		$object= new STBaseTable($name);
+		if(isset($address))
+			$object->linkTo($address);
+		$this->needTableObject($object);
+		return $object;
 	}
 	public function &getTable(string $tableName= null, string $sContainer= null, bool $bEmpty= false)
 	{
@@ -1352,7 +1379,7 @@ abstract class STObjectContainer extends STBaseContainer
 			if(!isset($baseURL))
 			{
 				$baseURL= $this->starterPage;
-				if(	!isset($baseURL) &&
+				if(	!$baseURL &&
 					isset($this->oExternSideCreator)	)
 				{
 					$baseURL= $this->oExternSideCreator->getStartPage();
