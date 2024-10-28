@@ -95,7 +95,8 @@ the FK in table as 'from Country'. This you see by updating row or by insert (cl
 
 To sort the table, the user has always the possibility to order the table by clicking in the headlines. 
 If you want an other order by begin, order the table with the command ->orderBy()
-```php $state->orderBy("name"); ```
+```ex. $state->orderBy("name"); ```<br />
+You can also limit the table listing with ->setMaxRowSelect(<count>)
 
 here the full code:
 ```php
@@ -165,7 +166,7 @@ $article->setMaxRowSelect(50);
 
 
 $creator= new STSiteCreator($db);
-$creator->addCssLink('../design/websitecolors.css');
+$creator->addCssLink('dbselftables/design/websitecolors.css');
 $creator->execute();
 $creator->display();
 
