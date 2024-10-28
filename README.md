@@ -19,7 +19,7 @@ git clone https://github.com/kollia/dbselftables.git
 <br />
 
 the folder structure should be:
-```
+`
 | Folder               | Description                                                                  
 |----------------------|--------------------------------------------------------------------------------
 | dbselftables         |
@@ -33,7 +33,7 @@ the folder structure should be:
 | ├── plugins          | [ Usable plugins for the project ]
 | ├── examples         | [ Examples for learning and test cases - can be removed for productive use ]
 | └── wiki             | [ Wiki content for GitHub - removable ]
-```
+`
 
 
 ## BASICs
@@ -59,3 +59,6 @@ now you can have three solutions:
  - an empty page - because you choose a database with no tables
  - a listing of a table - only one table in database
  - all tables as buttons
+
+
+> **Tipp:** sometimes I reffer to my example database under [example/00__mariadb_tables.sql](00__mariadb_tables.sql). You can download this if you want to know from what I speak
