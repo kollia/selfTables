@@ -986,7 +986,7 @@ abstract class STDatabase extends STObjectContainer
 		{// statement should only be a table name
 			$tableName= $statement;
 			$filedArrayKey= $tableName;
-			$statement= "select * from $tableName limit 1";
+			$statement= "select * from `$tableName` limit 1";
 		}
 		//-----------------------------------------------------------------------
 		// pre-define list of fields from table
