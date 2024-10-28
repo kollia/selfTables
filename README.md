@@ -61,4 +61,4 @@ now you can have three solutions:
  - all tables as buttons
 
 
-> **Tipp:** sometimes I reffer to my example database under [00__mariadb_tables.sql](example/00__mariadb_tables.sql). You can download this if you want to know from what I speak
+> **Tipp:** sometimes I reffer to my example database [00__mariadb_tables.sql](examples/00__mariadb_tables.sql). You can download this if you want to know from what I speak
