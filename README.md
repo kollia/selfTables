@@ -19,11 +19,10 @@ git clone https://github.com/kollia/dbselftables.git
 <br />
 
 the folder structure should be:
-`
+```
 | Folder               | Description                                                                  
 |----------------------|--------------------------------------------------------------------------------
 | dbselftables         |
-| ├── data             | [ Only required for Modelio UMLs - can be removed for productive use ]
 | ├── design           | [ Needs to be reachable from website (contains .css and .png or .svg files) ]
 | ├── environment      | [ PHP sources ]
 | │   ├── base         | [ Base classes ]
@@ -31,9 +30,11 @@ the folder structure should be:
 | │   ├── html         | [ Own HTML classes ]
 | │   ├── session      | [ Session objects ]
 | ├── plugins          | [ Usable plugins for the project ]
+| |
+| ├── data             | [ Only required for Modelio UMLs - can be removed for productive use ]
 | ├── examples         | [ Examples for learning and test cases - can be removed for productive use ]
 | └── wiki             | [ Wiki content for GitHub - removable ]
-`
+```
 
 
 ## BASICs
@@ -62,4 +63,45 @@ now you can have three solutions:
 
 
 > **Tipp:** sometimes I reffer to my example database [00__mariadb_tables.sql](examples/).
->           You can download this if you want to know from what I speak
+>           You can download and install as dump if you want to know from what I speak
+
+the first what you should do is to define which column(s) describe the table as best.
+In my example db there we have the tables `Country` and `State`. If you look on the website
+clicking on the State button. You see the table with the columns:
+`
+state_id
+name
+country_id
+`
+but the table in the database has:
+`
+state_id
+name
+<font color="red">country</font>
+`
+The reason is, that the State table has an foreign key to the Country table and shows the primary key ('counry_id')
+and not the own column ('country').
+Pull the table 'Country' from the database object and identify the column as follow. <br />
+There is also the possibility to select only the columns you want and give them an other name, also the table.
+```php
+$country= $db->getTable("Country");
+$country->setDisplayName("existing Countries");
+$country->identifColumn("name", "Country");
+$country->select("name", "Name");
+
+$state = $db->getTable("State");
+$state->setDisplayName("States");
+$state->select("name", "Name");
+$state->select("country", "from Country");
+```
+You see now in table State as second position the name of the country as 'Country', alto you defined
+the FK in table as 'from Country'. This you see by updating row or by insert (clicking on button 'new Entry')
+
+> **Tipp:** for developing, it's a good choice to set after including 'st_pathdef.inc.php' 
+> ```php STCheck::debug(true); ```
+> it will show you php errors/warnings and make also more checks in the source
+
+To sort the table, the user has always the possibility to order the table by clicking in the headlines. 
+If you want an other order by begin, order the table with the command ->orderBy()
+```php $state->orderBy("name"); ```
+
