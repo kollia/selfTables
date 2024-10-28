@@ -35,7 +35,7 @@ the folder structure should be:
 | ├── examples         | [ Examples for learning and test cases - can be removed for productive use ]
 | └── wiki             | [ Wiki content for GitHub - removable ]
 ```
-
+<br />
 
 ## BASICs
 As first try, you can use any database you want
@@ -65,22 +65,14 @@ now you can have three solutions:
 > **Tipp:** sometimes I reffer to my example database [00__mariadb_tables.sql](examples/).
 >           You can download and install as dump if you want to know from what I speak
 
-the first what you should do is to define which column(s) describe the table as best.
+the first what you should do is to define which column(s) describe the table as best.<br />
 In my example db there we have the tables `Country` and `State`. If you look on the website
-clicking on the State button. You see the table with the columns:
-`
-state_id
-name
-country_id
-`
+clicking on the [State] button. You see the table with the columns:
+` state_id, name, country_id `
 but the table in the database has:
-`
-state_id
-name
-<font color="red">country</font>
-`
-The reason is, that the State table has an foreign key to the Country table and shows the primary key ('counry_id')
-and not the own column ('country').
+`state_id, name,` <font color="red">country</font><br />
+The reason is, that the State table has an foreign key to the Country table and shows the primary key ('`counry_id`')
+and not the own column ('`country`').<br />
 Pull the table 'Country' from the database object and identify the column as follow. <br />
 There is also the possibility to select only the columns you want and give them an other name, also the table.
 ```php
@@ -98,10 +90,84 @@ You see now in table State as second position the name of the country as 'Countr
 the FK in table as 'from Country'. This you see by updating row or by insert (clicking on button 'new Entry')
 
 > **Tipp:** for developing, it's a good choice to set after including 'st_pathdef.inc.php' 
-> ```php STCheck::debug(true); ```
+> ` STCheck::debug(true); `
 > it will show you php errors/warnings and make also more checks in the source
 
 To sort the table, the user has always the possibility to order the table by clicking in the headlines. 
 If you want an other order by begin, order the table with the command ->orderBy()
 ```php $state->orderBy("name"); ```
+
+here the full code:
+```php
+<?php
+
+require_once 'dbselftables/st_pathdef.inc.php';
+require_once $_stdbmariadb;
+require_once $_stsitecreator;
+
+//STCheck::debug(true); // <- a good choice for developing
+
+$db= new STDbMariaDb();
+$db->connect('localhost', 'testUser', 'myComplicateNewPassword');
+$db->database('test');
+
+$country= $db->getTable("Country");
+$country->setDisplayName("existing Countries");
+$country->identifColumn("name", "Country");
+$country->select("name", "Name");
+$country->setMaxRowSelect(20);
+
+$state= $db->getTable("State");
+$state->setDisplayName("States");
+$state->identifColumn("name", "State");
+$state->select("name", "Name");
+$state->select("country", "from Country");
+$state->orderBy("name");
+$state->setMaxRowSelect(20);
+
+$county= $db->getTable("County");
+$county->identifColumn("name", "County");
+$county->select("state", "State");
+$county->select("name", "County");
+$county->setMaxRowSelect(50);
+
+$person= $db->getTable("Person");
+$person->identifColumn("first_name", "first Name");
+$person->identifColumn("last_name", "last Name");
+$person->select("first_name", "first Name");
+$person->select("last_name", "last Name");
+$person->select("address", "Address");
+$person->setMaxRowSelect(50);
+
+$address= $db->getTable("Address");
+$address->identifColumn("city", "City");
+$address->identifColumn("street", "Street");
+//$address->identifColumn("county", "County");
+$address->select("city", "City");
+$address->select("street", "Street");
+$address->select("county", "from County");
+$address->setMaxRowSelect(50);
+
+$order= $db->getTable("Order");
+$order->identifColumn("bill_id", "Order ID");
+$order->select("bill_id", "Order ID");
+$order->select("person", "for Person");
+$order->select("article", "Article");
+$order->select("amount", "Amount");
+$order->setMaxRowSelect(50);
+
+$article= $db->getTable("Article");
+$article->identifColumn("title", "Article");
+$article->select("title", "Article");
+$article->select("content", "Description");
+//$article->select("price", "Price");
+$article->setMaxRowSelect(50);
+
+
+$creator= new STSiteCreator($db);
+$creator->addCssLink('../design/websitecolors.css');
+$creator->execute();
+$creator->display();
+
+```
 
