@@ -12,6 +12,15 @@ require_once($_stitembox);
 abstract class STObjectContainer extends STBaseContainer
 {
 	var $db; // Datenbank-Objekt
+	/**
+	 * whether the tables are all pulled from the database
+	 * @var bool
+	 */
+	protected $bAllTablesNeeded= false;
+	/**
+	 * head tag of countainer
+	 * @var Tags
+	 */
 	var $headTag;
 	var $chooseTitle;
 	var $sDefaultCssLink;
@@ -171,7 +180,8 @@ abstract class STObjectContainer extends STBaseContainer
 	    $this->tables[$sTableName]= &$table;
 	}
 	public function &needTable(string $sTableName, bool $bEmpty= false) : object
-	{   
+	{  
+		$this->bAllTablesNeeded= true; 
 	    $this->initContainer();
 	    
 	    $orgTableName= $this->getTableName($sTableName);
@@ -228,6 +238,11 @@ abstract class STObjectContainer extends STBaseContainer
 			$this->initContainer();
 		}
 		
+		if(!$this->bAllTablesNeeded)
+		{
+			$this->bAllTablesNeeded= true;
+			$this->getTables();
+		}
 		// check first right name of table
 		if($tableName==null)
 		{
