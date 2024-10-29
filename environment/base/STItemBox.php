@@ -246,26 +246,32 @@ class STItemBox extends STBaseBox
         						// alex 09/05/2005: PK definition now from sPkInside
         						$rowResult["PK"]= $row[$sPkInside];
         						$string= "";
+								$bSelected= true;
+								$bAnyset= false;
         						foreach($row as $columnKey=>$columnValue)
         						{
         							$rowResult["columns"][$columnKey]= $columnValue;
-        				//			if(!$sPkInside)
-        				/*			{
-        								if($columnKey!=$joinColumns["other"])
-        									$string.= $columnValue." - ";
-        							}else								*/
         							if(	$sPkInside != $columnKey ||
         								count($row) == 1			)
         							{
         								$string.= $columnValue." - ";
         							}
-        						}
-        						$string= substr($string, 0, strlen($string)-3);
-        						//if(trim($string)=="")
-        						//	$string= $rowResult["PK"];
-        						$rowResult["Name"]= $string;
-        						$tableResult[]= $rowResult;
-    						}
+									if(isset($post[$columnKey]))
+									{
+										$bAnyset= true;
+										if($post[$columnKey] != $columnValue)
+										{
+											$bSelected= false;
+										}
+									}
+								}
+								$string= substr($string, 0, strlen($string)-3);
+								if(!$bAnyset)
+									$bSelected= false;
+								$rowResult['Name']= $string;
+								$rowResult['selected']= $bSelected;
+								$tableResult[]= $rowResult;
+							}
 						}
     					$aRv[$joinColumns["own"]][]= $tableResult;
 					}
@@ -955,8 +961,13 @@ class STItemBox extends STBaseBox
   								break;
 							$option= new OptionTag();
 							$option->value($row["PK"]);
-            				if( isset($columnValue) &&
-            					$columnValue==$row["PK"] ||
+            				if( (	isset($HTTP_POST_VARS) &&
+									!empty($HTTP_POST_VARS) &&
+									isset($columnValue) &&
+            						$columnValue==$row["PK"]	) ||
+								(	(	!isset($HTTP_POST_VARS) ||
+										empty($HTTP_POST_VARS)		) &&
+									$row['selected'] 		) ||
             					(	$bOneEntry &&
             						$bNotNullField	)			)
             				{
