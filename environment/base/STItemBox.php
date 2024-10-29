@@ -581,7 +581,7 @@ class STItemBox extends STBaseBox
     		$table->aAuto_increment["value"]=$pk;
 		}else
 		{
-    		$pk= $this->db->fetch_single("select max(".$this->asDBTable->getPkColumnName().") from $tableName");
+    		$pk= $this->db->fetch_single("select max(".$this->asDBTable->getPkColumnName().") from `$tableName`");
 			$this->setSqlError($pk);
 			$pk++;
 			$table->aAuto_increment["value"]=$pk;
