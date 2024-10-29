@@ -109,8 +109,9 @@ require_once $_stsitecreator;
 //STCheck::debug(true); // <- a good choice for developing
 
 $db= new STDbMariaDb();
-$db->connect('localhost', 'testUser', 'myComplicateNewPassword');
-$db->database('test');
+$db->connect('<host>', '<user>', '<password>');
+$db->database('<your preferred database>');
+
 
 $country= $db->getTable("Country");
 $country->setDisplayName("existing Countries");
