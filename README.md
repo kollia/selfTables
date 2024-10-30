@@ -62,8 +62,8 @@ now you can have three solutions:
  - all tables as buttons
 
 
-> **Tipp:** sometimes I reffer to my example database [00__mariadb_tables.sql](examples/).
->           You can download and install as dump if you want to know from what I speak
+> **Tipp:** The description reffer to an example database [00__mariadb_tables.sql](examples/00__mariaDB_tables.sql).
+>           You can download (as RAW) and install the mariaDB dump if you want to know from what is being talked about.
 
 the first what you should do is to define which column(s) describe the table as best.<br />
 In my example db there we have the tables `Country` and `State`. If you look on the website
