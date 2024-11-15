@@ -98,7 +98,7 @@ If you want an other order by begin, order the table with the command ->orderBy(
 ```ex. $state->orderBy("name"); ```<br />
 You can also limit the table listing with ->setMaxRowSelect(<count>)
 
-here the full code:
+here the full code for all tables:
 ```php
 <?php
 
@@ -172,4 +172,27 @@ $creator->execute();
 $creator->display();
 
 ```
+
+Maybe his will be a little confusing when the user sees all seven tables first.
+Although you can use needTable() instead of getTable().<br />
+like this:<br />
+```php
+// configure tables with ->getTable("...")
+$country= $db->getTable("Country");
+// ... some configuration
+// ... also other tables
+
+$article= $db->needTable("Article");
+// ... some configuration
+// and
+$order= $db->needTable("Order");
+// ... some configuration
+```
+In this case, you have all seven tables organized, but only see the two defined tables you need.
+
+
+### structuring Website
+
+The idea of ​​the project is to have a container for each web page that can display one or more tables.<br />
+The database (STDbMariaDb) that you configured first is also a container.
 
