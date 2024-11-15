@@ -173,7 +173,7 @@ $creator->display();
 
 ```
 
-Maybe his will be a little confusing when the user sees all seven tables first.
+Maybe this will be a little confusing when the user sees all seven tables first.
 Although you can use needTable() instead of getTable().<br />
 like this:<br />
 ```php
