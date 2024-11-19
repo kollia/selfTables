@@ -38,6 +38,8 @@ the folder structure should be:
 <br />
 
 ## BASICs
+### Scripting
+
 As first try, you can use any database you want
 ```php
 <?php
@@ -67,11 +69,11 @@ now you can have three solutions:
 
 the first what you should do is to define which column(s) describe the table as best.<br />
 In my example db there we have the tables `Country` and `State`. If you look on the website
-clicking on the [State] button. You see the table with the columns:
-` state_id, name, country_id `
+clicking on the `[State]` button. You see the table with the columns:
+`state_id`, `name`, `country_id`
 but the table in the database has:
-`state_id, name,` <font color="red">country</font><br />
-The reason is, that the State table has an foreign key to the Country table and shows the primary key ('`counry_id`')
+`state_id`, `name`, `<font color="red">country</font>`<br />
+The reason is, that the State table has an foreign key to the Country table and shows the primary key ('`counry_id`') of the other table
 and not the own column ('`country`').<br />
 Pull the table 'Country' from the database object and identify the column as follow. <br />
 There is also the possibility to select only the columns you want and give them an other name, also the table.
@@ -173,7 +175,12 @@ $creator->display();
 
 ```
 
-Maybe this will be a little confusing when the user sees all seven tables first.
+### structuring Website
+
+Maybe this will be a little confusing when the user sees all seven tables first.<br />
+The idea of ​​the project is to have a container for each web page that can display one or more tables.<br />
+The database (STDbMariaDb) that you configured first is also a container.
+
 Although you can use needTable() instead of getTable().<br />
 like this:<br />
 ```php
@@ -191,8 +198,5 @@ $order= $db->needTable("Order");
 In this case, you have all seven tables organized, but only see the two defined tables you need.
 
 
-### structuring Website
 
-The idea of ​​the project is to have a container for each web page that can display one or more tables.<br />
-The database (STDbMariaDb) that you configured first is also a container.
 
