@@ -72,7 +72,7 @@ In my example db there we have the tables `Country` and `State`. If you look on 
 clicking on the `[State]` button. You see the table with the columns:
 `state_id`, `name`, `country_id`
 but the table in the database has:
-`state_id`, `name`, `<font color="red">country</font>`<br />
+`state_id`, `name`, <font color="red">`country`</font><br />
 The reason is, that the State table has an foreign key to the Country table and shows the primary key ('`counry_id`') of the other table
 and not the own column ('`country`').<br />
 Pull the table 'Country' from the database object and identify the column as follow. <br />
