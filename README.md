@@ -179,6 +179,8 @@ $creator->display();
 
 Maybe this will be a little confusing when the user sees all seven tables first.<br />
 The idea of ​​the project is to have a container for each web page that can display one or more tables.<br />
+![ContainerStapel](https://github.com/user-attachments/assets/0a7c5aa3-04b1-4e43-9d51-02427ab65e17)
+
 The database (STDbMariaDb) that you configured first is also a container.
 
 Although you can use needTable() instead of getTable().<br />
