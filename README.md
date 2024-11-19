@@ -179,11 +179,11 @@ $creator->display();
 
 Maybe this will be a little confusing when the user sees all seven tables first.<br />
 The idea of ​​the project is to have a container for each web page that can display one or more tables.<br />
-&#160;&#160;&#160;&#160;&#160;&#160;![STDbContainers](relative%20../wiki/ContainerStapel.png?raw=true "STDbContainer stapel")
+&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;![STDbContainers](relative%20../wiki/ContainerStapel.png?raw=true "STDbContainer stapel")
 
 The database (STDbMariaDb) that you configured first is also a container.
 
-Although you can use needTable() instead of getTable().<br />
+If you want to see only some tables, you can use needTable() instead of getTable().<br />
 like this:<br />
 ```php
 // configure tables with ->getTable("...")
