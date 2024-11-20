@@ -213,10 +213,10 @@ $personContainer->setFirstTable("Person");
 
 $db->needContainer($personContainer);
 ```
-You see that the container `STObjectContainer` need an name. This is also for the database which have as default the name `main-menue`.
+You see that the container `STObjectContainer` need a name. This is also for the database which have as default the name `main-menue`.
 (If you need an second other database, you have to define in the constructor)<br />
 To link to the other container the container object is implemented with `->needContainer(<object>)` and you have access to them over an button like to see a table.
-It is also possible to link to an container over an table entry, see above like order list from bill.
+It is also possible to link to an container over an table entry, see below as in the table Bill to Order.
 
 Now let us organize the scripts inside two files.<br />
 ```php
@@ -296,7 +296,7 @@ $article->setMaxRowSelect(50);
 ```php
 <?php
 
-require_once 'common_db.php'
+require_once 'common_db.php';
 
 //STCheck::debug("query"); // <- to see current query from URL
 
@@ -339,7 +339,8 @@ $creator->execute();
 $creator->display();
 
 ```
-
+When you test this scripts, you can see as first a listing of all bills, where every
+bill has an ID which you link to all exist orders of the bill.<br />
 
 
 
