@@ -8,7 +8,7 @@ Or you just want to collect data for later use or something else. There are many
 
 
 ## INSTALLATION
-dbselftable is implemented now for php 8 / 9<br />
+dbselftable is implemented now for php 8.x / 9.x<br />
 and using as database MariaDb or MySql
 
 You can download the .zip or .tar.zip package from last release on the right column and extract this in your project folder.
@@ -180,7 +180,7 @@ $creator->display();
 
 Maybe this will be a little confusing when the user sees all seven tables first.<br />
 The idea of ​​the project is to have a container for each web page that can display one or more tables.<br />
-&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;![STDbContainers](relative%20../wiki/ContainerStack.png?raw=true "STDbContainer stack")
+&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;![STDbContainers](relative%20wiki/ContainerStack.png?raw=true "STDbContainer stack")
 
 The database (STDbMariaDb) that you configured first is also a container.
 
@@ -199,6 +199,146 @@ $order= $db->needTable("Order");
 // ... some configuration
 ```
 In this case, you have all seven tables organized, but only see the two defined tables you need.
+
+For an other site create a new `STDbObjectContainer` from database (or other container). The tables you have configured before are the same. Only you want other columns (identifColumns), you need to select the new colums.
+The definition from the container before are the default config.
+```php
+$personContainer= new STObjectContainer("address", $db);
+$personContainer->needTable("Country");
+$personContainer->needTable("State");
+$personContainer->needTable("County");
+$personContainer->needTable("Person");
+$personContainer->needTable("Address");
+$personContainer->setFirstTable("Person");
+
+$db->needContainer($personContainer);
+```
+You see that the container `STObjectContainer` need an name. This is also for the database which have as default the name `main-menue`.
+(If you need an second other database, you have to define in the constructor)<br />
+To link to the other container the container object is implemented with `->needContainer(<object>)` and you have access to them over an button like to see a table.
+It is also possible to link to an container over an table entry, see above like order list from bill.
+
+Now let us organize the scripts inside two files.<br />
+```php
+<?php
+
+require_once 'dbselftables/st_pathdef.inc.php';
+require_once $_stdbmariadb;
+require_once $_stsitecreator;
+
+//STCheck::debug(true); // <- a good choice for developing
+
+$db= new STDbMariaDb();
+$db->connect('<host>', '<user>', '<password>');
+$db->database('<your preferred database>');
+
+
+$country= $db->getTable("Country");
+$country->setDisplayName("existing Countries");
+$country->identifColumn("name", "Country");
+$country->select("name", "Name");
+$country->setMaxRowSelect(20);
+
+$state= $db->getTable("State");
+$state->setDisplayName("States");
+$state->identifColumn("name", "State");
+$state->select("name", "Name");
+$state->select("country", "from Country");
+$state->orderBy("name");
+$state->setMaxRowSelect(20);
+
+$county= $db->getTable("County");
+$county->identifColumn("name", "County");
+$county->select("state", "State");
+$county->select("name", "County");
+$county->setMaxRowSelect(50);
+
+$person= $db->getTable("Person");
+$person->identifColumn("first_name", "first Name");
+$person->identifColumn("last_name", "last Name");
+$person->select("first_name", "first Name");
+$person->select("last_name", "last Name");
+$person->select("address", "Address");
+$person->setMaxRowSelect(50);
+
+$address= $db->getTable("Address");
+$address->identifColumn("city", "City");
+$address->identifColumn("street", "Street");
+//$address->identifColumn("county", "County");
+$address->select("city", "City");
+$address->select("street", "Street");
+$address->select("county", "from County");
+$address->setMaxRowSelect(50);
+
+$bill= $db->getTable("Bill");
+$bill->identifColumn("bill_id", "Bill");
+$bill->select("bill_id", "Bill");
+$bill->select("person", "for Person");
+$bill->setMaxRowSelect(50);
+
+$order= $db->getTable("Order");
+$order->select("order_id", "Order ID");
+$order->select("bill", "Bill");
+$order->select("count", "Count");
+$order->select("article", "Article");
+$order->setMaxRowSelect(50);
+
+$article= $db->getTable("Article");
+$article->identifColumn("title", "Article");
+$article->identifColumn("price", "Price");
+$article->select("title", "Article");
+$article->select("content", "Description");
+$article->select("price", "Price");
+$article->setMaxRowSelect(50);
+
+```
+
+```php
+<?php
+
+require_once 'common_db.php'
+
+//STCheck::debug("query"); // <- to see current query from URL
+
+$addressee= new STObjectContainer("addressee", $db);
+$addressee->setDisplayName("Addressee");
+$addressee->needTable("Country");
+$addressee->needTable("State");
+$addressee->needTable("County");
+$addressee->needTable("Person");
+$addressee->needTable("Address");
+$addressee->setFirstTable("Person");
+
+$order= new STObjectContainer("Order", $db);
+$order->needTable("article");
+$order->needTable("Order");
+$order->setFirstTable("Order");
+$container= $order->getContainerName();
+$table= $order->getTableName();
+$action= $order->getAction();
+if( $container == "Order" &&
+    $table == "Order" &&
+    $action == STINSERT       )
+{
+    $query= new STQueryString();
+    $bill_id= $query->getParam("stget[from][bill]);
+    $order->preSelect("bill", $bill_id);
+}
+
+$main= new STObjectContainer("bill", $db);
+$main->needContainer($addressee);
+$main->needTable("Article");
+$main->setFirstTable("Bill");
+$bill= $main->needTable("Bill");
+$bill->namedLink("bill_id");
+
+
+$creator= new STSiteCreator($main);
+$creator->addCssLink('dbselftables/design/websitecolors.css');
+$creator->execute();
+$creator->display();
+
+```
 
 
 
