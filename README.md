@@ -180,11 +180,6 @@ $creator->display();
 ### structuring Website
 
 Maybe this will be a little confusing when the user see all seven tables first.<br />
-The idea of ​​the project is to have a container for each web page that can display one or more tables.<br />
-&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;![STDbContainers](relative%20wiki/ContainerStack.png?raw=true "STDbContainer stack")
-
-The database (STDbMariaDb) that you configured first is also a container.
-
 If you want to see only some tables, you can use needTable() instead of getTable().<br />
 like this:<br />
 ```php
@@ -201,7 +196,13 @@ $order= $db->needTable("Bill");
 ```
 In this case, you have all seven tables organized, but only see the two defined tables you need.
 
-For an second website create a new `STDbObjectContainer` from database (or from other container). The tables you have configured before are the same. Only you want other columns (identifColumns), you need to select the new colums.
+The idea of ​​the project is to have a container for each web page that can display one or more tables.<br />
+&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;![STDbContainers](wiki/ContainerStack.png?raw=true "STDbContainer stack")
+
+The database (STDbMariaDb) that you configured first is also a container.
+
+
+For an second website create a new `STDbObjectContainer` from an existing container. The tables you have configured before are the same. Only you want other columns (identifColumns), you need to select the new colums.
 The definition from the container before are the default config.
 ```php
 $personContainer= new STObjectContainer("address", $db);
@@ -216,7 +217,7 @@ $db->needContainer($personContainer);
 ```
 You see that the container `STObjectContainer` need a name. This is also for the database which have as default the name `main-menue`.
 (If you need an second other database, you have to define in the constructor)<br />
-To link to the other container the container object is implemented with `->needContainer(<object>)` and you have access to them over an button like the other tables.
+To link to the this created other container, the container object is implemented with `->needContainer(<object>)` and you have access to them over an button like the other tables.
 It is also possible to link to an container over an table entry, see below as in the table Bill to Order.
 
 Now let us organize the scripts inside two files.<br />
