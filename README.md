@@ -65,7 +65,8 @@ now you can have three solutions:
 
 
 > **Tipp:** The description reffer to an example database [00__mariadb_tables.sql](examples/00__mariaDB_tables.sql).
->           You can download (as RAW) and install the mariaDB dump if you want to know from what is being talked about.
+>           You can take this from subdirectory exampels/ and install as mariaDB dump
+>           if you want to know from what is being talked about.
 
 the first what you should do is to define which column(s) describe the table as best.<br />
 In my example db there we have the tables `Country` and `State`. If you look on the website
@@ -73,7 +74,7 @@ clicking on the `[State]` button. You see the table with the columns:
 `state_id`, `name`, `country_id`
 but the table in the database has:
 `state_id`, `name`, <font color="red">`country`</font><br />
-The reason is, that the State table has an foreign key to the Country table and shows the primary key ('`counry_id`') of the other table
+The reason is, that the State table has an foreign key to the Country table and shows the primary key ('`country_id`') of the other table
 and not the own column ('`country`').<br />
 Pull the table 'Country' from the database object and identify the column as follow. <br />
 There is also the possibility to select only the columns you want and give them an other name, also the table.
@@ -88,12 +89,12 @@ $state->setDisplayName("States");
 $state->select("name", "Name");
 $state->select("country", "from Country");
 ```
-You see now in table State as second position the name of the country as 'Country', alto you defined
+You see now in table State as second position the name of the country as 'Country', altough you defined
 the FK in table as 'from Country'. This you see by updating row or by insert (clicking on button 'new Entry')
 
 > **Tipp:** for developing, it's a good choice to set after including 'st_pathdef.inc.php' 
-> ` STCheck::debug(true); `
-> it will show you php errors/warnings and make also more checks in the source
+>           ` STCheck::debug(true); ` it will show you php errors/warnings
+>           and make also more checks in the source
 
 To sort the table, the user has always the possibility to order the table by clicking in the headlines. 
 If you want an other order by begin, order the table with the command ->orderBy()
@@ -178,7 +179,7 @@ $creator->display();
 <br /><br />
 ### structuring Website
 
-Maybe this will be a little confusing when the user sees all seven tables first.<br />
+Maybe this will be a little confusing when the user see all seven tables first.<br />
 The idea of ​​the project is to have a container for each web page that can display one or more tables.<br />
 &#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;![STDbContainers](relative%20wiki/ContainerStack.png?raw=true "STDbContainer stack")
 
@@ -195,12 +196,12 @@ $country= $db->getTable("Country");
 $article= $db->needTable("Article");
 // ... some configuration
 // and
-$order= $db->needTable("Order");
+$order= $db->needTable("Bill");
 // ... some configuration
 ```
 In this case, you have all seven tables organized, but only see the two defined tables you need.
 
-For an other site create a new `STDbObjectContainer` from database (or other container). The tables you have configured before are the same. Only you want other columns (identifColumns), you need to select the new colums.
+For an second website create a new `STDbObjectContainer` from database (or from other container). The tables you have configured before are the same. Only you want other columns (identifColumns), you need to select the new colums.
 The definition from the container before are the default config.
 ```php
 $personContainer= new STObjectContainer("address", $db);
@@ -215,7 +216,7 @@ $db->needContainer($personContainer);
 ```
 You see that the container `STObjectContainer` need a name. This is also for the database which have as default the name `main-menue`.
 (If you need an second other database, you have to define in the constructor)<br />
-To link to the other container the container object is implemented with `->needContainer(<object>)` and you have access to them over an button like to see a table.
+To link to the other container the container object is implemented with `->needContainer(<object>)` and you have access to them over an button like the other tables.
 It is also possible to link to an container over an table entry, see below as in the table Bill to Order.
 
 Now let us organize the scripts inside two files.<br />
