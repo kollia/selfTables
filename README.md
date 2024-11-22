@@ -41,6 +41,8 @@ the folder structure should be:
 ### Scripting
 
 As first try, you can use any database you want
+
+<b>[ [01_first_try.php](examples/01_first_try.php)]</b>
 ```php
 <?php
 
