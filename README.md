@@ -38,9 +38,13 @@ the folder structure should be:
 <br />
 
 ## BASICs
+All script files you found also in your `examples` subdirectory with the name defined before.
+
 ### Scripting
 
 As first try, you can use any database you want
+
+<b>[ [01_first_try.php](examples/01_first_try.php)]</b>
 ```php
 <?php
 
@@ -102,6 +106,7 @@ If you want an other order by begin, order the table with the command ->orderBy(
 You can also limit the table listing with ->setMaxRowSelect(<count>)
 
 here the full code for all tables:
+<b>[ [02_table_listing.php](examples/02_table_listing.php)]</b>
 ```php
 <?php
 
@@ -221,6 +226,7 @@ To link to the this created other container, the container object is implemented
 It is also possible to link to an container over an table entry, see below as in the table Bill to Order.
 
 Now let us organize the scripts inside two files.<br />
+<b>[ [03_common_db.php](examples/03_common_db.php) ]</b>
 ```php
 <?php
 
@@ -295,6 +301,7 @@ $article->setMaxRowSelect(50);
 
 ```
 
+<b>[ [04_basic_main.php](examples/04_basic_main.php) ]</b>
 ```php
 <?php
 
