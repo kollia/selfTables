@@ -9,7 +9,7 @@ require_once($_stlistbox);
 require_once($_stitembox);
 
 
-abstract class STObjectContainer extends STBaseContainer
+class STObjectContainer extends STBaseContainer
 {
 	var $db; // Datenbank-Objekt
 	/**
@@ -108,6 +108,28 @@ abstract class STObjectContainer extends STBaseContainer
 		    $this->setMessageContent("DELETE_QUESTION", "do you want to delete this entry?");
 		    $this->setMessageContent("NOPERMISSION", "you have no permission to '+action+' this entry!");
 		}
+	}
+	/**
+	 * method will be called by creation
+	 * when container need to know which tables inside
+	 * with witch names
+	 */
+	protected function create()
+	{
+		// dummy function
+		// this function is only for non object oriented programming
+	}
+	/**
+	 * method will be called when container has an action
+	 * to display as STListBox or STItembox
+	 *
+	 * @param string $action current action of container STInsert/STUpdate/STList/STDelete
+	 * @param string $table which table is in action
+	 */
+	protected function init(string $action, string $table)
+	{
+		// dummy function
+		// this function is only for non object oriented programming
 	}
 	function describeTables($description)
 	{

@@ -3,14 +3,12 @@
 $dbselftables= 'dbselftables';
 require_once "$dbselftables/st_pathdef.inc.php";
 require_once $_stdbmariadb;
-require_once $_stsitecreator;
 
 //STCheck::debug(true); // <- a good choice for developing
 
 $db= new STDbMariaDb();
 $db->connect('<host>', '<user>', '<password>');
 $db->database('<your preferred database>');
-
 
 $country= $db->getTable("Country");
 $country->setDisplayName("existing Countries");
@@ -53,24 +51,17 @@ $bill= $db->getTable("Bill");
 $bill->identifColumn("bill_id", "Bill");
 $bill->select("bill_id", "Bill");
 $bill->select("person", "for Person");
-$bill->select("address", "bill Address");
 $bill->setMaxRowSelect(50);
 
 $order= $db->getTable("Order");
-$order->select("bill", "Bill");
-$order->select("order_id", "Order ID");
+$order->select("count", "Count");
 $order->select("article", "Article");
 $order->setMaxRowSelect(50);
 
 $article= $db->getTable("Article");
 $article->identifColumn("title", "Article");
+$article->identifColumn("price", "Price");
 $article->select("title", "Article");
 $article->select("content", "Description");
 $article->select("price", "Price");
 $article->setMaxRowSelect(50);
-
-
-$creator= new STSiteCreator($db);
-$creator->addCssLink("$dbselftables/design/websitecolors.css");
-$creator->execute();
-$creator->display();

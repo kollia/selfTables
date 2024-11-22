@@ -1677,7 +1677,7 @@ abstract class STBaseContainer extends BodyTag implements STContainerTempl
 							}
     						$sButtonAddress= $get->getStringVars();
     						$oContainer= &STBaseContainer::getContainer($containerName);
-    						$sButtonName= $oContainer->getIdentification();
+    						$sButtonName= $oContainer->getDisplayName();
 							if($oContainer->hasContainerAccess())
 							{
 								Tag::echoDebug("containerChoice", "user have access to container, so make button in list");
