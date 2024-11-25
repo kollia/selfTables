@@ -509,15 +509,22 @@ class STBaseTable
     	    else
     	       STCheck::is_error($field==null, "STBaseTable::attribute()", "alias name or column ('$aliasName') does not exist");
 	    }
-		if($tableType!==null)
+		if(	$tableType !== null &&
+			$tableType !=  STALLDEF	)
 		{
 		    if(STCheck::isDebug())
 		    {    
 		        STCheck::warning( $tableType != STLIST &&
                 		          $tableType != STINSERT &&
-                		          $tableType != STUPDATE, "STBaseTable::attribute()", "unknown tableType ('$tableType') be set");
+                		          $tableType != STUPDATE &&
+								  $tableType != STINSERTUPDATE, "STBaseTable::attribute()", "unknown tableType ('$tableType') be set");
 		    }
-		    $this->aAttributes[$tableType][$element][$aliasName][$attribute]= $value;
+			if($tableType == STINSERTUPDATE)
+			{
+				$this->aAttributes[STINSERT][$element][$aliasName][$attribute]= $value;
+				$this->aAttributes[STUPDATE][$element][$aliasName][$attribute]= $value;
+			}else
+		    	$this->aAttributes[$tableType][$element][$aliasName][$attribute]= $value;
 			return;
 		}
 		// tableType is NULL
@@ -554,6 +561,32 @@ class STBaseTable
 	public function align($aliasName, $value, $tableType= STLIST)
 	{
 	    $this->tdAttribute("align", $value, $tableType, $aliasName);
+	}
+	/**
+	 * define column for a scrollable input field
+	 * 
+	 * @param string $aliasName name of column
+	 * @param int $min minimum value of scroll bar
+	 * @param int $max maximum value of scroll bar
+	 * @param int $bias alignment of scroll bar - STHORIZONTAL or STVERTICAL (default: <code>STHORIZONTAL</code> changeable with next parameter)
+	 * @param enum $tableType for which display table - STLIST, STINSERT or STDELETE - width should be.
+	 * 							(default: <code>STINSERTUPDATE</code>)
+	 */
+	public function range(string $aliasName, int $min, int $max, $bias= STHORIZONTAL, $tableType= STINSERTUPDATE)
+	{
+		if(	$bias != STVERTICAL &&
+			$bias != STHORIZONTAL	)
+		{
+			if($tableType == STVERTICAL)
+			{
+				$newValue= STVERTICAL;
+			}else
+				$newValue= STHORIZONTAL;
+			$tableType= $bias;
+			$bias= $newValue;
+		}
+		$value= array("min"=>$min, "max"=>$max, "range"=>$bias);
+	    $this->attribute("input", "range", $value, $tableType, $aliasName);
 	}
 	/**
 	 * pre-define a cluster for every row,

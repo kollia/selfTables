@@ -29,6 +29,7 @@ define("STCHOOSE", "choose");
 define("STLIST",   "list");
 define("STINSERT", "insert");
 define("STUPDATE", "update");
+define("STINSERTUPDATE", "insertupdate");
 define("STDELETE", "delete");
 define("STADMIN", "adminAccess");
 define("STALLDEF", "##all");
