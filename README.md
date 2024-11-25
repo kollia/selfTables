@@ -105,7 +105,7 @@ If you want an other order by begin, order the table with the command ->orderBy(
 ```ex. $state->orderBy("name"); ```<br />
 You can also limit the table listing with ->setMaxRowSelect(<count>)
 
-here the full code for all tables:
+here the full code for all tables:<br />
 <b>[ [02_table_listing.php](examples/02_table_listing.php)]</b>
 ```php
 <?php
@@ -207,7 +207,7 @@ The idea of ​​the project is to have a container for each web page that can 
 The database (STDbMariaDb) that you configured first is also a container.
 
 
-For an second website create a new `STDbObjectContainer` from an existing container. The tables you have configured before are the same. Only you want other columns (identifColumns), you need to select the new colums.
+For an second website create a new `STObjectContainer` from an existing container. The tables you have configured before are the same. Only you want other columns (identifColumns), you need to select the new colums.
 The definition from the container before are the default config.
 ```php
 $personContainer= new STObjectContainer("address", $db);
@@ -330,7 +330,8 @@ if( $container == "Order" &&
     $action == STINSERT       )
 {
     $query= new STQueryString();
-    $bill_id= $query->getParam("stget[from][bill]);
+    $limitation= $query->getLimitation("bill");
+    $bill_id= $limitation['bill_id'];
     $order->preSelect("bill", $bill_id);
 }
 
