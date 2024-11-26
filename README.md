@@ -210,15 +210,15 @@ The database (STDbMariaDb) that you configured first is also a container.
 For an second website create a new `STObjectContainer` from an existing container. The tables you have configured before are the same. Only you want other columns (identifColumns), you need to select the new colums.
 The definition from the container before are the default config.
 ```php
-$personContainer= new STObjectContainer("address", $db);
-$personContainer->needTable("Country");
-$personContainer->needTable("State");
-$personContainer->needTable("County");
-$personContainer->needTable("Person");
-$personContainer->needTable("Address");
-$personContainer->setFirstTable("Person");
+$addressee= new STObjectContainer("addressee", $db);
+$addressee->needTable("Country");
+$addressee->needTable("State");
+$addressee->needTable("County");
+$addressee->needTable("Person");
+$addressee->needTable("Address");
+$addressee->setFirstTable("Person");
 
-$db->needContainer($personContainer);
+$db->needContainer($addressee);
 ```
 You see that the container `STObjectContainer` need a name. This is also for the database which have as default the name `main-menue`.
 (If you need an second other database, you have to define in the constructor)<br />
