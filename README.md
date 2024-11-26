@@ -318,21 +318,18 @@ $addressee->needTable("Person");
 $addressee->needTable("Address");
 $addressee->setFirstTable("Person");
 
-$order= new STObjectContainer("Order", $db);
-$order->needTable("article");
-$order->needTable("Order");
-$order->setFirstTable("Order");
-$container= $order->getContainerName();
-$table= $order->getTableName();
-$action= $order->getAction();
-if( $container == "Order" &&
-    $table == "Order" &&
-    $action == STINSERT       )
+$orderContainer= new STObjectContainer("Order", $db);
+$orderContainer->needTable("article");
+$orderTable= $orderContainer->needTable("Order");
+$orderContainer->setFirstTable("Order");
+if( $orderContainer->getContainerName() == "Order" &&
+    $orderContainer->getTableName() == "Order" &&
+    $orderContainer->getAction() == STINSERT       )
 {
     $query= new STQueryString();
     $limitation= $query->getLimitation("bill");
     $bill_id= $limitation['bill_id'];
-    $order->preSelect("bill", $bill_id);
+    $orderTable->preSelect("bill", $bill_id);
 }
 
 $main= new STObjectContainer("bill", $db);
@@ -340,7 +337,7 @@ $main->needContainer($addressee);
 $main->needTable("Article");
 $main->setFirstTable("Bill");
 $bill= $main->needTable("Bill");
-$bill->namedLink("bill_id");
+$bill->namedLink("bill_id", $orderContainer);
 
 
 $creator= new STSiteCreator($main);
@@ -351,6 +348,35 @@ $creator->display();
 ```
 When you test this scripts, you can see as first a listing of all bills, where every
 bill has an ID which you link to all exist orders of the bill.<br />
+The reason is, because by creating the main container (<code>$main</code>) the Bill table defined as need
+and the column `bill_id` defined with the <code>$orderContainer</code> as `->namedLink()`.
+
+After organising the container <code>$orderContainer</code>, you can see an request of the current container, table and action.
+This you can do for every table if you want better performance. Because tables and containers not always need to organise when not displayed.
+> If you want developing in open source, it's also possible to overload class `STObjectContainer`.
+> You can organize container inside the method create() and init().
+> ```php
+> class MyNewContainer extends STObjectContainer
+> {
+>      protected function create()
+>      {
+>           // definition of which tables need
+>           // which should be the first table
+>           // and maybe the display-name
+>      }
+>
+>      protected function init(string $action, string $table)
+>      {
+>           // all other definitions
+>           // which need for current container
+>      }
+> }```
+
+### Design
+
+The Idea of `STObjectContainer` and `STSiteCreator` is that they are derived from a &lt;body&gt;-Tag and &lt;html&gt;-Tag.
+You can always add html-Tags before and after `STSiteCreator::execute()`.<br />
+
 
 
 
