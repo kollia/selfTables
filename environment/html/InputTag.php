@@ -2,56 +2,72 @@
 
 class InputTag extends Tag
 {
-		function __construct($class= null)
+		public function __construct($class= null)
 		{
 			Tag::__construct("input", false, $class);
 		}
-		function name($vlaue)
+		public function name($vlaue)
 		{
 			$this->insertAttribute("name", $vlaue);
 		}
-		function type($vlaue)
+		public function type($vlaue)
 		{
 			$this->insertAttribute("type", $vlaue);
 		}
-		function value($vlaue)
+		public function min($vlaue)
+		{
+			$this->insertAttribute("min", $vlaue);
+		}
+		public function max($vlaue)
+		{
+			$this->insertAttribute("max", $vlaue);
+		}
+		public function step($vlaue)
+		{
+			$this->insertAttribute("step", $vlaue);
+		}
+		public function value($vlaue)
 		{
 			$this->insertAttribute("value", $vlaue);
 		}
-		function size($vlaue)
+		public function oninput($vlaue)
+		{
+			$this->insertAttribute("oninput", $vlaue);
+		}
+		public function size($vlaue)
 		{
 			$this->insertAttribute("size", $vlaue);
 		}
-		function maxlen($vlaue)
+		public function maxlen($vlaue)
 		{
 			$this->insertAttribute("maxlen", $vlaue);
 		}
-		function onChange($vlaue)
+		public function onChange($vlaue)
 		{
 			$this->insertAttribute("onChange", $vlaue);
 		}
-		function onClick($vlaue)
+		public function onClick($vlaue)
 		{
 			$this->insertAttribute("onClick", $vlaue);
 		}
-		function accept($vlaue)
+		public function accept($vlaue)
 		{
 			$this->insertAttribute("accept", $vlaue);
 		}
-		function tabindex($vlaue)
+		public function tabindex($vlaue)
 		{
 			$this->insertAttribute("tabindex", $vlaue);
 		}
-		function autofocus($vlaue= "")
+		public function autofocus($vlaue= "")
 		{
 		    $this->insertAttribute("autofocus", $vlaue);
 		}
-		function checked($checked= true)
+		public function checked($checked= true)
 		{
 			if($checked)
 				$this->insertAttribute("checked", "checked");
 		}
-		function disabled()
+		public function disabled()
 		{
 			$this->insertAttribute("disabled", "disabled");
 		}

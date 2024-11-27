@@ -1224,7 +1224,30 @@ class STListBox extends STBaseBox
 				    isset($this->showTypes[$createdColumn]) )
 			    {// the variable createdColumn is different per HORIZONTAL/VERTIKA
 					$extraField= $this->showTypes[$createdColumn];
-			    }
+			    }elseif(isset($this->asDBTable->aAttributes[STLIST]))
+				{
+					foreach($this->asDBTable->aAttributes[STLIST] as $element=>$aAttributes)
+					{
+						foreach($aAttributes as $column=>$attributes)
+						{
+							if($column == $createdColumn)
+							{
+								$attribute= key($attributes);
+								if( $element != "td" &&
+									$attribute != "align" )
+								{
+									if( $attribute == "range" )
+									{
+										$extraField= $attribute;
+										break 2;
+
+									}elseif(STCheck::isDebug())
+										STCheck::warning("STListBox::createTags", "attribute $attribute is not defined for STLisBox");
+								}
+							}
+						}
+					}
+				}
 			    
 			    if( !isset($extraField) &&
 			        in_array($createdColumn, $aGetColumns) )
@@ -1507,22 +1530,43 @@ class STListBox extends STBaseBox
 							if($limitation)
 								$this->asDBTable->aActiveLink["represent"]= $limitation[$represent];
 						}
-						if($extraField=="check")
+						if(	$extraField == "check" ||
+							$extraField == "range" 		)
 						{
 						/*    echo __FILE__.__LINE__."<br>";
 						    echo "column:$columnKey<br>";
 						    st_print_r($this->address);
 						    st_print_r($this->asDBTable->aCheckDef);*/
 							$input= new InputTag();
-								$input->type("checkbox");
-								$input->name($createdColumn."[".$row."]");  
-		                    if(	(	isset($this->asDBTable->aCheckDef[$columnKey]) &&
-									$this->asDBTable->aCheckDef[$columnKey]===$columnValue	)
-		                        or
-		                        (	!isset($this->asDBTable->aCheckDef[$columnValue]) &&
-									$columnValue !== null										)	)
+							$input->name($createdColumn."[".$row."]");  
+							if($extraField=="range")
 							{
-								$input->checked();
+								$input->type("range");
+								$input->min($this->asDBTable->aAttributes[STLIST]['input'][$createdColumn]["range"]["min"]);
+								$input->max($this->asDBTable->aAttributes[STLIST]['input'][$createdColumn]["range"]["max"]);
+								$input->step($this->asDBTable->aAttributes[STLIST]['input'][$createdColumn]["range"]["step"]);
+								$input->value($columnValue);
+								if($this->asDBTable->aAttributes[STLIST]['input'][$createdColumn]["range"]["value"])
+									$input->oninput("this.nextElementSibling.value = this.value");
+								if($this->asDBTable->aAttributes[STLIST]['input'][$createdColumn]["range"]["range"] == STVERTICAL)
+								{
+									$input->style(	"writing-mode: vertical-lr;".
+													"direction: rtl;".
+													"vertical-align: middle;"		);
+								}
+
+							}elseif($extraField=="check")
+							{
+								$input->type("checkbox");
+
+								if(	(	isset($this->asDBTable->aCheckDef[$columnKey]) &&
+										$this->asDBTable->aCheckDef[$columnKey]===$columnValue	)
+									or
+									(	!isset($this->asDBTable->aCheckDef[$columnValue]) &&
+										$columnValue !== null										)	)
+								{
+									$input->checked();
+								}
 							}
 							if($bDisabled)
 							    $input->disabled();
@@ -1532,18 +1576,12 @@ class STListBox extends STBaseBox
 								$input->onClick($file);
 							}
 							$td->add($input);
-							$td->align("center");
-							// info comming now directly from database
-							// after the selection
-							/*if($columnValue)
+							if(	$extraField=="range" &&
+								$this->asDBTable->aAttributes[STLIST]['input'][$createdColumn]["range"]["value"]	)
 							{
-  								$input2= new InputTag();
-  								$input2->name("checked_".$createdColumn."[".$row."]");
-  								$input2->type("hidden");
-  								$input2->value("on");
-//								$div->add($input2);
-								$td->add($input2);
-							}*/
+								$td->add("<output>$columnValue</output>");
+							}
+							$td->align("center");
 						}elseif($extraField=="image")
 						{
 							if($columnValue)
@@ -1742,8 +1780,24 @@ class STListBox extends STBaseBox
 			 *****     wenn der buttonText deffiniert ist wird ein Form-Tag ben�tigt      *****
 			 *****     dann ist der hTable-Tag ein Div-Tag, sonst das objekt $this selbst *****
 			 **********************************************************************************/
+			$bNeedFormTag= false;
 			if(	isset($showTypes["check"]) ||
-				$this->asDBTable->bIsNnTable		)
+				$this->asDBTable->bIsNnTable	)
+			{
+				$bNeedFormTag= true;
+			}elseif(isset($this->asDBTable->aAttributes[STLIST]['input']))
+			{
+				foreach($this->asDBTable->aAttributes[STLIST]['input'] as $attributes)
+				{
+					if(key($attributes)=="range")
+					{
+						//$bNeedFormTag= true;
+						STCheck::warning("STListBox::createTags", 1, "range is not right implemented with save-button");
+						break;
+					}
+				}
+			}
+			if($bNeedFormTag)
 			{
 				$form= new FormTag();
 					$form->name($this->formName);

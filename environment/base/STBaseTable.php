@@ -568,12 +568,24 @@ class STBaseTable
 	 * @param string $aliasName name of column
 	 * @param int $min minimum value of scroll bar
 	 * @param int $max maximum value of scroll bar
+	 * @param int $steps steps of scroll bar (default: <code>1</code>)
 	 * @param int $bias alignment of scroll bar - STHORIZONTAL or STVERTICAL (default: <code>STHORIZONTAL</code> changeable with next parameter)
 	 * @param enum $tableType for which display table - STLIST, STINSERT or STDELETE - width should be.
 	 * 							(default: <code>STINSERTUPDATE</code>)
 	 */
-	public function range(string $aliasName, int $min, int $max, $bias= STHORIZONTAL, $tableType= STINSERTUPDATE)
+	public function range(string $aliasName, int $min, int $max, $steps= 1, $bias= STHORIZONTAL, $tableType= STINSERTUPDATE, $showValue= false)
 	{
+		if(is_bool($steps))
+		{
+			$showValue= $steps;
+			$steps= 1;
+		}
+		if(!is_int($steps))
+		{
+			$tableType= $bias;
+			$bias= $steps;
+			$steps= 1;
+		}
 		if(	$bias != STVERTICAL &&
 			$bias != STHORIZONTAL	)
 		{
@@ -585,7 +597,7 @@ class STBaseTable
 			$tableType= $bias;
 			$bias= $newValue;
 		}
-		$value= array("min"=>$min, "max"=>$max, "range"=>$bias);
+		$value= array("min"=>$min, "max"=>$max, "step"=>$steps, "range"=>$bias, "value"=>$showValue);
 	    $this->attribute("input", "range", $value, $tableType, $aliasName);
 	}
 	/**

@@ -46,6 +46,10 @@ class Tag extends STCheck
 		{
 		    $this->insertAttribute("class", $name);
 		}
+		public function style($value)
+		{
+			$this->insertAttribute("style", $value);
+		}
 		static function lastParam($nLast, $nParams)
 		{
 			Tag::paramCheck($nLast, 1, "int");
