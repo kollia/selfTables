@@ -2833,11 +2833,11 @@ class STItemBox extends STBaseBox
 			$oCallbackClass->display= false;
 			$oCallbackClass->before= true;
 			$oCallbackClass->MessageId= "PREPARE";
-			$error= $this->makeCallback(STDELETE, $oCallbackClass, STDELETE, 0);
+			$callback= $this->makeCallback(STDELETE, $oCallbackClass, STDELETE, 0);
 			//echo "ErrorString:";st_print_r($error);
 			//echo "callbackResult:";st_print_r($oCallbackClass->sqlResult);
 			
-			if(!$error)
+			if($callback === true)
 			{
 			    $where= $oCallbackClass->getWhere();
 			    if(isset($where))
@@ -2861,7 +2861,7 @@ class STItemBox extends STBaseBox
 			            }
 			        }
 			    }
-			    if($error == "NODELETE_FK")
+			    if($error === "NODELETE_FK")
 			    {
 			        $fks= $del->getFkLinkTables();
 			        $last= count($fks)-1;
@@ -2888,6 +2888,13 @@ class STItemBox extends STBaseBox
 				$oCallbackClass->MessageId= $this->msg->getMessageId();
 				$error= $this->makeCallback(STDELETE, $oCallbackClass, STDELETE, 0);
 				return $this->msg->getMessageId();
+			}else
+			{
+				$tr= new RowTag();
+					$td= new ColumnTag(TD);
+						$td->add($this->msg->getMessageEndScript());
+					$tr->add($td);
+            	$this->add($tr);
 			}
 
 			$oCallbackClass->before= false;

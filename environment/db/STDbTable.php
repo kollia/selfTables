@@ -45,24 +45,9 @@ class STDbTable extends STBaseTable
 	            }
 	            if(preg_match("/multiple_key/i", $field["flags"]))
 	            {
-	                $sql=  "select `REFERENCED_TABLE_SCHEMA`, `REFERENCED_TABLE_NAME`, `REFERENCED_COLUMN_NAME` ";
-	                $sql.= "FROM `information_schema`.`KEY_COLUMN_USAGE` ";
-	                $sql.= "WHERE `TABLE_SCHEMA`='".$this->db->getDatabaseName()."' ";
-	                $sql.= " and  `TABLE_NAME` = '$Table'";
-	                $sql.= " and  `COLUMN_NAME`='".$field["name"]."'";
-	                $sql.= " and  `REFERENCED_COLUMN_NAME` is not NULL";
-	                $this->db->query($sql);
-	                $result= $this->db->fetch_row(STSQL_NUM);
-	                
-	                if(	isset($result) &&
-	                    isset($result[0]) &&
-	                    is_array($result) &&
-	                    count($result) == 3	)
-	                {
-	                    $this->fk($field["name"], $result[1], $result[2]);
-	                    //echo "result of Fk for $tableName.$name:<br>";
-	                    //st_print_r($this->FK, 2);echo "<br>";
-	                }
+					$aFK= $this->db->getForeignKeyLink($Table, $field["name"]);
+					if($aFK !== NULL)
+	                    $this->fk($field["name"], $aFK['table'], $aFK['column'], /*join'*/null, /*where*/null, $aFK['cascade']);
 	            }
 	        }
 	    }else
@@ -636,7 +621,7 @@ class STDbTable extends STBaseTable
 	    $table= $this->db->getTableName($table);
 	    STBaseTable::noJoinOver($table);
 	}
-	protected function fk($ownColumn, &$toTable, $otherColumn= null, $join= null, $where= null)
+	protected function fk($ownColumn, &$toTable, $otherColumn= null, $join= null, $where= null, $cascade= null)
 	{
 		Tag::paramCheck($ownColumn, 1, "string");
 		Tag::paramCheck($toTable, 2, "STBaseTable", "string");
@@ -663,7 +648,7 @@ class STDbTable extends STBaseTable
     			$toTable= &$this->db->getTable($toTableName);//, false/*bAllByNone*/);
 			Tag::alert(!isset($toTable), "STDbTable::fk()", "second parameter '$toTableName' is no exist table");
     	}
-		STBaseTable::fk($ownColumn, $toTable, $otherColumn, $join, $where);
+		STBaseTable::fk($ownColumn, $toTable, $otherColumn, $join, $where, $cascade);
 		//st_print_r($this->FK,2);
 		if($bOtherDatabase)
 		{

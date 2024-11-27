@@ -1255,7 +1255,7 @@ class STBaseTable
 
 			$this->fk($ownColumn, $toTable, $otherColumn, STRIGHTJOIN, null);
 		}
-    protected function fk($ownColumn, &$toTable, $otherColumn= null, $join= null, $where= null)
+    protected function fk($ownColumn, &$toTable, $otherColumn= null, $join= null, $where= null, $cascade= null)
     {// echo "function fk($ownColumn, &$toTable, $otherColumn, $join, $where)<br />";
 		STCheck::param($ownColumn, 0, "string");
 		STCheck::param($toTable, 1, "STBaseTable", "string");
@@ -1338,7 +1338,14 @@ class STBaseTable
 		}
 		if(!$bSet)
 		{
-	     	$this->aFks[$toTableName][]= array("own"=>$ownColumn, "other"=>$otherColumn, "join"=>$join, "table"=>&$toTable);
+
+	     	$aFk= array(	"own"=>$ownColumn, 
+							"other"=>$otherColumn, 
+							"join"=>$join, 
+							"table"=>&$toTable		);
+			if($cascade)
+				$aFk['cascade']= $cascade;
+			$this->aFks[$toTableName][]= $aFk;
 	     	$toTable->setBackJoin($this->Name);
 		}
 		if(STCheck::isDebug("db.table.fk"))

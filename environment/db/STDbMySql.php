@@ -582,6 +582,58 @@ class STDbMySql extends STDatabase
 	        "in" => array( "type" => "text", "len" => $this->getTextLen(), "needOp" => false )
 	    );
 	}
+	/**
+	 * get structure of foreign key to which column refer to
+	 * 
+	 * @param string $fromTable from which table the column refer to
+	 * @param string $fromColumn from which column the foreign key refer to
+	 * @return array|NULL array with the structure of the foreign key table.<br />
+	 * 					  array(	[database]	=> to which database the own column refer,
+	 * 								[table]		=> to which table the own column refer,
+	 * 								[column]	=> to which column the own column refer,
+	 * 								[constraint]=> the constraint name of the foreign key,
+	 * 								[cascade]	=> which cascade the foreign key have, STUPDATE or STDELETE	)
+	 */ 
+	public function getForeignKeyLink(string $fromTable, string $fromColumn) : array|NULL
+	{
+		$rFK= NULL;
+		$sql =  "SELECT k.`REFERENCED_TABLE_SCHEMA`, k.`REFERENCED_TABLE_NAME`, k.`REFERENCED_COLUMN_NAME`, ";
+		$sql.= "r.`CONSTRAINT_NAME`, r.`UPDATE_RULE`, r.`DELETE_RULE` ";
+		$sql.= "FROM `information_schema`.`REFERENTIAL_CONSTRAINTS` r ";
+		$sql.= "INNER JOIN `information_schema`.`KEY_COLUMN_USAGE` k ";
+		$sql.= "ON r.`CONSTRAINT_NAME` = k.`CONSTRAINT_NAME` ";
+		$sql.= "WHERE r.`CONSTRAINT_SCHEMA`='".$this->getDatabaseName()."' ";
+		$sql.= "AND k.`TABLE_NAME` = '$fromTable' ";
+		$sql.= "AND k.`COLUMN_NAME`='".$fromColumn."' ";
+		$sql.= "AND k.`REFERENCED_COLUMN_NAME` IS NOT NULL";
+		$this->db->query($sql);
+		if(	STCheck::isDebug() &&
+			$this->db->isError()	)
+		{
+			showLine();
+			echo $this->db->getError();	
+			echo "<br /><br />";
+		}
+		$result= $this->db->fetch_row(STSQL_NUM);
+		
+		if(	isset($result) &&
+			is_array($result) &&
+			isset($result[0]) &&
+			count($result) > 3		)
+		{
+			$cascade= "RESTRICT";
+			if($result[4] == "CASCADE")
+				$cascade= STUPDATE;
+			if($result[5] == "CASCADE")
+				$cascade= STDELETE;
+			$rFK= array('database'	=> $result[0],
+						'table'		=> $result[1],
+						'column'	=> $result[2],
+						'constraint'=> $result[3],
+						'cascade'	=> $cascade		);
+		}
+		return $rFK;
+	}
 	public function getFunctionDelimiter() : array
 	{
 	    $aRv= array();

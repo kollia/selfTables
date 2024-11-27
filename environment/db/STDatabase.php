@@ -1663,6 +1663,19 @@ abstract class STDatabase extends STObjectContainer
 		return null;
 	}
 	/**
+	 * get structure of foreign key to which column refer to
+	 * 
+	 * @param string $fromTable from which table the column refer to
+	 * @param string $fromColumn from which column the foreign key refer to
+	 * @return array|NULL array with the structure of the foreign key table.<br />
+	 * 					  array(	[database]	=> to which database the own column refer,
+	 * 								[table]		=> to which table the own column refer,
+	 * 								[column]	=> to which column the own column refer,
+	 * 								[constraint]=> the constraint name of the foreign key,
+	 * 								[cascade]	=> which cascade the foreign key have, STUPDATE or STDELETE	)
+	 */ 
+	abstract public function getForeignKeyLink(string $fromTable, string $fromColumn) : array|NULL;
+	/**
 	 * returning an single array with an tablename which reach all other tables from $aNeededTables
 	 * 
 	 * @param STObjectContainer $container
@@ -1902,7 +1915,13 @@ abstract class STDatabase extends STObjectContainer
                 $fkSelector->execute();
                 $res= $fkSelector->getSingleResult();
                 if($res)
-                    $aRv[]= $fkTableName;
+				{
+					if(isset($columns["cascade"]))
+						$cascade= $columns["cascade"];
+					else
+						$cascade= "RESTRICT";
+                    $aRv[$fkTableName][]= $columns;
+				}
 	        }
 		}
 		if(empty($aFkTables))

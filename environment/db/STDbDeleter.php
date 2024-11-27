@@ -13,7 +13,7 @@ class STDbDeleter extends STDbSqlWhereCases
 	 * to delete
 	 * @var string
 	 */
-	private $aFkLinkTables= "";
+	private $aFkLinkTables= array();
 	private $aStatement= array();
 	
 	public function execute($onError= onDebugErrorShow)
@@ -23,8 +23,17 @@ class STDbDeleter extends STDbSqlWhereCases
 		$this->table->where(null);
 		//$table= new STDbTable($this->table);
 		$this->table->modifyQueryLimitation($this->bModify);
-		$fkTables= $db->hasFkEntriesToTable($this->table->getName(), $this->oWhere);
-		if($fkTables)
+		$fkLinks= $db->hasFkEntriesToTable($this->table->getName(), $this->oWhere);
+		$fkTables= array();
+		foreach($fkLinks as $fromTable=>$fkLink)
+		{
+			foreach($fkLink as $qualified)
+			{
+				if($qualified['cascade'] != STDELETE) 
+		    		$fkTables[]= $fromTable;
+			}
+		}
+		if(count($fkTables))
 		{
 		    $this->nErrno= "NODELETE_FK";
 		    $this->aFkLinkTables= $fkTables;
