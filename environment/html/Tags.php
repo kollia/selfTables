@@ -6,6 +6,12 @@ $tag_spaces= 0;
 $tagCount= 0;
 
 $HTML_TAG_CONTAINER= null;
+/**
+ * count all tags which are displayed
+ * @var array $nDisplayCount
+ */
+$__nTagDisplayCount= 0;
+
 
 class Tag extends STCheck
 {
@@ -128,11 +134,12 @@ class Tag extends STCheck
 		}
 		public function display()
 		{
-		    echo $this->getDisplayString();
+		    echo $this->getDisplayString(0);
 		}
-		public function getDisplayString()
+		public function getDisplayString($displayCount= 0)
 		{
 			global 	$tag_spaces,
+					$__nTagDisplayCount,
 					$HTML_CLASS_DEBUG_CONTENT,
 					$HTML_CLASS_DEBUG_CONTENT_SHOWN,
 					$global_SESSION_noRegister_SHOWEN,
@@ -140,6 +147,8 @@ class Tag extends STCheck
 					$global_set_DEBUG_onLine_byFirst;
 
             $displayString= "";
+			$displayCount++;
+			$__nTagDisplayCount++;
             
             if( $HTML_CLASS_DEBUG_CONTENT &&
                 !typeof($this, "TextAreaTag")   )
@@ -192,7 +201,9 @@ class Tag extends STCheck
 						st_print_r($tag);
 						exit();
 					}
-					$displayString.= $tag->getDisplayString();
+					// *** debugging test for endless loop
+					//echo "display tag {$this->tag} {$__nTagDisplayCount} $displayCount<br />";
+					$displayString.= $tag->getDisplayString($displayCount);
 				}
         		if($indention)
 					$tag_spaces--;

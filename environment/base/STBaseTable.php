@@ -597,8 +597,27 @@ class STBaseTable
 			$tableType= $bias;
 			$bias= $newValue;
 		}
+		STCheck::warning($tableType != STLIST, "STListBox::createTags", "implementations for STINSERT and STUPDATE are not yet implemented now");
 		$value= array("min"=>$min, "max"=>$max, "step"=>$steps, "range"=>$bias, "value"=>$showValue);
 	    $this->attribute("input", "range", $value, $tableType, $aliasName);
+		if($tableType == STLIST)
+			$this->selectPkColumnOnListIfNeed();
+	}
+	protected function selectPkColumnOnListIfNeed()
+	{
+		$pk= $this->getPkColumnName();
+		$bSet= false;
+		foreach($this->show as $column)
+		{
+			if(	$column['table'] == $this->Name &&
+				$column['column'] == $pk			)
+			{
+				$bSet= true;
+				break;
+			}
+		}
+		if(!$bSet)
+			$this->getColumn($pk, $this->Name."_table@PK_value");		
 	}
 	/**
 	 * pre-define a cluster for every row,
