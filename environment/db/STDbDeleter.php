@@ -25,12 +25,15 @@ class STDbDeleter extends STDbSqlWhereCases
 		$this->table->modifyQueryLimitation($this->bModify);
 		$fkLinks= $db->hasFkEntriesToTable($this->table->getName(), $this->oWhere);
 		$fkTables= array();
-		foreach($fkLinks as $fromTable=>$fkLink)
+		if(is_array($fkLinks))
 		{
-			foreach($fkLink as $qualified)
+			foreach($fkLinks as $fromTable=>$fkLink)
 			{
-				if($qualified['cascade'] != STDELETE) 
-		    		$fkTables[]= $fromTable;
+				foreach($fkLink as $qualified)
+				{
+					if($qualified['cascade'] != STDELETE) 
+						$fkTables[]= $fromTable;
+				}
 			}
 		}
 		if(count($fkTables))
