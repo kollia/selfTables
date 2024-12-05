@@ -353,7 +353,7 @@ and the column `bill_id` defined with the <code>$orderContainer</code> as `->nam
 
 After organising the container <code>$orderContainer</code>, you can see an request of the current container, table and action.
 This you can do for every table if you want better performance. Because tables and containers not always need to organise when not displayed.
-> If you want developing in open source, it's also possible to overload class `STObjectContainer`.
+> If you want developing object oriented, it's also possible to overload class `STObjectContainer`.
 > You can organize container inside the method create() and init().
 > ```php
 > class MyNewContainer extends STObjectContainer
@@ -370,7 +370,8 @@ This you can do for every table if you want better performance. Because tables a
 >           // all other definitions
 >           // which need for current container
 >      }
-> }```
+> }
+> ```
 
 ### Design
 
