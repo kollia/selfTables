@@ -1820,7 +1820,9 @@ class STListBox extends STBaseBox
 						$input->type("submit");
 						$input->value($this->buttonText);
 					$td->add($input);
-					if($query->getParameterValue("stlisttable") == "updated")
+					$buttonPressed= $this->oQuery->getRemoveOnNewPageValue("pressedSTListSaveButton");
+					if(	isset($buttonPressed) &&
+						$buttonPressed == "updated"	)
 					{
 						$span= new SpanTag("saveButtonText");
 							$b= new BTag();
@@ -2004,7 +2006,7 @@ class STListBox extends STBaseBox
 								$query->insert($varString);
 							}
 						}
-						$query->insert("stlisttable=updated");
+						$query->removeOnNewPage("pressedSTListSaveButton", "updated");
 						$address= $query->getStringVars();
 						if(Tag::isDebug())
 						{

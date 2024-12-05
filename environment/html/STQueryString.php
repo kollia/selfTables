@@ -1067,6 +1067,7 @@ class STQueryString
 		{
 			global	$HTTP_GET_VARS,
 			        $global_selftables_queryArray,
+					$global_selftables_delnextpage_queryValues,
 					$global_selftables_query_table;
 
 			if(	isset($global_selftables_query_table["table"]) &&
@@ -1097,7 +1098,14 @@ class STQueryString
 				unset($HTTP_GET_VARS["stget"]["nr"]);
 			}
 			if(!isset($global_selftables_queryArray))
-			    $global_selftables_queryArray= $HTTP_GET_VARS;
+			{
+				if(isset($HTTP_GET_VARS['stget']['delnewpage']))
+				{
+					$global_selftables_delnextpage_queryValues= $HTTP_GET_VARS['stget']['delnewpage'];
+					unset($HTTP_GET_VARS['stget']['delnewpage']);
+				}
+				$global_selftables_queryArray= $HTTP_GET_VARS;
+			}
 			$this->param_vars= $global_selftables_queryArray;
 			$session= STSession::getSessionUrlParameter();
 			if($session == "")
@@ -1106,6 +1114,32 @@ class STQueryString
 			    $this->delete($session_name);
 			}else
     			$this->update($session);
+		}
+		/**
+		 * set an parameter for the next page inside 'stget[delnewpage]' parameter
+		 * which will be set for next page and then for the page after this should be deleted
+		 * 
+		 * @param string $parameter name of parameter
+		 * @param mixed  $value value of parameter
+		 */
+		public function removeOnNewPage(string $parameter, $value)
+		{
+			$param_value= "stget[delnewpage][".$parameter."]=".$value;
+			$this->update($param_value);
+		}
+		/**
+		 * get value of parameter which should be deleted after next page
+		 * 
+		 * @param string $parameter name of parameter
+		 * @return mixed value of parameter
+		 */
+		public function getRemoveOnNewPageValue(string $parameter)
+		{
+			global $global_selftables_delnextpage_queryValues;
+			
+			if(isset($global_selftables_delnextpage_queryValues[$parameter]))
+				return $global_selftables_delnextpage_queryValues[$parameter];
+			return null;
 		}
 		/**
 		 * synchronize new defined query string

@@ -73,6 +73,7 @@
 	 * @var array $global_selftables_queryArray
 	 */
 	$global_selftables_queryArray= null;
+	$global_selftables_delnextpage_queryValues= null;
 
 
 
