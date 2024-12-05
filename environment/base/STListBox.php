@@ -1024,12 +1024,8 @@ class STListBox extends STBaseBox
 		 */
 		function createTags()
 		{
-			/**********************************************************************************
-			 *****     if the buttonText is defined, a Form-Tag is needed                 *****
-			 *****     than the hTable-Tag is a Div-Tag, otherwise the object $this       *****
-			 *****     should be the hTable-Tag                                           *****
-			 **********************************************************************************/
 			$bNeedFormTag= false;
+			$showTypes= array_flip($this->showTypes);
 			if(	isset($showTypes["check"]) ||
 				$this->asDBTable->bIsNnTable	)
 			{
@@ -1046,7 +1042,12 @@ class STListBox extends STBaseBox
 				}
 			}
 			
-		    $showTypes= array_flip($this->showTypes);
+			/**********************************************************************************
+			 *****     if showTypes has checkboxes or ranges, or current table            *****
+			 *****     defined as n to n table, a Form-Tag is needed                      *****
+			 *****     than the hTable-Tag is a Div-Tag, otherwise                        *****
+			 *****     the own object $this (STListBox) should be the hTable-Tag          *****
+			 **********************************************************************************/
 			if($bNeedFormTag)
 			{
 				$hTable= new DivTag();
@@ -1264,7 +1265,7 @@ class STListBox extends STBaseBox
 										break 2;
 
 									}elseif(STCheck::isDebug())
-										STCheck::warning("STListBox::createTags", "attribute $attribute is not defined for STLisBox");
+										STCheck::warning(1, "STListBox::createTags", "attribute $attribute is not defined for STLisBox");
 								}
 							}
 						}
@@ -1797,12 +1798,6 @@ class STListBox extends STBaseBox
             $hTable->addObj($idtr);
         }
 
-
-		/**********************************************************************************
-		 *****     if the buttonText is defined, a Form-Tag is needed                 *****
-		 *****     than the hTable-Tag is a Div-Tag, otherwise the object $this       *****
-		 *****     is the hTable-Tag                                                  *****
-		 **********************************************************************************/
 		if($bNeedFormTag)
 		{
 			$form= new FormTag();
@@ -1825,23 +1820,23 @@ class STListBox extends STBaseBox
 						$input->type("submit");
 						$input->value($this->buttonText);
 					$td->add($input);
-				if($query->getParameterValue("stlisttable") == "updated")
-				{
-					$span= new SpanTag("saveButtonText");
-						$b= new BTag();
-							$b->add($this->msg->getMessageContent("SAVEBUTTONPRESSED"));
-						$span->add($b);
-					$td->add($span);
-					$td->colspan(30);
-					$script= new JavaScriptTag();
-						$function= new jsFunction("hidePressedSaveButtonText");
-							$function->add("buttonText= document.getElementsByClassName('saveButtonText')[0];");
-							$function->add("buttonText.innerHTML= '';");
-						$script->add($function);
-						$script->add("setTimeout('hidePressedSaveButtonText()', 2000);");
-					$td->add($script);
-				}
-						
+					if($query->getParameterValue("stlisttable") == "updated")
+					{
+						$span= new SpanTag("saveButtonText");
+							$b= new BTag();
+								$b->add($this->msg->getMessageContent("SAVEBUTTONPRESSED"));
+							$span->add($b);
+						$td->add($span);
+						$td->colspan(30);
+						$script= new JavaScriptTag();
+							$function= new jsFunction("hidePressedSaveButtonText");
+								$function->add("buttonText= document.getElementsByClassName('saveButtonText')[0];");
+								$function->add("buttonText.innerHTML= '';");
+							$script->add($function);
+							$script->add("setTimeout('hidePressedSaveButtonText()', 2000);");
+						$td->add($script);
+					}
+							
 
 					$input= new InputTag();
 						$input->type("hidden");
@@ -1876,7 +1871,7 @@ class STListBox extends STBaseBox
 		function createDbChanges()
 		{
 			global $HTTP_POST_VARS;
-			
+
 			$checked= array();
 			if(	isset($HTTP_POST_VARS["stlisttable_make"])
 				and
@@ -1886,17 +1881,17 @@ class STListBox extends STBaseBox
 			    if(!$this->asDBTable->bIsNnTable)
 			    {
 			        $showTypes= array_flip($this->showTypes);
-					if(isset($showTypes['check']))
-					{
-						$isCheck= $showTypes['check'];
-						$columnName= $this->asDBTable->findAliasOrColumn($isCheck);
-					}else
+					if(!isset($showTypes['check']))
 						return; // if no checkbox is set, no pre-defined changes have to be made.
 								// if a column defined as range, all values should be always visible by post
+			        $isCheck= $showTypes['check'];
+			        $columnName= $this->asDBTable->findAliasOrColumn($isCheck);
 			    }else
 			        $columnName= $isCheck= $this->asDBTable->aNnTableColumn['alias'];
 			        
 		        $box= array();
+				if(isset($HTTP_POST_VARS[$isCheck]))
+					$box= $HTTP_POST_VARS[$isCheck];
 		        $checked= array();
 				foreach($this->sqlResult as $key=>$value)
 				{
@@ -1969,12 +1964,22 @@ class STListBox extends STBaseBox
 				$error==="NOERROR"						)
 			{// checkboxen mit Datenbank abgleichen
 
+			    $nnTableInsert= array();
+				if($this->asDBTable->bIsNnTable)
+				{
+				    $tableName= $this->asDBTable->aNnTableColumn['table'];
+				    $useTable= $this->asDBTable->getTable($tableName);
+				}else
+				{
+			        $tableName= $this->asDBTable->getName();
+			        $useTable= $this->asDBTable;
+				}
 				$showTypes= array_flip($this->showTypes);
 				if(!isset($showTypes['check']))
-					$res= $this->makeDbChagesOnListFields();
+					$changed= $this->makeDbChagesOnListFields();
 				else
-					$res= $this->makeDbChangesOnCheckboxes($checkedBefore);
-				if($res)
+					$changed= $this->makeDbChangesOnCheckboxes($checkedBefore);
+				if($changed)
 				{
 					if($this->msg->isDefOKUrl())
 						$this->add($this->msg->getMessageEndScript());
@@ -2022,7 +2027,8 @@ class STListBox extends STBaseBox
 							exit;
 						}
 					}
-				}				
+					//return $this->msg->getMessageId();
+				}
 			}
 		}
 		protected function makeDbChagesOnListFields() : bool
@@ -2083,7 +2089,7 @@ class STListBox extends STBaseBox
 			}
 			return false;
 		}
-		protected function makeDbChangesOnCheckboxes($checkedBefore)
+		protected function makeDbChangesOnCheckboxes($checkedBefore) : bool
 		{
 			global $HTTP_POST_VARS;
 			
@@ -2216,7 +2222,7 @@ class STListBox extends STBaseBox
 												if($bSetValue)
 												{
 													$this->msg->setMessageId("NNTABLEINSERT_MUCH@", $columnContent["name"]);
-													return;
+													return false;
 												}
 												$nnTableInsert[$columnContent["name"]]= $content["value"];
 												if(STCheck::isDebug("db.statements.insert"))
@@ -2304,7 +2310,7 @@ class STListBox extends STBaseBox
 										{
 											//$this->msg->setMessageId("NOPK_FORDBCHANGE@", "xxx");
 											$this->msg->setMessageId("NOFK_JOINFIELDEXIST@@@", $columnContent['name'], $nnTableName, $joinTableName);
-											return;
+											return false;
 										}else
 											$joinFieldName= "join@$joinTableName@$foreignColumn";
 										if(isset($this->sqlResult[$countBox][$joinFieldName]))
@@ -2319,7 +2325,7 @@ class STListBox extends STBaseBox
 										if(preg_match("/not_null/", $columnContent["flags"]))
 										{
 											$this->msg->setMessageId("NNTABLEINSERT_FAULT@", $columnContent["name"]);
-											return;
+											return false;
 										}
 									}else
 										$inserter->fillColumn($columnContent["name"], $value);
@@ -2362,7 +2368,7 @@ class STListBox extends STBaseBox
 						if(!$existPk)
 						{
 							$this->msg->setMessageId("NOPK_FORDBCHANGE@", $tableColumn);
-							return;
+							return false;
 						}
 					}
 					foreach($aDelete as $kChecked => $vChecked)
@@ -2401,29 +2407,26 @@ class STListBox extends STBaseBox
 					if($updater->execute())
 					{
 						$this->msg->setMessageId("SQL_ERROR", $updater->getErrorString());
-						return 1;
+						return false;
 					}
 				}elseif(!$this->insertStatement)
 				{
 					if($bInsert && $inserter->execute())
 					{
 						$this->msg->setMessageId("SQL_ERROR", $inserter->getErrorString());
-						return 1;
+						return false;
 					}
 					if($bDelete && $deleter->execute())
 					{
 						$this->msg->setMessageId("SQL_ERROR", $deleter->getErrorString());
-						return 1;
+						return false;
 					}
 				}
 			}
 
-			//st_print_r($this->sqlResult,2);
-			if($bOnDbChanged)
-				return 0;
-			return 0;
+			return $bOnDbChanged;
 		}
-		function createOldInsertDeleteStatements() : int
+		function createOldInsertDeleteStatements()
 		{
 			if(	!is_string($this->insertStatement)
 				or
