@@ -19,85 +19,85 @@ require_once($_stdbtabledescriptions);
 */
 abstract class STDatabase extends STObjectContainer
 {
-/**
-*  string type of the database
-* @abstract
-* @access private
-* @var string
-*/
+	/**
+	*  string type of the database
+	* @abstract
+	* @access private
+	* @var string
+	*/
 	var $dbType= "defined DB";
-/**
-*  defined type in which format the result from the database will be showen
-*
-* <table>
-*	<tr>
-*		<th align='left' colspan='2'>
-*			existing types:
-*		</th>
-*	</tr>
-*	<tr>
-*		<td>
-*			<b>STSQL_NUM</b>
-*		</td>
-*		<td>
-*			- showes the Fields in the row array with 1, 2, 3, ...
-*		</td>
-*	</tr>
-*	<tr>
-*		<td>
-*			<b>STSQL_ASSOC</b>
-*		</td>
-*		<td>
-*			- the Fields are showen as key from the select-statement
-*		</td>
-*	</tr>
-*	<tr>
-*		<td>
-*			<b>STSQL_BOTH</b>
-*		</td>
-*		<td>
-*			- both defined given -> the number and also the named-key
-*		</td>
-*	</tr>
-*
-* @access private
-* @var integer
-*/
+	/**
+	*  defined type in which format the result from the database will be showen
+	*
+	* <table>
+	*	<tr>
+	*		<th align='left' colspan='2'>
+	*			existing types:
+	*		</th>
+	*	</tr>
+	*	<tr>
+	*		<td>
+	*			<b>STSQL_NUM</b>
+	*		</td>
+	*		<td>
+	*			- showes the Fields in the row array with 1, 2, 3, ...
+	*		</td>
+	*	</tr>
+	*	<tr>
+	*		<td>
+	*			<b>STSQL_ASSOC</b>
+	*		</td>
+	*		<td>
+	*			- the Fields are showen as key from the select-statement
+	*		</td>
+	*	</tr>
+	*	<tr>
+	*		<td>
+	*			<b>STSQL_BOTH</b>
+	*		</td>
+	*		<td>
+	*			- both defined given -> the number and also the named-key
+	*		</td>
+	*	</tr>
+	*
+	* @access private
+	* @var integer
+	*/
 	var $defaultTyp;
-/**
-*  an string which define the host-name or -address on which the database is running
-*
-* @access private
-* @var string
-*/
+	/**
+	*  an string which define the host-name or -address on which the database is running
+	*
+	* @access private
+	* @var string
+	*/
   	var $host= null;
-/**
-*  an string which define the user-name to access the database
-*
-* @access private
-* @var string
-*/
+	/**
+	*  an string which define the user-name to access the database
+	*
+	* @access private
+	* @var string
+	*/
   	var $user= null;
-/**
-*  an string which define to which database will be connect
-*
-* @access private
-* @var string
-*/
-  	var $dbName= "";
-/**
-*  contains all exist name of tables in the choosed database
-*
-* @access private
-* @var array string
-*/
+	/**
+	*  an string which define to which database will be connect
+	*
+	* @access private
+	* @var string
+	*/
+  	protected $dbName= "";
+	/**
+	*  contains all exist name of tables in the choosed database
+	*
+	* @access private
+	* @var array string
+	*/
 	var	$tableNames;
-/**
-*  contains the structer of tables with his foreign keys
-*
-* @access private
-* @var array string
-*/
+	/**
+	*  contains the structer of tables with his foreign keys
+	*
+	* @access private
+	* @var array string
+	*/
 	var $aTableStructure= array();
 
 	/**
@@ -514,7 +514,10 @@ abstract class STDatabase extends STObjectContainer
 	abstract public function closeConnection();
    	public function database($dbName, $onError= onErrorStop)
    	{   
-   	    $this->dbName= $dbName;
+		if($this->hasLowerCaseTableNames())
+   	    	$this->dbName= strtolower($dbName);
+		else
+			$this->dbName= $dbName;
    	    STDbTableDescriptions::init($this);
    	}
 	function getDatabaseName()

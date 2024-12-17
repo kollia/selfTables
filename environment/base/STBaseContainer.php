@@ -729,7 +729,7 @@ abstract class STBaseContainer extends BodyTag implements STContainerTempl
 		$global_first_objectContainerName= $container;
 	}
 	/**
-	 * return obj of created container
+	 * return obj of created container.
 	 * 
 	 * @param string|bool §containerName name of container, when parameter not given, method return object of first container,
 	 * 										if parameter a boolean of true, return object can be null if not exist, otherwise the same if not given
@@ -801,6 +801,19 @@ abstract class STBaseContainer extends BodyTag implements STContainerTempl
 			{
 				if(typeof($container, $className))
 					return $container;
+			}
+		}else
+		{
+			// if container name not exist
+			// and also no class name exist
+			// search whether container name is only a database name
+			foreach($global_array_all_exist_stobjectcontainers as $name=>$container)
+			{
+				if( $containerName == $container->getDatabaseName()	)
+				{
+					$containerObj= &$global_array_all_exist_stobjectcontainers[$name];
+					return $containerObj;
+				}
 			}
 		}
 		if(	(	!isset($className) ||

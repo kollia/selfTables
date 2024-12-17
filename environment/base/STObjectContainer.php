@@ -240,11 +240,19 @@ class STObjectContainer extends STBaseContainer
 			$bEmpty= $sContainer;
 			$sContainer= null;
 		}
+		if(	$tableName &&
+			preg_match("/\./", $tableName))
+		{
+			$split= preg_split("/\./", $tableName);
+			$sContainer= $split[0];
+			$tableName= $split[1];
+		}
 		if( $sContainer != null &&
 		    $sContainer != $this->name )
 		{
 		    $container= &STBaseContainer::getContainer($sContainer);
-		    return $container->getTable($tableName, $sContainer, $bEmpty);
+			$fromContainer= null; // container defined now, should not search again
+		    return $container->getTable($tableName, $fromContainer, $bEmpty);
 		}else
 		    $container= &$this;
 		// method needs initialization properties

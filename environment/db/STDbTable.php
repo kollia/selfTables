@@ -47,7 +47,12 @@ class STDbTable extends STBaseTable
 	            {
 					$aFK= $this->db->getForeignKeyLink($Table, $field["name"]);
 					if($aFK !== NULL)
-	                    $this->fk($field["name"], $aFK['table'], $aFK['column'], /*join'*/null, /*where*/null, $aFK['cascade']);
+					{
+						$sTable= $aFK['table'];
+						if($this->db->getDatabaseName() != $aFK['database'])
+							$sTable= $aFK['database'].".$sTable";
+	                    $this->fk($field["name"], $sTable, $aFK['column'], /*join'*/null, /*where*/null, $aFK['cascade']);
+					}
 	            }
 	        }
 	    }else
@@ -120,7 +125,14 @@ class STDbTable extends STBaseTable
     {
         STBaseTable::__clone();
         STCheck::echoDebug("table", "clone STDbTable::content ".$this->Name.":".$this->ID);
-        //unset($this->container);
+        		
+	    //---------------------------------------------------------------------------------
+	    // foreign keys and backjoins should always same like in first database table
+	    // so make an direct link from copied table
+		$main= $this->db->getTable($this->Name);
+		$this->FK= &$main->FK;
+		$this->aFks= &$main->aFks;
+		$this->aBackJoin= &$main->aBackJoin;
     }
 	function copy($oTable)
 	{
@@ -1573,7 +1585,7 @@ class STDbTable extends STBaseTable
     			$BackTable= &$oTable->getTable($sBackTableName);
     			Tag::echoDebug("db.statements.table", "need backward from table $this->Name to table $sBackTableName from container ".$BackTable->container->getName());
     			$sTableAlias= $aTableAlias[$sBackTableName];
-    			$dbName= $BackTable->db->dbName;
+    			$dbName= $BackTable->db->getDatabaseName();
     			$database= "";
     			$fks= $BackTable->getForeignKeys();
     			$join= $fks[$this->Name][0];

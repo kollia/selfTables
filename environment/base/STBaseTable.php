@@ -74,7 +74,7 @@ class STBaseTable
 	protected $aClusterColumns= array();
 	var	$bDisplaySelects= true;
 	var	$bColumnSelects= true; // have the Table columns in select-statement
-    private $FK= array();// bug: if in one table be two foreign keys to the same table
+    protected $FK= array();// bug: if in one table be two foreign keys to the same table
 					 // 	 there be seen only one
 	var	$aFks= array();	// so make an new one
 	var	$aBackJoin= array();// for join in table where the other have an foreigen key to the own
@@ -321,13 +321,9 @@ class STBaseTable
 	    $this->listArrangement= STHORIZONTAL;//bestimmt das Layout der STListBox
 	    $this->oSearchBox= null; // Suchen-Box bei Auflistung der Tabelle anzeigen
 	    
-	    //---------------------------------------------------------------------------------
-	    // foreign keys and backjoins should always same like in first database table
-	    // so make an direct link from copied table
-		$main= $this->db->getTable($this->Name);
-		$this->FK= &$main->FK;
-		$this->aFks= &$main->aFks;
-		$this->aBackJoin= &$main->aBackJoin;
+		// kollia 2024-12-09:
+		// switch FK, aFks and aBackJoin members cloning to the STDbTable object		
+
 		if(isset($this->oWhere))
 			$this->oWhere->resetQueryLimitation("own", true);
 	    //---------------------------------------------------------------------------------
@@ -3493,6 +3489,8 @@ class STBaseTable
 			{
 				if($fromColumn==$columns["own"])
 				{
+					if(isset($columns["table"]))
+						return $columns["table"];
 					$oTable= &$this->getTable($table);
 					return $oTable;
 				}

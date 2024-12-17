@@ -266,7 +266,8 @@ class STDbSelector extends STDbTable implements STContainerTempl
 				if($oTable)
 				{
 				    $oTable->container= $this;
-				    $oTable->allowQueryLimitation($this->bModifyFk);
+					if(typeof($oTable, "STDbTable"))
+				    	$oTable->allowQueryLimitation($this->bModifyFk);
 					$this->aoToTables[$sTableName]= &$oTable;
 				}else
 					unset($this->aoToTables[$sTableName]);
