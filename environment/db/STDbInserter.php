@@ -108,7 +108,7 @@ class STDbInserter extends STDbSqlCases
     			}else
     			{
     				$this->lastInsertID= $db->getLastInsertID();
-    				$this->aInsertIDs[]= $this->lastInsertID;
+    				$this->aInsertIDs[$nr]= $this->lastInsertID;
     				$this->updateCluster($columns);
     			}
     		}
@@ -138,12 +138,37 @@ class STDbInserter extends STDbSqlCases
 		}
 		return $db->errno();
 	}
-	function getLastInsertID()
+	/**
+	 * returns the last inserted primary key
+	 * inserted by the last insert statement
+	 * where the table has an auto_increment column
+	 * @return Integer|string
+	 */
+	public function getLastInsertID()
 	{
 		return $this->lastInsertID;
 	}
-	function getInsertedIDs()
+	/**
+	 * returns all inserted primary keys
+	 * of all insert statements
+	 * where the table has an auto_increment column
+	 * @return Integer|string
+	 */
+	public function getInsertedIDs()
 	{ return $this->aInsertIDs; }
+	/**
+	 * returns the inserted primary key
+	 * of the insert statement with the number $nr
+	 * where the table has an auto_increment column
+	 * @param Integer $nr the number of the insert statement (default 0)
+	 * @return Integer|string inserted primary key of statement when no error occured
+	 */
+	public function getInsertedID(int $nr= 0) : int|string
+	{
+		if(isset($this->aInsertIDs[$nr]))
+			return $this->aInsertIDs[$nr];
+		return null;
+	}
 	function createCluster(&$row)
 	{
 		// if it is generate an STUserManagementSession
