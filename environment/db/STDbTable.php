@@ -19,12 +19,6 @@ class STDbTable extends STBaseTable
     public $container= null;
 	var $aAuto_increment= array(); // um ein Feld mit Autoincrement vor dem eigentlichen Insert zu holen
 	var	$password= array(); // all about to set an password in database
-	/**
-	 * array of statement parts,
-	 * the reason is to create not everey time the same statement
-	 * @var array
-	 */
-	protected $aStatement= array();
 
 	protected function createFirstOwnTable($Table)
 	{
@@ -1791,6 +1785,8 @@ class STDbTable extends STBaseTable
 	}
 	public function getWhereAliases() : array
 	{
+		if(isset($this->aStatement['whereAliases']))
+			return $this->aStatement['whereAliases'];
 	    $aRv= array();
 	    $aliasTables= $this->db->getAliasOrder();
 	    $ostwhere= $this->getWhere();

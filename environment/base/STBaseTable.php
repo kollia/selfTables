@@ -23,6 +23,12 @@ class STBaseTable
 	 * @var array
 	 */
 	protected $limitRows= null;
+	/**
+	 * array of statement parts,
+	 * the reason is to create not every time the same statement
+	 * @var array
+	 */
+	protected $aStatement= array();
 	var $title= "";
 	var	$sPKColumn;
 	var $columns;
@@ -2807,6 +2813,10 @@ class STBaseTable
 	 	        if($operator == "")
 	 	            STCheck::echoDebug("db.statements.where", "no operator for where method be set, so clear all old where clauses");
 		 	}
+			// remove all pre-defined where clauses
+			// to create sql statement new
+			$this->clearWhere();
+
 		 	if(	!isset($stwhere) ||
 				$stwhere == null ||
 				$stwhere == ""	||
@@ -2871,6 +2881,9 @@ class STBaseTable
 		function clearWhere()
 		{
 			$this->oWhere= null;
+			$this->aStatement['where']= null;
+			$this->aStatement['whereAlias']= null;
+			$this->aStatement['full']= null;
 		}
 		public function getWhere()
 		{
