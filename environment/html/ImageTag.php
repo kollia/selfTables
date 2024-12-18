@@ -39,6 +39,10 @@ class ImageTag extends Tag
 				$value= "0";
 			$this->insertAttribute("border", $value);
 		}
+		public function onClick($vlaue)
+		{
+			$this->insertAttribute("onClick", $vlaue);
+		}
 }
 
 ?>
