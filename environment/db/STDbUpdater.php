@@ -67,7 +67,7 @@ class STDbUpdater extends STDbSqlWhereCases
                 STCheck::echoDebug("db.statement.update", "   and value '$value'");
                 echo "<br />";
             }
-            $update_string.= $mainTableAlias.$key."=".$this->add_quotes($key, $value).",";
+            $update_string.= $mainTableAlias."`$key`=".$this->add_quotes($key, $value).",";
         }
         $update_string= substr($update_string, 0, strlen($update_string)-1);
         $tableStatement= $this->table->getTableStatement($tableAliases, array());

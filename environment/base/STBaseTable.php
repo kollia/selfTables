@@ -326,10 +326,19 @@ class STBaseTable
 	    $this->bAlwaysIndex= true;
 	    $this->listArrangement= STHORIZONTAL;//bestimmt das Layout der STListBox
 	    $this->oSearchBox= null; // Suchen-Box bei Auflistung der Tabelle anzeigen
-	    
+	   
 		// kollia 2024-12-09:
-		// switch FK, aFks and aBackJoin members cloning to the STDbTable object		
-
+		// switch FK, aFks and aBackJoin members cloning to the STDbTable object
+		if(isset($this->db))
+		{
+			//---------------------------------------------------------------------------------
+			// foreign keys and backjoins should always same like in first database table
+			// so make an direct link from copied table
+			$main= $this->db->getTable($this->Name);
+			$this->FK= &$main->FK;
+			$this->aFks= &$main->aFks;
+			$this->aBackJoin= &$main->aBackJoin;
+		}
 		if(isset($this->oWhere))
 			$this->oWhere->resetQueryLimitation("own", true);
 	    //---------------------------------------------------------------------------------
