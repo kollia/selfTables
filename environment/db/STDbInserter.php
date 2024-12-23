@@ -63,6 +63,9 @@ class STDbInserter extends STDbSqlCases
             $space= STCheck::echoDebug("db.statement.insert", "insert follow values into database table <b>$table</b>");
             st_print_r($result,3, $space);
         }
+		$delimiter= $this->table->db->getFieldDelimiter();
+		$openDeli= $delimiter[0]['open']['delimiter'];
+		$closeDeli= $delimiter[0]['close']['delimiter'];
         foreach($result as $key => $value)
         {
             if(STCheck::isDebug("db.statement.insert"))
@@ -75,7 +78,7 @@ class STDbInserter extends STDbSqlCases
             }
             if(!preg_match("/auto_increment/i", $flags[$key]))
             {
-                $key_string.= "$key,";
+                $key_string.= $openDeli.$key.$closeDeli.",";
                 $value_string.= $this->add_quotes($types[$key], $value).",";
             }
         }
