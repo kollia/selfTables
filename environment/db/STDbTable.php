@@ -316,12 +316,7 @@ class STDbTable extends STBaseTable
 			$bCreateCluster= true;
 
 		$this->aSetAlso[$column][STINSERT]= $clusterfColumn;
-		$this->sAccessClusterColumn[]= array(	"action"=>	$action,
-												"column"=>	$column,
-												"parent"=>	$parentCluster,
-												"cluster"=>	$clusterfColumn,
-												"info"=>	$accessInfoString,
-												"group"=>	$addGroup			);		
+		$res= "NOCLUSTERCREATE";		
 		if( $bCreateCluster &&
 			STUserSession::sessionGenerated()	)
 		{
@@ -342,6 +337,7 @@ class STDbTable extends STBaseTable
 				}
 			}
 		}
+		return $res;
 	}
 	/**
 	 * pre-define an access cluster for every row,
@@ -414,69 +410,101 @@ class STDbTable extends STBaseTable
 	 */
 	public function cluster(string $access, string $column, string $prefix, string $accessInfoString= "", $addGroup= true)
 	{
+		$action= $this->container->getAction();
 		$field= $this->findColumnOrAlias($column);
-
-		if(	$this->container->currentContainer() &&
-			$this->currentTable()					)
+		if($action == STLIST)
+			$this->getColumn($field['column']);
+		
+		$this->sAccessClusterColumn[]= array(	"action"=>	$access,
+												"column"=>	$field['column'],
+												"prefix"=>	$prefix,
+												"info"=>	$accessInfoString,
+												"group"=>	$addGroup			);
+		//$this->addAccessClusterColumn($field['column'], $parentCluster, $clusterfColumn, $accessInfoString, $addGroup, $access);
+	}
+	public function createDynamicClusters()
+	{
+		foreach($this->sAccessClusterColumn as &$cluster)
 		{
+			$access= $cluster['action'];
+			$column= $cluster['column'];
+			$prefix= $cluster['prefix'];
+			$accessInfoString= $cluster['info'];
+			$addGroup= $cluster['group'];
+
 			$action= $this->container->getAction();
-			$post= new STPostArray();
-			if( $post->exist("STBoxes_action") &&
-				$post->getValue("STBoxes_action") == "make"    )
+			if($action == STINSERT)
 			{
-				if($action == STINSERT)
-					$this->insertCluster($access, $field['column'], $prefix, $accessInfoString, $addGroup);
-			}else
-			{
-				$query= new STQueryString();
-				$stget= $query->getUrlParamValue("stget");
-				if(	$action == STDELETE &&
-					STUserSession::sessionGenerated() &&
-					isset($stget['limit'][$this->Name])	)
-				{
-					$selector= new STDbSelector($this);
-					$selector->select($this->Name, $field['column'], $field['column']);
-					foreach($stget['limit'][$this->Name] as $col=>$val)
+				if(isset($this->asAccessIds[$action]["cluster"]))
+					$parentCluster= $this->asAccessIds[$action]["cluster"];
+				else
+					$parentCluster= "";
+				if($this->container->currentContainer())// if container is not the current one,
+				{										// does not need an parent-cluster,
+					if(!$parentCluster)					// because an insert box can not appear
 					{
-						$sWhere= "$col=";
-						if(is_numeric($val))
-							$sWhere.= "$val";
-						else
-							$sWhere.= "'$val'";
-						$selector->where($this->Name, $sWhere);
+						if(!isset($parentTable))
+							$parentTable= $this;
+						$parentCluster= $this->container->getLinkedCluster($action);
+					}else
+					{ 
+						if(preg_match("/,/", $parentCluster))
+							$parentCluster= preg_split("/,/", $parentCluster);
+						else 
+							$parentCluster= array($parentCluster);
 					}
-					if(!$selector->execute())
-						return;
-					$cluster= $selector->getSingleResult();
-
-					$toClustersAlso= array();
-					$parentClusters= $this->container->getLinkedCluster($action);
-					foreach($parentClusters as $parent)
-					{
-						if($parent['action'] == STLIST)
-							$toClustersAlso[]= $parent['cluster'];
-					}
-					$session= STUserSession::instance();
-					$session->removeCluster($cluster, $toClustersAlso);
-				}else
-				{ // action should be STLIST
-					if($action == STLIST)
-						$this->getColumn($field['column']);
-					$parentCluster= array();
-					$clusterfColumn= null;
-					$this->addAccessClusterColumn($column, $parentCluster, $clusterfColumn, $accessInfoString, $addGroup, $access);
 				}
-			}
-		}else
+				//Tag::alert(!$parentCluster, "STDbTable::accessCluster()", "no parentCluster be set");
+				$clusterfColumn= $this->createDynamicClusterString($access, $prefix, $column, $accessInfoString);
+				if(	isset($clusterfColumn) &&
+					trim($clusterfColumn) != ""	)
+				{
+					$cluster['cluster']= $clusterfColumn;
+					$cluster['info']= $accessInfoString;
+				}
+					
+				if($parentCluster == "")
+					$parentCluster= null;//no parent cluster exist
+				$res= $this->addAccessClusterColumn($column, $parentCluster, $clusterfColumn, $accessInfoString, $addGroup, $access);
+				$cluster['creation']= $res;
+			}else
+				STCheck::alert(true, "STDbTable::createDynamicClusters()", "action $action not allowed for creating dynamic clusters");
+		}
+	}
+	public function removeDynamicClusters()
+	{
+		$query= new STQueryString();
+		$stget= $query->getUrlParamValue("stget");
+		foreach($this->sAccessClusterColumn as $field)
 		{
-			if(STCheck::isDebug())
+			if(	STUserSession::sessionGenerated() &&
+				isset($stget['limit'][$this->Name])	)
 			{
-				showLine();
-				echo "toDo: check whether table is in the feature<br>";
+				$selector= new STDbSelector($this);
+				$selector->select($this->Name, $field['column'], $field['column']);
+				foreach($stget['limit'][$this->Name] as $col=>$val)
+				{
+					$sWhere= "$col=";
+					if(is_numeric($val))
+						$sWhere.= "$val";
+					else
+						$sWhere.= "'$val'";
+					$selector->where($this->Name, $sWhere);
+				}
+				if(!$selector->execute())
+					return;
+				$cluster= $selector->getSingleResult();
+
+				$toClustersAlso= array();
+				$parentClusters= $this->container->getLinkedCluster(STDELETE);
+				foreach($parentClusters as $parent)
+				{
+					if($parent['action'] == STLIST)
+						$toClustersAlso[]= $parent['cluster'];
+				}
+				$session= STUserSession::instance();
+				$session->removeCluster($cluster, $toClustersAlso);
 			}
-			$parentCluster= array();
-			$clusterfColumn= null;
-			$this->addAccessClusterColumn($column, $parentCluster, $clusterfColumn, $accessInfoString, $addGroup, $access);
 		}
 	}
 	public function currentTable()
@@ -495,43 +523,6 @@ class STDbTable extends STBaseTable
 	public function getAccessClusterColumns()
 	{
 		return $this->sAccessClusterColumn;
-	}
-	protected function insertCluster($access, $column, $prefix, $accessInfoString= "", $addGroup= true)
-	{
-	    if(STCheck::isDebug())
-	    {
-    	    STCheck::param($access, 0, "string");
-    		STCheck::param($column, 1, "string");
-    		STCheck::param($prefix, 2, "string");
-    		STCheck::param($accessInfoString, 3, "string", "empty(string)");
-    		STCheck::param($addGroup, 4, "boolean");
-	    }
-
-		$action= STINSERT;
-		if(isset($this->asAccessIds[$action]["cluster"]))
-		    $parentCluster= $this->asAccessIds[$action]["cluster"];
-		else
-		    $parentCluster= "";
-		if($this->container->currentContainer())// if container is not the current one,
-		{										// does not need an parent-cluster,
-			if(!$parentCluster)					// because an insert box can not appear
-			{
-			    if(!isset($parentTable))
-			        $parentTable= $this;
-		        $parentCluster= $this->container->getLinkedCluster($action);
-			}else
-			{ 
-				if(preg_match("/,/", $parentCluster))
-					$parentCluster= preg_split("/,/", $parentCluster);
-				else 
-					$partenCluster= array($parentCluster);
-			}
-			//Tag::alert(!$parentCluster, "STDbTable::accessCluster()", "no parentCluster be set");
-			$clusterfColumn= $this->createDynamicClusterString($access, $prefix, $column, $accessInfoString);
-			if($parentCluster == "")
-			    $parentCluster= null;//no parent cluster exist
-			$this->addAccessClusterColumn($column, $parentCluster, $clusterfColumn, $accessInfoString, $addGroup, $access);
-		}
 	}
 	protected function createDynamicClusterString(string $access, string $prefix, string $column, string &$accessInfoString= "")
 	{

@@ -1884,78 +1884,24 @@ class STItemBox extends STBaseBox
 				// and in the STBaseTable are be set columns
 				// to create cluster for spezific actions
 				// produce this
-				$_instance= null;
-				if(	STUserSession::sessionGenerated()
-					and
-					count($this->asDBTable->sAccessClusterColumn))
+
+				// kollia 23.12.2024: 
+				// move creation of dynamic cluster from cluster definition
+				// inside STDbTable to here in STItemBox
+				$this->asDBTable->createDynamicClusters();
+				foreach($this->asDBTable->sAccessClusterColumn as $cluster)
 				{
-    				$_instance= &STUserSession::instance();
-                    $identification= "";
-                    foreach($this->asDBTable->identification as $identifColumn)
-                    {
-						if(!isset($identifColumn['alias']))
-						{
-							$field= $this->asDBTable->findColumnOrAlias($identifColumn["column"]);
-							$aliasColumn= $field['alias'];
-						}else
-							$aliasColumn= $identifColumn["alias"];
-                    	$identif= $showpost[$aliasColumn];
-                        $identification.= $identif." - ";
-                    }
-                    if($identification)
-                    	$identification= substr($identification, 0, strlen($identification)-3);
-
-                    $pkValue= null;
-                    $pkColumn= $this->asDBTable->getPkColumnName();
-                    if(isset($showpost[$pkColumn]))
-    				    $pkValue= $showpost[$pkColumn];
-    				if(!isset($pkValue))
-    				{
-    				    //$table= $this->asDBTable;
-  						//$table->clearSelects();
-						$table= new STDbSelector($this->asDBTable);
-  						$table->select($this->asDBTable->getName(), $table->getPkColumnName());
-						if($table->execute() < 0)
-						{
-							$this->msg->setMessageId("SQLERROR@", $table->getErrorString());
-							return false;
-						}
-						$pkValue= $table->getSingleResult();
-    				}
-					$tableName= $this->asDBTable->getDisplayName();
-   					foreach($this->asDBTable->sAccessClusterColumn as $aColumnCluster)
-   					{
-	   					if(	!isset($showpost[$aColumnCluster["column"]]) ||
-							!$showpost[$aColumnCluster["column"]] ||
-							trim($showpost[$aColumnCluster["column"]]) == ""	)
-   						{
-							$infoString= preg_replace("/@/", $identification, $aColumnCluster["info"]);
-
-							if(isset($showpost[$aColumnCluster["column"]]))
-								$cluster= $showpost[$aColumnCluster["column"]];
-							else
-								$cluster= $aColumnCluster["cluster"];
-   							$result= $_instance->createAccessCluster(	$aColumnCluster["parent"],
-   																		$cluster,
-   																		$infoString,
-																		$tableName,
-																		$aColumnCluster["group"]	);
-   							if($result=="NOCLUSTERCREATE")
-   							{
-   								$bError= true;
-   								$this->msg->setMessageId("NOCLUSTERCREATE@@", $cluster, $aColumnCluster["info"]);
-   								break;
-   							}elseif($result!="NOERROR")
-								    $this->msg->setMessageId($result);
-								else
-								   $_instance->addDynamicCluster($this->asDBTable, $aColumnCluster["action"], $pkValue, $cluster);
-
-							$aClusters[$aColumnCluster["column"]]= $cluster;
-   							$showpost[$aColumnCluster["column"]]= $cluster;
-						}
-					}
+					if($cluster['creation']=="NOCLUSTERCREATE")
+					{
+						$bError= true;
+						$this->msg->setMessageId("NOCLUSTERCREATE@@", $cluster, $aColumnCluster["info"]);
+						break;
+					}elseif($cluster['creation'] != "NOERROR")
+						 $this->msg->setMessageId($luster['creation']);
+					else
+						$showpost[$cluster["column"]]= $cluster["cluster"];
 				}
-			}
+			}// end of if(	$this->action==STINSERT )
 			// check all content of fields
 			if( !$bError &&
             	!$this->checkFields($showpost) )
@@ -2757,7 +2703,7 @@ class STItemBox extends STBaseBox
 			    }else
 			        $this->msg->setMessageId("SQLERROR@", $del->getErrorString());
 			    
-			        
+			    
 				$tr= new RowTag();
 					$td= new ColumnTag(TD);
 						$td->add($this->msg->getMessageEndScript());
@@ -2768,6 +2714,11 @@ class STItemBox extends STBaseBox
 				$error= $this->makeCallback(STDELETE, $oCallbackClass, STDELETE, 0);
 				return $this->msg->getMessageId();
 			}
+
+			// kollia 23.12.2024: 
+			// move removing of dynamic cluster from cluster definition
+			// inside STDbTable to here in STItemBox
+			$this->asDBTable->removeDynamicClusters();
 
 			$oCallbackClass->before= false;
 			$oCallbackClass->MessageId= $this->msg->getMessageId();
