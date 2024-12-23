@@ -2437,9 +2437,18 @@ class STItemBox extends STBaseBox
 					$post[$postColumn]= null;
 				else
 				{
-					if(	$post[$postColumn]!="now()"
-						and
-						$post[$postColumn]!="sysdate()"	)
+					$bKeyWord= false;
+					$keywords= $this->db->getFunctionKeywords();
+					foreach($keywords as $keyword)
+					{
+						if( $keyword['type'] == "date" &&
+							$keyword['function']."()" == $post[$postColumn]	)
+						{
+							$bKeyWord= true;
+							break;
+						}
+					}
+					if(!$bKeyWord)
 					{
     					$result= $this->db->makeSqlDateFormat(trim($post[$postColumn]));
     					if(!$result)

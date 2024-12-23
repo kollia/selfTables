@@ -521,14 +521,14 @@ class STDbMySql extends STDatabase
 	public function getFunctionKeywords() : array
 	{
 	    return array(
-	        "now" => array( "type" => "date", "len" => 10, "needOp" => true ),
-	        "date" => array( "type" => "date", "len" => 10, "needOp" => true ),
-	        "sysdate" => array( "type" => "date", "len" => 10, "needOp" => true ),
-	        "password" => array( "type" => "char", "len" => 512, "needOp" => true ),
-	        "count" => array( "type" => "int", "len" => 11, "needOp" => true ),
-	        "min" => array( "type" => "int", "len" => 11, "needOp" => true ),
-	        "max" => array( "type" => "int", "len" => 11, "needOp" => true ),
-	        "in" => array( "type" => "text", "len" => $this->getTextLen(), "needOp" => false )
+	        "now" => array( "function" => "now", "type" => "date", "len" => 10, "needOp" => true ),
+	        "date" => array( "function" => "date", "type" => "date", "len" => 10, "needOp" => true ),
+	        "sysdate" => array( "function" => "sysdate", "type" => "date", "len" => 10, "needOp" => true ),
+	        "password" => array( "function" => "password", "type" => "char", "len" => 512, "needOp" => true ),
+	        "count" => array( "function" => "count", "type" => "int", "len" => 11, "needOp" => true ),
+	        "min" => array( "function" => "min", "type" => "int", "len" => 11, "needOp" => true ),
+	        "max" => array( "function" => "max", "type" => "int", "len" => 11, "needOp" => true ),
+	        "in" => array( "function" => "in", "type" => "text", "len" => $this->getTextLen(), "needOp" => false )
 	    );
 	}
 	public function getFunctionDelimiter() : array
