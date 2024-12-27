@@ -378,7 +378,7 @@ This you can do for every table if you want better performance. Because tables a
 
 
 
-## use DB selftables only as pur sql client
+## use as pur sql client
 
 
 
