@@ -379,8 +379,8 @@ As described before, the DB selftables should create fast results for you own re
 There is no need to make the project particularly beatifull at first if you don't even know if the project is useful.
 But there are many helpers to make the functionality of tables and containers more clear.
 
-Here we will first describe how to create better functionality,
-and then, if you want to make the project more beautiful later because you know you can use it productively,
+Here we will first describe how to create better functionality,<br />
+and then, if you want to make the project more beautiful later because you know you can use it productively,<br />
 how to improve the containers with additional HTML tags.
 
 #### Functionality
