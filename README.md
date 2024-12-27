@@ -226,6 +226,9 @@ To link to this created other container, the container object is implemented wit
 It is also possible to link to an container over an table entry, see below as in the table Bill to Order.
 
 Now let us organize the scripts inside two files.<br />
+This common_db php file is the same as `02_table_listing.php`<br />
+only the last four lines of creation from `STSiteCreator()` is missing
+and will be done in the next file.<br />
 <b>[ [03_common_db.php](examples/03_common_db.php) ]</b>
 ```php
 <?php
@@ -301,6 +304,7 @@ $article->setMaxRowSelect(50);
 
 ```
 
+now the final creation by structuring the website:<br />
 <b>[ [04_basic_main.php](examples/04_basic_main.php) ]</b>
 ```php
 <?php
@@ -384,7 +388,7 @@ This you can do for every table if you want better performance. Because tables a
 
 ## Design
 
-As described before, the DB selftables should create fast results for you own research projects to handle data on database.
+As described before, the DB selftables should create fast results for your own research projects to handle data on database.
 There is no need to make the project particularly beatifull at first if you don't even know if the project is useful.
 But there are many helpers to make the functionality of tables and containers more clear.
 
