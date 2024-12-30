@@ -443,8 +443,6 @@ class STDbTable extends STBaseTable
 				{										// does not need an parent-cluster,
 					if(!$parentCluster)					// because an insert box can not appear
 					{
-						if(!isset($parentTable))
-							$parentTable= $this;
 						$parentCluster= $this->container->getLinkedCluster($action);
 					}else
 					{ 
@@ -522,6 +520,18 @@ class STDbTable extends STBaseTable
 	}
 	public function getAccessClusterColumns()
 	{
+		if(	count($this->sAccessClusterColumn) &&
+			!isset($this->sAccessClusterColumn[0]['cluster'])	)
+		{
+			$select= new STDbSelector($this);
+			foreach($this->sAccessClusterColumn as $key => $cluster)
+				$select->select($this->Name, $cluster['column'], "{$key}");
+			$select->allowQueryLimitation();
+			$select->execute();
+			$row= $select->getRowResult();
+			foreach($row as $key => $value)
+				$this->sAccessClusterColumn[$key]['cluster']= $value;
+		}
 		return $this->sAccessClusterColumn;
 	}
 	protected function createDynamicClusterString(string $access, string $prefix, string $column, string &$accessInfoString= "")

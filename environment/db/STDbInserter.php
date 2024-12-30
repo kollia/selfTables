@@ -44,7 +44,13 @@ class STDbInserter extends STDbSqlCases
 	    }
 	    if(!isset($this->statements[$nr]))
 	    {
-	        $this->createCluster($this->columns[$nr]);
+			// ------------------------------------------------------------------
+	        //$this->createCluster($this->columns[$nr]);
+			// this method mayebe is not used
+			// it will be done in STDbTable::addAccessClusterColumn()
+			// this seems to be a try before the final solution
+			// toDo: check if this method is need to used
+			// ------------------------------------------------------------------
 	        $this->statements[$nr]= $this->getInsertStatement($nr);
 	    }
 	    return $this->statements[$nr];
@@ -145,8 +151,15 @@ class STDbInserter extends STDbSqlCases
 	}
 	function getInsertedIDs()
 	{ return $this->aInsertIDs; }
-	function createCluster(&$row)
+	private function createCluster(&$row)
 	{
+		STCheck::deprecated("do not use this function", "STDbInserter::createCluster()");
+		// this method mayebe is not used
+		// it will be done in STDbTable::addAccessClusterColumn()
+		// this seems to be a try before the final solution
+		// toDo: check if this method is need to used
+
+
 		// if it is generate an STUserManagementSession
 		// and in the STBaseTable are be set columns
 		// to create cluster for spezific actions

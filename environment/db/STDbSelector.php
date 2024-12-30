@@ -504,7 +504,7 @@ class STDbSelector extends STDbTable implements STContainerTempl
                 $nextLine= $alias;
                 $alias= null;
 			}
-			if(!$alias)
+			if(!isset($alias))
 			    $alias= $orgColumn;
 			
 			$select= array(	"type"=>	"select",

@@ -1894,7 +1894,7 @@ class STItemBox extends STBaseBox
 					if($cluster['creation']=="NOCLUSTERCREATE")
 					{
 						$bError= true;
-						$this->msg->setMessageId("NOCLUSTERCREATE@@", $cluster, $aColumnCluster["info"]);
+						$this->msg->setMessageId("NOCLUSTERCREATE@@", $cluster['cluster'], $cluster['info']);
 						break;
 					}elseif($cluster['creation'] != "NOERROR")
 						 $this->msg->setMessageId($luster['creation']);
