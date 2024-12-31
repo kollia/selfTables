@@ -395,7 +395,7 @@ But there are many helpers to make the functionality of tables and containers mo
 
 #### Class diagram of DB selftables framework
 
-&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;<img src="wiki/dbselftables Class diagram.png?raw=true" alt="Class Diagram" title="Class Diagram" width="500"/>
+&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;<img src="wiki/dbselftables Class diagram.png" alt="Class Diagram" title="Class Diagram" width="600"/>
 
 Here we will first describe how to create better functionality,<br />
 and then, if you want to make the project more beautiful later because you know you can use it productively,<br />
