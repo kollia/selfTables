@@ -1,4 +1,4 @@
-# DB selfTables
+ DB selfTables
 The goal of this project is for you to design your database table and automatically get a user-friendly GUI interface for all your generated tables in a short time.
 
 This solution can be useful for research if you have written your own specific algorithm that uses data from the database. 
@@ -201,8 +201,9 @@ $order= $db->needTable("Bill");
 ```
 In this case, you have all seven tables organized, but only see the two defined tables you need.
 
-The idea of ​​the project is to have a container for each web page that can display one or more tables.<br />
-&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;![STDbContainers](wiki/ContainerStack.png?raw=true "STDbContainer stack")
+The idea of ​​the project is to have a container for each web page that can display one or more tables.
+<br />
+&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;![STDbContainers](wiki/ContainerStack.png?raw=true "STDbContainer stack")
 
 The database (STDbMariaDb) that you configured first is also a container.
 
@@ -391,6 +392,10 @@ This you can do for every table if you want better performance. Because tables a
 As described before, the DB selftables should create fast results for your own research projects to handle data on database.
 There is no need to make the project particularly beatifull at first if you don't even know if the project is useful.
 But there are many helpers to make the functionality of tables and containers more clear.
+
+#### Class diagram of DB selftables framework
+
+&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;<img src="wiki/dbselftables Class diagram.png?raw=true" alt="Class Diagram" title="Class Diagram" width="500"/>
 
 Here we will first describe how to create better functionality,<br />
 and then, if you want to make the project more beautiful later because you know you can use it productively,<br />
