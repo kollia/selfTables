@@ -1290,6 +1290,7 @@ abstract class STObjectContainer extends STBaseContainer
 		function deleteTableEntry($get_vars)
 		{
 			$table= &$this->getTable($get_vars["table"]);
+			$table->removeDynamicClusters();
 			
 			$box= new STItemBox($this);
 			$box->table($table);

@@ -10,9 +10,9 @@ class STDbDeleter extends STDbSqlWhereCases
 	 * table names of foregn key tables
 	 * which have entrys to own main table
 	 * to delete
-	 * @var string
+	 * @var array
 	 */
-	private $aFkLinkTables= "";
+	private $aFkLinkTables= array();
 	private $aStatement= array();
 	
 	public function execute($onError= onDebugErrorShow)

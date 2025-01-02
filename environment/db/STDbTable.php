@@ -308,7 +308,7 @@ class STDbTable extends STBaseTable
 			$selector= new STDbSelector($this);
 			$selector->select($this->Name, $column, $column);
 			$selector->allowQueryLimitation(true);
-			$statement= $selector->getStatement();
+			//$statement= $selector->getStatement();
 			$selector->execute();
 			$clusterfColumn= $selector->getSingleResult();
 			$bCreateCluster= false;
