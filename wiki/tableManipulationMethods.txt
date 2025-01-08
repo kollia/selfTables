@@ -1,0 +1,168 @@
+
+both can be set inside STDbTable:
+-----------------------------------------
+STDbTable::allowQueryLimitation(bool $bModify= true) // do both next commands
+STDbTable::allowFkQueryLimitation(bool $bModify= true)
+STBaseTable::allowQueryLimitationByOwn(bool $bModify= true)
+
+STListBox manipulation:
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+::aligen()
+::valigen()
+
+STItemBox manipulation:
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+STBaseTable::preSelect()
+STBaseTable::setIBoxBegin()
+STBaseTable::setIBoxEnd()
+STDbTable::cluster()
+STDbTable::accessCluster()
+STDbTable::adminCluster()
+
+
+basic table informations:
+	STDbTable::&getDatabase();
+	STDbTable::currentTable(): bool; // whether table is the current table
+    STBaseTable::columnExist(string $column, bool $bAlias= false) : bool;
+    STBaseTable::getDbColumnName(string $column, int $warnFuncOutput= 0);
+
+    STBaseTable::group($name, $fieldset, $aliasColumn /*...*/); // ?????
+    
+
+Table manipulation:
+    STBaseTable::getName() : string; // name of table defined inside constructor
+    STBaseTable::setDisplayName($string);
+    STBaseTable::showNameOverList($show); // whether should show table name (defined inside constructor or as display name) over table listing
+
+    STBaseTable::select(string $column, $alias= null, $fillCallback= null, $nextLine= null, bool $add= false, bool $addGet= null);
+    STBaseTable::addSelect($column, $alias= null, $fillCallback= null, $nextLine= null); // if first selected, do not clear the default selection
+	STBaseTable::getColumn(string $column, string $alias= "", string $unknown= "");
+    STBaseTable::identifColumn(string $column, string $alias= null);
+	STBaseTable::preSelect(string $columnName, $value, $action= null, $unknown= null);
+
+	STBaseTable::setFirstAction($action);
+    
+	STBaseTable::disabled($columnName, $enum= null);
+	STBaseTable::checkBox(string $columnName, $trueValue= false, $notSet= null);
+    STBaseTable::radioButtonsByEnum($aliasName);
+	STBaseTable::pullDownMenuByEnum($aliasName);
+	STBaseTable::dropDownSelect($aliasColumn, $callbackFunction);
+    STBaseTable::onChangeRefresh($column);
+	
+    STBaseTable::noInsert();
+    STBaseTable::noUpdate();
+    STBaseTable::noDelete();
+    STBaseTable::noHeadLineSort();
+
+	STBaseTable::forwardByOneEntry($toColumn= true);
+    
+	STBaseTable::setListCaption($bSet); // ??? test it, there set inside STListBox <th> colums inside <tr> before <td> columns
+	STBaseTable::displayListInColumns($nColumns);// test it
+
+    STBaseTable::image($column, $toPath= null, $byte= 0, $width= 0, $height= 0); // create column content as image
+
+	STBaseTable::namedLink(string $alias, $address= null);
+	STBaseTable::namedColumnLink(string $aliasColumn, string $valueColumn, $address= null);
+	STBaseTable::namedPkLink(string $aliasColumn, $address= null);
+
+    STBaseTable::imageLink($column, $toPath= null, $byte= 0, $width= 0, $height= 0, $address= null);
+    STBaseTable::imageBorderLink($column, $toPath= null, $byte= 0, $width= 0, $height= 0, $address= null);
+    STBaseTable::imagePkLink($column, $toPath= null, $byte= 0, $width= 0, $height= 0, $address= null);
+    STBaseTable::imageBorderPkLink($column, $toPath= null, $byte= 0, $width= 0, $height= 0, $address= null);
+    STBaseTable::imageValueLink($column, $valueColumn, $toPath= null, $byte= 0, $width= 0, $height= 0, $address= null);
+    STBaseTable::imageBorderValueLink($column, $valueColumn, $toPath= null, $byte= 0, $width= 0, $height= 0, $address= null);
+    STBaseTable::upload($column, $toPath, $type, $byte= 0, $width= 0, $height= 0); // old upload function - habe to be tested
+	STBaseTable::download($columnName, $access= null);
+    
+    
+	STBaseTable::listCallback($callbackFunction, $alias= null);
+	STBaseTable::insertCallback(string $callbackFunction, string $alias= null);
+	STBaseTable::updateCallback(string $callbackFunction, string $alias= null);
+	STBaseTable::indexCallback(string $callbackFunction);
+	STBaseTable::deleteCallback(string $callbackFunction);
+	STBaseTable::joinCallback($callbackFunction, $alias= null);
+
+
+    STDbTable::password(string $fieldName, bool $bEncode= true);
+    STDbTable::passwordNames($firstName, $secondName, $thirdName= null);
+
+
+Layout modification:
+	STBaseTable::listLayout($arrangement); // - HORIZONTAL, VERTICAL
+	STBaseTable::align($aliasName, $value, $tableType= STLIST)
+	STBaseTable::inputSize($column, $width, $height= null)
+    STBaseTable::selectIBoxBegin($fieldset= false);
+    STBaseTable::selectIBoxEnd();
+    STBaseTable::addContent($content, $action); // text describtion for row
+    STBaseTable::addBehind($content, $action); // text description between row
+    
+	STBaseTable::tableAttribute($attribute, $value, $tableType= null)
+	STBaseTable::trAttribute($attribute, $value, $tableType= null)
+	STBaseTable::thAttribute($attribute, $value, $tableType= null)
+	STBaseTable::tdAttribute($attribute, $value, $tableType= null, $aliasName= null)
+	STBaseTable::attribute($element, $attribute, $value, $tableType= null, $aliasName= null)
+
+	STBaseTable::showAlwaysIndex($bShow); // test it
+	STBaseTable::setMaxRowSelect($count);
+    
+create Clolumns:    
+    STBaseTable::column($name, $type, $len);// maybe when column new created
+	STBaseTable::needValue(string $column, $action= STADMIN); // maybe when column new created
+	STBaseTable::optional(string $column, $action= STADMIN); // maybe when column new created
+    STBaseTable::columnFlags($columnName, $flags);// maybe when column new created
+    STBaseTable::removeFlag($columnName, $flag);// maybe when column new created 
+
+access rights:
+	STBaseTable::accessBy($clusters, $action= STALLDEF, $toAccessInfoString= "", int $customID= null)
+	STBaseTable::hasAccess($action= STALLDEF, $loginOnFail= false);
+	STDbTable::accessCluster(string $column, string $prefix= "", string $accessInfoString= "", $addGroup= true);
+	STDbTable::adminCluster(string $column, string $prefix= "", string $accessInfoString= "", $addGroup= true);
+	STDbTable::cluster(string $access, string $column, string $prefix, string $accessInfoString= "", $addGroup= true);
+
+sql statement manipulation:
+	STBaseTable::distinct($bDistinct= true);
+
+    STBaseTable::foreignKey($ownColumn, $toTable, $otherColumn= null, $where= null);
+    STBaseTable::joinOver(string $table, string $join= "inner");
+    STBaseTable::noJoinOver(string $table);
+    STBaseTable::innerJoin($ownColumn, &$toTable, $otherColumn= null);
+    STBaseTable::leftJoin($ownColumn, $toTable, $otherColumn= null);
+    STBaseTable::rightJoin($ownColumn, $toTable, $otherColumn= null);
+
+	STBaseTable::allowQueryLimitationByOwn($bModify= null)
+	STDbTable::allowQueryLimitation(bool|array $modify= null) : array;
+	STDbTable::allowFkQueryLimitation($bModify= null);
+	STBaseTable::useLimitationBefore()
+	STBaseTable::useNoLimitationBefore();
+
+    STBaseTable::where($stwhere, string $operator= "");
+    STBaseTable::andWhere($stwhere);
+    STBaseTable::orWhere($stwhere);
+    STBaseTable::clearWhere();
+
+	STBaseTable::orderBy(string $column, $bASC= true);
+    
+	STDbTable::getStatement(bool $bFromIdentifications= false);
+	STDbTable::setStatement(string $statement);
+	STDbTable::displayWrappedStatement();
+	STDbTable::getWrappedStatement();
+    
+    
+    
+
+
+
+
+
+
+
+
+
+	
+
+
+
+
+
+
+

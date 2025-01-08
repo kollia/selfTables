@@ -1,4 +1,4 @@
-# DB selfTables
+ DB selfTables
 The goal of this project is for you to design your database table and automatically get a user-friendly GUI interface for all your generated tables in a short time.
 
 This solution can be useful for research if you have written your own specific algorithm that uses data from the database. 
@@ -40,7 +40,7 @@ the folder structure should be:
 ## BASICs
 All script files you found also in your `examples` subdirectory with the name defined before.
 
-### Scripting
+### first Scripting
 
 As first try, you can use any database you want
 
@@ -201,8 +201,9 @@ $order= $db->needTable("Bill");
 ```
 In this case, you have all seven tables organized, but only see the two defined tables you need.
 
-The idea of ​​the project is to have a container for each web page that can display one or more tables.<br />
-&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;![STDbContainers](wiki/ContainerStack.png?raw=true "STDbContainer stack")
+The idea of ​​the project is to have a container for each web page that can display one or more tables.
+<br />
+&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;![STDbContainers](wiki/ContainerStack.png?raw=true "STDbContainer stack")
 
 The database (STDbMariaDb) that you configured first is also a container.
 
@@ -222,10 +223,13 @@ $db->needContainer($addressee);
 ```
 You see that the container `STObjectContainer` need a name. This is also for the database which have as default the name `main-menue`.
 (If you need an second other database, you have to define in the constructor)<br />
-To link to the this created other container, the container object is implemented with `->needContainer(<object>)` and you have access to them over an button like the other tables.
+To link to this created other container, the container object is implemented with <nobr>`->needContainer(<object>)`</nobr> and you have access to them over an button like the other tables.
 It is also possible to link to an container over an table entry, see below as in the table Bill to Order.
 
 Now let us organize the scripts inside two files.<br />
+This common_db php file is the same as `02_table_listing.php`<br />
+only the last four lines of creation from `STSiteCreator()` is missing
+and will be done in the next file.<br />
 <b>[ [03_common_db.php](examples/03_common_db.php) ]</b>
 ```php
 <?php
@@ -301,6 +305,7 @@ $article->setMaxRowSelect(50);
 
 ```
 
+now the final creation by structuring the website:<br />
 <b>[ [04_basic_main.php](examples/04_basic_main.php) ]</b>
 ```php
 <?php
@@ -360,9 +365,9 @@ This you can do for every table if you want better performance. Because tables a
 > {
 >      protected function create()
 >      {
->           // definition of which tables need
->           // which should be the first table
->           // and maybe the display-name
+>           // definition of which tables and
+>           // other containers need from this container
+>           // and maybe an other display-name if you want
 >      }
 >
 >      protected function init(string $action, string $table)
@@ -373,10 +378,37 @@ This you can do for every table if you want better performance. Because tables a
 > }
 > ```
 
-### Design
 
+### change listing content with callbacks
+
+
+
+## use as pur sql client
+
+
+
+## Design
+
+As described before, the DB selftables should create fast results for your own research projects to handle data on database.
+There is no need to make the project particularly beatifull at first if you don't even know if the project is useful.
+But there are many helpers to make the functionality of tables and containers more clear.
+
+#### Class diagram of DB selftables framework
+
+&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;<img src="wiki/dbselftables Class diagram.png" alt="Class Diagram" title="Class Diagram" width="600"/>
+
+Here we will first describe how to create better functionality,<br />
+and then, if you want to make the project more beautiful later because you know you can use it productively,<br />
+how to improve the containers with additional HTML tags.
+
+### Functionality
+#### Tables
+#### Containers
+
+### HTML tags
 The Idea of `STObjectContainer` and `STSiteCreator` is that they are derived from a &lt;body&gt;-Tag and &lt;html&gt;-Tag.
-You can always add html-Tags before and after `STSiteCreator::execute()`.<br />
+You can always add html-Tags before and after <nobr>`STSiteCreator::execute()`.</nobr><br />
+
 
 
 
