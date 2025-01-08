@@ -802,10 +802,20 @@ abstract class STBaseContainer extends BodyTag implements STContainerTempl
 				if(typeof($container, $className))
 					return $container;
 			}
-		}else
+		}
+		if(	(	!isset($className) ||
+				!$className				) &&
+			isset($global_array_exist_stobjectcontainer_with_classname[$containerName]["class"])	)
+		{	// if param className not set,
+			// search in the globaly array
+			// which be created with STObjectContainer::install()
+			$className= $global_array_exist_stobjectcontainer_with_classname[$containerName]["class"];
+		}
+		if(	!isset($className) ||
+			!$className				)
 		{
-			// if container name not exist
-			// and also no class name exist
+			// if container name not exist, no class name exist
+			// and container name not exist in global predefined stobjectcontainer list
 			// search whether container name is only a database name
 			foreach($global_array_all_exist_stobjectcontainers as $name=>$container)
 			{
@@ -816,14 +826,6 @@ abstract class STBaseContainer extends BodyTag implements STContainerTempl
 				}
 			}
 		}
-		if(	(	!isset($className) ||
-				!$className				) &&
-			isset($global_array_exist_stobjectcontainer_with_classname[$containerName]["class"])	)
-		{	// if param className not set,
-			// search in the globaly array
-			// which be created with STObjectContainer::install()
-			$className= $global_array_exist_stobjectcontainer_with_classname[$containerName]["class"];
-		}
 		if(	(	!isset($fromContainer) ||
 				!$fromContainer				) &&
 				isset($global_array_exist_stobjectcontainer_with_classname[$containerName]["from"])	)
@@ -832,6 +834,7 @@ abstract class STBaseContainer extends BodyTag implements STContainerTempl
 			
 		}else
 			$fromContainer= $_selftable_first_main_database_name;
+			
 
 		// if className is an exist database class
 		// it should be no error and the second parameter
