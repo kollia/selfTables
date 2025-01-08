@@ -182,6 +182,7 @@ abstract class STDatabase extends STObjectContainer
 	 * This option also applies to database names and table aliases.
 	 * @var int
 	 */
+	private $nLowerCaseDatabaseNames= null;
 	private $nLowerCaseTableNames= null;
 
 
@@ -208,6 +209,21 @@ abstract class STDatabase extends STObjectContainer
     	}
     	
   	}
+	  /**
+	   * Whether database has lower case database names."<br />
+	   * If set to 0, table names are stored as specified and comparisons are case-sensitive.
+	   * If set to 1, table names are stored in lowercase on disk and comparisons are not case-sensitive.
+	   * If set to 2, table names are stored as given but compared in lowercase. 
+	   * This option also applies to database names and table aliases.
+	   * 
+	   * @return int 0, 1 or 2 whether case-sensitive
+	   */
+	  public function hasLowerCaseDatabaseNames()
+	  {
+		  if(!isset($this->nLowerCaseDatabaseNames))
+		  	  $this->nLowerCaseDatabaseNames= $this->dbHasLowerCaseDatabaseNames();
+		  return $this->nLowerCaseDatabaseNames;
+	  }
 	/**
 	 * Whether database has lower case table names."<br />
 	 * If set to 0, table names are stored as specified and comparisons are case-sensitive.
@@ -224,6 +240,7 @@ abstract class STDatabase extends STObjectContainer
 		$this->nLowerCaseTableNames= $this->dbHasLowerCaseTableNames();
 		return $this->nLowerCaseTableNames;
 	}
+	abstract protected function dbHasLowerCaseDatabaseNames();
 	abstract protected function dbHasLowerCaseTableNames();
 	static function existDatabaseClassName($className)
 	{
@@ -514,7 +531,7 @@ abstract class STDatabase extends STObjectContainer
 	abstract public function closeConnection();
    	public function database($dbName, $onError= onErrorStop)
    	{   
-		if($this->hasLowerCaseTableNames())
+		if($this->hasLowerCaseDatabaseNames())
    	    	$this->dbName= strtolower($dbName);
 		else
 			$this->dbName= $dbName;

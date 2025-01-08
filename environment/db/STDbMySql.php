@@ -118,6 +118,18 @@ class STDbMySql extends STDatabase
 	    return $this->mysqlVersion;
 	}
 	/**
+	 * Whether database has lower case table names.<br />
+	 * For MySQL same as dbHasLowerCaseTableNames()<br />
+	 * If set to 0, table names are stored as specified and comparisons are case-sensitive.
+	 * If set to 1, table names are stored in lowercase on disk and comparisons are not case-sensitive.
+	 * If set to 2, table names are stored as given but compared in lowercase. 
+	 * This option also applies to database names and table aliases.
+	 * 
+	 * @return int 0, 1 or 2 whether case-sensitive
+	 */
+	protected function dbHasLowerCaseDatabaseNames()
+	{ return $this->dbHasLowerCaseTableNames(); }
+	/**
 	 * Whether database has lower case table names."<br />
 	 * If set to 0, table names are stored as specified and comparisons are case-sensitive.
 	 * If set to 1, table names are stored in lowercase on disk and comparisons are not case-sensitive.
@@ -199,7 +211,7 @@ class STDbMySql extends STDatabase
         STDatabase::database($dbName, $onError);
 //		if($dbName != $this->dbName)
 //		{
-			if(!$this->conn->select_db("$dbName"))
+			if(!$this->conn->select_db($this->dbName))
 			{
 					$this->error= true;
 					if($onError>noErrorShow)
