@@ -655,8 +655,21 @@ class STProjectOverviewList extends STBackgroundImagesDbContainer
         $user= $session->getUserData();
         $bLoggedIn= $session->isLoggedIn();
         $profile= STPRojectUserSiteCreator::getContainerProjectDefinition("UserProfile");
-        STCheck::warning($user['register'] != "ACTIVE", "STProjectOverviewList::getAccessibleProjectList()",
-                         "registering status of user is not finished yet, see user column 'register' in table 'User', should be 'ACTIVE'");
+        if(STCheck::isDebug())
+        {
+            $bActiveUser= false;
+            if($user === 0)
+            {// user is not logged-in, so show no warning
+                $bActiveUser= true;
+            }elseif(isset($user['register']) &&
+                    $user['register'] == "ACTIVE" )
+            {
+                $bActiveUser= true;
+            }
+            STCheck::warning(!$bActiveUser, "STProjectOverviewList::getAccessibleProjectList()",
+                            "registering status of user is not finished yet, see user column 'register' in table 'User',"
+                            ." should be 'ACTIVE'");
+        }
 
         $div= new DivTag("AccessibleProjectList");
             $table= new st_tableTag("ListTable");
