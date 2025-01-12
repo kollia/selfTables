@@ -60,7 +60,7 @@ class STDbUpdater extends STDbSqlWhereCases
                 STCheck::echoDebug("db.statement.update", "   and value '$value'");
                 echo "<br />";
             }
-            $update_string.= $key."=".$this->add_quotes($types[$key], $value).",";
+            $update_string.= "`$key`=".$this->add_quotes($types[$key], $value).",";
         }
         $update_string= substr($update_string, 0, strlen($update_string)-1);
         $whereStatement= $this->getWhereStatement($nr);

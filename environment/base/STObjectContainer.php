@@ -1204,7 +1204,10 @@ abstract class STObjectContainer extends STBaseContainer
 			$box= new STItemBox($this);
 			$box->align("center");
 			$query= new STQueryString();
-			if($this->sFirstAction==$get_vars["action"])
+			$sFirstAction= $table->getFirstAction();
+			if($sFirstAction == STLIST) // if first action from table not changed, take own first action
+				$sFirstAction= $this->sFirstAction;	// because maybe this is changed
+			if($sFirstAction==$get_vars["action"])
 			{// if first action is set to STUPDATE or STINSERT
 			 // user can not choose any other actions in this table
 			 // so go back to last container
@@ -1262,7 +1265,7 @@ abstract class STObjectContainer extends STBaseContainer
 
 			if($table->sFirstAction!==STLIST)
 			{
-				$chooseTable= $this->getChooseTableTag($get_vars);
+				$chooseTable= $this->getChooseTableTag($get_vars['action']);
 				$this->addObj($chooseTable);
 			}
     		$this->addObj($center);

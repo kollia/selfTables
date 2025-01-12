@@ -533,6 +533,7 @@ class STSession
 				$staction= "STADMIN";
 			$space= STCheck::echoDebug("user", "entering hasAccess(&lt;follow clusters&gt;, ".$sAccess.", ".$sID.", ".$staction."</em>)");
 			st_print_r($input['authorisationCluster'], 1, $space);
+			echo "<br />";
 		}
 		// alex 09/10/2005:	User muss nicht eingeloggt sein
 		//					um auf Projekte zugriff zu haben
