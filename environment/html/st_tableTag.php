@@ -27,7 +27,7 @@ class st_tableTag extends TableTag
 	            $this->columnType= LI;
 	            break;
 	    }
-	    TableTag::__construct("table", true, $class);
+	    TableTag::__construct($class);
 	}
 	function add($value, $columnType= null, $columnClass= null, $rowClass= null)
 	{
