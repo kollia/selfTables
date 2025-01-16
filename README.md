@@ -382,6 +382,29 @@ This you can do for every table if you want better performance. Because tables a
 
 ### change listing content with callbacks
 
+Sometime you don't want to display exactly what filled in database.<br />
+For this case you can define a callback method for the table. Like <nobr>`->listCallback(<callback funtion>)`</nobr><br />
+You can define this &lt;callback function&gt; as follow for the bill table:
+```php
+function billRequest(STCallbackClass &$callbackObject, string $columnName, int $rownum)
+{
+    if(	!$callbackObject->display ||
+        !$callbackObject->before     )
+    {
+        return;
+	   }
+    if($columnName == "bill_id")
+    {
+	       $billContent= $callbackObject->getValue();
+        $billContent= "Bill ".$billContent;
+        $callbackObject->setValue($billContent);
+    }
+}
+
+$bill->listCallback("billRequest");
+
+```
+
 
 
 ## use as pur sql client
