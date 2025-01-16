@@ -380,6 +380,7 @@ This you can do for every table if you want better performance. Because tables a
 > ```
 
 
+<br /><br />
 ### change listing content with callbacks
 
 Sometime you don't want to display exactly what filled in database.<br />
@@ -407,10 +408,13 @@ $bill->listCallback("billRequest");
 
 
 
+<br /><br />
 ## use as pur sql client
 
 
 
+<br /><br />
+<br /><br />
 ## Design
 
 As described before, the DB selftables should create fast results for your own research projects to handle data on database.
