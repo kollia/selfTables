@@ -68,7 +68,7 @@ now you can have three solutions:
  - all tables as buttons
 
 
-> **Tipp:** The description reffer to an example database [00__mariadb_tables.sql](examples/00__mariaDB_tables.sql), which also for mysql.
+> **Tipp:** The description reffer to an example database [00__mariadb_tables.sql](examples/00__mariaDB_tables.sql), which is also suitable for MySQL.
 >           You can take this from subdirectory exampels/ and install as mariaDB dump
 >           if you want to know from what is being talked about.
 
