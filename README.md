@@ -306,6 +306,7 @@ $article->setMaxRowSelect(50);
 ```
 
 now the final creation by structuring the website:<br />
+(we use the first database container only as template)<br />
 <b>[ [04_basic_main.php](examples/04_basic_main.php) ]</b>
 ```php
 <?php
