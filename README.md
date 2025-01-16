@@ -223,8 +223,8 @@ $db->needContainer($addressee);
 ```
 You see that the container `STObjectContainer` need a name. This is also for the database which have as default the name `main-menue`.
 (If you need an second other database, you have to define in the constructor)<br />
-To link to this created other container, the container object is implemented with <nobr>`->needContainer(<object>)`</nobr> and you have access to them over an button like the other tables.
-It is also possible to link to an container over an table entry, see below as in the table Bill to Order.
+To link to this created other container, the container object is implemented with <nobr>`->needContainer(<object>)`</nobr> and you have access to them over a button like the other tables.
+It is also possible to link to a container over an table entry, see below as in the table Bill to Order.
 
 Now let us organize the scripts inside two files.<br />
 This common_db php file is the same as `02_table_listing.php`<br />
