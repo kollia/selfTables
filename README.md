@@ -1,4 +1,4 @@
- DB selfTables
+# DB selfTables
 The goal of this project is for you to design your database table and automatically get a user-friendly GUI interface for all your generated tables in a short time.
 
 This solution can be useful for research if you have written your own specific algorithm that uses data from the database. 
@@ -38,7 +38,7 @@ the folder structure should be:
 <br />
 
 ## BASICs
-All script files you found also in your `examples` subdirectory with the name defined before.
+All script files can also be found in your `examples/` subdirectory with the name previously defined in square brackets, if specified.
 
 ### first Scripting
 
@@ -68,7 +68,7 @@ now you can have three solutions:
  - all tables as buttons
 
 
-> **Tipp:** The description reffer to an example database [00__mariadb_tables.sql](examples/00__mariaDB_tables.sql).
+> **Tipp:** The description reffer to an example database [00__mariadb_tables.sql](examples/00__mariaDB_tables.sql), which also for mysql.
 >           You can take this from subdirectory exampels/ and install as mariaDB dump
 >           if you want to know from what is being talked about.
 
@@ -201,9 +201,9 @@ $order= $db->needTable("Bill");
 ```
 In this case, you have all seven tables organized, but only see the two defined tables you need.
 
-The idea of ​​the project is to have a container for each web page that can display one or more tables.
+The idea of ​​the project is to have a container for each web page which can display one or more tables.<br />
 <br />
-&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;![STDbContainers](wiki/ContainerStack.png?raw=true "STDbContainer stack")
+&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;![STDbContainers](wiki/ContainerStack.png?raw=true "STDbContainer stack")
 
 The database (STDbMariaDb) that you configured first is also a container.
 
@@ -228,7 +228,7 @@ It is also possible to link to an container over an table entry, see below as in
 
 Now let us organize the scripts inside two files.<br />
 This common_db php file is the same as `02_table_listing.php`<br />
-only the last four lines of creation from `STSiteCreator()` is missing
+only the last four lines of creation from `STSiteCreator()` are missing
 and will be done in the next file.<br />
 <b>[ [03_common_db.php](examples/03_common_db.php) ]</b>
 ```php
@@ -310,7 +310,7 @@ now the final creation by structuring the website:<br />
 ```php
 <?php
 
-require_once 'common_db.php';
+require_once '03_common_db.php';
 
 //STCheck::debug("query"); // <- to see current query from URL
 
@@ -340,9 +340,9 @@ if( $orderContainer->getContainerName() == "Order" &&
 $main= new STObjectContainer("bill", $db);
 $main->needContainer($addressee);
 $main->needTable("Article");
-$main->setFirstTable("Bill");
 $bill= $main->needTable("Bill");
 $bill->namedLink("bill_id", $orderContainer);
+$main->setFirstTable("Bill");
 
 
 $creator= new STSiteCreator($main);
