@@ -393,10 +393,10 @@ function billRequest(STCallbackClass &$callbackObject, string $columnName, int $
         !$callbackObject->before     )
     {
         return;
-	   }
+    }
     if($columnName == "bill_id")
     {
-	       $billContent= $callbackObject->getValue();
+        $billContent= $callbackObject->getValue();
         $billContent= "Bill ".$billContent;
         $callbackObject->setValue($billContent);
     }
