@@ -312,7 +312,8 @@ class STMessageHandling // implements STMessageHandlingInterface <- ab version 5
 				}
 			}else
 				Tag::echoDebug("STMessageHandling", "display no alert-string for given messageId: ".$messageId);
-			if(Tag::isDebug())
+			if(	STCheck::isDebug() &&
+				!STCheck::isDebug("test")	)
 			{
 				echo $this->sObject." execute result <b>".$messageId;
 				if($string)

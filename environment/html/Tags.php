@@ -134,6 +134,25 @@ class Tag extends STCheck
 		}
 		public function display()
 		{
+			if(STCheck::isDebug("test"))
+			{
+				global $__global_finished_SiteCreator_result;
+
+				$query= new STQueryString();
+				$action= $query->getParameterValue("testdebug", "action");//"testdebug[action]");
+				if(	isset($__global_finished_SiteCreator_result) &&
+					$__global_finished_SiteCreator_result === "NOERROR" &&
+					(	!isset($action) ||
+						$action !== "finished"	)							)
+				{
+					$query->update("testdebug[action]=finished");
+					$new_url= $query->getUrlParamString();
+					$script= new JavaScriptTag();
+						$script->add("setTimeout(function(){ location.href='$new_url'; }, 5000);");
+					$body= $this->getBody();
+					$body->add($script);
+				}
+			}
 		    echo $this->getDisplayString(0);
 		}
 		public function getDisplayString($displayCount= 0)
@@ -159,7 +178,8 @@ class Tag extends STCheck
 			if($indention)
 			{
 			    $displayString.= $this->spaces($tag_spaces);
-				if(!$HTML_CLASS_DEBUG_CONTENT_SHOWN)
+				if(	!$HTML_CLASS_DEBUG_CONTENT_SHOWN &&
+					!STCheck::isDebug("test")			)
 				{
       				$displayString.= "</pre></td></tr></table>";
     				$displayString.= "<table width='100%' bgcolor='white'><tr><td>";

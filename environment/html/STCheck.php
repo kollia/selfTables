@@ -489,8 +489,8 @@ class STCheck
 			    $__stdbtables_statement_count_from= array();
 			    $__stdbtables_statement_count_to= array();
 			}
-			if(	!$HTML_CLASS_DEBUG_CONTENT
-				and
+			if(	!$HTML_CLASS_DEBUG_CONTENT &&
+				STCheck::isDebug("test") &&
 				$dbg_str	)
 			{
 				$param= new STQueryString();
@@ -513,7 +513,7 @@ class STCheck
 			{
 				echo "\n</pre>\n";
 			}
-			if( $dbg_str == "noRegister_warning" &&
+			if( $dbg_str === "noRegister_warning" &&
 			    (    !isset($global_SESSION_noRegister_SHOWEN) ||
 			         !$global_SESSION_noRegister_SHOWEN              )   )
 			{

@@ -319,6 +319,7 @@ class STSiteCreator extends HtmlTag
 		public function execute($onError= onErrorMessage)
 		{
 			global	$HTTP_GET_VARS;
+			global  $__global_finished_SiteCreator_result;
 
 			Tag::alert($this->tableContainer==null, "STDbSiteCreator::execute()",
 								"befor execute set container in constructor or with ::setMainContainer()", 1);
@@ -437,6 +438,8 @@ class STSiteCreator extends HtmlTag
 					$body->addObj($msgHandling->getMessageEndScript());
 				$this->addObj($body);
 			}
+			if(STCheck::isDebug("test"))
+				$__global_finished_SiteCreator_result= $result;
 			return $result;
 		}
 		/**

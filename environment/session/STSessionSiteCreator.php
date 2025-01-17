@@ -338,6 +338,8 @@ class STSessionSiteCreator extends STSiteCreator
 		}
 		function execute($additionalText= "")
 		{
+			global $__global_finished_SiteCreator_result;
+			
 		    $tableName= $this->getTableName();
 		    if($tableName)
 		        $table= &$this->tableContainer->getTable($tableName);
@@ -355,7 +357,10 @@ class STSessionSiteCreator extends STSiteCreator
 			
 			// check access to SideCreator, Container, and Tables
 			$this->checkPermission();
-			return STSiteCreator::execute();
+			$result= STSiteCreator::execute();
+			if(STCheck::isDebug("test"))
+				$__global_finished_SiteCreator_result= $result;
+			return $result;
 		}
 		/**
 		 * whether object need registration or login

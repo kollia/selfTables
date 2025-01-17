@@ -707,6 +707,11 @@ class STQueryString
 		}
 		private function recursiveParameter(array $parameter, array $args, string &$value= null) : bool
 		{
+			if(0)
+			{
+				var_dump($parameter);
+				echo "recursiveParameter(";st_print_r($args, 20);echo ", $value)<br />";
+			}
 			if(	!isset($parameter) ||
 				!count($parameter)		)
 			{
@@ -715,8 +720,11 @@ class STQueryString
 			$first= array_shift($args);
 			if(isset($parameter[$first]))
 			{
-				if(is_array($parameter[$first]))
-					return $this->recursiveParameter($parameter. $args, $value);
+				if(	is_array($parameter[$first]) &&
+					count($args)					)
+				{
+					return $this->recursiveParameter($parameter[$first], $args, $value);
+				}
 				$value= $parameter[$first];
 				return true;
 			}
