@@ -37,7 +37,7 @@ $__email_text_cases= array(	"HOST",
 							"ACKNOWLEDGE_ACTIVE"				);
 
 
-function mail_allowNewCaseCallback(STCallbackClass &$callbackObject, $columnName, $rownum)
+function mail_allowNewCaseCallback(STCallbackClass &$callbackObject, string $columnName, int $rownum)
 {
 	if(	$callbackObject->display ||
 		$callbackObject->before == false )
@@ -48,7 +48,7 @@ function mail_allowNewCaseCallback(STCallbackClass &$callbackObject, $columnName
 	if(preg_match("/[^_A-ZÜÖÄ]+/", $case))
 		return "for column 'Case' only big letters and underscores allowed";
 }
-function mail_allowRemovingCallback(STCallbackClass &$callbackObject, $columnName, $rownum)
+function mail_allowRemovingCallback(STCallbackClass &$callbackObject, string $columnName, int $rownum)
 {
 	if($callbackObject->display)
 	{
@@ -65,7 +65,7 @@ function mail_allowRemovingCallback(STCallbackClass &$callbackObject, $columnNam
 		}
 	}
 }
-function mail_disableColumnCallback(STCallbackClass &$callbackObject, $columnName, $rownum)
+function mail_disableColumnCallback(STCallbackClass &$callbackObject, string $columnName, int $rownum)
 {
 	if($callbackObject->display)
 	{
@@ -93,7 +93,7 @@ function mail_disableColumnCallback(STCallbackClass &$callbackObject, $columnNam
 		}
 	}
 }
-function emailCallback(STCallbackClass &$callbackObject, $columnName, $rownum)
+function emailCallback(STCallbackClass &$callbackObject, string $columnName, int $rownum)
 {
 	//$callbackObject->echoResult();
 	if($callbackObject->display)
@@ -192,7 +192,7 @@ function emailCallback(STCallbackClass &$callbackObject, $columnName, $rownum)
  * 
  * @param STCallbackClass $callbackObject 
  */
-function disableUserFieldsCallback(STCallbackClass &$callbackObject, $columnName, $rownum)
+function disableUserFieldsCallback(STCallbackClass &$callbackObject, string $columnName, int $rownum)
 {
 	//$callbackObject->echoResult();
 	if(!$callbackObject->display)
@@ -209,7 +209,7 @@ function disableUserFieldsCallback(STCallbackClass &$callbackObject, $columnName
 		$callbackObject->disabled($columnName);
 	}
 }
-function setRegisterColumnActive(STCallbackClass &$callbackObject, $columnName, $rownum)
+function setRegisterColumnActive(STCallbackClass &$callbackObject, string $columnName, int $rownum)
 {
     if(	$callbackObject->display ||
 		!$callbackObject->before	)
@@ -223,7 +223,7 @@ function setRegisterColumnActive(STCallbackClass &$callbackObject, $columnName, 
 		$callbackObject->setValue("", "regcode");
 	}
 }
-function disablePasswordCallback(STCallbackClass &$callbackObject, $columnName, $rownum)
+function disablePasswordCallback(STCallbackClass &$callbackObject, string $columnName, int $rownum)
 {
 	//$callbackObject->echoResult();
     if(!$callbackObject->before)
@@ -243,7 +243,7 @@ function disablePasswordCallback(STCallbackClass &$callbackObject, $columnName, 
         $callbackObject->disabled($columnName);
 	}
 }
-function descriptionCallback(&$callbackObject, $columnName, $rownum)
+function descriptionCallback(&$callbackObject, string $columnName, int $rownum)
 {
     //$bFirstCall= $callbackObject->echoResult();
     global	$global_selftable_session_class_instance;
@@ -282,7 +282,7 @@ function descriptionCallback(&$callbackObject, $columnName, $rownum)
     
 }
 
-function actionCallback(&$callbackObject, $columnName, $rownum)
+function actionCallback(&$callbackObject, string $columnName, int $rownum)
 {
     $session= STUSerSession::instance();
     $domain= $session->getCustomDomain();
