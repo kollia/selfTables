@@ -62,6 +62,10 @@ class InputTag extends Tag
 		{
 		    $this->insertAttribute("autofocus", $vlaue);
 		}
+		public function autocomplete($vlaue= "on")
+		{
+			$this->insertAttribute("autocomplete", $vlaue);
+		}
 		public function checked($checked= true)
 		{
 			if($checked)
