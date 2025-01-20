@@ -2822,9 +2822,17 @@ class STBaseTable
 	 	        if($operator == "")
 	 	            STCheck::echoDebug("db.statements.where", "no operator for where method be set, so clear all old where clauses");
 		 	}
+			if(	!isset($stwhere) ||
+				$stwhere == null ||
+				$stwhere == ""	)
+			{
+				return $this->oWhere;
+			}
 			// remove all pre-defined where clauses
+			// if define new fresh where clause (without operator)
 			// to create sql statement new
-			$this->clearWhere();
+			if($operator == "")
+				$this->clearWhere();
 
 		 	if(	!isset($stwhere) ||
 				$stwhere == null ||
