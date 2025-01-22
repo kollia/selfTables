@@ -49,6 +49,7 @@ class STSiteCreator extends HtmlTag
 		var	$aContainerAdress= array(); // alle link-Adressen der ContainerButtons
 		var $logoutButton= null;
 		var $aDefaultCssLink= array();
+		var $aJavaScriptLinks= array();
 		protected $bUseOnlyDefaultCssLinks= false;
 
 		function __construct($container= null)
@@ -589,6 +590,22 @@ class STSiteCreator extends HtmlTag
     			foreach($aContainerLinks as $link)
     			    $aLinks[]= $link;
 			}
+			return $aLinks;
+		}
+		public function addJavaScriptLink($src, $type= null, $title= "protokoll default JavaScript")
+		{
+			if(!isset($type))
+				$type= "text/javascript";
+			$sLink= array( "src"  =>	$src,
+						   "type" =>	$type,
+						   "title"=>	$title	);
+			$this->aJavaScriptLinks[]= $sLink;
+		}
+		public function getJavaScriptLinks()
+		{
+			$aLinks= $this->tableContainer->getJavaScriptLinks();
+			foreach($this->aJavaScriptLinks as $link)
+				$aLinks[]= STQueryString::getJavaScriptTag($link["src"], $link["type"]);
 			return $aLinks;
 		}
 		// deprecatet wird in STObjectContainer verschoben

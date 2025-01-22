@@ -132,6 +132,11 @@ abstract class STBaseContainer extends BodyTag implements STContainerTempl
 	 * @var array
 	 */
 	protected $aCssLinks= array();
+	/**
+	 * all defined javascript links inside this container
+	 * @var array
+	 */
+	protected $aJavaScriptLinks= array();
 
 	function __construct($name, &$container= null, $bodyClass= "body_content")
 	{
@@ -332,6 +337,9 @@ abstract class STBaseContainer extends BodyTag implements STContainerTempl
   		$cssLinks= $this->oExternSideCreator->getCssLinks();
   		foreach($cssLinks as $css)
 			$head->add($css);
+		$jsTags= $this->oExternSideCreator->getJavaScriptLinks();
+		foreach($jsTags as $js)
+			$head->add($js);
 		$this->headTag= &$head;
 		return $head;
 	}
@@ -353,7 +361,7 @@ abstract class STBaseContainer extends BodyTag implements STContainerTempl
 	        $this->aCssLinks[$media][]= array( "href"  =>	$href,
 	                                           "title" =>	$title	);
 	}
-	function addCssLink($href, $media= "all", $title= "protokoll Stylesheet")
+	public function addCssLink($href, $media= "all", $title= "protokoll Stylesheet")
 	{
 	    $this->aCssLinks[$media][]= array( "href"  =>	$href,
 	                                       "title" =>	$title	);
@@ -371,6 +379,27 @@ abstract class STBaseContainer extends BodyTag implements STContainerTempl
 		    $aContainerLinks= $this->parentContainer->getCssLinks();
 		    foreach($aContainerLinks as $link)
 		        $aLinks[]= $link;
+		}
+		return $aLinks;
+	}
+	public function addJavaScriptLink($src, $type= "text/javascript")
+	{
+		$sLink= array( "src"  =>	$src,
+		               "type" =>	$type	);
+		$this->aJavaScriptLinks[]= $sLink;
+	}
+	public function getJavaScriptLinks()
+	{
+		$aLinks= array();
+		foreach($this->aJavaScriptLinks as $link)
+		{
+			$aLinks[]= STQueryString::getJavaScriptLink($link["src"], $link["type"]);
+		}
+		if(isset($this->parentContainer))
+		{
+			$aContainerLinks= $this->parentContainer->getJavaScriptLinks();
+			foreach($aContainerLinks as $link)
+				$aLinks[]= $link;
 		}
 		return $aLinks;
 	}

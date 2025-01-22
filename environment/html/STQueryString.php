@@ -1417,10 +1417,10 @@ class STQueryString
    *
 	 *  @Autor: Alexander Kolli
    */
-		function getJavaScriptTag($src= null)
+		public static function getJavaScriptTag($src= null, $type= "text/javascript")
 		{
 			$script= new ScriptTag();
-				$script->type("text/javascript");
+				$script->type($type);
 				if($src)
 					$script->src($src);
 			return $script;

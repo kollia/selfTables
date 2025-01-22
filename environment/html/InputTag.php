@@ -50,6 +50,10 @@ class InputTag extends Tag
 		{
 			$this->insertAttribute("onClick", $vlaue);
 		}
+		public function onFocus($vlaue)
+		{
+			$this->insertAttribute("onFocus", $vlaue);
+		}
 		public function accept($vlaue)
 		{
 			$this->insertAttribute("accept", $vlaue);
