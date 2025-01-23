@@ -490,8 +490,8 @@ class STCheck
 			    $__stdbtables_statement_count_to= array();
 			}
 			if(	!$HTML_CLASS_DEBUG_CONTENT &&
-				STCheck::isDebug("test") &&
-				$dbg_str	)
+				$dbg_str &&
+				$dbg_str !== "test"				)
 			{
 				$param= new STQueryString();
 				$HTTP_GET_VARS= $param->getArrayVars();
