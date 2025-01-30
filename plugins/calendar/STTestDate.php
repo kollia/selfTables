@@ -125,12 +125,12 @@ class STtDate
                     "day" => "06",
                     "month" => "01"
                 ),
-                array( "name" => "Aschermittwoch",      "public" => false, "date" => "easter", "day" => -46 ),
-                array( "name" => "Palmsonntag",         "public" => false, "date" => "easter", "day" =>  -7 ),
-                array( "name" => "Gründonnerstag",		"public" => false, "date" => "easter", "day" =>  -3 ),
-                array( "name" => "Karfreitag",		    "public" => false, "date" => "easter", "day" =>  -2 ),
-                array( "name" => "Ostersonntag",		"public" => true,  "date" => "easter", "day" =>   0 ),
-                array( "name" => "Ostermontag",		    "public" => true,  "date" => "easter", "day" =>   1 ),
+                array( "name" => "Aschermittwoch",      "public" => false, "date" => "easter", "day" => -45 ), // check 2024 am 14.02.
+                array( "name" => "Palmsonntag",         "public" => false, "date" => "easter", "day" =>  -7 ), // check 2024 am 24.03.
+                array( "name" => "Gründonnerstag",		"public" => false, "date" => "easter", "day" =>  -2 ), // check 2024 am 28.03.
+                array( "name" => "Karfreitag",		    "public" => false, "date" => "easter", "day" =>  -1 ), // check 2024 am 29.03.
+                array( "name" => "Ostersonntag",		"public" => true,  "date" => "easter", "day" =>   1 ), // check 2024 am 31.03.
+                array( "name" => "Ostermontag",		    "public" => true,  "date" => "easter", "day" =>   2 ), // check 2024 am 01.04.
                 array(
                     "name" => "Staatsfeiertag",
                     "public" => true,
@@ -138,10 +138,10 @@ class STtDate
                     "day" => "01",
                     "month" => "05"
                 ),
-                array( "name" => "Christi Himmelfahrt", "public" => true,  "date" => "easter", "day" =>  39 ),
-                array( "name" => "Pfingstsonntag",		"public" => true,  "date" => "easter", "day" =>  49 ),
-                array( "name" => "Pfingstmontag",		"public" => true,  "date" => "easter", "day" =>  50 ),
-                array( "name" => "Fronleichnam",		"public" => true,  "date" => "easter", "day" =>  60 ),
+                array( "name" => "Christi Himmelfahrt", "public" => true,  "date" => "easter", "day" =>  40 ), // check 2024 am 09.05.
+                array( "name" => "Pfingstsonntag",		"public" => true,  "date" => "easter", "day" =>  50 ), // check 2024 am 19.05.
+                array( "name" => "Pfingstmontag",		"public" => true,  "date" => "easter", "day" =>  51 ), // check 2024 am 20.05.
+                array( "name" => "Fronleichnam",		"public" => true,  "date" => "easter", "day" =>  61 ), // check 2024 am 30.05.
                 array(
                     "name" => "Mariä Himmelfahrt",
                     "public" => true,
