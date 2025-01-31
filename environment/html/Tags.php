@@ -37,22 +37,23 @@ class Tag extends STCheck
 		{
 			$this->tag= $name;
 			$this->bEndTag= $bEndTag;
-			$this->class($class);
+			if(isset($class))
+				$this->class($class);
 			$this->inherit= array();
 
 			$this->aNames= array();
 			if($class)
 				$this->insertAttribute("class", $class);
 		}
-		function id($name)
+		public function id(string $name)
 		{
 		    $this->insertAttribute("id", $name);
 		}
-		function class($name)
+		public function class(string $name)
 		{
 		    $this->insertAttribute("class", $name);
 		}
-		public function style($value)
+		public function style(string $value)
 		{
 			$this->insertAttribute("style", $value);
 		}
@@ -108,16 +109,19 @@ class Tag extends STCheck
 		}
 		public function insertAttribute($name, $term)
 		{
-			$this->aNames[$name]= $term;
+			$this->aNames[strtolower($name)]= $term;
 		}
 		public function hasAttribut(string $name) : bool
 		{
-		    foreach($this->aNames as $key => $value)
-		    {
-		        if($key == $name)
-		            return true;
-		    }
+			if(isset($this->aNames[strtolower($name)]))
+				return true;
 		    return false;
+		}
+		public function getAttribut(string $name)
+		{
+			if(isset($this->aNames[strtolower($name)]))
+				return $this->aNames[strtolower($name)];
+			return null;
 		}
 		protected function spaces($num)
 		{
@@ -134,8 +138,10 @@ class Tag extends STCheck
 		}
 		public function display()
 		{
-			if(STCheck::isDebug("test"))
+			if(	STCheck::isDebug("test") &&
+				typeof($this, "STSiteCreator")	)
 			{
+				global $global_selftable_test_links;
 				global $__global_finished_SiteCreator_result;
 
 				$query= new STQueryString();
@@ -145,12 +151,121 @@ class Tag extends STCheck
 					(	!isset($action) ||
 						$action !== "finished"	)							)
 				{
-					$query->update("testdebug[action]=finished");
-					$new_url= $query->getUrlParamString();
-					$script= new JavaScriptTag();
-						$script->add("setTimeout(function(){ location.href='$new_url'; }, 5000);");
-					$body= $this->getBody();
-					$body->add($script);
+					$bNew= false;
+					$jsonFilename= "selftable_test_links.json";
+					$reportFilename= "selftable_test_report.txt";
+					$script = pathinfo($_SERVER["SCRIPT_FILENAME"]);
+					$report= "";
+					if (file_exists($jsonFilename))
+					{
+						$file = file_get_contents($jsonFilename);
+						if (!$file)
+						{
+							echo "ERROR: cannot load file selftable_test_links.json<br />";
+							exit();
+						}
+						$json= json_decode($file, true);
+						if($json['status'] == "finished")
+							$bNew= true;
+
+					}else
+					{
+						$bNew= true;
+						reset($global_selftable_test_links);
+						$json= array( 	"start" => time(),
+										"status" => "running",
+										"container" => $this->getContainerName(),
+										"table" => $this->getTableName(),
+										"link-class" => key($global_selftable_test_links),
+										"onlink" => -1								);
+					}
+					$bFinished= false;
+					if($bNew)
+					{
+						$json['status']= "running";
+						$json['container']= $this->getContainerName();
+						$json['table']= $this->getTableName();
+						$json['link-class']= key($global_selftable_test_links);
+						$json['onlink']= -1;
+						$report= "\n\n\n\n\n\n\n\n";
+						$report.= " ****************************************\n";
+						$report.= " ***  new DBSelfTables test started\n";
+						$report.= " ***  on ".date("d.m.Y H:i:s")."\n";
+						$report.= " ***  file {$script['basename']}\n";
+						$report.= " ***\n";
+						$report.= "\n";
+						$report.= "\n";
+					}
+
+					$report.= " *******************************************************************************\n";
+					$report.= " ***  container: ".$this->getContainerName()."\n";
+					$report.= " ***      table: ".$this->getTableName()."\n";
+					$report.= " ***     action: ".$this->getAction()."\n";
+					$report.= " ***     result: $__global_finished_SiteCreator_result\n";
+					$report.= "\n";
+
+					if($__global_finished_SiteCreator_result === "NOERROR")
+					{
+						$buttonClass= $json['link-class'];
+						$onAttribute= $global_selftable_test_links[$buttonClass];
+						$tags= $this->getElementsByClass($buttonClass);
+						$tagCount= $json['onlink'] + 1;
+						if(isset($tags[$tagCount]))
+						{
+							$link= $tags[$tagCount]->getAttribut($onAttribute);
+							$json['onlink']= $tagCount;
+						}else
+						{
+							$bFinished= true;
+							$link= " set query to finished";
+							$json['status']= "finished";
+						}
+
+						echo "<pre>";
+						echo "Current working directory: " . getcwd() . "<br />";
+						echo "nextLink: $link<br />";
+						st_print_r($global_selftable_test_links);
+						st_print_r($json, 2);
+						echo "</pre>";
+					}else
+						$json['status']= "finished";
+
+					if($bFinished)
+					{
+						$finishedtime= time() - $json['start'];
+						$finishedtime= date("H:i:s", $finishedtime);
+						$report.= " ***\n";
+						$report.= " ***\n";
+						$report.= " ***  Test finished in $finishedtime\n";
+						$report.= " ********************************************************************************************************************************************************\n";
+						$report= "\n\n\n\n\n\n\n\n";
+					}
+					$jsonData= json_encode($json, JSON_PRETTY_PRINT);
+					if(file_put_contents($jsonFilename, $jsonData) === false)
+					{
+						echo "ERROR: cannot write file selftable_test_links.json<br />";
+						exit();
+					}
+					if(file_put_contents($reportFilename, $report, FILE_APPEND) === false)
+					{
+						echo "ERROR: cannot write file selftable_test_report.txt<br />";
+						exit();
+					}
+					
+
+					if($__global_finished_SiteCreator_result === "NOERROR")
+					{
+						if($bFinished)
+						{
+							$query->update("testdebug[action]=finished");
+							$link= "alert('Test finished'); ";
+							$link.= "location.href='".$query->getUrlParamString()."'";
+						}
+						$script= new JavaScriptTag();
+							$script->add("setTimeout(function(){ $link; }, 5000);");
+						$body= $this->getBody();
+						$body->add($script);
+					}
 				}
 			}
 		    echo $this->getDisplayString(0);
@@ -419,30 +534,47 @@ class Tag extends STCheck
 		{
 			$this->aNames["#require_once"]= $fileName;
 		}
-		function &getElementsByTagName($tagName)
+	/**
+	 * Return array of tags with the given attribute
+	 * or the tag name itself when the attribute is "##tag"
+	 * 
+	 * @param string $attribute name of the attribute, or "##tag" for the tag name
+	 * @param string $name value of the attribute
+	 * @param int $count number of tags maximal to return
+	 * @return array result array of tags
+	 */
+    private function &getElementsByAttribute(string $attribute, string $name, int &$count= null) : array
     {
-    	$aTags= array();
-        $this->private_getElementByTagName($tagName, $aTags);
-        return $aTags;
-    }
-		function &getElementByTagName($tagName, $count= 0)
-		{
-			return $this->private_getElementByTagName($tagName, $count);
-		}
-    private function &private_getElementByTagName($tagName, &$count)
-    {
-    	if(strtolower($tagName)==$this->tag)
+		$aRv= array();
+		$attribute= strtolower($attribute);
+    	if(	(	$attribute == "##tag" &&
+				strtolower($name) == $this->tag	) ||
+			(	$attribute != "##tag" &&
+				isset($this->aNames[$attribute])	)	)
+
         {
-            if(is_array($count))
-            {
-    			$count[]= &$this;
-            }else
-            {
-            	if($count==0)
-                	return $this;
-                else
-                	$count--;
-            }
+			$bFill= false;
+			if($attribute == "class")
+			{
+				$names= explode(" ", $this->aNames[$attribute]);
+				if(in_array($name, $names))
+					$bFill= true;
+
+			}elseif($attribute == "##tag" ||
+					$this->aNames[$attribute] == $name	)
+			{
+            	$bFill= true;
+			}
+			if($bFill)
+			{
+				$aRv[]= &$this;
+				if(isset($count))
+				{
+					$count--;
+					if($count == -1)
+						return $aRv;
+				}
+			}
         }
         $inheritCount= count($this->inherit);
         for($n= 0; $n<$inheritCount; $n++)
@@ -451,13 +583,55 @@ class Tag extends STCheck
             if(	is_object($tag) &&
             	is_subclass_of($tag, "Tag")	)
             {
-            	$get= &$tag->private_getElementByTagName($tagName, $count);
-                if($get)
-                	return $get;
+            	$aRv= array_merge($aRv, $tag->getElementsByAttribute($attribute, $name, $count));
+				if(	isset($count) &&
+					$count == -1	)
+				{
+                	return $aRv;
+				}
             }
         }
-        $oRV= null;
-		return $oRv;
+		return $aRv;
+	}
+	private function &getElementByAttribute(string $attribute, string $name, int $count= 0)
+	{
+		$tags= $this->getElementsByAttribute($attribute, $name, $count);
+		if(isset($tags[0]))
+			return $tags[0];
+		$tag= null;
+		return $tag;
+	}
+	public function &getElementByTagName(string $tagName, int $count= 0)
+	{
+		return $this->getElementByAttribute("##tag", $tagName, $count);
+	}
+	public function &getElementsByTagName(string $tagName) : array
+	{
+		return $this->getElementsByAttribute("##tag", $tagName);
+	}
+	public function &getElementById(string $name, int $count= 0)
+	{
+		return $this->getElementByAttribute("id", $name, $count);
+	}
+	public function &getElementsById(string $name) : array
+	{
+		return $this->getElementsByAttribute("id", $name);
+	}
+	public function &getElementByClass(string $name, int $count= 0)
+	{
+		return $this->getElementByAttribute("class", $name, $count);
+	}
+	public function &getElementsByClass(string $name) : array
+	{
+		return $this->getElementsByAttribute("class", $name);
+	}
+	public function &getElementByName(string $name, int $count= 0)
+	{
+		return $this->getElementByAttribute("name", $name, $count);
+	}
+	public function &getElementsByName(string $name) : array
+	{
+		return $this->getElementsByAttribute("name", $name);
 	}
 }
 

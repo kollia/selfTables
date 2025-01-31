@@ -6,6 +6,12 @@ require_once($php_javascript);
 class STChooseBox extends TableTag
 {
 		var	$tableContainer;
+		/**
+		 * class attribute of tag
+		 * @var string $class
+		 */
+		protected $class= null;
+
 		var $aEntries;
 		var	$startPage;
 		var	$aButtons= array();
@@ -22,8 +28,9 @@ class STChooseBox extends TableTag
 		// wenn $Db ein Array ist sind die Eintr�ge [Button-Name] => Adresse
 		// oder [Button-Name] => [0] => Adresse
 		//						 [1] => Beschreibung	
-		function __construct(&$container, $class= "tableChoose")
+		function __construct(&$container, $class= "STChoose")
 		{
+			$this->class= $class;
 			TableTag::__construct($class);
 			// alex 26/04/2005:	Bei Angabe von Datenbank oder Array
 			//					wird nun die Variable f�r besseres Verst�ndnis
@@ -82,7 +89,7 @@ class STChooseBox extends TableTag
 				$aktTable= $this->tableContainer->getTableName();
 				$aTables= array();
 				if(is_string($table))
-					$aTables[]= $this->getTable($table);
+					$aTables[]= $this->tableContainer->getTable($table);
 				else
 					$aTables= &$this->tableContainer->getTables();
 				
@@ -207,12 +214,15 @@ class STChooseBox extends TableTag
 		}   
 		$address.= $Get->getParamString();*/
    
+		$class_name= "{$this->class}-menue-button";
+		if(STCheck::isDebug("test"))
+			STCheck::test_tagClassAttributeLinks($class_name, "onclick");
 		$this->aButtons[$name]= $address;
 		$tr= new RowTag();
 			$td= new ColumnTag(TD);
 				$td->align($this->sButtonAlign);
 				$td->valign("middle");
-				$button= new ButtonTag("menue");
+				$button= new ButtonTag($class_name);
 					$button->add($name);
 					$address= "javascript:location='".$address."'";
 					$button->onClick($address);

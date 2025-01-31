@@ -7,6 +7,7 @@
 
 	// globaly variables
     $__global_finished_SiteCreator_result= null;
+    $global_selftable_test_links= array();
 	$global_first_objectContainer= null;
 	$global_boolean_installed_objectContainer= false;
 	$global_array_exist_stobjectcontainer_with_classname= array();
