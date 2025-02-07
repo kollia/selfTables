@@ -492,7 +492,7 @@ class STItemBox extends STBaseBox
 		$getColumns= array();
 		foreach($this->asDBTable->show as $show)
 		{
-			if($show['type'] == 'get')
+			if( isset($show['type']) && $show['type'] == 'get')
 				$getColumns[]= $show['alias'];
 		}
     	foreach($columns as $column => $name)

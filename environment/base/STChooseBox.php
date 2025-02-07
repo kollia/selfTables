@@ -216,7 +216,7 @@ class STChooseBox extends TableTag
    
 		$class_name= "{$this->class}-menue-button";
 		if(STCheck::isDebug("test"))
-			STCheck::test_tagClassAttributeLinks($class_name, "onclick");
+			STCheck::test_tagClassAttributeLinks("table", $class_name, "onclick");
 		$this->aButtons[$name]= $address;
 		$tr= new RowTag();
 			$td= new ColumnTag(TD);

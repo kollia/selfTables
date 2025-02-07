@@ -541,11 +541,14 @@ class STCheck
 				$HTML_CLASS_DEBUG_CONTENT_CLASS_FUNCTION= "";
 			}
 		}
-		public static function test_tagClassAttributeLinks(string $class, string $attribute)
+		public static function test_tagClassAttributeLinks(string $type, string $class, string $attribute)
 		{
 			global $global_selftable_test_links;
 
-			$global_selftable_test_links[$class]= $attribute;
+			if(preg_match("/^###/", $class))
+				$global_selftable_test_links[$type][$class][]= $attribute;
+			else
+				$global_selftable_test_links[$type][$class]= $attribute;
 		}
 		private static function print_query_post()
 		{

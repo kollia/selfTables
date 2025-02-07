@@ -136,14 +136,40 @@ class Tag extends STCheck
 		protected function getBehindSubTagString()
 		{//funktion zum �berladen
 		}
+		private function read_test_json(string $jsonFilename) : array|null
+		{
+			$aRv= null;
+			if (file_exists($jsonFilename))
+			{
+				$file = file_get_contents($jsonFilename);
+				if (!$file)
+				{
+					echo "ERROR: cannot load file selftable_test_links.json<br />";
+					exit();
+				}
+				$aRv= json_decode($file, true);
+
+			}
+			return $aRv;
+		}
+		/**
+		 * sorting order of links
+		 * inside array $global_selftable_test_links
+		 * @var array $aTestTypes
+		 */
+		private array $aTestTypes= array("edit", "table");
+		private int $nStopTestDisplayCount= 2; // if value -1 testing to end
 		public function display()
 		{
+			STcheck::debug("query");
 			if(	STCheck::isDebug("test") &&
 				typeof($this, "STSiteCreator")	)
 			{
 				global $global_selftable_test_links;
 				global $__global_finished_SiteCreator_result;
 
+				$jsonFilename= "selftable_test_links.json";
+				$reportFilename= "selftable_test_report.txt";
 				$query= new STQueryString();
 				$action= $query->getParameterValue("testdebug", "action");//"testdebug[action]");
 				if(	isset($__global_finished_SiteCreator_result) &&
@@ -151,42 +177,52 @@ class Tag extends STCheck
 					(	!isset($action) ||
 						$action !== "finished"	)							)
 				{
+					$selftable_test_links= array();
+					// Sort keys according to the order in $this->aTestTypes
+					foreach ($this->aTestTypes as $orderKey)
+					{
+						if (isset($global_selftable_test_links[$orderKey]))
+							$selftable_test_links[$orderKey] = $global_selftable_test_links[$orderKey];
+					}
 					$bNew= false;
-					$jsonFilename= "selftable_test_links.json";
-					$reportFilename= "selftable_test_report.txt";
+					$nMaxEditLinks= 1;
 					$script = pathinfo($_SERVER["SCRIPT_FILENAME"]);
 					$report= "";
-					if (file_exists($jsonFilename))
+					$json= $this->read_test_json($jsonFilename);
+					if(isset($json))
 					{
-						$file = file_get_contents($jsonFilename);
-						if (!$file)
-						{
-							echo "ERROR: cannot load file selftable_test_links.json<br />";
-							exit();
-						}
-						$json= json_decode($file, true);
+						$type= $json['link-type'];
 						if($json['status'] == "finished")
 							$bNew= true;
-
 					}else
 					{
 						$bNew= true;
-						reset($global_selftable_test_links);
 						$json= array( 	"start" => time(),
 										"status" => "running",
-										"container" => $this->getContainerName(),
-										"table" => $this->getTableName(),
-										"link-class" => key($global_selftable_test_links),
-										"onlink" => -1								);
+										"container" => "unknown",
+										"table" => "unknown",
+										"link-type" => "unknown",
+										"link-class" => "",
+										"onEditLinkCount" => -1,
+										"onEditDeleteCount" => -1,
+										"onTableTagCount" => -1								);
 					}
 					$bFinished= false;
 					if($bNew)
 					{
+						reset($selftable_test_links);
+						$type= key($selftable_test_links);						
+						reset($selftable_test_links[$type]);
+						echo "type: $type<br />";
+						$json['start']= time();
 						$json['status']= "running";
 						$json['container']= $this->getContainerName();
 						$json['table']= $this->getTableName();
-						$json['link-class']= key($global_selftable_test_links);
-						$json['onlink']= -1;
+						$json['link-type']= $type;
+						$json['link-class']= key($selftable_test_links[$type]);
+						$json['onEditLinkCount']= -1;
+						$json['onEditDeleteCount']= -1;
+						$json['onTableTagCount']= -1;
 						$report= "\n\n\n\n\n\n\n\n";
 						$report.= " ****************************************\n";
 						$report.= " ***  new DBSelfTables test started\n";
@@ -196,6 +232,7 @@ class Tag extends STCheck
 						$report.= "\n";
 						$report.= "\n";
 					}
+					
 
 					$report.= " *******************************************************************************\n";
 					$report.= " ***  container: ".$this->getContainerName()."\n";
@@ -204,31 +241,64 @@ class Tag extends STCheck
 					$report.= " ***     result: $__global_finished_SiteCreator_result\n";
 					$report.= "\n";
 
+					if( $this->nStopTestDisplayCount == -1 ||
+						$this->nStopTestDisplayCount <= (	$json['onTableTagCount'] + 
+															$json['onEditLinkCount'] +
+															$json['onEditDeleteCount']	) )
+					{
+						$bFinished= true;
+						$json['status']= "finished";
+					}
 					if($__global_finished_SiteCreator_result === "NOERROR")
 					{
-						$buttonClass= $json['link-class'];
-						$onAttribute= $global_selftable_test_links[$buttonClass];
-						$tags= $this->getElementsByClass($buttonClass);
-						$tagCount= $json['onlink'] + 1;
-						if(isset($tags[$tagCount]))
-						{
-							$link= $tags[$tagCount]->getAttribut($onAttribute);
-							$json['onlink']= $tagCount;
+						if( !isset($selftable_test_links['edit']['###link'][$json['onEditLinkCount']+1]) &&
+							!isset($selftable_test_links['edit']['###delete'][$json['onEditDeleteCount']+1])	)
+						{ // loop through table links
+							$type= "table";
+							$json['onEditLinkCount']= -1;
+							$json['onEditDeleteCount']= -1;
+							$buttonClass= $json['link-class'];
+							$onAttribute= $selftable_test_links[$type][$buttonClass];
+							$tags= $this->getElementsByClass($buttonClass);
+							$tagCount= $json['onTableTagCount'] + 1;
+							if(isset($tags[$tagCount]))
+							{
+								$link= $tags[$tagCount]->getAttribut($onAttribute);
+								$json['onTableTagCount']= $tagCount;
+							}else
+							{
+								$bFinished= true;
+								$link= " set query to finished";
+								$json['status']= "finished";
+							}
 						}else
-						{
-							$bFinished= true;
-							$link= " set query to finished";
-							$json['status']= "finished";
+						{ // loop through edit links
+							$type= "edit";
+							$link= "window.location='";
+							if(isset($selftable_test_links['edit']['###link'][$json['onEditLinkCount']+1]))
+							{
+								$json['onEditLinkCount']++;
+								$link.= $selftable_test_links['edit']['###link'][$json['onEditLinkCount']];
+							}else
+							{
+								$json['onEditDeleteCount']++;
+								$link.= $selftable_test_links['edit']['###delete'][$json['onEditDeleteCount']];
+							}
+							$link.= "'";
 						}
 
 						echo "<pre>";
+						showLine();
 						echo "Current working directory: " . getcwd() . "<br />";
 						echo "nextLink: $link<br />";
-						st_print_r($global_selftable_test_links);
+						st_print_r($selftable_test_links,2);
 						st_print_r($json, 2);
 						echo "</pre>";
 					}else
+					{ 
+						$bFinished= true; 
 						$json['status']= "finished";
+					}
 
 					if($bFinished)
 					{
@@ -238,7 +308,7 @@ class Tag extends STCheck
 						$report.= " ***\n";
 						$report.= " ***  Test finished in $finishedtime\n";
 						$report.= " ********************************************************************************************************************************************************\n";
-						$report= "\n\n\n\n\n\n\n\n";
+						$report.= "\n\n\n\n\n\n\n\n";
 					}
 					$jsonData= json_encode($json, JSON_PRETTY_PRINT);
 					if(file_put_contents($jsonFilename, $jsonData) === false)
@@ -265,6 +335,30 @@ class Tag extends STCheck
 							$script->add("setTimeout(function(){ $link; }, 5000);");
 						$body= $this->getBody();
 						$body->add($script);
+					}
+				}else
+				{
+					$json= $this->read_test_json($jsonFilename);
+
+					$report=  " *******************************************************************************\n";
+					$report.= " ***  container: ".$this->getContainerName()."\n";
+					$report.= " ***      table: ".$this->getTableName()."\n";
+					$report.= " ***     action: ".$this->getAction()."\n";
+					$report.= " ***     result: $__global_finished_SiteCreator_result\n";
+					$report.= "\n";
+					
+					$finishedtime= time() - $json['start'];
+					$finishedtime= date("H:i:s", $finishedtime);
+					$report.= " ***\n";
+					$report.= " ***\n";
+					$report.= " ***  Test finished in $finishedtime\n";
+					$report.= " ********************************************************************************************************************************************************\n";
+					$report.= "\n\n\n\n\n\n\n\n";
+					
+					if(file_put_contents($reportFilename, $report, FILE_APPEND) === false)
+					{
+						echo "ERROR: cannot write file selftable_test_report.txt<br />";
+						exit();
 					}
 				}
 			}
