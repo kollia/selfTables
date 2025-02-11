@@ -1078,8 +1078,11 @@ class STDbTable extends STBaseTable
                         isset($column['type']) && // <- otherwise field is PK for update or delete inside STListBox
                         $column['type'] == "select"             ) ||
                     (   typeof($oMainTable, "STDbSelector") &&
-                        (   !isset($oMainTable->abOrigChoice["select"]) ||
-                            $oMainTable->abOrigChoice["select"] == "true"   )   )    )
+                        (   (	!isset($oMainTable->abOrigChoice["select"]) &&
+								(	!isset($column['type']) || // <- if not set maybe field is default selection (all columns) from table
+									$column['type'] == "select"	)				) ||
+                            (	isset($oMainTable->abOrigChoice["select"]) &&
+								$oMainTable->abOrigChoice["select"] == "true"	)		)   )    )
                 {
                     // alex 24/05/2005:	if table is an existing foreign Key
                     //                  and the current/main table an STDbSelector,
