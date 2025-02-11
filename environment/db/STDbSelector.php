@@ -250,22 +250,35 @@ class STDbSelector extends STDbTable implements STContainerTempl
 				}
 				if(!$oTable)
 				{
-				    $getTable= $container->getTable($sTableName);
-				    $oTable= clone $getTable;
-				    $oTable->container= &$this;
-				    if(STCheck::isDebug())
-				    {
-				        $msg= array();
-				        $msg[]= "new not exist table $oTable filled with own container";
-				        $msg[]= "    was cloned from $getTable";
-				        STCheck::echoDebug("table", $msg);
-				        STCheck::warning(!isset($oTable), "STDbSelector::getTable()", 
-				            "table $sTableName do not exist inside container ".$container->getName());
-				    }
+					// if table not exist in container,
+					// check whether was pulled from other
+					// database before
+					foreach($this->aoToTables as $tableName=>$table)
+					{
+						if(preg_match("/^(.*)\.(.*)$/", $tableName, $match))
+						{
+							if($match[2] == $sTableName)
+							{
+								$oTable= &$table;
+								break;
+							}
+						}
+					}
+
+					if(!$oTable)
+					{
+						// if table not found,
+						// search in container
+						// who search also in parent containers
+						// and other databases
+						$getTable= $container->getTable($sTableName);
+						if($getTable)
+							$oTable= clone $getTable;
+					}
 				}
 				if($oTable)
 				{
-				    $oTable->container= $this;
+				    $oTable->container= &$this;
 					if(typeof($oTable, "STDbTable"))
 				    	$oTable->allowQueryLimitation($this->bModifyFk);
 					$this->aoToTables[$sTableName]= &$oTable;

@@ -1452,6 +1452,7 @@ abstract class STDatabase extends STObjectContainer
 		}
 		$this->aTableStructure[STALLDEF]["fromAll"]= $bFromAll;
 		$aHaveFks= array();
+		$ownDbName= $this->getDatabaseName();
 		
 
 		if(!isset($this->aTableStructure["struct"]))
@@ -1480,9 +1481,23 @@ abstract class STDatabase extends STObjectContainer
 				{
 					$aHaveFks[$tableName]= true;
         			foreach($fromTable->aFks as $fromTableName=>$toColumn)
-        				$this->aTableStructure["struct"][$tableName][$fromTableName]= array();
-				}else
-				    STCheck::echoDebug("db.statments.table", "$tableName has no FK to an other table");
+					{
+						$fTable= $fromTableName;
+						if(isset($toColumn[0]['table']))
+						{
+							$otherDbName= $toColumn[0]['table']->getDatabase()->getDatabaseName();
+							if($otherDbName!=$ownDbName)
+								$fTable= "$otherDbName.$fTable";
+						}
+        				$this->aTableStructure["struct"][$tableName][$fTable]= array();
+					}
+				}elseif(STCheck::isDebug())
+				{
+					$dbg_str= "db.statements.table";
+					if(!STCheck::isDebug($dbg_str))
+						$dbg_str= "db.table.fk";
+				    STCheck::echoDebug($dbg_str, "$tableName has no FK to an other table");
+				}
 				if(STCheck::isDebug("db.table.fk"))
 				{
     			    $space= STCheck::echoDebug("db.table.fk", "Foreign Key structure from tables grow to:");

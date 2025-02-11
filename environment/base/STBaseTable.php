@@ -3537,7 +3537,21 @@ class STBaseTable
 			foreach($content as $columns)
 			{
 				if($fromColumn==$columns["own"])
-					return $table;
+				{
+					$name= $table;
+					if(	isset($columns["table"]) &&
+						typeof($columns["table"], "STDbTable")	)
+					{
+						if(typeof($this, "STDbTable"))
+							$ownDb= $this->container->getDatabaseName();
+						else
+							$ownDb= "";
+						$otherDb= $columns["table"]->container->getDatabaseName();
+						if($ownDb!=$otherDb)
+							$name= "$otherDb.$name";
+					}
+					return $name;
+				}
 			}
 		}
 		return null;

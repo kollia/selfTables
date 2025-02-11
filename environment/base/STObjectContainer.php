@@ -156,7 +156,9 @@ class STObjectContainer extends STBaseContainer
 	}
 	function &needEmptyTable(string $sTableName)
 	{	
-		return $this->needTable($sTableName, /*empty*/true);
+		$table= new STBaseTable($sTableName);
+		$this->needTableObject($table);
+		return $table;
 	}
 	/**
 	 * if container on display should show no tables
@@ -201,7 +203,7 @@ class STObjectContainer extends STBaseContainer
 	    $sTableName= strtolower($orgTableName);
 	    $this->tables[$sTableName]= &$table;
 	}
-	public function &needTable(string $sTableName, bool $bEmpty= false) : object
+	public function &needTable(string $sTableName, bool $bEmpty= false) : STBaseTable|null
 	{  
 		$this->bAllTablesNeeded= true; 
 	    $this->initContainer();
@@ -232,6 +234,7 @@ class STObjectContainer extends STBaseContainer
 	}
 	public function &getTable(string $tableName= null, string|bool $sContainer= null, bool $bEmpty= false)
 	{
+		$nullTable= null;
 		$nParams= func_num_args();
 		STCheck::lastParam(3, $nParams);
 		
@@ -298,11 +301,9 @@ class STObjectContainer extends STBaseContainer
 		$tableName= strtolower($tableName);
 		// ----------------------------------------------------------------------------------------------------
 		
-		if(	$bEmpty &&
-			$this->db->isTable($tableName)	)
-		{
-			STCheck::alert(true, "STObjectContainer::getTable()", "cannot create a STBaseTable with the same name exist in database");
-		}
+		// kollia 11/02/2025: 	remove alert if table has same name as table in database
+		//						cause error shouldn't be in this method
+
 		// alex 08/07/2005: die Tabelle wird nun auch ohne Referenz geholt
 		//					�nderungen jetzt ausserhalb m�glich
 		//					und die Tabelle ist dann nicht automatisch in $this->tables eingetragen
@@ -360,16 +361,74 @@ class STObjectContainer extends STBaseContainer
 			}
 		}else
 		{
+			// kollia 10/02/2025:
+			// after v0.0.5.1-SNAPSHOT-94-g6e35f32 
+			// create no BaseTable object if table not exist in database
 		    if(!$this->isTable($tableName))
-		    {
-		        $table= new STBaseTable($tableName);
-		        Tag::echoDebug("table", "created dummy table ".$table->toString()." inside database container <b>".$this->getName()."</b>");
-		    }else
-		        $table= &$this->createTable($orgTableName);
+			{
+				if(!$bEmpty)
+				{
+					// if table not exist in own container
+					// search in all exist databases
+					$table= $this->searchTableInOtherDatabase($tableName);
+					if(	!$table &&
+						STCheck::isDebug())
+					{
+						if(STCheck::isDebug("table"))
+						{
+							$space= STCheck::echoDebug("table", "table <b>$tableName</b> not inside container <b>".$this->getName()." </b>");
+							st_print_r($this->oGetTables, 1, $space);
+							STCheck::echoDebug("table", "and also not in any other database");
+							$allContainers= STBaseContainer::getAllContainer();
+							st_print_r($allContainers, 1, $space);
+						}
+						$msg= "table $tableName do not exist inside container ".$container->getName()." or other container/databases.";
+						if(!STCheck::isDebug("table"))
+							$msg.= " For more information set STCheck debug mode to 'table'";
+						STCheck::warning(true, "STDbSelector::getTable()", $msg);
+					}
+				}else
+					$table= $nullTable;
+				return $table;
+			}
+		    $table= &$this->createTable($orgTableName);
 		    $this->oGetTables[$tableName]= &$table;
 		}
-		//showBackTrace();
 		return $table;
+	}
+	private function &searchTableInOtherDatabase(string $tableName) : STBaseTable|null
+	{
+		$oRv= null;
+		
+		if(preg_match("/^([^.]+)\.([^.]+)/", $tableName, $preg))
+		{
+			$container= $this->getContainer($preg[1]);
+			$table= $container->getTable($preg[2]);
+			if($table)
+			{
+				$this->oGetTables[$tableName]= &$table;
+				return $table;
+			}
+		}
+
+		$searchedDatabases= array( $this->db->getDatabaseName() => true );				
+		$allContainers= STBaseContainer::getAllContainer();
+		foreach($allContainers as $oContainer)
+		{
+			$dbName= $oContainer->getDatabaseName();
+			if(!isset($searchedDatabases[$dbName]))
+			{
+				$searchedDatabases[$dbName]= true;
+				$table= $oContainer->getTable($tableName, /*container*/null, /*empty*/true);
+				if($table)
+				{
+					$this->oGetTables["$dbName.$tableName"]= &$table;
+					$oRv= $table;
+					break;
+				}
+			}
+		}
+		return $oRv;
 	}
 	/**
 	 * create unknown table if container not from STDatabase
