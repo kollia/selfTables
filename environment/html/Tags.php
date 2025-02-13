@@ -161,7 +161,6 @@ class Tag extends STCheck
 		private int $nStopTestDisplayCount= 2; // if value -1 testing to end
 		public function display()
 		{
-			STcheck::debug("query");
 			if(	STCheck::isDebug("test") &&
 				typeof($this, "STSiteCreator")	)
 			{
