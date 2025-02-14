@@ -595,13 +595,53 @@ class STQueryString
 				unset($aQuery[$firstVar]);
 			}
 		}
-		public function update($paramValue)
+		private function actualice(array $new_params, &$param_vars= null)
 		{
-			$array= $this->splitParamValue($paramValue);
-			$this->updateA($array, $this->param_vars);
+			if(!isset($param_vars))
+				$param_vars= &$this->param_vars;
+			foreach($new_params as $param=>$value)
+			{
+				if(isset($param_vars[$param]))
+				{
+					if(	is_array($value) && // first asking for $value
+						is_array($param_vars[$param])	)
+					{
+						$this->actualice($value, $param_vars[$param]);
+					}else
+						$param_vars[$param]= $value;
+				}else
+					$param_vars[$param]= $value;
+			}
+		}
+		/**
+		 * update query parameter with new values
+		 * 
+		 * @param string|array $paramValue	Parameter with new value.<br />
+		 * 							   		Parameter can be an string where the value is separated by '='.
+		 * 							   		Like 'param=value' and also 'param1=value1&param2=value2&...' be possible.
+		 * 							   		For an one or more dimensional array the parameter can be 'array[param1][param2]=value'.
+		 * 							   		The parameter can also be an array with the parameter name as key and the value as value.
+		 */
+		public function update(string|array $paramValue)
+		{
+			if(is_string($paramValue))
+			{
+				$array= $this->splitParamValue($paramValue);
+				$this->updateA($array, $this->param_vars);
+			}else
+				$this->actualice($paramValue);
 		}
 		private function updateA($array, &$param_vars)
 		{
+			if(isset($array["values"]))
+			{ // if set values and not value, then it is an array of parameters
+				foreach($array["params"] as $key => $params)
+				{
+					$newarray= array("params"=>$params, "value"=>$array["values"][$key]);
+					$Rv= $this->updateA($newarray, $param_vars);
+				}
+				return $Rv;
+			}
 			$params= $array["params"];
 			$value= $array["value"];
 			$pos= &$param_vars;
@@ -694,7 +734,7 @@ class STQueryString
 		 * @param string $arg one ore more parameter strings, like for an array
 		 * @return string value of parameter(s), if parameter not set value is null
 		 */
-		public function getParameterValue(string|array $arg) : string|null
+		public function getParameterValue(string|array $arg) : string|array|null
 		{
 			if(!is_array($arg))
 				$args= func_get_args();
@@ -955,6 +995,19 @@ class STQueryString
 		}
 		function splitParamValue($paramValue)
 		{
+			$aRv= array();
+			$split= preg_split("/&/", $paramValue);
+			if(	$split &&
+				count($split) > 1	)
+			{
+				foreach($split as $param)
+				{
+					$paramArray= STQueryString::splitParamValue($param);
+					$aRv["params"][]= $paramArray["params"];
+					$aRv["values"][]= $paramArray["value"];
+				}
+				return $aRv;
+			}
 			$split= preg_split("/=/", $paramValue);
 			$param= $split[0];
 			$value= "";
