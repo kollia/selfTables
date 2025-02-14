@@ -136,22 +136,6 @@ class Tag extends STCheck
 		protected function getBehindSubTagString()
 		{//funktion zum �berladen
 		}
-		private function read_test_json(string $jsonFilename) : array|null
-		{
-			$aRv= null;
-			if (file_exists($jsonFilename))
-			{
-				$file = file_get_contents($jsonFilename);
-				if (!$file)
-				{
-					echo "ERROR: cannot load file selftable_test_links.json<br />";
-					exit();
-				}
-				$aRv= json_decode($file, true);
-
-			}
-			return $aRv;
-		}
 		/**
 		 * sorting order of links
 		 * inside array $global_selftable_test_links
@@ -166,15 +150,17 @@ class Tag extends STCheck
 			{
 				global $global_selftable_test_links;
 				global $__global_finished_SiteCreator_result;
+				global $HTML_CLASS_DEBUG_CONTENT_CLASS_FUNCTION;
 
-				$jsonFilename= "selftable_test_links.json";
 				$reportFilename= "selftable_test_report.txt";
 				$query= new STQueryString();
-				$action= $query->getParameterValue("testdebug", "action");//"testdebug[action]");
+				//$query->update("set=5");
+				$testdebug= $query->getParameterValue("testdebug");//"testdebug");
+				$status= $query->getParameterValue("testdebug", "status");//"testdebug[action]");
 				if(	isset($__global_finished_SiteCreator_result) &&
 					$__global_finished_SiteCreator_result === "NOERROR" &&
-					(	!isset($action) ||
-						$action !== "finished"	)							)
+					(	!isset($status) ||
+						$status !== "finished"	)							)
 				{
 					$selftable_test_links= array();
 					// Sort keys according to the order in $this->aTestTypes
@@ -184,27 +170,26 @@ class Tag extends STCheck
 							$selftable_test_links[$orderKey] = $global_selftable_test_links[$orderKey];
 					}
 					$bNew= false;
-					$nMaxEditLinks= 1;
+					//$nMaxEditLinks= 1;
 					$script = pathinfo($_SERVER["SCRIPT_FILENAME"]);
 					$report= "";
-					$json= $this->read_test_json($jsonFilename);
-					if(isset($json))
+					if(isset($testdebug))
 					{
-						$type= $json['link-type'];
-						if($json['status'] == "finished")
+						$type= $testdebug['link-type'];
+						if($testdebug['status'] == "finished")
 							$bNew= true;
 					}else
 					{
 						$bNew= true;
-						$json= array( 	"start" => time(),
-										"status" => "running",
-										"container" => "unknown",
-										"table" => "unknown",
-										"link-type" => "unknown",
-										"link-class" => "",
-										"onEditLinkCount" => -1,
-										"onEditDeleteCount" => -1,
-										"onTableTagCount" => -1								);
+						$testdebug= array( 	"start" => time(),
+											"status" => "running",
+											"container" => "unknown",
+											"table" => "unknown",
+											"link-type" => "unknown",
+											"link-class" => "",
+											"onEditLinkCount" => -1,
+											"onEditDeleteCount" => -1,
+											"onTableTagCount" => -1		);
 					}
 					$bFinished= false;
 					if($bNew)
@@ -212,17 +197,17 @@ class Tag extends STCheck
 						reset($selftable_test_links);
 						$type= key($selftable_test_links);						
 						reset($selftable_test_links[$type]);
-						echo "type: $type<br />";
-						$json['start']= time();
-						$json['status']= "running";
-						$json['container']= $this->getContainerName();
-						$json['table']= $this->getTableName();
-						$json['link-type']= $type;
-						$json['link-class']= key($selftable_test_links[$type]);
-						$json['onEditLinkCount']= -1;
-						$json['onEditDeleteCount']= -1;
-						$json['onTableTagCount']= -1;
-						$report= "\n\n\n\n\n\n\n\n";
+						
+						$testdebug['start']= time();
+						$testdebug['status']= "running";
+						$testdebug['container']= $this->getContainerName();
+						$testdebug['table']= $this->getTableName();
+						$testdebug['link-type']= $type;
+						$testdebug['link-class']= key($selftable_test_links[$type]);
+						$testdebug['onEditLinkCount']= -1;
+						$testdebug['onEditDeleteCount']= -1;
+						$testdebug['onTableTagCount']= -1;
+						$report= "\n\n\n";
 						$report.= " ****************************************\n";
 						$report.= " ***  new DBSelfTables test started\n";
 						$report.= " ***  on ".date("d.m.Y H:i:s")."\n";
@@ -241,79 +226,109 @@ class Tag extends STCheck
 					$report.= "\n";
 
 					if( $this->nStopTestDisplayCount == -1 ||
-						$this->nStopTestDisplayCount <= (	$json['onTableTagCount'] + 
-															$json['onEditLinkCount'] +
-															$json['onEditDeleteCount']	) )
+						$this->nStopTestDisplayCount <= (	$testdebug['onTableTagCount'] + 
+															$testdebug['onEditLinkCount'] +
+															$testdebug['onEditDeleteCount']	) )
 					{
 						$bFinished= true;
-						$json['status']= "finished";
+						$testdebug['status']= "finished";
 					}
 					if($__global_finished_SiteCreator_result === "NOERROR")
 					{
-						if( !isset($selftable_test_links['edit']['###link'][$json['onEditLinkCount']+1]) &&
-							!isset($selftable_test_links['edit']['###delete'][$json['onEditDeleteCount']+1])	)
+						if( !isset($selftable_test_links['edit']['###link'][$testdebug['onEditLinkCount']+1]) &&
+							!isset($selftable_test_links['edit']['###delete'][$testdebug['onEditDeleteCount']+1])	)
 						{ // loop through table links
 							$type= "table";
-							$json['onEditLinkCount']= -1;
-							$json['onEditDeleteCount']= -1;
-							$buttonClass= $json['link-class'];
+							$testdebug['onEditLinkCount']= -1;
+							$testdebug['onEditDeleteCount']= -1;
+							$buttonClass= $testdebug['link-class'];
 							$onAttribute= $selftable_test_links[$type][$buttonClass];
 							$tags= $this->getElementsByClass($buttonClass);
-							$tagCount= $json['onTableTagCount'] + 1;
+							$tagCount= $testdebug['onTableTagCount'] + 1;
 							if(isset($tags[$tagCount]))
 							{
 								$link= $tags[$tagCount]->getAttribut($onAttribute);
-								$json['onTableTagCount']= $tagCount;
+								$split= preg_split("/\?/", $link);
+								$link= $split[0];
+								if(preg_match("/^javascript:location='/", $link))
+									$link= substr($link, 21);
+								if(preg_match("/'$/", $link))
+									$link= substr($link, 0, -1);
+								if(count($split) > 1)
+									$query->update(substr($split[1], 0, -1));
+								$testdebug['onTableTagCount']= $tagCount;
+								$type= "link";
 							}else
 							{
 								$bFinished= true;
-								$link= " set query to finished";
-								$json['status']= "finished";
+								$link= "";
+								$testdebug['status']= "finished";
 							}
 						}else
 						{ // loop through edit links
 							$type= "edit";
 							$link= "window.location='";
-							if(isset($selftable_test_links['edit']['###link'][$json['onEditLinkCount']+1]))
+							if(isset($selftable_test_links['edit']['###link'][$testdebug['onEditLinkCount']+1]))
 							{
-								$json['onEditLinkCount']++;
-								$link.= $selftable_test_links['edit']['###link'][$json['onEditLinkCount']];
+								$testdebug['onEditLinkCount']++;
+								$link.= $selftable_test_links['edit']['###link'][$testdebug['onEditLinkCount']];
 							}else
 							{
-								$json['onEditDeleteCount']++;
-								$link.= $selftable_test_links['edit']['###delete'][$json['onEditDeleteCount']];
+								$testdebug['onEditDeleteCount']++;
+								$link.= $selftable_test_links['edit']['###delete'][$testdebug['onEditDeleteCount']];
 							}
 							$link.= "'";
 						}
 
-						echo "<pre>";
-						showLine();
-						echo "Current working directory: " . getcwd() . "<br />";
-						echo "nextLink: $link<br />";
-						st_print_r($selftable_test_links,2);
-						st_print_r($json, 2);
-						echo "</pre>";
+						$output= false;
+						if( isset($HTML_CLASS_DEBUG_CONTENT_CLASS_FUNCTION) &&
+							$HTML_CLASS_DEBUG_CONTENT_CLASS_FUNCTION != ""		)
+						{
+							$exp= explode("/", $HTML_CLASS_DEBUG_CONTENT_CLASS_FUNCTION);
+							if(count($exp) > 1)
+								$output= true;
+						}
+						if($output)
+						{
+							echo "<pre>";
+							showLine();
+							echo "Current working directory: " . getcwd() . "<br />";
+							echo "nextLink: $link<br />";
+							st_print_r($selftable_test_links,2);
+							echo "new testdbug array:<br />";
+							st_print_r($testdebug, 2);
+							echo "</pre>";
+						}
 					}else
 					{ 
 						$bFinished= true; 
-						$json['status']= "finished";
+						$testdebug['status']= "finished";
 					}
 
 					if($bFinished)
 					{
-						$finishedtime= time() - $json['start'];
-						$finishedtime= date("H:i:s", $finishedtime);
+						$timestamp= time();
+						$endtime= date("H:i:s", $timestamp);
+						$finishedtime= $timestamp - $testdebug['start'];
+						$pattern= "s";
+						$item= "sec";
+						if($finishedtime > 60)
+						{
+							$pattern= "i:s";
+							$item= "min:sec";
+							if($finishedtime > (60*60))
+							{
+								$pattern= "H:i:s";
+								$item= "hour:min:sec";
+							}
+						}
+						$finishedtime= date($pattern, $finishedtime);
 						$report.= " ***\n";
 						$report.= " ***\n";
-						$report.= " ***  Test finished in $finishedtime\n";
+						$report.= " ***  Test finished on $endtime\n";
+						$report.= " ***                in $finishedtime $item\n";
 						$report.= " ********************************************************************************************************************************************************\n";
 						$report.= "\n\n\n\n\n\n\n\n";
-					}
-					$jsonData= json_encode($json, JSON_PRETTY_PRINT);
-					if(file_put_contents($jsonFilename, $jsonData) === false)
-					{
-						echo "ERROR: cannot write file selftable_test_links.json<br />";
-						exit();
 					}
 					if(file_put_contents($reportFilename, $report, FILE_APPEND) === false)
 					{
@@ -326,9 +341,27 @@ class Tag extends STCheck
 					{
 						if($bFinished)
 						{
-							$query->update("testdebug[action]=finished");
+							$query->update("testdebug[status]=finished");
 							$link= "alert('Test finished'); ";
 							$link.= "location.href='".$query->getUrlParamString()."'";
+						}else
+						{
+							$params= array( 'testdebug' => $testdebug );
+							$query->update($params);
+							if($type == "link")
+								$link= "window.location='$link".$query->getUrlParamString()."'";
+							elseif($type == "edit")
+							{
+								$split= preg_split("/\?/", $link);
+								$link= $split[0];
+								if(preg_match("/^window.location='/", $link))
+									$link= substr($link, 17);
+								if(preg_match("/'$/", $link))
+									$link= substr($link, 0, -1);
+								if(count($split) > 1)
+									$query->update(substr($split[1], 0, -1));
+								$link= "window.location='".$query->getUrlParamString()."'";
+							}
 						}
 						$script= new JavaScriptTag();
 							$script->add("setTimeout(function(){ $link; }, 5000);");
@@ -337,8 +370,6 @@ class Tag extends STCheck
 					}
 				}else
 				{
-					$json= $this->read_test_json($jsonFilename);
-
 					$report=  " *******************************************************************************\n";
 					$report.= " ***  container: ".$this->getContainerName()."\n";
 					$report.= " ***      table: ".$this->getTableName()."\n";
@@ -346,7 +377,7 @@ class Tag extends STCheck
 					$report.= " ***     result: $__global_finished_SiteCreator_result\n";
 					$report.= "\n";
 					
-					$finishedtime= time() - $json['start'];
+					$finishedtime= time() - $testdebug['start'];
 					$finishedtime= date("H:i:s", $finishedtime);
 					$report.= " ***\n";
 					$report.= " ***\n";
