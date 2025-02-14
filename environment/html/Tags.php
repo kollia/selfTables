@@ -152,6 +152,7 @@ class Tag extends STCheck
 				global $__global_finished_SiteCreator_result;
 				global $HTML_CLASS_DEBUG_CONTENT_CLASS_FUNCTION;
 
+				$report= "";
 				$reportFilename= "selftable_test_report.txt";
 				$query= new STQueryString();
 				//$query->update("set=5");
@@ -172,32 +173,22 @@ class Tag extends STCheck
 					$bNew= false;
 					//$nMaxEditLinks= 1;
 					$script = pathinfo($_SERVER["SCRIPT_FILENAME"]);
-					$report= "";
 					if(isset($testdebug))
 					{
 						$type= $testdebug['link-type'];
 						if($testdebug['status'] == "finished")
 							$bNew= true;
 					}else
-					{
 						$bNew= true;
-						$testdebug= array( 	"start" => time(),
-											"status" => "running",
-											"container" => "unknown",
-											"table" => "unknown",
-											"link-type" => "unknown",
-											"link-class" => "",
-											"onEditLinkCount" => -1,
-											"onEditDeleteCount" => -1,
-											"onTableTagCount" => -1		);
-					}
+
 					$bFinished= false;
 					if($bNew)
 					{
 						reset($selftable_test_links);
 						$type= key($selftable_test_links);						
 						reset($selftable_test_links[$type]);
-						
+
+						$testdebug= array();
 						$testdebug['start']= time();
 						$testdebug['status']= "running";
 						$testdebug['container']= $this->getContainerName();
@@ -218,12 +209,7 @@ class Tag extends STCheck
 					}
 					
 
-					$report.= " *******************************************************************************\n";
-					$report.= " ***  container: ".$this->getContainerName()."\n";
-					$report.= " ***      table: ".$this->getTableName()."\n";
-					$report.= " ***     action: ".$this->getAction()."\n";
-					$report.= " ***     result: $__global_finished_SiteCreator_result\n";
-					$report.= "\n";
+					$report.= $this->reportContainer();
 
 					if( $this->nStopTestDisplayCount == -1 ||
 						$this->nStopTestDisplayCount <= (	$testdebug['onTableTagCount'] + 
@@ -306,36 +292,7 @@ class Tag extends STCheck
 					}
 
 					if($bFinished)
-					{
-						$timestamp= time();
-						$endtime= date("H:i:s", $timestamp);
-						$finishedtime= $timestamp - $testdebug['start'];
-						$pattern= "s";
-						$item= "sec";
-						if($finishedtime > 60)
-						{
-							$pattern= "i:s";
-							$item= "min:sec";
-							if($finishedtime > (60*60))
-							{
-								$pattern= "H:i:s";
-								$item= "hour:min:sec";
-							}
-						}
-						$finishedtime= date($pattern, $finishedtime);
-						$report.= " ***\n";
-						$report.= " ***\n";
-						$report.= " ***  Test finished on $endtime\n";
-						$report.= " ***                in $finishedtime $item\n";
-						$report.= " ********************************************************************************************************************************************************\n";
-						$report.= "\n\n\n\n\n\n\n\n";
-					}
-					if(file_put_contents($reportFilename, $report, FILE_APPEND) === false)
-					{
-						echo "ERROR: cannot write file selftable_test_report.txt<br />";
-						exit();
-					}
-					
+						$report.= $this->reportEndTime($testdebug['start']);					
 
 					if($__global_finished_SiteCreator_result === "NOERROR")
 					{
@@ -370,29 +327,56 @@ class Tag extends STCheck
 					}
 				}else
 				{
-					$report=  " *******************************************************************************\n";
-					$report.= " ***  container: ".$this->getContainerName()."\n";
-					$report.= " ***      table: ".$this->getTableName()."\n";
-					$report.= " ***     action: ".$this->getAction()."\n";
-					$report.= " ***     result: $__global_finished_SiteCreator_result\n";
-					$report.= "\n";
-					
-					$finishedtime= time() - $testdebug['start'];
-					$finishedtime= date("H:i:s", $finishedtime);
-					$report.= " ***\n";
-					$report.= " ***\n";
-					$report.= " ***  Test finished in $finishedtime\n";
-					$report.= " ********************************************************************************************************************************************************\n";
-					$report.= "\n\n\n\n\n\n\n\n";
-					
-					if(file_put_contents($reportFilename, $report, FILE_APPEND) === false)
-					{
-						echo "ERROR: cannot write file selftable_test_report.txt<br />";
-						exit();
-					}
+					$report.= $this->reportContainer();
+					$report.= $this->reportEndTime($testdebug['start']);
+				}
+
+				if(file_put_contents($reportFilename, $report, FILE_APPEND) === false)
+				{
+					echo "ERROR: cannot write file selftable_test_report.txt<br />";
+					exit();
 				}
 			}
 		    echo $this->getDisplayString(0);
+		}
+		private function reportContainer()
+		{
+			global $__global_finished_SiteCreator_result;
+
+			$report= " *******************************************************************************\n";
+			$report.= " ***  container: ".$this->getContainerName()."\n";
+			$report.= " ***      table: ".$this->getTableName()."\n";
+			$report.= " ***     action: ".$this->getAction()."\n";
+			$report.= " ***     result: $__global_finished_SiteCreator_result\n";
+			$report.= "\n";
+			return $report;
+		}
+		private function reportEndTime(int $starttime)
+		{
+			$timestamp= time();
+			$endtime= date("H:i:s", $timestamp);
+			$finishedtime= $timestamp - $starttime;
+			$pattern= "s";
+			$item= "sec";
+			if($finishedtime > 60)
+			{
+				$pattern= "i:s";
+				$item= "min:sec";
+				if($finishedtime > (60*60))
+				{
+					$pattern= "H:i:s";
+					$item= "hour:min:sec";
+				}
+			}
+			$finishedtime= date($pattern, $finishedtime);
+
+			$report= " ***\n";
+			$report.= " ***\n";
+			$report.= " ***  Test finished on $endtime\n";
+			$report.= " ***                in $finishedtime $item\n";
+			$report.= " ********************************************************************************************************************************************************\n";
+			$report.= "\n\n\n\n\n\n\n\n";
+			return $report;
 		}
 		public function getDisplayString($displayCount= 0)
 		{
